@@ -21,18 +21,24 @@
 package com.github.yumelira.yumebox
 
 import android.app.Application
+import com.github.yumelira.yumebox.common.native.NativeLibraryManager.initialize
+import com.github.yumelira.yumebox.common.runtime.StartupGate
+import com.github.yumelira.yumebox.common.util.AppUtil
+import com.github.yumelira.yumebox.common.util.PlatformIdentifier
+import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
+import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.di.appModule
+import com.github.yumelira.yumebox.update.EmasUpdateManager
 import com.tencent.mmkv.MMKV
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
-import com.github.yumelira.yumebox.core.Global
-import com.github.yumelira.yumebox.common.util.PlatformIdentifier
-import com.github.yumelira.yumebox.data.store.FeatureStore
-import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
-import com.github.yumelira.yumebox.di.appModule
-import com.github.yumelira.yumebox.common.native.NativeLibraryManager.initialize
-import com.github.yumelira.yumebox.common.util.AppUtil
 import java.io.File
+import java.io.IOException
 
 class App : Application() {
 
@@ -41,16 +47,21 @@ class App : Application() {
             private set
     }
 
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
 
         instance = this
-        if (Timber.forest().isEmpty()) {
+        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
             Timber.plant(Timber.DebugTree())
         }
 
+        StartupGate.verify(this)
+
         Global.init(this)
         MMKV.initialize(this)
+        initialize(this)
 
         val koinApp = startKoin {
             androidContext(this@App)
@@ -67,26 +78,39 @@ class App : Application() {
             featureStore.markFirstOpenHandled()
         }
 
-        initialize(this)
-
         PlatformIdentifier.getPlatformIdentifier()
+
+        EmasUpdateManager.init(
+            application = this,
+            appKey = BuildConfig.EMAS_APP_KEY,
+            appSecret = BuildConfig.EMAS_APP_SECRET,
+            channelId = BuildConfig.EMAS_CHANNEL_ID,
+            enableCustomDialog = true,
+        )
     }
 
     private fun extractGeoFiles() {
         val clashDir = File(filesDir, "clash").apply { mkdirs() }
         val geoFiles = listOf("geoip.metadb", "geosite.dat", "ASN.mmdb")
-        
+        val failedFiles = mutableListOf<String>()
+
         geoFiles.forEach { filename ->
             val targetFile = File(clashDir, filename)
             if (!targetFile.exists()) {
-                runCatching {
+                try {
                     assets.open(filename).use { input ->
                         targetFile.outputStream().use { output ->
                             input.copyTo(output)
                         }
                     }
+                } catch (_: IOException) {
+                    failedFiles += filename
                 }
             }
+        }
+
+        if (failedFiles.isNotEmpty()) {
+            Timber.w("Failed to extract geo files: ${failedFiles.joinToString()}")
         }
     }
 }
