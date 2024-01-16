@@ -105,6 +105,8 @@ class ClashHttpService : Service() {
     private fun startHttpProxy(profileId: String) {
         delegate.serviceScope.launch {
             try {
+                val startTime = System.currentTimeMillis()
+
                 val profile = delegate.loadProfileIfNeeded(
                     profileId, willUseTunMode = false, quickStart = true
                 ).getOrElse { error ->
@@ -112,14 +114,19 @@ class ClashHttpService : Service() {
                     delegate.showErrorNotification("启动失败", error.message ?: "配置加载失败")
                     return@launch
                 }
+                
+                val loadTime = System.currentTimeMillis() - startTime
+                Timber.tag(TAG).d("配置加载完成: ${loadTime}ms")
 
-                val address = clashManager.startHttpMode() ?: run {
+                val address = clashManager.startHttpMode().getOrNull() ?: run {
                     Timber.tag(TAG).e("HTTP 代理启动失败")
                     delegate.showErrorNotification("启动失败", "无法启动 HTTP 代理")
                     return@launch
                 }
 
-                Timber.tag(TAG).d("HTTP 代理启动成功: $address")
+                val totalTime = System.currentTimeMillis() - startTime
+                Timber.tag(TAG).d("HTTP 代理启动完成: ${totalTime}ms, 地址: $address")
+                
                 delegate.startNotificationUpdate()
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "HTTP 代理启动失败")

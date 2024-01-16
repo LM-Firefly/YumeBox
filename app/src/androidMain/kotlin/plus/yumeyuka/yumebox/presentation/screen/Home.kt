@@ -71,9 +71,9 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    val displayState by remember {
+    val displayState by remember(isRunning) {
         derivedStateOf {
-            if (isRunning || uiState.isStartingProxy) HomeDisplayState.Running else HomeDisplayState.Idle
+            if (isRunning) HomeDisplayState.Running else HomeDisplayState.Idle
         }
     }
 
@@ -146,8 +146,8 @@ fun HomePager(mainInnerPadding: PaddingValues) {
             }
 
             ProxyControlButton(
-                isRunning = isRunning || uiState.isStartingProxy,
-                isEnabled = profiles.isNotEmpty() && hasEnabledProfile && !uiState.isStartingProxy,
+                isRunning = isRunning,
+                isEnabled = profiles.isNotEmpty() && hasEnabledProfile,
                 hasEnabledProfile = hasEnabledProfile,
                 hasProfiles = profiles.isNotEmpty(),
                 onClick = {
@@ -179,24 +179,24 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
 @OptIn(ExperimentalAnimationApi::class)
 private fun AnimatedContentTransitionScope<HomeDisplayState>.createHomeTransitionSpec(): ContentTransform {
-    val animDuration = 500
+    val animDuration = 350
     return when {
         targetState == HomeDisplayState.Idle -> {
-            (slideInVertically(animationSpec = tween(animDuration)) { -it } + 
-             fadeIn(animationSpec = tween(animDuration)) + 
-             scaleIn(initialScale = 0.9f, animationSpec = tween(animDuration))).togetherWith(
-                slideOutVertically(animationSpec = tween(animDuration)) { it } + 
-                fadeOut(animationSpec = tween(animDuration)) + 
-                scaleOut(targetScale = 1.1f, animationSpec = tween(animDuration))
+            (slideInVertically(animationSpec = tween(animDuration)) { -it } +
+             fadeIn(animationSpec = tween(animDuration)) +
+             scaleIn(initialScale = 0.95f, animationSpec = tween(animDuration))).togetherWith(
+                slideOutVertically(animationSpec = tween(animDuration)) { it } +
+                fadeOut(animationSpec = tween(animDuration)) +
+                scaleOut(targetScale = 1.05f, animationSpec = tween(animDuration))
             )
         }
         else -> {
-            (slideInVertically(animationSpec = tween(animDuration)) { it } + 
-             fadeIn(animationSpec = tween(animDuration)) + 
-             scaleIn(initialScale = 0.9f, animationSpec = tween(animDuration))).togetherWith(
-                slideOutVertically(animationSpec = tween(animDuration)) { -it } + 
-                fadeOut(animationSpec = tween(animDuration)) + 
-                scaleOut(targetScale = 1.1f, animationSpec = tween(animDuration))
+            (slideInVertically(animationSpec = tween(animDuration)) { it } +
+             fadeIn(animationSpec = tween(animDuration)) +
+             scaleIn(initialScale = 0.95f, animationSpec = tween(animDuration))).togetherWith(
+                slideOutVertically(animationSpec = tween(animDuration)) { -it } +
+                fadeOut(animationSpec = tween(animDuration)) +
+                scaleOut(targetScale = 1.05f, animationSpec = tween(animDuration))
             )
         }
     }
