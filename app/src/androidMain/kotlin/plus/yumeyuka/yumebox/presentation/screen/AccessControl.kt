@@ -40,10 +40,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
+import android.widget.Toast
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -157,6 +161,9 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 onDismissRequest = { showSettingsSheet.value = false },
                 insideMargin = DpSize(32.dp, 16.dp),
             ) {
+                val clipboardManager = LocalClipboardManager.current
+                val context = LocalContext.current
+                
                 Column {
                     top.yukonga.miuix.kmp.basic.Card {
                         SuperSwitch(
@@ -168,6 +175,11 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                             title = MLang.AccessControl.Settings.DescendingOrder,
                             checked = uiState.descending,
                             onCheckedChange = { viewModel.onDescendingChange(it) }
+                        )
+                        SuperSwitch(
+                            title = MLang.AccessControl.Settings.SelectedFirst,
+                            checked = uiState.selectedFirst,
+                            onCheckedChange = { viewModel.onSelectedFirstChange(it) }
                         )
                     }
 
@@ -196,6 +208,29 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                                     0 -> viewModel.selectAll()
                                     1 -> viewModel.deselectAll()
                                     2 -> viewModel.invertSelection()
+                                }
+                            }
+                        )
+                        SuperDropdown(
+                            title = MLang.AccessControl.Settings.ImportExport,
+                            items = listOf(MLang.AccessControl.Settings.Import, MLang.AccessControl.Settings.Export),
+                            selectedIndex = 0,
+                            onSelectedIndexChange = { index ->
+                                when (index) {
+                                    0 -> {
+                                        val text = clipboardManager.getText()?.text ?: ""
+                                        if (text.isNotEmpty()) {
+                                            val count = viewModel.importPackages(text)
+                                            Toast.makeText(context, MLang.AccessControl.Settings.ImportSuccess.format(count), Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, MLang.AccessControl.Settings.ImportFailed, Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                    1 -> {
+                                        val exportText = viewModel.exportPackages()
+                                        clipboardManager.setText(AnnotatedString(exportText))
+                                        Toast.makeText(context, MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size), Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
                         )
