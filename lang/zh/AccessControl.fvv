@@ -15,12 +15,19 @@ AccessControl = {
         Title = "访问控制设置"
         ShowSystemApps = "显示系统应用"
         DescendingOrder = "倒序排列"
+        SelectedFirst = "已选应用优先"
         SortMode = "排序方式"
         SortModeCurrent = "当前：%s"
         BatchOperation = "批量操作"
         SelectAll = "全选"
         DeselectAll = "全不选"
         Invert = "反选"
+        ImportExport = "导入/导出"
+        Import = "从剪贴板导入"
+        Export = "导出到剪贴板"
+        ImportSuccess = "导入成功：%d 个包名"
+        ExportSuccess = "已复制 %d 个包名到剪贴板"
+        ImportFailed = "导入失败"
     }
     
     SortMode = {
