@@ -20,14 +20,24 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
+import android.widget.Toast
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -36,19 +46,30 @@ import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.ListPopup
+import top.yukonga.miuix.kmp.basic.ListPopupColumn
+import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.extra.DropdownImpl
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.icons.useful.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.*
 import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.icon.icons.useful.Edit
 
 @Composable
 @Destination<RootGraph>
 fun ProvidersScreen(navigator: DestinationsNavigator) {
     val viewModel = koinViewModel<ProvidersViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
+    val context = LocalContext.current
 
     val providers by viewModel.providers.collectAsState()
     val isRunning by viewModel.isRunning.collectAsState()
@@ -57,6 +78,20 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
     LaunchedEffect(isRunning) {
         if (isRunning) {
             viewModel.refreshProviders()
+        }
+    }
+
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearError()
         }
     }
 
@@ -108,7 +143,8 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
                             ProviderCard(
                                 provider = provider,
                                 isUpdating = uiState.updatingProviders.contains(provider.name),
-                                onUpdate = { viewModel.updateProvider(provider) }
+                                onUpdate = { viewModel.updateProvider(provider) },
+                                onUpload = { uri -> viewModel.uploadProviderFile(context, provider, uri) }
                             )
                         }
                     }
@@ -123,7 +159,8 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
                             ProviderCard(
                                 provider = provider,
                                 isUpdating = uiState.updatingProviders.contains(provider.name),
-                                onUpdate = { viewModel.updateProvider(provider) }
+                                onUpdate = { viewModel.updateProvider(provider) },
+                                onUpload = { uri -> viewModel.uploadProviderFile(context, provider, uri) }
                             )
                         }
                     }
@@ -137,8 +174,20 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
 private fun ProviderCard(
     provider: Provider,
     isUpdating: Boolean,
-    onUpdate: () -> Unit
+    onUpdate: () -> Unit,
+    onUpload: (Uri) -> Unit
 ) {
+    val showPopup = remember { mutableStateOf(false) }
+    val colorScheme = MiuixTheme.colorScheme
+    val updateBg = remember(colorScheme) { colorScheme.tertiaryContainer.copy(alpha = 0.6f) }
+    val updateTint = remember(colorScheme) { colorScheme.onTertiaryContainer.copy(alpha = 0.8f) }
+    
+    val filePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onUpload(it) }
+    }
+
     Card(modifier = Modifier.padding(vertical = 4.dp)) {
         Row(
             modifier = Modifier
@@ -181,10 +230,64 @@ private fun ProviderCard(
             Spacer(modifier = Modifier.width(8.dp))
 
             if (provider.vehicleType == Provider.VehicleType.HTTP) {
-                RotatingRefreshButton(
-                    isRotating = isUpdating,
-                    onClick = onUpdate
-                )
+                Box {
+                    IconButton(
+                        backgroundColor = updateBg,
+                        minHeight = 35.dp,
+                        minWidth = 35.dp,
+                        enabled = !isUpdating,
+                        onClick = { showPopup.value = true }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = MiuixIcons.Useful.Edit,
+                                tint = updateTint,
+                                contentDescription = MLang.Providers.Action.Operation,
+                            )
+                            Text(
+                                modifier = Modifier.padding(end = 3.dp),
+                                text = MLang.Providers.Action.Operation,
+                                color = updateTint,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+
+                    val items = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
+                    var selectedIndex by remember { mutableStateOf(0) }
+
+                    ListPopup(
+                        show = showPopup,
+                        popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
+                        alignment = PopupPositionProvider.Align.Right,
+                        onDismissRequest = { showPopup.value = false }
+                    ) {
+                        ListPopupColumn {
+                            items.forEachIndexed { index, item ->
+                                DropdownImpl(
+                                    text = item,
+                                    optionSize = items.size,
+                                    isSelected = selectedIndex == index,
+                                    onSelectedIndexChange = {
+                                        selectedIndex = index
+                                        showPopup.value = false
+                                        when (index) {
+                                            0 -> onUpdate()
+                                            1 -> filePicker.launch("*/*")
+                                        }
+                                    },
+                                    index = index
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

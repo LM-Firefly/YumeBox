@@ -17,10 +17,15 @@ type Provider struct {
 	VehicleType string `json:"vehicleType"`
 	Type        string `json:"type"`
 	UpdatedAt   int64  `json:"updatedAt"`
+	Path        string `json:"path"`
 }
 
 type UpdatableProvider interface {
 	UpdatedAt() time.Time
+}
+
+type VehicleProvider interface {
+	Vehicle() provider.Vehicle
 }
 
 func QueryProviders() []*Provider {
@@ -49,9 +54,14 @@ func QueryProviders() []*Provider {
 
 	for _, p := range providers {
 		updatedAt := time.Time{}
+		path := ""
 
 		if s, ok := p.(UpdatableProvider); ok {
 			updatedAt = s.UpdatedAt()
+		}
+
+		if v, ok := p.(VehicleProvider); ok {
+			path = v.Vehicle().Path()
 		}
 
 		result = append(result, &Provider{
@@ -59,6 +69,7 @@ func QueryProviders() []*Provider {
 			VehicleType: p.VehicleType().String(),
 			Type:        p.Type().String(),
 			UpdatedAt:   updatedAt.UnixNano() / 1000 / 1000,
+			Path:        path,
 		})
 	}
 

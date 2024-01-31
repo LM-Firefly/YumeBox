@@ -20,17 +20,23 @@
 
 package com.github.yumelira.yumebox.presentation.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.Provider
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import timber.log.Timber
 
 class ProvidersViewModel(
     private val clashManager: ClashManager
@@ -111,6 +117,42 @@ class ProvidersViewModel(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun uploadProviderFile(context: Context, provider: Provider, uri: Uri) {
+        viewModelScope.launch {
+            try {
+                Timber.d("Starting upload for provider: ${provider.name}, path: ${provider.path}")
+                _uiState.update { it.copy(updatingProviders = it.updatingProviders + provider.name) }
+                
+                withContext(Dispatchers.IO) {
+                    if (provider.path.isBlank()) {
+                        throw IllegalStateException("Provider path is empty")
+                    }
+                    
+                    val targetFile = File(provider.path)
+                    Timber.d("Target file: ${targetFile.absolutePath}")
+                    
+                    targetFile.parentFile?.mkdirs()
+                    
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        targetFile.outputStream().use { output ->
+                            val bytes = input.copyTo(output)
+                            Timber.d("Copied $bytes bytes to ${targetFile.absolutePath}")
+                        }
+                    } ?: throw IllegalStateException("Cannot read file from uri: $uri")
+                }
+                
+                Timber.d("Upload successful for provider: ${provider.name}")
+                refreshProviders()
+                _uiState.update { it.copy(message = MLang.Providers.Message.UploadSuccess.format(provider.name)) }
+            } catch (e: Exception) {
+                Timber.e(e, "Upload failed for provider: ${provider.name}")
+                _uiState.update { it.copy(error = MLang.Providers.Message.UploadFailed.format(e.message)) }
+            } finally {
+                _uiState.update { it.copy(updatingProviders = it.updatingProviders - provider.name) }
+            }
+        }
     }
 
     data class ProvidersUiState(
