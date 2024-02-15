@@ -79,7 +79,13 @@ val appModule = module {
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
     single { TrafficStatisticsStore(get(named("traffic_statistics"))) }
 
-    single(createdAtStart = false) { ClashManager(androidContext(), androidApplication().filesDir.resolve("clash")) }
+    single(createdAtStart = false) { 
+        ClashManager(
+            androidContext(), 
+            androidApplication().filesDir.resolve("clash"),
+            proxyModeProvider = { get<ProxyDisplaySettingsStore>().proxyMode.value }
+        ) 
+    }
     single { ConfigAutoLoader(get(), get()) }
 
     single { NetworkInfoService() }

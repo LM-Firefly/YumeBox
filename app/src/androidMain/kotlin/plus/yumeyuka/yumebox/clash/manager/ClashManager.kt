@@ -36,7 +36,8 @@ import java.io.File
 
 class ClashManager(
     private val context: Context,
-    private val workDir: File
+    private val workDir: File,
+    private val proxyModeProvider: (() -> com.github.yumelira.yumebox.core.model.TunnelState.Mode)? = null
 ) : Closeable {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
@@ -159,10 +160,36 @@ class ClashManager(
         return loadProfileUseCase(profile, forceDownload, onProgress, willUseTunMode, quickStart)
             .onSuccess {
                 scope.launch { 
+                    applySavedProxyMode()
                     delay(300)
                     refreshProxyGroups(skipCacheClear = true) 
                 }
             }
+    }
+    
+    private fun applySavedProxyMode() {
+        val savedMode = proxyModeProvider?.invoke() ?: return
+        runCatching {
+            val persistOverride = com.github.yumelira.yumebox.core.Clash.queryOverride(
+                com.github.yumelira.yumebox.core.Clash.OverrideSlot.Persist
+            )
+            if (persistOverride.mode != savedMode) {
+                persistOverride.mode = savedMode
+                com.github.yumelira.yumebox.core.Clash.patchOverride(
+                    com.github.yumelira.yumebox.core.Clash.OverrideSlot.Persist, 
+                    persistOverride
+                )
+            }
+            
+            val sessionOverride = com.github.yumelira.yumebox.core.Clash.queryOverride(
+                com.github.yumelira.yumebox.core.Clash.OverrideSlot.Session
+            )
+            sessionOverride.mode = savedMode
+            com.github.yumelira.yumebox.core.Clash.patchOverride(
+                com.github.yumelira.yumebox.core.Clash.OverrideSlot.Session, 
+                sessionOverride
+            )
+        }
     }
 
     suspend fun startTunMode(
