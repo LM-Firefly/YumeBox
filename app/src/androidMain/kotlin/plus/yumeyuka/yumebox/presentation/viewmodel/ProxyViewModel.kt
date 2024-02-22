@@ -60,11 +60,13 @@ class ProxyViewModel(
 
 
     val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
-        combine(proxyGroups, sortMode) { groups, sortMode ->
-            groups.map { group ->
-                group.copy(
-                    proxies = sortProxies(group.proxies, sortMode)
-                )
+        combine(proxyGroups, sortMode) { groups, mode ->
+            if (mode == ProxySortMode.DEFAULT) {
+                groups
+            } else {
+                groups.map { group ->
+                    group.copy(proxies = sortProxies(group.proxies, mode))
+                }
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -106,17 +108,22 @@ class ProxyViewModel(
                 clearError()
                 if (groupName != null) {
                     showMessage(MLang.Proxy.Testing.Group.format(groupName))
-                    clashManager.healthCheck(groupName)
+                    val result = clashManager.healthCheck(groupName)
+                    if (result.isSuccess) {
+                        showMessage(MLang.Proxy.Testing.RequestSent)
+                    } else {
+                        showError(MLang.Proxy.Testing.Failed.format(result.exceptionOrNull()?.message))
+                    }
                 } else {
                     showMessage(MLang.Proxy.Testing.All)
-                    clashManager.healthCheckAll()
+                    val result = clashManager.healthCheckAll()
+                    if (result.isFailure) {
+                        showError(MLang.Proxy.Testing.Failed.format(result.exceptionOrNull()?.message))
+                    }
                 }
-                showMessage(MLang.Proxy.Testing.RequestSent)
-                kotlinx.coroutines.delay(3000)
-                setLoading(false)
-                _testRequested.value = false
             } catch (e: Exception) {
                 showError(MLang.Proxy.Testing.Failed.format(e.message))
+            } finally {
                 _testRequested.value = false
                 setLoading(false)
             }
