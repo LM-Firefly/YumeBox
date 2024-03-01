@@ -178,7 +178,7 @@ private fun PagerGroupSync(
     setSelectedGroup: (Int) -> Unit
 ) {
     LaunchedEffect(groupCount, selectedGroupIndex) {
-        if (groupCount > 0 && selectedGroupIndex >= groupCount) {
+        if (groupCount in 1..selectedGroupIndex) {
             setSelectedGroup(0)
         }
     }
@@ -452,7 +452,6 @@ fun LazyListScope.proxyNodeGridItems(
     onProxyClick: ((String) -> Unit)?
 ) {
     val columns = if (displayMode.isSingleColumn) 1 else 2
-    val isSingleColumn = displayMode.isSingleColumn
     val showDetail = displayMode.showDetail
 
     if (columns == 1) {
