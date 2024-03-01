@@ -70,4 +70,8 @@ ProfilesPage = {
         Message = "确定要删除「%s」吗？"
         Confirm = "删除"
     }
+
+    EditDialog = {
+        Title = "编辑配置名称"
+    }
 }

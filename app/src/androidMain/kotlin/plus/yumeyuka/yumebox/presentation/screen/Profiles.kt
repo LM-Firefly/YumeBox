@@ -111,15 +111,17 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     val showAddBottomSheet = remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Profile?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
     var pendingProfileId by remember { mutableStateOf<String?>(null) }
     var profileToEdit by remember { mutableStateOf<Profile?>(null) }
     var isDownloading by remember { mutableStateOf(false) }
-    
+    var editName by remember { mutableStateOf("") }
+
     var importUrlFromScheme by remember { mutableStateOf<String?>(null) }
     val pendingImportUrl by MainActivity.pendingImportUrl.collectAsState()
-    
+
     var scannedUrl by remember { mutableStateOf<String?>(null) }
-    
+
     LaunchedEffect(pendingImportUrl) {
         if (pendingImportUrl != null) {
             importUrlFromScheme = pendingImportUrl
@@ -164,7 +166,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         },
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
-                        Icon(MiuixIcons.Useful.Refresh, contentDescription = MLang.ProfilesPage.Action.UpdateAll)
+                        Icon(
+                            MiuixIcons.Useful.Refresh,
+                            contentDescription = MLang.ProfilesPage.Action.UpdateAll
+                        )
                     }
 
                     IconButton(
@@ -174,7 +179,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         },
                         modifier = Modifier.padding(end = LocalSpacing.current.xxl)
                     ) {
-                        Icon(MiuixIcons.Useful.New, contentDescription = MLang.ProfilesPage.Action.AddProfile)
+                        Icon(
+                            MiuixIcons.Useful.New,
+                            contentDescription = MLang.ProfilesPage.Action.AddProfile
+                        )
                     }
                 })
         },
@@ -218,9 +226,13 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         }
-                                        context.startActivity(Intent.createChooser(intent, MLang.ProfilesPage.Action.ExportConfig).apply {
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        })
+                                        context.startActivity(
+                                            Intent.createChooser(
+                                                intent,
+                                                MLang.ProfilesPage.Action.ExportConfig
+                                            ).apply {
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            })
                                     } catch (e: Exception) {
                                         e.printStackTrace()
                                     }
@@ -240,14 +252,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         onEdit = { profile ->
                             if (!isDownloading) {
                                 profileToEdit = profile
-                                showAddBottomSheet.value = true
+                                editName = profile.name
+                                showEditDialog = true
                             }
                         },
                         onToggleEnabled = { updatedProfile ->
                             if (!isDownloading) {
                                 scope.launch {
                                     profilesViewModel.toggleProfileEnabled(
-                                        profileId = updatedProfile.id,
+                                        profile = updatedProfile,
                                         enabled = updatedProfile.enabled,
                                         onProfileEnabled = { enabledProfile ->
                                             if (isRunning) {
@@ -293,8 +306,80 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             showDeleteDialog = null
         }, onDismiss = { showDeleteDialog = null })
     }
+
+    val currentProfileToEdit = profileToEdit
+    if (showEditDialog && currentProfileToEdit != null) {
+        EditProfileNameDialog(
+            show = remember { mutableStateOf(true) },
+            currentName = currentProfileToEdit.name,
+            onDismiss = {
+                showEditDialog = false
+                profileToEdit = null
+            },
+            onConfirm = { newName ->
+                if (newName.isNotBlank()) {
+                    val updatedProfile = currentProfileToEdit.copy(
+                        name = newName,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    profilesViewModel.updateProfile(updatedProfile)
+                    showEditDialog = false
+                    profileToEdit = null
+                }
+            }
+        )
+    }
 }
 
+
+@Composable
+private fun EditProfileNameDialog(
+    show: MutableState<Boolean>,
+    currentName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var editName by remember { mutableStateOf(currentName) }
+
+    SuperDialog(
+        title = MLang.ProfilesPage.EditDialog.Title,
+        show = show,
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TextField(
+                value = editName,
+                onValueChange = { editName = it },
+                label = MLang.ProfilesPage.Input.ProfileName,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(MLang.ProfilesPage.Button.Cancel)
+                }
+                Button(
+                    onClick = { onConfirm(editName) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColorsPrimary()
+                ) {
+                    Text(
+                        MLang.ProfilesPage.Button.Confirm,
+                        color = MiuixTheme.colorScheme.surface
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun AddProfileSheet(
@@ -373,28 +458,33 @@ private fun AddProfileSheet(
                 filePath = ""
                 fileName = ""
             }
+
             2 -> {
             }
         }
         error = ""
     }
 
-    var hasCameraPermission by remember { 
+    var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    
+
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasCameraPermission = isGranted
         if (!isGranted) {
-            Toast.makeText(context, MLang.ProfilesPage.QrScanner.NeedCamera, Toast.LENGTH_LONG).show()
+            Toast.makeText(context, MLang.ProfilesPage.QrScanner.NeedCamera, Toast.LENGTH_LONG)
+                .show()
             selectedTypeIndex = 0
         }
     }
-    
+
     LaunchedEffect(selectedTypeIndex) {
         if (selectedTypeIndex == 2 && !hasCameraPermission) {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
@@ -409,7 +499,7 @@ private fun AddProfileSheet(
                 name = profileToEdit.name
                 if (profileToEdit.type == ProfileType.URL) {
                     selectedTypeIndex = 0
-                    url = profileToEdit.config
+                    url = profileToEdit.remoteUrl ?: ""
                 } else {
                     selectedTypeIndex = 1
                     filePath = profileToEdit.config
@@ -418,14 +508,19 @@ private fun AddProfileSheet(
             } else if (!importUrl.isNullOrBlank()) {
                 selectedTypeIndex = 0
                 url = importUrl
-                Toast.makeText(context, MLang.ProfilesPage.Message.UrlImported, Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, MLang.ProfilesPage.Message.UrlImported, Toast.LENGTH_SHORT)
+                    .show()
             } else {
                 selectedTypeIndex = 0
                 try {
                     val clipboardUrl = readClipboardAndCheckUrl()
                     if (clipboardUrl != null) {
                         url = clipboardUrl
-                        Toast.makeText(context, MLang.ProfilesPage.Message.ClipboardRead, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            MLang.ProfilesPage.Message.ClipboardRead,
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -472,7 +567,8 @@ private fun AddProfileSheet(
 
                     val steps = (actualProgress - displayedProgress) / 5
                     for (i in 1..steps) {
-                        val stepProgress = kotlin.math.min(displayedProgress + (i * 5), actualProgress)
+                        val stepProgress =
+                            kotlin.math.min(displayedProgress + (i * 5), actualProgress)
                         displayedProgress = stepProgress
                         delay(100)
                     }
@@ -510,7 +606,13 @@ private fun AddProfileSheet(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
             val actualFileName =
-                context.contentResolver.query(it, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                context.contentResolver.query(
+                    it,
+                    arrayOf(OpenableColumns.DISPLAY_NAME),
+                    null,
+                    null,
+                    null
+                )
                     ?.use { cursor ->
                         val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                         cursor.moveToFirst()
@@ -518,7 +620,11 @@ private fun AddProfileSheet(
                     } ?: MLang.ProfilesPage.Message.UnknownFile
 
             val extension = actualFileName.substringAfterLast(".", "")
-            if (!extension.equals("yaml", ignoreCase = true) && !extension.equals("yml", ignoreCase = true)) {
+            if (!extension.equals("yaml", ignoreCase = true) && !extension.equals(
+                    "yml",
+                    ignoreCase = true
+                )
+            ) {
                 error = MLang.ProfilesPage.Validation.YamlOnly
                 return@let
             }
@@ -529,36 +635,51 @@ private fun AddProfileSheet(
 
             val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
             if (name.isBlank() || name == actualFileName) {
-                name = if (fileNameWithoutExt.isNotBlank()) fileNameWithoutExt else MLang.ProfilesPage.Input.NewProfile
-            }
-        }
-    }
-    
-    val qrImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            scope.launch {
-                try {
-                    val result = readQrFromImage(context, it)
-                    if (result != null) {
-                        url = result
-                        selectedTypeIndex = 0
-                        Toast.makeText(context, MLang.ProfilesPage.QrScanner.RecognizeSuccess, Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, MLang.ProfilesPage.QrScanner.RecognizeFailed, Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    Toast.makeText(context, MLang.ProfilesPage.QrScanner.RecognizeError.format(e.message), Toast.LENGTH_SHORT).show()
-                }
+                name =
+                    if (fileNameWithoutExt.isNotBlank()) fileNameWithoutExt else MLang.ProfilesPage.Input.NewProfile
             }
         }
     }
 
+    val qrImageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                scope.launch {
+                    try {
+                        val result = readQrFromImage(context, it)
+                        if (result != null) {
+                            url = result
+                            selectedTypeIndex = 0
+                            Toast.makeText(
+                                context,
+                                MLang.ProfilesPage.QrScanner.RecognizeSuccess,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                MLang.ProfilesPage.QrScanner.RecognizeFailed,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            context,
+                            MLang.ProfilesPage.QrScanner.RecognizeError.format(e.message),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+
     val showCameraPreview = remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(selectedTypeIndex, show.value, isDownloading, hasCameraPermission) {
-        showCameraPreview.value = show.value && selectedTypeIndex == 2 && !isDownloading && hasCameraPermission
+        showCameraPreview.value =
+            show.value && selectedTypeIndex == 2 && !isDownloading && hasCameraPermission
     }
-    
+
     SuperBottomSheet(
         show = show,
         title = if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle else MLang.ProfilesPage.Sheet.AddTitle,
@@ -592,7 +713,10 @@ private fun AddProfileSheet(
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
+                        verticalArrangement = Arrangement.spacedBy(
+                            16.dp,
+                            Alignment.CenterVertically
+                        )
                     ) {
                         Box(
                             modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center
@@ -602,12 +726,15 @@ private fun AddProfileSheet(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center,
                                 transitionSpec = {
-                                    fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                                    fadeIn(animationSpec = tween(300)) togetherWith fadeOut(
+                                        animationSpec = tween(300)
+                                    )
                                 },
                                 label = "ProgressIcon"
                             ) { complete ->
                                 Box(
-                                    modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     if (complete) {
                                         Icon(
@@ -628,7 +755,8 @@ private fun AddProfileSheet(
                         }
 
                         Text(
-                            text = downloadProgress?.message ?: MLang.ProfilesPage.Progress.Downloading,
+                            text = downloadProgress?.message
+                                ?: MLang.ProfilesPage.Progress.Downloading,
                             style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
@@ -665,7 +793,7 @@ private fun AddProfileSheet(
                         Box(modifier = Modifier.alpha(if (profileToEdit != null) 0.5f else 1f)) {
                             SuperSpinner(
                                 title = MLang.ProfilesPage.Type.Title, items = listOf(
-                                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription), 
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
                                     SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
                                     SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan)
                                 ), selectedIndex = selectedTypeIndex, onSelectedIndexChange = {
@@ -688,12 +816,12 @@ private fun AddProfileSheet(
                             }
                         }
                     }
-                    
+
                     AnimatedContent(
                         targetState = selectedTypeIndex,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(200)) togetherWith 
-                            fadeOut(animationSpec = tween(150))
+                            fadeIn(animationSpec = tween(200)) togetherWith
+                                    fadeOut(animationSpec = tween(150))
                         },
                         label = "ProfileTypeContent"
                     ) { typeIndex ->
@@ -718,7 +846,11 @@ private fun AddProfileSheet(
                                                         showCameraPreview.value = false
                                                         url = scannedUrl
                                                         selectedTypeIndex = 0
-                                                        Toast.makeText(context, MLang.ProfilesPage.QrScanner.ScanSuccess, Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(
+                                                            context,
+                                                            MLang.ProfilesPage.QrScanner.ScanSuccess,
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
                                                     }
                                                 )
                                             }
@@ -731,20 +863,24 @@ private fun AddProfileSheet(
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 TextButton(
                                                     text = MLang.ProfilesPage.QrScanner.GrantPermission,
-                                                    onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) }
+                                                    onClick = {
+                                                        cameraPermissionLauncher.launch(
+                                                            Manifest.permission.CAMERA
+                                                        )
+                                                    }
                                                 )
                                             }
                                         } else {
                                             CircularProgressIndicator(modifier = Modifier.size(32.dp))
                                         }
                                     }
-                                    
+
                                     TextButton(
                                         text = MLang.ProfilesPage.QrScanner.SelectFromAlbum,
                                         onClick = { qrImageLauncher.launch("image/*") },
                                         modifier = Modifier.fillMaxWidth()
                                     )
-                                    
+
                                     Button(
                                         onClick = {
                                             showCameraPreview.value = false
@@ -754,6 +890,7 @@ private fun AddProfileSheet(
                                         modifier = Modifier.fillMaxWidth()
                                     ) { Text(MLang.ProfilesPage.Button.Cancel) }
                                 }
+
                                 else -> {
                                     TextField(
                                         value = name,
@@ -761,7 +898,7 @@ private fun AddProfileSheet(
                                         label = MLang.ProfilesPage.Input.ProfileName,
                                         modifier = Modifier.fillMaxWidth()
                                     )
-                                    
+
                                     if (typeIndex == 0) {
                                         TextField(
                                             value = url,
@@ -783,25 +920,38 @@ private fun AddProfileSheet(
                                                 .fillMaxWidth()
                                                 .clickable(
                                                     indication = null,
-                                                    interactionSource = remember { MutableInteractionSource() }) { launcher.launch("*/*") })
+                                                    interactionSource = remember { MutableInteractionSource() }) {
+                                                    launcher.launch(
+                                                        "*/*"
+                                                    )
+                                                })
                                     }
-                                    
+
                                     if (error.isNotEmpty()) {
-                                        Text(text = error, color = MiuixTheme.colorScheme.error, style = MiuixTheme.textStyles.body2)
+                                        Text(
+                                            text = error,
+                                            color = MiuixTheme.colorScheme.error,
+                                            style = MiuixTheme.textStyles.body2
+                                        )
                                     }
-                                    
+
                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        Button(onClick = {
-                                            show.value = false
-                                            profilesViewModel.clearDownloadProgress()
-                                        }, modifier = Modifier.weight(1f)) { Text(MLang.ProfilesPage.Button.Cancel) }
+                                        Button(
+                                            onClick = {
+                                                show.value = false
+                                                profilesViewModel.clearDownloadProgress()
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        ) { Text(MLang.ProfilesPage.Button.Cancel) }
                                         Button(
                                             onClick = {
                                                 if (typeIndex == 0 && url.isBlank()) {
-                                                    error = MLang.ProfilesPage.Validation.EnterUrl; return@Button
+                                                    error =
+                                                        MLang.ProfilesPage.Validation.EnterUrl; return@Button
                                                 }
                                                 if (typeIndex == 1 && filePath.isBlank()) {
-                                                    error = MLang.ProfilesPage.Validation.SelectFile; return@Button
+                                                    error =
+                                                        MLang.ProfilesPage.Validation.SelectFile; return@Button
                                                 }
 
                                                 keyboardController?.hide()
@@ -833,7 +983,10 @@ private fun AddProfileSheet(
 
                                                         scope.launch {
                                                             val downloadedProfile =
-                                                                profilesViewModel.downloadProfile(profile, saveToDb = true)
+                                                                profilesViewModel.downloadProfile(
+                                                                    profile,
+                                                                    saveToDb = true
+                                                                )
                                                             if (downloadedProfile != null && !downloadedProfile.config.isNullOrBlank()) {
                                                                 show.value = false
                                                                 profilesViewModel.clearDownloadProgress()
@@ -868,10 +1021,15 @@ private fun AddProfileSheet(
                                                         }
                                                     }
                                                 }
-                                            }, 
-                                            modifier = Modifier.weight(1f), 
+                                            },
+                                            modifier = Modifier.weight(1f),
                                             colors = ButtonDefaults.buttonColorsPrimary()
-                                        ) { Text(MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.background) }
+                                        ) {
+                                            Text(
+                                                MLang.ProfilesPage.Button.Confirm,
+                                                color = MiuixTheme.colorScheme.background
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -889,11 +1047,11 @@ private fun StableQrScanner(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
-    
+
     val currentOnScanned by rememberUpdatedState(onScanned)
-    
+
     val hasScanned = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
-    
+
     AndroidView(
         modifier = Modifier
             .fillMaxSize()
@@ -906,19 +1064,19 @@ private fun StableQrScanner(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                 )
             }
-            
+
             val barcodeScanner = BarcodeScanning.getClient(
                 BarcodeScannerOptions.Builder()
                     .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
                     .build()
             )
-            
+
             val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-            
+
             val previewUseCase = Preview.Builder().build().also {
                 it.surfaceProvider = previewView.surfaceProvider
             }
-            
+
             val imageAnalysisUseCase = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
@@ -931,7 +1089,7 @@ private fun StableQrScanner(
                         }
                     }
                 }
-            
+
             coroutineScope.launch {
                 try {
                     val cameraProvider = context.getStableCameraProvider()
@@ -946,7 +1104,7 @@ private fun StableQrScanner(
                     e.printStackTrace()
                 }
             }
-            
+
             previewView
         },
         onRelease = { previewView ->
@@ -971,7 +1129,7 @@ private fun processStableQrImage(
             image,
             imageProxy.imageInfo.rotationDegrees,
         )
-        
+
         barcodeScanner.process(inputImage)
             .addOnSuccessListener { barcodeList ->
                 barcodeList.firstOrNull()?.rawValue?.let { text ->
@@ -985,7 +1143,7 @@ private fun processStableQrImage(
     } ?: imageProxy.close()
 }
 
-private suspend fun Context.getStableCameraProvider(): ProcessCameraProvider = 
+private suspend fun Context.getStableCameraProvider(): ProcessCameraProvider =
     suspendCoroutine { continuation ->
         ProcessCameraProvider.getInstance(this).also { future ->
             future.addListener(
@@ -995,27 +1153,28 @@ private suspend fun Context.getStableCameraProvider(): ProcessCameraProvider =
         }
     }
 
-private suspend fun readQrFromImage(context: Context, uri: Uri): String? = kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
-    try {
-        val inputImage = InputImage.fromFilePath(context, uri)
-        val scanner = BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                .build()
-        )
-        scanner.process(inputImage)
-            .addOnSuccessListener { barcodes ->
-                val barcode = barcodes.getOrNull(0)
-                continuation.resume(barcode?.rawValue)
-            }
-            .addOnFailureListener {
-                continuation.resume(null)
-            }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        continuation.resume(null)
+private suspend fun readQrFromImage(context: Context, uri: Uri): String? =
+    kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+        try {
+            val inputImage = InputImage.fromFilePath(context, uri)
+            val scanner = BarcodeScanning.getClient(
+                BarcodeScannerOptions.Builder()
+                    .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                    .build()
+            )
+            scanner.process(inputImage)
+                .addOnSuccessListener { barcodes ->
+                    val barcode = barcodes.getOrNull(0)
+                    continuation.resume(barcode?.rawValue)
+                }
+                .addOnFailureListener {
+                    continuation.resume(null)
+                }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            continuation.resume(null)
+        }
     }
-}
 
 @Composable
 private fun DeleteConfirmDialog(
@@ -1028,12 +1187,20 @@ private fun DeleteConfirmDialog(
         onDismissRequest = onDismiss
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(MLang.ProfilesPage.Button.Cancel) }
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f)
+            ) { Text(MLang.ProfilesPage.Button.Cancel) }
             Button(
                 onClick = onConfirm,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColorsPrimary()
-            ) { Text(MLang.ProfilesPage.DeleteDialog.Confirm, color = MiuixTheme.colorScheme.background) }
+            ) {
+                Text(
+                    MLang.ProfilesPage.DeleteDialog.Confirm,
+                    color = MiuixTheme.colorScheme.background
+                )
+            }
         }
     }
 }
