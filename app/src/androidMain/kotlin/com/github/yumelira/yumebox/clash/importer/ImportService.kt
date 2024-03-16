@@ -11,7 +11,7 @@ import timber.log.Timber
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-class ConfigImportService(private val workDir: File) {
+class ImportService(private val workDir: File) {
 
     companion object {
         private const val IMPORTED_DIR = "imported"
@@ -63,7 +63,6 @@ class ConfigImportService(private val workDir: File) {
             cleanupFailedImport(profile.id)
             throw e
         } catch (e: Exception) {
-            // 将异常转换为 ConfigImportException
             Timber.d("捕获异常类型: ${e.javaClass.simpleName}, 消息: ${e.message}")
             val importException = e.toConfigImportException()
 
@@ -226,7 +225,6 @@ class ConfigImportService(private val workDir: File) {
         val targetFile = File(targetDir, CONFIG_FILE)
 
         try {
-            // 检查源文件和目标文件是否相同，避免自我复制导致的问题
             val isSameFile = try {
                 sourceFile.canonicalPath == targetFile.canonicalPath
             } catch (e: Exception) {
@@ -271,7 +269,6 @@ class ConfigImportService(private val workDir: File) {
                         }
 
                         else -> {
-                            // 忽略其他状态
                             null
                         }
                     }
@@ -330,9 +327,6 @@ class ConfigImportService(private val workDir: File) {
         }
     }
 
-    /**
-     * 创建合适的 ConfigImportException
-     */
     private fun toConfigImportException(message: String, cause: Throwable?): ConfigImportException {
         return when (cause) {
             is ConfigImportException -> cause

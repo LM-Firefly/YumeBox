@@ -20,11 +20,7 @@
 
 package com.github.yumelira.yumebox.clash.config
 
-import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.ConfigurationOverride
-import com.github.yumelira.yumebox.core.model.TunnelState
-
-object ClashConfiguration {
+object Configuration {
     object Defaults {
         const val MIXED_PORT = 7890
         const val HTTP_ADDRESS = "127.0.0.1"
@@ -37,34 +33,6 @@ object ClashConfiguration {
 
     sealed class ProxyMode {
         object Tun : ProxyMode()
-        data class Http(val port: Int = Defaults.MIXED_PORT) : ProxyMode()
-    }
-
-    fun applyOverride(
-        mode: ProxyMode,
-        slot: Clash.OverrideSlot = Clash.OverrideSlot.Session
-    ) {
-        val override = when (mode) {
-            is ProxyMode.Tun -> ConfigurationOverride(
-                mode = TunnelState.Mode.Rule,
-                mixedPort = null
-            )
-
-            is ProxyMode.Http -> ConfigurationOverride(
-                mode = TunnelState.Mode.Rule,
-                mixedPort = mode.port
-            )
-        }
-
-        Clash.patchOverride(slot, override)
-    }
-
-    fun clearOverride(slot: Clash.OverrideSlot = Clash.OverrideSlot.Session) {
-        Clash.clearOverride(slot)
-    }
-
-    fun getCurrentOverride(slot: Clash.OverrideSlot = Clash.OverrideSlot.Session): ConfigurationOverride {
-        return Clash.queryOverride(slot)
     }
 
     data class TunConfig(
@@ -78,8 +46,7 @@ object ClashConfiguration {
     )
 
     data class HttpConfig(
-        val host: String = Defaults.HTTP_ADDRESS,
-        val port: Int = Defaults.MIXED_PORT
+        val host: String = Defaults.HTTP_ADDRESS, val port: Int = Defaults.MIXED_PORT
     ) {
         val address: String get() = "$host:$port"
         val listenAddress: String get() = ":$port"
