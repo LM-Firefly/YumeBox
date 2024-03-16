@@ -21,7 +21,7 @@
 package com.github.yumelira.yumebox.clash.config
 
 
-object VpnRouteConfig {
+object RouteConfig {
 
     const val TUN_GATEWAY6 = "fdfe:dcba:9876::1"
     const val TUN_SUBNET_PREFIX6 = 126
