@@ -75,7 +75,7 @@ fun ProxyPager(
 ) {
     val context = LocalContext.current
     val proxyViewModel = koinViewModel<ProxyViewModel>()
-    val homeViewModel = koinViewModel<HomeViewModel>()
+    koinViewModel<HomeViewModel>()
     val featureViewModel = koinViewModel<FeatureViewModel>()
 
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()

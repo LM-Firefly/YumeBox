@@ -84,6 +84,5 @@ object ByteFormatter {
 }
 
 fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)
-fun formatTotal(bytes: Long): String = ByteFormatter.format(bytes)
 fun formatSpeed(bytesPerSecond: Long): String = ByteFormatter.formatSpeed(bytesPerSecond)
 fun formatBytesForDisplay(bytes: Long): Pair<String, String> = ByteFormatter.formatForDisplay(bytes, isSpeed = true)
