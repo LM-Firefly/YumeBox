@@ -40,12 +40,12 @@ class ClashManager(
     val isRunning: StateFlow<Boolean> = _proxyState.map { it.isRunning }.stateIn(scope, SharingStarted.Eagerly, false)
 
     val runningMode: StateFlow<RunningMode> = _proxyState.map { state ->
-            when (state) {
-                is ProxyState.Running -> state.mode
-                is ProxyState.Connecting -> state.mode
-                else -> RunningMode.None
-            }
-        }.stateIn(scope, SharingStarted.Eagerly, RunningMode.None)
+        when (state) {
+            is ProxyState.Running -> state.mode
+            is ProxyState.Connecting -> state.mode
+            else -> RunningMode.None
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, RunningMode.None)
 
     private val _currentProfile = MutableStateFlow<Profile?>(null)
     val currentProfile: StateFlow<Profile?> = _currentProfile.asStateFlow()
