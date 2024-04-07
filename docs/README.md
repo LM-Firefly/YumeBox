@@ -31,13 +31,34 @@
 - **Install**: Visit the [Releases](https://github.com/YumeYuka/YumeBox/releases) page
 - **Build**: See the [Build section](#build)
 
+### External Control API
+
+YumeBox supports external control via Android Intent, allowing other applications to control proxy
+service startup and shutdown.
+
+- Start Clash.Meta service
+
+  Send intent to activity `com.github.yumelira.yumebox.MainActivity` with action
+  `com.github.yumelira.yumebox.action.START_CLASH`
+
+- Stop Clash.Meta service
+
+  Send intent to activity `com.github.yumelira.yumebox.MainActivity` with
+  `action com.github.yumelira.yumebox.action.STOP_CLASH`
+
+- Import a profile
+
+  URL Scheme `clash://install-config?url=<encoded URI>` or
+  `clashmeta://install-config?url=<encoded URI>`
+
 ## Discussion
 
 - Telegram group: [@OOM_WG](https://t.me/OOM_Group)
 
 ## Contributing Translations
 
-To translate YumeBox into your language or improve existing translations, please fork this project and create or update translation files in the `lang` directory.
+To translate YumeBox into your language or improve existing translations, please fork this project
+and create or update translation files in the `lang` directory.
 
 ## Build
 
@@ -87,6 +108,10 @@ To translate YumeBox into your language or improve existing translations, please
    ```bash
    ./gradlew extension:assembleRelease
    ```
+## Note
+
+> [!IMPORTANT]
+> The author has no knowledge of the code in this project. The code is either functional or non-functional; there is no third state.
 
 ## Acknowledgements
 
