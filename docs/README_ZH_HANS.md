@@ -6,7 +6,7 @@
 
 ## YumeBox
 
-[![Latest release](https://img.shields.io/github/v/release/YumeYuka/YumeBox?label=Release&logo=github)](https://github.com/YumeYuka/YumeBox/releases/latest)[![GitHub License](https://img.shields.io/github/license/YumeYuka/YumeBox?logo=gnu)](/LICENSE)![Downloads](https://img.shields.io/github/downloads/YumeYuka/YumeBox/total)
+[![Latest release](https://img.shields.io/github/v/release/YumeLira/YumeBox?label=Release&logo=github)](https://github.com/YumeLira/YumeBox/releases/latest)[![GitHub License](https://img.shields.io/github/license/YumeLira/YumeBox?logo=gnu)](/LICENSE)![Downloads](https://img.shields.io/github/downloads/YumeLira/YumeBox/total)
 
 **一个基于 [mihomo](https://github.com/MetaCubeX/mihomo) 内核的开源 Android 客户端**
 
@@ -26,7 +26,7 @@
 
 ## 使用方法
 
-- **安装**：前往 [Releases](https://github.com/YumeYuka/YumeBox/releases)
+- **安装**：前往 [Releases](https://github.com/YumeLira/YumeBox/releases)
 - **构建**：[跳转至构建章节](#构建)
 
 ### 外部控制 API
