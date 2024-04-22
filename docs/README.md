@@ -14,6 +14,7 @@
 
 </div>
 
+
 ## Features
 
 - Mihomo kernel
@@ -28,28 +29,8 @@
 
 ## Usage
 
-- **Install**: Visit the [Releases](https://github.com/YumeLira/YumeBox/releases) page
-- **Build**: See the [Build section](#build)
-
-### External Control API
-
-YumeBox supports external control via Android Intent, allowing other applications to control proxy
-service startup and shutdown.
-
-- Start Clash.Meta service
-
-  Send intent to activity `com.github.yumelira.yumebox.MainActivity` with action
-  `com.github.yumelira.yumebox.action.START_CLASH`
-
-- Stop Clash.Meta service
-
-  Send intent to activity `com.github.yumelira.yumebox.MainActivity` with
-  `action com.github.yumelira.yumebox.action.STOP_CLASH`
-
-- Import a profile
-
-  URL Scheme `clash://install-config?url=<encoded URI>` or
-  `clashmeta://install-config?url=<encoded URI>`
+- **Install**: Visit the [Installation](https://yume.mintlify.app/yumebox/guide/install) page
+- **Build**: See the [Build section](https://yume.mintlify.app/yumebox/guide/building)
 
 ## Discussion
 
@@ -60,54 +41,7 @@ service startup and shutdown.
 To translate YumeBox into your language or improve existing translations, please fork this project
 and create or update translation files in the `lang` directory.
 
-## Build
 
-1. **Sync core source code**
-
-   ```bash
-   sh scripts/sync-kernel.sh <alpha|meta|smart>
-   ```
-
-2. **Install dependencies**
-   Ensure that OpenJDK 24, Android SDK, CMake, and Golang are installed.
-
-3. **Create `local.properties` in the project root**
-
-   ```properties
-   sdk.dir=/path/to/android-sdk
-   ```
-
-4. **(Optional) Customize the package name by editing `gradle.properties`**
-
-   ```properties
-   project.namespace.base=com.github.yumelira.yumebox
-   project.namespace.core=${project.namespace.base}.core
-   project.namespace.extension=${project.namespace.base}.extension
-   project.namespace.buildlogic=${project.namespace.base}.buildlogic
-   ```
-
-5. **Create `signing.properties` in the project root**
-
-   ```properties
-   keystore.path=/path/to/keystore/file
-   keystore.password=<key store password>
-   key.alias=<key alias>
-   key.password=<key password>
-   ```
-
-6. **Build the application**
-
-   Ontology:
-
-   ```bash
-   ./gradlew app:assembleRelease
-   ```
-
-   SubStore Extension:
-
-   ```bash
-   ./gradlew extension:assembleRelease
-   ```
 ## Note
 
 > [!IMPORTANT]
