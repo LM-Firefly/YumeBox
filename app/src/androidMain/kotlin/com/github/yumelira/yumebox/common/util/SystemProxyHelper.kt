@@ -21,7 +21,6 @@
 package com.github.yumelira.yumebox.common.util
 
 import android.content.Context
-import android.os.Build
 import timber.log.Timber
 
 object SystemProxyHelper {
@@ -29,48 +28,15 @@ object SystemProxyHelper {
     private const val TAG = "SystemProxyHelper"
 
     fun clearSystemProxy(context: Context) {
-        try {
-            Timber.tag(TAG).d("清理系统代理设置")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                clearSystemProxyQ(context)
-            } else {
-                clearSystemProxyLegacy(context)
-            }
-            Timber.tag(TAG).d("系统代理设置已清理")
-        } catch (e: Exception) {
+        runCatching {
+            System.clearProperty("http.proxyHost")
+            System.clearProperty("http.proxyPort")
+            System.clearProperty("https.proxyHost")
+            System.clearProperty("https.proxyPort")
+            System.clearProperty("socksProxyHost")
+            System.clearProperty("socksProxyPort")
+        }.onFailure { e ->
             Timber.tag(TAG).e(e, "清理系统代理失败: ${e.message}")
         }
-    }
-
-    @Suppress("NewApi")
-    private fun clearSystemProxyQ(context: Context) {
-        try {
-            val proxyHost = System.getProperty("http.proxyHost")
-            val proxyPort = System.getProperty("http.proxyPort")
-            if (proxyHost != null || proxyPort != null) {
-                getSystemProxy(context)
-                Timber.tag(TAG).d("已清除系统属性中的代理设置")
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Android 10+ 代理清除失败: ${e.message}")
-        }
-    }
-
-    private fun clearSystemProxyLegacy(context: Context) {
-        try {
-            getSystemProxy(context)
-            Timber.tag(TAG).d("已清除旧版本系统属性中的代理设置")
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "旧版本代理清除失败: ${e.message}")
-        }
-    }
-
-    private fun getSystemProxy(context: Context) {
-        System.clearProperty("http.proxyHost")
-        System.clearProperty("http.proxyPort")
-        System.clearProperty("https.proxyHost")
-        System.clearProperty("https.proxyPort")
-        System.clearProperty("socksProxyHost")
-        System.clearProperty("socksProxyPort")
     }
 }
