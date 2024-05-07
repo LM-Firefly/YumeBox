@@ -30,7 +30,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
@@ -137,7 +136,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            
+
             LaunchedEffect(Unit) {
                 kotlinx.coroutines.delay(com.github.yumelira.yumebox.common.AppConstants.Timing.AUTO_START_DELAY_MS)
                 com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper.checkAndAutoStart(
@@ -151,12 +150,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)
     }
-    
+
     private fun handleIntent(intent: Intent?) {
         intent?.let { safeIntent ->
             safeIntent.data?.let { uri ->
@@ -230,7 +229,7 @@ fun MainScreen(navigator: DestinationsNavigator) {
 
                     return Offset.Zero
                 }
-                
+
                 override suspend fun onPreFling(available: Velocity): Velocity {
                     if (abs(available.y) > abs(available.x) * 1.5f) {
                         return Velocity(available.x, 0f)
@@ -239,7 +238,7 @@ fun MainScreen(navigator: DestinationsNavigator) {
                 }
             }
         }
-        
+
         Scaffold(
             bottomBar = {
                 BottomBar(hazeState, hazeStyle)

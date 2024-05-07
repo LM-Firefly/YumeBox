@@ -45,7 +45,6 @@ class OverrideViewModel : ViewModel() {
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _hasChanges = MutableStateFlow(false)
-    val hasChanges: StateFlow<Boolean> = _hasChanges.asStateFlow()
 
     init {
         loadConfiguration()
@@ -53,39 +52,24 @@ class OverrideViewModel : ViewModel() {
 
     private fun loadConfiguration() {
         viewModelScope.launch {
-            try {
+            runCatching {
                 _isLoading.value = true
                 val config = Clash.queryOverride(Clash.OverrideSlot.Persist)
                 _configuration.value = config
-                Timber.tag(TAG).d("加载覆写配置成功")
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 Timber.tag(TAG).e(e, "加载覆写配置失败")
-            } finally {
-                _isLoading.value = false
             }
-        }
-    }
-
-    fun saveConfiguration() {
-        viewModelScope.launch {
-            try {
-                Clash.patchOverride(Clash.OverrideSlot.Persist, _configuration.value)
-                _hasChanges.value = false
-                Timber.tag(TAG).d("保存覆写配置成功")
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "保存覆写配置失败")
-            }
+            _isLoading.value = false
         }
     }
 
     fun resetConfiguration() {
         viewModelScope.launch {
-            try {
+            runCatching {
                 Clash.clearOverride(Clash.OverrideSlot.Persist)
                 _configuration.value = ConfigurationOverride()
                 _hasChanges.value = false
-                Timber.tag(TAG).d("重置覆写配置成功")
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 Timber.tag(TAG).e(e, "重置覆写配置失败")
             }
         }
@@ -118,10 +102,6 @@ class OverrideViewModel : ViewModel() {
 
     fun setIpv6(enabled: Boolean?) {
         updateConfig { it.copy(ipv6 = enabled) }
-    }
-
-    fun setBindAddress(address: String?) {
-        updateConfig { it.copy(bindAddress = address) }
     }
 
     fun setMode(mode: TunnelState.Mode?) {
@@ -390,10 +370,9 @@ class OverrideViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         if (_hasChanges.value) {
-            try {
+            runCatching {
                 Clash.patchOverride(Clash.OverrideSlot.Persist, _configuration.value)
-                Timber.tag(TAG).d("ViewModel 清理时自动保存配置")
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 Timber.tag(TAG).e(e, "自动保存配置失败")
             }
         }
