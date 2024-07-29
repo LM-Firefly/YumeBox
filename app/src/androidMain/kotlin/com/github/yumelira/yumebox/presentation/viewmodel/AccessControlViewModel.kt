@@ -24,6 +24,7 @@ import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
@@ -76,12 +77,40 @@ class AccessControlViewModel(
         val sortMode: SortMode = SortMode.LABEL,
         val descending: Boolean = false,
         val selectedFirst: Boolean = true,
+        val needsMiuiPermission: Boolean = false,
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     init {
+        checkAndLoad()
+    }
+
+    private fun checkAndLoad() {
+        val context = getApplication<Application>()
+        val permission = "com.android.permission.GET_INSTALLED_APPS"
+
+        val hasPermission = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            loadApps()
+        } else {
+            val isMiui = runCatching {
+                val permissionInfo = context.packageManager.getPermissionInfo(permission, 0)
+                permissionInfo.packageName == "com.lbe.security.miui"
+            }.getOrElse { false }
+
+            if (isMiui) {
+                _uiState.update { it.copy(needsMiuiPermission = true, isLoading = false) }
+            } else {
+                loadApps()
+            }
+        }
+    }
+
+    fun onPermissionResult() {
+        _uiState.update { it.copy(needsMiuiPermission = false) }
         loadApps()
     }
 
@@ -114,9 +143,11 @@ class AccessControlViewModel(
 
     private fun loadInstalledApps(selectedPackages: Set<String>): List<AppInfo> {
         val pm = getApplication<Application>().packageManager
+        val selfPackageName = getApplication<Application>().packageName
+
         val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
-        return packages.map { appInfo ->
+        return packages.filter { it.packageName != selfPackageName }.map { appInfo ->
             val pkgInfo = runCatching { pm.getPackageInfo(appInfo.packageName, 0) }.getOrNull()
             AppInfo(
                 packageName = appInfo.packageName,
