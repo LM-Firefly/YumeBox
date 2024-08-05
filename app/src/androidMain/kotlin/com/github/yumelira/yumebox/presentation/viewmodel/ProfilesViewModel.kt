@@ -28,6 +28,10 @@ import com.github.yumelira.yumebox.clash.downloadProfile
 import com.github.yumelira.yumebox.clash.exception.ConfigImportException
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.model.ProfileType
+import com.github.yumelira.yumebox.data.store.LinkOpenMode
+import com.github.yumelira.yumebox.data.store.Preference
+import com.github.yumelira.yumebox.data.store.ProfileLink
+import com.github.yumelira.yumebox.data.store.ProfileLinksStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +47,34 @@ import java.util.*
 class ProfilesViewModel(
     application: Application,
     private val profilesStore: ProfilesStore,
+    profileLinksStorage: ProfileLinksStorage,
 ) : AndroidViewModel(application) {
+
+    // 链接管理
+    val linkOpenMode: Preference<LinkOpenMode> = profileLinksStorage.linkOpenMode
+    val links: Preference<List<ProfileLink>> = profileLinksStorage.links
+    val defaultLinkId: Preference<String> = profileLinksStorage.defaultLinkId
+
+    fun setOpenMode(mode: LinkOpenMode) = linkOpenMode.set(mode)
+    
+    fun setDefaultLink(linkId: String) = defaultLinkId.set(linkId)
+
+    fun addLink(link: ProfileLink) = links.set(links.value + link)
+
+    fun updateLink(linkId: String, name: String, url: String) {
+        links.set(links.value.map { link ->
+            if (link.id == linkId) link.copy(name = name, url = url)
+            else link
+        })
+    }
+
+    fun removeLink(linkId: String) {
+        links.set(links.value.filterNot { it.id == linkId })
+        // 如果删除的是默认链接,清空默认链接
+        if (defaultLinkId.value == linkId) {
+            defaultLinkId.set("")
+        }
+    }
 
     private val _uiState = MutableStateFlow(ConfigUiState())
     val uiState: StateFlow<ConfigUiState> = _uiState.asStateFlow()
