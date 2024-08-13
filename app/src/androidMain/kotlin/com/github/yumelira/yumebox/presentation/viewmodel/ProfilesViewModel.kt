@@ -129,8 +129,15 @@ class ProfilesViewModel(
 
     fun addProfile(profile: Profile) {
         viewModelScope.launch {
-            runCatching { profilesStore.addProfile(profile); showMessage("配置已添加: ${profile.name}") }
-                .onFailure { e -> timber.log.Timber.e(e, "addProfile failed"); showError("添加配置失败: ${e.message}") }
+            runCatching {
+                val maxOrder = profilesStore.profiles.value.maxOfOrNull { it.order } ?: -1
+                val profileWithOrder = profile.copy(order = maxOrder + 1)
+                profilesStore.addProfile(profileWithOrder)
+                showMessage("配置已添加: ${profile.name}")
+            }.onFailure { e ->
+                timber.log.Timber.e(e, "addProfile failed")
+                showError("添加配置失败: ${e.message}")
+            }
         }
     }
 
@@ -372,6 +379,25 @@ class ProfilesViewModel(
 
     fun clearMessage() = _uiState.update { it.copy(message = null) }
     fun clearError() = _uiState.update { it.copy(error = null) }
+
+    fun reorderProfiles(fromIndex: Int, toIndex: Int) {
+        viewModelScope.launch {
+            runCatching {
+                val currentList = profiles.value.toMutableList()
+                if (fromIndex !in currentList.indices || toIndex !in currentList.indices) {
+                    return@launch
+                }
+                
+                val movedItem = currentList.removeAt(fromIndex)
+                currentList.add(toIndex, movedItem)
+                
+                profilesStore.reorderProfiles(currentList)
+            }.onFailure { e ->
+                timber.log.Timber.e(e, "reorderProfiles failed")
+                showError("排序失败: ${e.message}")
+            }
+        }
+    }
 
     data class ConfigUiState(
         val isLoading: Boolean = false,

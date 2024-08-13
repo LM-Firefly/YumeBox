@@ -63,6 +63,7 @@ data class Profile(
     val usedBytes: Long = 0L,
     val totalBytes: Long? = null,
     val lastUpdatedAt: Long? = null,
+    val order: Int = 0,
 ) {
     fun getDisplayProvider(): String = when (type) {
         ProfileType.URL -> provider ?: "远程订阅"
