@@ -12,6 +12,7 @@ Proxy = {
     }
     
     Action = {
+        TestToast = "测试中……"
         ExternalResources = "外部资源"
         Panel = "面板"
         Test = "测试"
@@ -28,6 +29,7 @@ Proxy = {
         All = "正在测试所有代理组..."
         RequestSent = "测试请求已发送"
         Failed = "测试失败: %s"
+        Tip = "下拉也可以测试节点 ᓚᘏᗢ"
     }
     
     Refresh = {
