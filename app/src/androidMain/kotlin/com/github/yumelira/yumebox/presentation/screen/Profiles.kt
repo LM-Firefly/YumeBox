@@ -40,7 +40,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -54,11 +53,7 @@ import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
-import com.github.yumelira.yumebox.presentation.icon.yume.Chromium
-import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
-import com.github.yumelira.yumebox.presentation.icon.yume.`Link-2`
-import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProfilesViewModel
@@ -68,6 +63,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -75,21 +71,12 @@ import org.koin.androidx.compose.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SpinnerEntry
-import top.yukonga.miuix.kmp.extra.SuperBottomSheet
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.SuperDropdown
-import top.yukonga.miuix.kmp.extra.SuperSpinner
+import top.yukonga.miuix.kmp.extra.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.basic.Search
 import top.yukonga.miuix.kmp.icon.icons.useful.Delete
-import top.yukonga.miuix.kmp.icon.icons.useful.Edit
-import top.yukonga.miuix.kmp.icon.icons.useful.New
-import top.yukonga.miuix.kmp.icon.icons.useful.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
-import sh.calvin.reorderable.ReorderableCollectionItemScope
 import java.io.File
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -153,11 +140,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     Scaffold(
         topBar = {
-            TopBar(title = "配置", scrollBehavior = scrollBehavior, navigationIcon = {
+            TopBar(title = MLang.ProfilesPage.Title, scrollBehavior = scrollBehavior, navigationIcon = {
                 Row {
                     IconButton(
-                        modifier = Modifier.padding(start = 24.dp),
-                        onClick = {
+                        modifier = Modifier.padding(start = 24.dp), onClick = {
                             if (links.isNotEmpty()) {
                                 // 优先使用默认链接,如果没有设置默认链接则使用第一个
                                 val link = if (defaultLinkId.isNotEmpty()) {
@@ -177,12 +163,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                 showLinkSettingsDialog.value = true
                             }
                         }) {
-                        Icon(imageVector = Yume.Chromium, contentDescription = "打开链接")
+                        Icon(imageVector = Yume.Chromium, contentDescription = MLang.ProfilesPage.Misc.OpenLink)
                     }
                     IconButton(
-                        modifier = Modifier.padding(start = 12.dp),
-                        onClick = { showLinkSettingsDialog.value = true }) {
-                        Icon(imageVector = Yume.`Link-2`, contentDescription = "链接设置")
+                        modifier = Modifier.padding(start = 12.dp), onClick = { showLinkSettingsDialog.value = true }) {
+                        Icon(imageVector = Yume.`Link-2`, contentDescription = MLang.ProfilesPage.LinkSettings.Title)
                     }
                 }
             }, actions = {
@@ -203,7 +188,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     }, modifier = Modifier.padding(end = 12.dp)
                 ) {
                     Icon(
-                        Yume.`Circle-fading-arrow-up`, contentDescription = "一键更新所有"
+                        Yume.`Circle-fading-arrow-up`, contentDescription = MLang.ProfilesPage.Action.UpdateAll
                     )
                 }
 
@@ -214,7 +199,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     }, modifier = Modifier.padding(end = LocalSpacing.current.xxl)
                 ) {
                     Icon(
-                        Yume.`Badge-plus`, contentDescription = "添加配置"
+                        Yume.`Badge-plus`, contentDescription = MLang.ProfilesPage.Action.AddProfile
                     )
                 }
             })
@@ -223,7 +208,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
         if (profiles.isEmpty()) {
 
             CenteredText(
-                firstLine = "暂无配置文件", secondLine = "点击右上角添加配置"
+                firstLine = MLang.ProfilesPage.Empty.NoProfiles, secondLine = MLang.ProfilesPage.Empty.Hint
             )
         } else {
             val lazyListState = rememberLazyListState()
@@ -235,12 +220,8 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .scrollEndHaptic()
-                    .overScrollVertical()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection)
-                    .let { mod ->
+                modifier = Modifier.fillMaxSize().scrollEndHaptic().overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection).let { mod ->
                         if (bottomBarScrollBehavior != null) {
                             mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
                         } else mod
@@ -336,22 +317,18 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     val currentProfileToEdit = profileToEdit
     if (showEditDialog.value && currentProfileToEdit != null) {
-        EditProfileNameDialog(
-            show = showEditDialog,
-            currentName = currentProfileToEdit.name,
-            onDismiss = {
+        EditProfileNameDialog(show = showEditDialog, currentName = currentProfileToEdit.name, onDismiss = {
+            showEditDialog.value = false
+            profileToEdit = null
+        }, onConfirm = { newName ->
+            if (newName.isNotBlank()) {
+                val updatedProfile = currentProfileToEdit.copy(
+                    name = newName, updatedAt = System.currentTimeMillis()
+                )
+                profilesViewModel.updateProfile(updatedProfile)
                 showEditDialog.value = false
-                profileToEdit = null
-            },
-            onConfirm = { newName ->
-                if (newName.isNotBlank()) {
-                    val updatedProfile = currentProfileToEdit.copy(
-                        name = newName, updatedAt = System.currentTimeMillis()
-                    )
-                    profilesViewModel.updateProfile(updatedProfile)
-                    showEditDialog.value = false
-                }
-            })
+            }
+        })
     }
 
     if (showLinkSettingsDialog.value) {
@@ -417,63 +394,57 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     }
 
     if (showShareDialog.value && profileToShare != null) {
-        ShareOptionsDialog(
-            show = showShareDialog,
-            profile = profileToShare!!,
-            onDismiss = {
-                showShareDialog.value = false
-                profileToShare = null
-            },
-            onShareFile = { profile ->
-                val context = com.github.yumelira.yumebox.App.instance
-                val importedDir = File(context.filesDir, "imported")
-                val profileDir = File(importedDir, profile.id)
-                val file = File(profileDir, "config.yaml")
-                if (file.exists()) {
-                    try {
-                        val uri = FileProvider.getUriForFile(
-                            context, "${context.packageName}.fileprovider", file
-                        )
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_STREAM, uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(
-                            Intent.createChooser(
-                                intent, "分享配置文件"
-                            ).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            })
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-                showShareDialog.value = false
-                profileToShare = null
-            },
-            onShareLink = { profile ->
-                val context = com.github.yumelira.yumebox.App.instance
-                profile.remoteUrl?.let { url ->
+        ShareOptionsDialog(show = showShareDialog, profile = profileToShare!!, onDismiss = {
+            showShareDialog.value = false
+            profileToShare = null
+        }, onShareFile = { profile ->
+            val context = com.github.yumelira.yumebox.App.instance
+            val importedDir = File(context.filesDir, "imported")
+            val profileDir = File(importedDir, profile.id)
+            val file = File(profileDir, "config.yaml")
+            if (file.exists()) {
+                try {
+                    val uri = FileProvider.getUriForFile(
+                        context, "${context.packageName}.fileprovider", file
+                    )
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, url)
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(
                         Intent.createChooser(
-                            intent, "分享订阅链接"
+                            intent, MLang.ProfilesPage.ShareDialog.ShareFile
                         ).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         })
-                } ?: run {
-                    Toast.makeText(context, "该配置没有订阅链接", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-                showShareDialog.value = false
-                profileToShare = null
             }
-        )
+            showShareDialog.value = false
+            profileToShare = null
+        }, onShareLink = { profile ->
+            val context = com.github.yumelira.yumebox.App.instance
+            profile.remoteUrl?.let { url ->
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, url)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(
+                    Intent.createChooser(
+                        intent, MLang.ProfilesPage.ShareDialog.ShareLink
+                    ).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+            } ?: run {
+                Toast.makeText(context, MLang.ProfilesPage.ShareDialog.NoLink, Toast.LENGTH_SHORT).show()
+            }
+            showShareDialog.value = false
+            profileToShare = null
+        })
     }
 }
 
@@ -485,7 +456,7 @@ private fun EditProfileNameDialog(
     var editName by remember { mutableStateOf(currentName) }
 
     SuperDialog(
-        title = "编辑配置名称", show = show, onDismissRequest = onDismiss
+        title = MLang.ProfilesPage.EditDialog.Title, show = show, onDismissRequest = onDismiss
     ) {
         Column(
             modifier = Modifier
@@ -496,7 +467,7 @@ private fun EditProfileNameDialog(
             TextField(
                 value = editName,
                 onValueChange = { editName = it },
-                label = "配置名称",
+                label = MLang.ProfilesPage.Input.ProfileName,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -504,7 +475,7 @@ private fun EditProfileNameDialog(
                 Button(
                     onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
-                    Text("取消")
+                    Text(MLang.ProfilesPage.Button.Cancel)
                 }
                 Button(
                     onClick = { onConfirm(editName) },
@@ -512,7 +483,7 @@ private fun EditProfileNameDialog(
                     colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
                     Text(
-                        "确定", color = MiuixTheme.colorScheme.surface
+                        MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.surface
                     )
                 }
             }
@@ -618,7 +589,7 @@ private fun AddProfileSheet(
     ) { isGranted ->
         hasCameraPermission = isGranted
         if (!isGranted) {
-            Toast.makeText(context, "需要相机权限才能扫码", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, MLang.ProfilesPage.QrScanner.NeedCamera, Toast.LENGTH_LONG).show()
             selectedTypeIndex = 0
         }
     }
@@ -646,7 +617,7 @@ private fun AddProfileSheet(
             } else if (!importUrl.isNullOrBlank()) {
                 selectedTypeIndex = 0
                 url = importUrl
-                Toast.makeText(context, "已从链接导入配置", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, MLang.ProfilesPage.Message.UrlImported, Toast.LENGTH_SHORT).show()
             } else {
                 selectedTypeIndex = 0
                 try {
@@ -654,7 +625,7 @@ private fun AddProfileSheet(
                     if (clipboardUrl != null) {
                         url = clipboardUrl
                         Toast.makeText(
-                            context, "已从剪贴板读取链接", Toast.LENGTH_SHORT
+                            context, MLang.ProfilesPage.Message.ClipboardRead, Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
@@ -733,7 +704,7 @@ private fun AddProfileSheet(
             context.toast(uiState.error!!, Toast.LENGTH_LONG)
             if (isDownloading) {
                 isDownloading = false
-                error = uiState.error ?: "错误"
+                error = uiState.error ?: MLang.ProfilesPage.Misc.Error
             }
             profilesViewModel.clearError()
         }
@@ -753,14 +724,14 @@ private fun AddProfileSheet(
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 cursor.moveToFirst()
                 cursor.getString(nameIndex)
-            } ?: "未知文件"
+            } ?: MLang.ProfilesPage.Message.UnknownFile
 
             val extension = actualFileName.substringAfterLast(".", "")
             if (!extension.equals("yaml", ignoreCase = true) && !extension.equals(
                     "yml", ignoreCase = true
                 )
             ) {
-                error = "仅支持 .yaml 或 .yml 格式的配置文件"
+                error = MLang.ProfilesPage.Validation.YamlOnly
                 return@let
             }
 
@@ -770,7 +741,7 @@ private fun AddProfileSheet(
 
             val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
             if (name.isBlank() || name == actualFileName) {
-                name = fileNameWithoutExt.ifBlank { "新配置" }
+                name = fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile }
             }
         }
     }
@@ -784,16 +755,16 @@ private fun AddProfileSheet(
                         url = result
                         selectedTypeIndex = 0
                         Toast.makeText(
-                            context, "识别成功", Toast.LENGTH_SHORT
+                            context, MLang.ProfilesPage.QrScanner.RecognizeSuccess, Toast.LENGTH_SHORT
                         ).show()
                     } else {
                         Toast.makeText(
-                            context, "未能识别到二维码", Toast.LENGTH_SHORT
+                            context, MLang.ProfilesPage.QrScanner.RecognizeFailed, Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
                     Toast.makeText(
-                        context, "识别失败: ${e.message}", Toast.LENGTH_SHORT
+                        context, MLang.ProfilesPage.QrScanner.RecognizeError.format(e.message ?: ""), Toast.LENGTH_SHORT
                     ).show()
                 }
             }
@@ -808,7 +779,7 @@ private fun AddProfileSheet(
 
     SuperBottomSheet(
         show = show,
-        title = if (profileToEdit != null) "编辑配置文件" else "添加配置文件",
+        title = if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle else MLang.ProfilesPage.Sheet.AddTitle,
         backgroundColor = MiuixTheme.colorScheme.surface,
         dragHandleColor = MiuixTheme.colorScheme.onSurfaceVariantActions,
         insideMargin = DpSize(32.dp, 16.dp),
@@ -860,7 +831,7 @@ private fun AddProfileSheet(
                                     if (complete) {
                                         Icon(
                                             imageVector = Yume.`Package-check`,
-                                            contentDescription = "完成",
+                                            contentDescription = MLang.ProfilesPage.Misc.Complete,
                                             tint = MiuixTheme.colorScheme.primary,
                                             modifier = Modifier.fillMaxSize()
                                         )
@@ -909,10 +880,10 @@ private fun AddProfileSheet(
                     top.yukonga.miuix.kmp.basic.Card {
                         Box(modifier = Modifier.alpha(if (profileToEdit != null) 0.5f else 1f)) {
                             SuperSpinner(
-                                title = "配置类型", items = listOf(
-                                    SpinnerEntry(title = "订阅链接"),
-                                    SpinnerEntry(title = "本地文件"),
-                                    SpinnerEntry(title = "扫码添加")
+                                title = MLang.ProfilesPage.Type.Title, items = listOf(
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan)
                                 ), selectedIndex = selectedTypeIndex, onSelectedIndexChange = {
                                     if (profileToEdit == null) {
                                         selectedTypeIndex = it
@@ -963,7 +934,9 @@ private fun AddProfileSheet(
                                                         url = scannedUrl
                                                         selectedTypeIndex = 0
                                                         Toast.makeText(
-                                                            context, "扫描成功", Toast.LENGTH_SHORT
+                                                            context,
+                                                            MLang.ProfilesPage.QrScanner.ScanSuccess,
+                                                            Toast.LENGTH_SHORT
                                                         ).show()
                                                     })
                                             }
@@ -972,10 +945,10 @@ private fun AddProfileSheet(
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.Center
                                             ) {
-                                                Text("需要相机权限")
+                                                Text(MLang.ProfilesPage.QrScanner.NeedPermission)
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 TextButton(
-                                                    text = "授予权限", onClick = {
+                                                    text = MLang.ProfilesPage.QrScanner.GrantPermission, onClick = {
                                                         cameraPermissionLauncher.launch(
                                                             Manifest.permission.CAMERA
                                                         )
@@ -987,7 +960,7 @@ private fun AddProfileSheet(
                                     }
 
                                     TextButton(
-                                        text = "从相册选择二维码图片",
+                                        text = MLang.ProfilesPage.QrScanner.SelectFromAlbum,
                                         onClick = { qrImageLauncher.launch("image/*") },
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -998,14 +971,14 @@ private fun AddProfileSheet(
                                             show.value = false
                                             profilesViewModel.clearDownloadProgress()
                                         }, modifier = Modifier.fillMaxWidth()
-                                    ) { Text("取消") }
+                                    ) { Text(MLang.ProfilesPage.Button.Cancel) }
                                 }
 
                                 else -> {
                                     TextField(
                                         value = name,
                                         onValueChange = { name = it; error = "" },
-                                        label = "配置名称",
+                                        label = MLang.ProfilesPage.Input.ProfileName,
                                         modifier = Modifier.fillMaxWidth()
                                     )
 
@@ -1013,7 +986,7 @@ private fun AddProfileSheet(
                                         TextField(
                                             value = url,
                                             onValueChange = { url = it; error = "" },
-                                            label = "订阅链接 (HTTP/HTTPS)",
+                                            label = MLang.ProfilesPage.Input.SubscriptionUrl,
                                             maxLines = 2,
                                             readOnly = profileToEdit != null,
                                             enabled = profileToEdit == null,
@@ -1023,7 +996,7 @@ private fun AddProfileSheet(
                                         TextField(
                                             value = fileName.ifEmpty { "" },
                                             onValueChange = { },
-                                            label = "点击选择文件",
+                                            label = MLang.ProfilesPage.Input.SelectFile,
                                             readOnly = true,
                                             enabled = false,
                                             modifier = Modifier
@@ -1051,14 +1024,14 @@ private fun AddProfileSheet(
                                                 show.value = false
                                                 profilesViewModel.clearDownloadProgress()
                                             },
-                                        ) { Text("取消") }
+                                        ) { Text(MLang.ProfilesPage.Button.Cancel) }
                                         Button(
                                             onClick = {
                                                 if (typeIndex == 0 && url.isBlank()) {
-                                                    error = "请输入链接"; return@Button
+                                                    error = MLang.ProfilesPage.Validation.EnterUrl; return@Button
                                                 }
                                                 if (typeIndex == 1 && filePath.isBlank()) {
-                                                    error = "请选择文件"; return@Button
+                                                    error = MLang.ProfilesPage.Validation.SelectFile; return@Button
                                                 }
 
                                                 keyboardController?.hide()
@@ -1082,7 +1055,7 @@ private fun AddProfileSheet(
                                                         scope.launch {
                                                             val profile = Profile(
                                                                 id = UUID.randomUUID().toString(),
-                                                                name = name.ifBlank { "新配置" },
+                                                                name = name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                                                                 config = "",
                                                                 remoteUrl = url,
                                                                 type = ProfileType.URL,
@@ -1112,7 +1085,7 @@ private fun AddProfileSheet(
                                                             val importedProfile =
                                                                 profilesViewModel.importProfileFromFile(
                                                                     filePath.toUri(),
-                                                                    name.ifBlank { "新配置" },
+                                                                    name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                                                                     saveToDb = true
                                                                 )
                                                             isDownloading = false
@@ -1127,7 +1100,8 @@ private fun AddProfileSheet(
                                             colors = ButtonDefaults.buttonColorsPrimary()
                                         ) {
                                             Text(
-                                                "确定", color = MiuixTheme.colorScheme.background
+                                                MLang.ProfilesPage.Button.Confirm,
+                                                color = MiuixTheme.colorScheme.background
                                             )
                                         }
                                     }
@@ -1210,7 +1184,7 @@ private fun StableQrScanner(
     })
 }
 
-@android.annotation.SuppressLint("UnsafeOptInUsageError")
+@SuppressLint("UnsafeOptInUsageError")
 private fun processStableQrImage(
     barcodeScanner: BarcodeScanner,
     imageProxy: ImageProxy,
@@ -1266,13 +1240,16 @@ private fun DeleteConfirmDialog(
     profileName: String, onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     SuperDialog(
-        title = "删除配置",
-        summary = "确定要删除「$profileName」吗？",
+        title = MLang.ProfilesPage.DeleteDialog.Title,
+        summary = MLang.ProfilesPage.DeleteDialog.Message.format(profileName),
         show = remember { mutableStateOf(true) },
         onDismissRequest = onDismiss
     ) {
         DialogButtonRow(
-            onCancel = onDismiss, onConfirm = onConfirm, cancelText = "取消", confirmText = "删除"
+            onCancel = onDismiss,
+            onConfirm = onConfirm,
+            cancelText = MLang.ProfilesPage.Button.Cancel,
+            confirmText = MLang.ProfilesPage.DeleteDialog.Confirm
         )
     }
 }
@@ -1289,12 +1266,14 @@ private fun LinkSettingsDialog(
     onDeleteLink: (String) -> Unit,
     onOpenLink: (ProfileLink) -> Unit
 ) {
-    val openModeOptions = listOf("App内打开", "外部浏览器")
+    val openModeOptions = listOf(
+        MLang.ProfilesPage.LinkSettings.OpenModeInApp, MLang.ProfilesPage.LinkSettings.OpenModeExternal
+    )
     val openModeIndex = when (linkOpenMode) {
         LinkOpenMode.IN_APP -> 0
         LinkOpenMode.EXTERNAL_BROWSER -> 1
     }
-    
+
     val defaultLinkIndex = if (defaultLinkId.isEmpty() || links.isEmpty()) {
         0
     } else {
@@ -1302,10 +1281,8 @@ private fun LinkSettingsDialog(
     }
 
     SuperBottomSheet(
-        title = "链接设置", 
-        show = show, 
-        onDismissRequest = { 
-            show.value = false 
+        title = MLang.ProfilesPage.LinkSettings.Title, show = show, onDismissRequest = {
+            show.value = false
         }) {
         Column(
             modifier = Modifier
@@ -1316,7 +1293,7 @@ private fun LinkSettingsDialog(
             // 打开方式选择
             top.yukonga.miuix.kmp.basic.Card {
                 SuperDropdown(
-                    title = "打开方式",
+                    title = MLang.ProfilesPage.LinkSettings.OpenMode,
                     items = openModeOptions,
                     selectedIndex = openModeIndex,
                     onSelectedIndexChange = { index ->
@@ -1326,24 +1303,22 @@ private fun LinkSettingsDialog(
                             else -> LinkOpenMode.IN_APP
                         }
                         onOpenModeChange(mode)
-                    }
-                )
+                    })
             }
-            
+
             // 默认链接选择
             if (links.isNotEmpty()) {
                 top.yukonga.miuix.kmp.basic.Card {
                     SuperDropdown(
-                        title = "默认链接",
-                        summary = "点击左上角快捷按钮时打开的链接",
+                        title = MLang.ProfilesPage.LinkSettings.DefaultLink,
+                        summary = MLang.ProfilesPage.LinkSettings.DefaultLinkSummary,
                         items = links.map { it.name },
                         selectedIndex = defaultLinkIndex,
                         onSelectedIndexChange = { index ->
                             if (index in links.indices) {
                                 onDefaultLinkChange(links[index].id)
                             }
-                        }
-                    )
+                        })
                 }
             }
 
@@ -1352,18 +1327,15 @@ private fun LinkSettingsDialog(
                 top.yukonga.miuix.kmp.basic.Card {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         links.forEachIndexed { index, link ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onOpenLink(link) }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                            Row(modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenLink(link) }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                                verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = link.name, 
-                                        style = MiuixTheme.textStyles.body1
+                                        text = link.name, style = MiuixTheme.textStyles.body1
                                     )
                                     Text(
                                         text = link.url,
@@ -1373,18 +1345,17 @@ private fun LinkSettingsDialog(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
-                                
+
                                 IconButton(
-                                    onClick = { onDeleteLink(link.id) }
-                                ) {
+                                    onClick = { onDeleteLink(link.id) }) {
                                     Icon(
                                         imageVector = MiuixIcons.Useful.Delete,
-                                        contentDescription = "删除",
+                                        contentDescription = MLang.Component.ProfileCard.Delete,
                                         tint = MiuixTheme.colorScheme.error
                                     )
                                 }
                             }
-                            
+
                             if (index < links.size - 1) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -1398,20 +1369,17 @@ private fun LinkSettingsDialog(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 TextButton(
-                    text = "关闭", 
-                    onClick = { show.value = false }, 
+                    text = MLang.ProfilesPage.LinkSettings.Close,
+                    onClick = { show.value = false },
                     modifier = Modifier.weight(1f)
                 )
                 Button(
-                    onClick = onAddLink,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary()
+                    onClick = onAddLink, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
-                    Text("添加链接",color = MiuixTheme.colorScheme.surface)
+                    Text(MLang.ProfilesPage.LinkSettings.AddLink, color = MiuixTheme.colorScheme.surface)
                 }
             }
         }
@@ -1430,23 +1398,25 @@ private fun AddLinkDialog(
     onConfirm: () -> Unit
 ) {
     var error by remember { mutableStateOf("") }
+    var currentName by remember { mutableStateOf(linkName) }
+    var currentUrl by remember { mutableStateOf(linkUrl) }
 
-    LaunchedEffect(show.value) {
+    LaunchedEffect(show.value, linkToEdit) {
         if (show.value) {
             if (linkToEdit != null) {
-                onNameChange(linkToEdit.name)
-                onUrlChange(linkToEdit.url)
+                currentName = linkToEdit.name
+                currentUrl = linkToEdit.url
             } else {
-                onNameChange("")
-                onUrlChange("")
+                currentName = ""
+                currentUrl = ""
             }
             error = ""
         }
     }
 
     SuperBottomSheet(
-        title = "添加链接", 
-        show = show, 
+        title = if (linkToEdit != null) MLang.ProfilesPage.LinkSettings.EditLink else MLang.ProfilesPage.LinkSettings.AddLink,
+        show = show,
         onDismissRequest = onDismiss
     ) {
         Column(
@@ -1456,56 +1426,50 @@ private fun AddLinkDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TextField(
-                value = linkName, 
-                onValueChange = {
-                    onNameChange(it)
+                value = currentName, onValueChange = {
+                    currentName = it
                     error = ""
-                }, 
-                label = "名称", 
-                modifier = Modifier.fillMaxWidth()
+                }, label = MLang.ProfilesPage.LinkSettings.Name, modifier = Modifier.fillMaxWidth()
             )
 
             TextField(
-                value = linkUrl, 
-                onValueChange = {
-                    onUrlChange(it)
+                value = currentUrl, onValueChange = {
+                    currentUrl = it
                     error = ""
-                }, 
-                label = "链接", 
-                modifier = Modifier.fillMaxWidth()
+                }, label = MLang.ProfilesPage.LinkSettings.Url, modifier = Modifier.fillMaxWidth()
             )
 
             if (error.isNotEmpty()) {
                 Text(
-                    text = error, 
-                    color = MiuixTheme.colorScheme.error, 
-                    style = MiuixTheme.textStyles.body2
+                    text = error, color = MiuixTheme.colorScheme.error, style = MiuixTheme.textStyles.body2
                 )
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Button(
-                    onClick = onDismiss, 
-                    modifier = Modifier.weight(1f)
+                    onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
-                    Text("取消")
+                    Text(MLang.ProfilesPage.Button.Cancel)
                 }
                 Button(
                     onClick = {
                         when {
-                            linkName.isBlank() -> error = "请输入名称"
-                            linkUrl.isBlank() -> error = "请输入链接"
-                            !linkUrl.startsWith("http", ignoreCase = true) -> error = "请输入有效的链接"
-                            else -> onConfirm()
+                            currentName.isBlank() -> error = MLang.ProfilesPage.LinkSettings.Validation.EnterName
+                            currentUrl.isBlank() -> error = MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
+                            !currentUrl.startsWith("http", ignoreCase = true) -> error =
+                                MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
+
+                            else -> {
+                                onNameChange(currentName)
+                                onUrlChange(currentUrl)
+                                onConfirm()
+                            }
                         }
-                    }, 
-                    modifier = Modifier.weight(1f), 
-                    colors = ButtonDefaults.buttonColorsPrimary()
+                    }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
-                    Text("确定", color = MiuixTheme.colorScheme.surface)
+                    Text(MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.surface)
                 }
             }
         }
@@ -1521,9 +1485,7 @@ private fun ShareOptionsDialog(
     onShareLink: (Profile) -> Unit
 ) {
     SuperDialog(
-        title = "分享配置",
-        show = show,
-        onDismissRequest = onDismiss
+        title = MLang.ProfilesPage.ShareDialog.Title, show = show, onDismissRequest = onDismiss
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1534,7 +1496,7 @@ private fun ShareOptionsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
-                    Text("分享订阅链接", color = MiuixTheme.colorScheme.surface)
+                    Text(MLang.ProfilesPage.ShareDialog.ShareLink, color = MiuixTheme.colorScheme.surface)
                 }
             }
             Button(
@@ -1542,14 +1504,12 @@ private fun ShareOptionsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors()
             ) {
-                Text("分享配置文件")
+                Text(MLang.ProfilesPage.ShareDialog.ShareFile)
             }
             Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors()
+                onClick = onDismiss, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors()
             ) {
-                Text("取消")
+                Text(MLang.ProfilesPage.Button.Cancel)
             }
         }
     }

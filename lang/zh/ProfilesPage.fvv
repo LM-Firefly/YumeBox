@@ -74,4 +74,36 @@ ProfilesPage = {
     EditDialog = {
         Title = "编辑配置名称"
     }
+
+    LinkSettings = {
+        Title = "链接设置"
+        OpenMode = "打开方式"
+        OpenModeInApp = "App内打开"
+        OpenModeExternal = "外部浏览器"
+        DefaultLink = "默认链接"
+        DefaultLinkSummary = "点击左上角快捷按钮时打开的链接"
+        AddLink = "添加链接"
+        EditLink = "编辑链接"
+        Name = "名称"
+        Url = "链接"
+        Close = "关闭"
+        Validation = {
+            EnterName = "请输入名称"
+            EnterUrl = "请输入链接"
+            InvalidUrl = "请输入有效的链接"
+        }
+    }
+
+    ShareDialog = {
+        Title = "分享配置"
+        ShareFile = "分享配置文件"
+        ShareLink = "分享订阅链接"
+        NoLink = "该配置没有订阅链接"
+    }
+
+    Misc = {
+        OpenLink = "打开链接"
+        Complete = "完成"
+        Error = "错误"
+    }
 }
