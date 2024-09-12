@@ -16,7 +16,7 @@ Settings = {
     }
     
     Function = {
-        SubStore = "SubStore"
+        SubStore = "Sub-Store"
         FeatureManagement = "Feature Management"
     }
     

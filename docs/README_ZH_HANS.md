@@ -16,7 +16,7 @@
 ## 特性
 
 - Mihomo 内核
-- SubStore 可选支持
+- Sub-Store 可选支持
 - Web 面板
 - 更多请自行探索...
 
@@ -50,7 +50,7 @@
 
 - [Mihomo](https://github.com/MetaCubeX/mihomo)
 - [ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid)
-- [SubStore](https://github.com/sub-store-org)
+- [Sub-Store](https://github.com/sub-store-org)
 - [SubCase](https://github.com/sion-codin/SubCase)
 - [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
 - [Zashboard](https://github.com/Zephyruso/zashboard)
