@@ -24,6 +24,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.screen.home.HomeIdleContent
 import com.github.yumelira.yumebox.presentation.screen.home.HomeRunningContent
 import com.github.yumelira.yumebox.presentation.screen.home.ProxyControlButton
+import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import kotlinx.coroutines.launch
@@ -177,24 +179,35 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
 @OptIn(ExperimentalAnimationApi::class)
 private fun AnimatedContentTransitionScope<HomeDisplayState>.createHomeTransitionSpec(): ContentTransform {
-    val animDuration = 300
-    return when {
-        targetState == HomeDisplayState.Idle -> {
-            (fadeIn(animationSpec = tween(animDuration)) +
-                    scaleIn(initialScale = 0.92f, animationSpec = tween(animDuration))).togetherWith(
-                fadeOut(animationSpec = tween(animDuration)) +
-                        scaleOut(targetScale = 1.08f, animationSpec = tween(animDuration))
-            )
-        }
+    val fadeOutDuration = 180
+    val fadeInDuration = 240
+    val delayBetween = 40
 
-        else -> {
-            (fadeIn(animationSpec = tween(animDuration)) +
-                    scaleIn(initialScale = 0.92f, animationSpec = tween(animDuration))).togetherWith(
-                fadeOut(animationSpec = tween(animDuration)) +
-                        scaleOut(targetScale = 1.08f, animationSpec = tween(animDuration))
-            )
-        }
-    }
+    val exitTransition = fadeOut(
+        animationSpec = tween(fadeOutDuration, easing = AnimationSpecs.ExitEasing),
+        targetAlpha = 0f
+    )
+
+    val enterTransition = fadeIn(
+        animationSpec = tween(
+            durationMillis = fadeInDuration,
+            delayMillis = fadeOutDuration + delayBetween,
+            easing = AnimationSpecs.EnterEasing
+        ),
+        initialAlpha = 0f
+    )
+
+    return enterTransition.togetherWith(exitTransition).using(
+        SizeTransform(
+            clip = false,
+            sizeAnimationSpec = { _, _ ->
+                tween(
+                    durationMillis = fadeOutDuration + delayBetween,
+                    easing = AnimationSpecs.EmphasizedDecelerate
+                )
+            }
+        )
+    )
 }
 
 private fun handleProxyToggle(
