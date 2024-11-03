@@ -1,5 +1,6 @@
 package com.github.yumelira.yumebox.presentation.screen
 
+import Rocket
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +41,6 @@ import com.github.yumelira.yumebox.presentation.icon.yume.`Chart-column`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Git-merge`
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.Meta
-import com.github.yumelira.yumebox.presentation.icon.yume.Rocket
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Wifi-cog`
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent

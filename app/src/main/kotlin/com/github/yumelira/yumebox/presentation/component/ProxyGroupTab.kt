@@ -30,10 +30,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -115,8 +113,6 @@ fun LazyListScope.proxyGroupGridItems(
                             onDelayClick = { onGroupDelayClick(secondGroup) },
                         )
                     }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -133,13 +129,12 @@ private fun ProxyGroupCard(
     isDelayTesting: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val summary = group.now.ifBlank { MLang.Proxy.Mode.Direct }
-    val proxiesState = rememberUpdatedState(group.proxies)
-    val nowState = rememberUpdatedState(group.now)
-    val selectedDelay: Int? by remember {
-        derivedStateOf { proxiesState.value.firstOrNull { it.name == nowState.value }?.delay }
+    val summary = remember(group.now) {
+        group.now.ifBlank { MLang.Proxy.Mode.Direct }
     }
-    val delay = selectedDelay
+    val delay = remember(group.proxies, group.now) {
+        group.proxies.firstOrNull { it.name == group.now }?.delay
+    }
 
     ProxySelectableCard(
         isSelected = false,
@@ -171,14 +166,13 @@ private fun ProxyGroupCard(
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        if (delay != null) {
-                            DelayPill(
-                                delay = delay,
-                                onClick = onDelayClick,
-                                isLoading = isDelayTesting,
-                                textStyle = MiuixTheme.textStyles.body2,
-                            )
-                        }
+                        DelayPill(
+                            delay = delay ?: 0,
+                            onClick = onDelayClick,
+                            isLoading = isDelayTesting,
+                            textStyle = MiuixTheme.textStyles.body2,
+                            height = 22.dp,
+                        )
                     }
                 }
             } else {
@@ -195,7 +189,12 @@ private fun ProxyGroupCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    if (delay != null) DelayPill(delay = delay, onClick = null, textStyle = MiuixTheme.textStyles.body2)
+                    DelayPill(
+                        delay = delay ?: 0,
+                        onClick = null,
+                        textStyle = MiuixTheme.textStyles.body2,
+                        height = 22.dp
+                    )
                 }
             }
         } else {
@@ -221,13 +220,11 @@ private fun ProxyGroupCard(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
-                        if (delay != null) {
-                            DelayPill(
-                                delay = delay,
-                                onClick = onDelayClick,
-                                isLoading = isDelayTesting,
-                            )
-                        }
+                        DelayPill(
+                            delay = delay ?: 0,
+                            onClick = onDelayClick,
+                            isLoading = isDelayTesting,
+                        )
                     }
                 }
             } else {
@@ -244,7 +241,7 @@ private fun ProxyGroupCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    if (delay != null) DelayPill(delay = delay, onClick = onDelayClick, isLoading = isDelayTesting)
+                    DelayPill(delay = delay ?: 0, onClick = onDelayClick, isLoading = isDelayTesting)
                 }
             }
         }
