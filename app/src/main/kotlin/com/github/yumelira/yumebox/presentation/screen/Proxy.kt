@@ -21,34 +21,12 @@
 package com.github.yumelira.yumebox.presentation.screen
 
 import android.content.Context
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -67,12 +45,11 @@ import com.github.yumelira.yumebox.presentation.component.ProxyNodeGrid
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.proxyGroupGridItems
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.Activity
 import com.github.yumelira.yumebox.presentation.icon.yume.`List-chevrons-up-down`
+import com.github.yumelira.yumebox.presentation.icon.yume.Speed
 import com.github.yumelira.yumebox.presentation.icon.yume.`Squares-exclude`
 import com.github.yumelira.yumebox.presentation.icon.yume.Zashboard
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
-import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
@@ -80,20 +57,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.DropdownImpl
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
-import top.yukonga.miuix.kmp.basic.ListPopupColumn
-import top.yukonga.miuix.kmp.basic.ListPopupDefaults
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.ScrollBehavior
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
-import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.extra.WindowListPopup
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -102,12 +66,10 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun ProxyPager(
-    mainInnerPadding: PaddingValues,
-    navigator: DestinationsNavigator
+    mainInnerPadding: PaddingValues, navigator: DestinationsNavigator
 ) {
     val context = LocalContext.current
     val proxyViewModel = koinViewModel<ProxyViewModel>()
-    koinViewModel<HomeViewModel>()
     val featureViewModel = koinViewModel<FeatureViewModel>()
 
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
@@ -130,15 +92,12 @@ fun ProxyPager(
                 selectedPanelType = selectedPanelType,
                 onNavigateToProviders = { navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true } },
                 onTestDelay = onTestDelay,
-                onShowSettings = { showSettingsBottomSheet.value = true }
-            )
-        }
-    ) { innerPadding ->
+                onShowSettings = { showSettingsBottomSheet.value = true })
+        }) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             if (proxyGroups.isEmpty()) {
                 CenteredText(
-                    firstLine = MLang.Proxy.Empty.NoNodes,
-                    secondLine = MLang.Proxy.Empty.Hint
+                    firstLine = MLang.Proxy.Empty.NoNodes, secondLine = MLang.Proxy.Empty.Hint
                 )
             } else {
                 ProxyContent(
@@ -166,9 +125,7 @@ fun ProxyPager(
             insideMargin = DpSize(32.dp, 16.dp),
         ) {
             ProxySettingsContent(
-                proxyViewModel = proxyViewModel,
-                onDismiss = { showSettingsBottomSheet.value = false }
-            )
+                proxyViewModel = proxyViewModel, onDismiss = { showSettingsBottomSheet.value = false })
         }
 
         val proxyGroupsState = rememberUpdatedState(proxyGroups)
@@ -203,8 +160,7 @@ fun ProxyPager(
                     show = showPopup,
                     popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
                     alignment = PopupPositionProvider.Align.Start,
-                    onDismissRequest = { showPopup.value = false }
-                ) {
+                    onDismissRequest = { showPopup.value = false }) {
                     ListPopupColumn {
                         modes.forEachIndexed { index, mode ->
                             DropdownImpl(
@@ -225,7 +181,7 @@ fun ProxyPager(
             endAction = {
                 val group = sheetGroup ?: return@WindowBottomSheet
                 IconButton(onClick = { proxyViewModel.testDelay(group.name) }) {
-                    Icon(Yume.Activity, contentDescription = MLang.Proxy.Action.Test)
+                    Icon(Yume.Speed, contentDescription = MLang.Proxy.Action.Test)
                 }
             },
             onDismissRequest = { showGroupBottomSheet.value = false },
@@ -235,12 +191,12 @@ fun ProxyPager(
             ProxyGroupSelectorContent(
                 group = group,
                 displayMode = displayMode,
-                isGroupTesting = testingGroupNames.contains(group.name),
-                onGroupDelayClick = { proxyViewModel.testDelay(group.name) },
                 onSelectProxy = { proxyName ->
                     proxyViewModel.selectProxy(group.name, proxyName)
                     showGroupBottomSheet.value = false
                 },
+                isDelayTesting = testingGroupNames.contains(group.name),
+                onTestDelay = { proxyViewModel.testDelay(group.name) },
             )
         }
     }
@@ -255,52 +211,42 @@ private fun ProxyTopBar(
     onTestDelay: (() -> Unit)?,
     onShowSettings: () -> Unit
 ) {
-    TopBar(
-        title = MLang.Proxy.Title,
-        scrollBehavior = scrollBehavior,
-        navigationIcon = {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                IconButton(
-                    modifier = Modifier.padding(start = 24.dp),
-                    onClick = onNavigateToProviders
-                ) {
-                    Icon(Yume.`Squares-exclude`, contentDescription = MLang.Proxy.Action.ExternalResources)
-                }
-
-                IconButton(
-                    onClick = {
-                        val panelUrl = getPanelUrl(context, selectedPanelType)
-                        val webViewUrl = panelUrl.ifEmpty {
-                            val localUrl = getLocalBaseUrl(context)
-                            if (localUrl.isNotEmpty()) localUrl + "index.html" else ""
-                        }
-                        if (webViewUrl.isNotEmpty()) {
-                            WebViewActivity.start(context, webViewUrl)
-                        }
-                    }
-                ) {
-                    Icon(Yume.Zashboard, contentDescription = MLang.Proxy.Action.Panel)
-                }
-            }
-        },
-        actions = {
+    TopBar(title = MLang.Proxy.Title, scrollBehavior = scrollBehavior, navigationIcon = {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             IconButton(
-                modifier = Modifier.padding(end = 16.dp),
+                modifier = Modifier.padding(start = 24.dp), onClick = onNavigateToProviders
+            ) {
+                Icon(Yume.`Squares-exclude`, contentDescription = MLang.Proxy.Action.ExternalResources)
+            }
+
+            IconButton(
                 onClick = {
-                    onTestDelay?.invoke()
-                }
-            ) {
-                Icon(Yume.Activity, contentDescription = MLang.Proxy.Action.Test)
-            }
-
-            IconButton(
-                modifier = Modifier.padding(end = 24.dp),
-                onClick = onShowSettings
-            ) {
-                Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Action.Settings)
+                    val panelUrl = getPanelUrl(context, selectedPanelType)
+                    val webViewUrl = panelUrl.ifEmpty {
+                        val localUrl = getLocalBaseUrl(context)
+                        if (localUrl.isNotEmpty()) localUrl + "index.html" else ""
+                    }
+                    if (webViewUrl.isNotEmpty()) {
+                        WebViewActivity.start(context, webViewUrl)
+                    }
+                }) {
+                Icon(Yume.Zashboard, contentDescription = MLang.Proxy.Action.Panel)
             }
         }
-    )
+    }, actions = {
+        IconButton(
+            modifier = Modifier.padding(end = 16.dp), onClick = {
+                onTestDelay?.invoke()
+            }) {
+            Icon(Yume.Speed, contentDescription = MLang.Proxy.Action.Test)
+        }
+
+        IconButton(
+            modifier = Modifier.padding(end = 24.dp), onClick = onShowSettings
+        ) {
+            Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Action.Settings)
+        }
+    })
 }
 
 @Composable
@@ -342,18 +288,18 @@ private fun ProxyContent(
 private fun ProxyGroupSelectorContent(
     group: ProxyGroupInfo,
     displayMode: ProxyDisplayMode,
-    isGroupTesting: Boolean,
-    onGroupDelayClick: () -> Unit,
     onSelectProxy: (String) -> Unit,
+    isDelayTesting: Boolean,
+    onTestDelay: () -> Unit,
 ) {
     val groupName = group.name
     val isSelectable = group.type == Proxy.Type.Selector
 
-    val onProxyClick = remember(groupName, isSelectable, onSelectProxy) {
+    val onProxyClick: (String) -> Unit = remember(groupName, isSelectable, onSelectProxy, onTestDelay) {
         if (isSelectable) {
             { proxyName: String -> onSelectProxy(proxyName) }
         } else {
-            null
+            { _: String -> onTestDelay() }
         }
     }
 
@@ -362,19 +308,10 @@ private fun ProxyGroupSelectorContent(
     }
 
     var showContent by remember { mutableStateOf(false) }
-    val alpha by animateFloatAsState(
-        targetValue = if (showContent) 1f else 0f,
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-        label = "contentAlpha"
-    )
 
     LaunchedEffect(shouldShowLoading) {
-        if (shouldShowLoading) {
-            delay(450)
-            showContent = true
-        } else {
-            showContent = true
-        }
+        if (shouldShowLoading) delay(450)
+        showContent = true
     }
 
     val contentPadding = remember {
@@ -387,59 +324,57 @@ private fun ProxyGroupSelectorContent(
     val maxSheetHeight = (screenHeight * 0.72f).coerceAtLeast(420.dp).coerceAtMost(620.dp)
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = minSheetHeight, max = maxSheetHeight),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxWidth().let { base ->
+            // IMPORTANT: 当需要显示 loading 时，固定到最终高度，避免 loading-> 内容切换时“往上顶一下”。
+            // 在 Dialog(WindowBottomSheet/SuperBottomSheet) 场景下，高度跳变会非常明显。
+            if (shouldShowLoading) {
+                base.height(maxSheetHeight)
+            } else {
+                base.heightIn(min = minSheetHeight, max = maxSheetHeight)
+            }
+        }, contentAlignment = Alignment.Center
     ) {
         if (!showContent && shouldShowLoading) {
-            // 加载指示器使用固定高度 minSheetHeight，避免高度跳动
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(minSheetHeight),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
                 InfiniteProgressIndicator()
             }
         } else {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(alpha)
-            ) {
-                ProxyNodeGrid(
-                    proxies = group.proxies,
-                    selectedProxyName = group.now,
-                    displayMode = displayMode,
-                    onProxyClick = if (onProxyClick != null) {
-                        { proxy: Proxy -> onProxyClick(proxy.name) }
-                    } else {
-                        null
-                    },
-                    onProxyDelayClick = { onGroupDelayClick() },
-                    isDelayTesting = isGroupTesting,
-                    contentPadding = contentPadding,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+            // IMPORTANT: 不要对整块列表套 alpha/graphicsLayer。
+            // Dialog(WindowBottomSheet) 场景下，这会导致滚动时更容易掉帧。
+            ProxyNodeGrid(
+                proxies = group.proxies,
+                selectedProxyName = group.now,
+                displayMode = displayMode,
+                onProxyClick = { proxy: Proxy -> onProxyClick(proxy.name) },
+                isDelayTesting = isDelayTesting,
+                onDelayTestClick = onTestDelay,
+                contentPadding = contentPadding,
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }
 
 @Composable
 private fun ProxySettingsContent(
-    proxyViewModel: ProxyViewModel,
-    onDismiss: () -> Unit
+    proxyViewModel: ProxyViewModel, onDismiss: () -> Unit
 ) {
     val currentMode by proxyViewModel.currentMode.collectAsState()
-    val sortMode by proxyViewModel.sortMode.collectAsState()
     val displayMode by proxyViewModel.displayMode.collectAsState()
 
     val modeTabs = remember { listOf(MLang.Proxy.Mode.Rule, MLang.Proxy.Mode.Global, MLang.Proxy.Mode.Direct) }
     val modeValues = remember { listOf(TunnelState.Mode.Rule, TunnelState.Mode.Global, TunnelState.Mode.Direct) }
-    val sortTabs = remember { ProxySortMode.entries.map { it.displayName } }
-    val displayTabs = remember { ProxyDisplayMode.entries.map { it.displayName } }
+    val displayModes = remember { listOf(ProxyDisplayMode.SINGLE_DETAILED, ProxyDisplayMode.DOUBLE_DETAILED) }
+    val displayTabs = remember { displayModes.map { it.displayName } }
+    val selectedDisplayMode = remember(displayMode) {
+        when (displayMode) {
+            ProxyDisplayMode.SINGLE_SIMPLE -> ProxyDisplayMode.SINGLE_DETAILED
+            ProxyDisplayMode.DOUBLE_SIMPLE -> ProxyDisplayMode.DOUBLE_DETAILED
+            else -> displayMode
+        }
+    }
 
     Column {
         Text(
@@ -454,25 +389,7 @@ private fun ProxySettingsContent(
                 if (index < modeValues.size) {
                     proxyViewModel.patchMode(modeValues[index])
                 }
-            }
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = MLang.Proxy.Settings.SortMode,
-            style = MiuixTheme.textStyles.subtitle,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        TabRowWithContour(
-            tabs = sortTabs,
-            selectedTabIndex = sortMode.ordinal,
-            onTabSelected = { index ->
-                if (index < ProxySortMode.entries.size) {
-                    proxyViewModel.setSortMode(ProxySortMode.entries[index])
-                }
-            }
-        )
+            })
 
         Spacer(Modifier.height(12.dp))
 
@@ -483,27 +400,23 @@ private fun ProxySettingsContent(
         )
         TabRowWithContour(
             tabs = displayTabs,
-            selectedTabIndex = displayMode.ordinal,
+            selectedTabIndex = displayModes.indexOf(selectedDisplayMode).coerceAtLeast(0),
             onTabSelected = { index ->
-                if (index < ProxyDisplayMode.entries.size) {
-                    proxyViewModel.setDisplayMode(ProxyDisplayMode.entries[index])
+                if (index < displayModes.size) {
+                    proxyViewModel.setDisplayMode(displayModes[index])
                 }
-            }
-        )
+            })
 
         Spacer(modifier = Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f)
+                onClick = onDismiss, modifier = Modifier.weight(1f)
             ) {
                 Text(MLang.Component.Button.Cancel)
             }
 
             Button(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColorsPrimary()
+                onClick = onDismiss, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
             ) {
                 Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.background)
             }
