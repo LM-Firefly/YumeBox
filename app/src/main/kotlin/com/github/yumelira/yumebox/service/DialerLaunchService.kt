@@ -65,4 +65,3 @@ class DialerLaunchService : Service() {
         return START_NOT_STICKY
     }
 }
-

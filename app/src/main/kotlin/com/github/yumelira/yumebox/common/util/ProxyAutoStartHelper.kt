@@ -20,11 +20,11 @@
 
 package com.github.yumelira.yumebox.common.util
 
-import com.github.yumelira.yumebox.clash.manager.ClashManager
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
+import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
@@ -33,11 +33,11 @@ object ProxyAutoStartHelper {
     private const val TAG = "ProxyAutoStartHelper"
 
     suspend fun checkAndAutoStart(
-        proxyConnectionService: ProxyConnectionService,
+        proxyFacade: ProxyFacade,
+        profilesRepository: ProfilesRepository,
         appSettingsStorage: AppSettingsStorage,
         networkSettingsStorage: NetworkSettingsStorage,
-        profilesStore: ProfilesStore,
-        clashManager: ClashManager,
+        serviceCache: MMKV,
         isBootCompleted: Boolean = false
     ) {
         runCatching {
@@ -46,11 +46,11 @@ object ProxyAutoStartHelper {
                 return
             }
 
-            if (clashManager.isRunning.value) {
+            if (serviceCache.decodeBool("service_running", false)) {
                 return
             }
 
-            val profileId = getProfileToStart(profilesStore)
+            val profileId = getProfileToStart(profilesRepository)
             if (profileId == null) {
                 Timber.tag(TAG).w("没有可用的配置文件，无法自动启动")
                 return
@@ -60,38 +60,24 @@ object ProxyAutoStartHelper {
                 delay(3000)
             }
 
-            val proxyMode = networkSettingsStorage.proxyMode.value
-
-            val result = proxyConnectionService.startDirect(
-                profileId = profileId, mode = proxyMode
-            )
-
-            if (result.isFailure) {
-                Timber.tag(TAG).e("自动启动代理失败: ${result.exceptionOrNull()?.message}")
-            }
+            val useTun = networkSettingsStorage.proxyMode.value == com.github.yumelira.yumebox.data.model.ProxyMode.Tun
+            
+            // Set active profile and start
+            profilesRepository.setActiveProfile(java.util.UUID.fromString(profileId))
+            proxyFacade.startProxy(useTun)
+            
+            Timber.tag(TAG).i("自动启动代理成功: profileId=$profileId, useTun=$useTun")
         }.onFailure { e ->
             Timber.tag(TAG).e(e, "自动启动代理失败: ${e.message}")
         }
     }
 
-    private fun getProfileToStart(profilesStore: ProfilesStore): String? {
-        val profiles = profilesStore.getAllProfiles()
-        val lastUsedId = profilesStore.lastUsedProfileId
-        if (lastUsedId.isNotEmpty()) {
-            val lastUsedProfile = profiles.find { it.id == lastUsedId }
-            if (lastUsedProfile != null) {
-                return lastUsedId
-            }
-        }
-
-        val enabledProfile = profiles.find { it.enabled }
-        if (enabledProfile != null) {
-            return enabledProfile.id
-        }
-
-        val firstProfile = profiles.firstOrNull()
-        if (firstProfile != null) {
-            return firstProfile.id
+    private suspend fun getProfileToStart(profilesRepository: ProfilesRepository): String? {
+        val activeProfile = profilesRepository.queryActiveProfile()
+        
+        // 只允许自动启动已激活的配置，默认不自动选择任何配置
+        if (activeProfile != null) {
+            return activeProfile.uuid.toString()
         }
 
         return null

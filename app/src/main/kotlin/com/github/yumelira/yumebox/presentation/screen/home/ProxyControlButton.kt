@@ -63,6 +63,7 @@ fun ProxyControlButton(
     isEnabled: Boolean,
     hasEnabledProfile: Boolean,
     hasProfiles: Boolean,
+    profilesLoaded: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -79,10 +80,12 @@ fun ProxyControlButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (!hasProfiles) {
-            HintText(MLang.Home.Control.HintAddProfile)
-        } else if (!hasEnabledProfile) {
-            HintText(MLang.Home.Control.HintEnableProfile)
+        if (profilesLoaded) {
+            if (!hasProfiles) {
+                HintText(MLang.Home.Control.HintAddProfile)
+            } else if (!hasEnabledProfile) {
+                HintText(MLang.Home.Control.HintEnableProfile)
+            }
         }
 
         Button(

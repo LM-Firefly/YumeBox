@@ -24,7 +24,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.data.repository.ProvidersRepository
 import dev.oom_wg.purejoy.mlang.MLang
@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProvidersViewModel(
-    private val clashManager: ClashManager,
+    private val proxyFacade: ProxyFacade,
     private val providersRepository: ProvidersRepository
 ) : ViewModel() {
 
@@ -45,11 +45,11 @@ class ProvidersViewModel(
     private val _uiState = MutableStateFlow(ProvidersUiState())
     val uiState: StateFlow<ProvidersUiState> = _uiState.asStateFlow()
 
-    val isRunning: StateFlow<Boolean> = clashManager.isRunning
+    val isRunning: StateFlow<Boolean> = proxyFacade.isRunning
 
     fun refreshProviders() {
         viewModelScope.launch {
-            if (!clashManager.isRunning.value) {
+            if (!proxyFacade.isRunning.value) {
                 _providers.value = emptyList()
                 return@launch
             }

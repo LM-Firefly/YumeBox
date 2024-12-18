@@ -24,15 +24,15 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.downloadProfile
-import com.github.yumelira.yumebox.clash.exception.ConfigImportException
-import com.github.yumelira.yumebox.data.model.Profile
-import com.github.yumelira.yumebox.data.model.ProfileType
+import com.github.yumelira.yumebox.common.util.DownloadUtil
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.data.store.ProfileLinksStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.core.model.FetchStatus
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,14 +41,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
+import timber.log.Timber
+import java.io.File
 import java.util.*
-
 
 class ProfilesViewModel(
     application: Application,
-    private val profilesStore: ProfilesStore,
-    profileLinksStorage: ProfileLinksStorage,
+    private val profilesRepository: ProfilesRepository,
+    profileLinksStorage: ProfileLinksStorage
 ) : AndroidViewModel(application) {
 
     // 链接管理
@@ -57,362 +57,423 @@ class ProfilesViewModel(
     val defaultLinkId: Preference<String> = profileLinksStorage.defaultLinkId
 
     fun setOpenMode(mode: LinkOpenMode) = linkOpenMode.set(mode)
-    
-    fun setDefaultLink(linkId: String) = defaultLinkId.set(linkId)
 
-    fun addLink(link: ProfileLink) = links.set(links.value + link)
+    // 配置列表
+    private val _profiles = MutableStateFlow<List<Profile>>(emptyList())
+    val profiles: StateFlow<List<Profile>> = _profiles.asStateFlow()
 
-    fun updateLink(linkId: String, name: String, url: String) {
-        links.set(links.value.map { link ->
-            if (link.id == linkId) link.copy(name = name, url = url)
-            else link
-        })
-    }
+    // 激活的配置
+    private val _activeProfile = MutableStateFlow<Profile?>(null)
+    val activeProfile: StateFlow<Profile?> = _activeProfile.asStateFlow()
 
-    fun removeLink(linkId: String) {
-        links.set(links.value.filterNot { it.id == linkId })
-        // 如果删除的是默认链接,清空默认链接
-        if (defaultLinkId.value == linkId) {
-            defaultLinkId.set("")
-        }
-    }
+    // UI 状态
+    private val _uiState = MutableStateFlow(ProfilesUiState())
+    val uiState: StateFlow<ProfilesUiState> = _uiState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(ConfigUiState())
-    val uiState: StateFlow<ConfigUiState> = _uiState.asStateFlow()
-
+    // 下载进度
     private val _downloadProgress = MutableStateFlow<DownloadProgress?>(null)
     val downloadProgress: StateFlow<DownloadProgress?> = _downloadProgress.asStateFlow()
 
-    val profiles: StateFlow<List<Profile>> = profilesStore.profiles
-
-    // 防重复下载的profile ID集合
-    private val downloadingProfiles = mutableSetOf<String>()
-
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            // 立即清理孤立文件，无需延迟
-            cleanupOrphanedFiles()
-        }
+        refreshProfiles()
     }
 
-    private fun cleanupOrphanedFiles() {
-        runCatching {
-            val activeIds = profilesStore.profiles.value.map { it.id }.toSet()
-            val importedDir = getApplication<Application>().filesDir.resolve("imported")
-            if (!importedDir.exists() || !importedDir.isDirectory) return
-
-            importedDir.listFiles()?.forEach { file ->
-                when {
-                    file.isDirectory && file.name !in activeIds -> {
-                        file.deleteRecursively()
-                    }
-
-                    file.isDirectory && file.name in activeIds -> {
-                        val cfg = java.io.File(file, "config.yaml")
-                        if (cfg.exists() && cfg.length() <= 10) {
-                            cfg.delete()
-                        }
-                        // 清理临时文件
-                        file.listFiles()?.forEach { subFile ->
-                            if (subFile.name != "config.yaml") {
-                                subFile.delete()
-                            }
-                        }
-                    }
-
-                    file.isFile && (file.name.endsWith(".yaml") || file.name.endsWith(".yml")) -> {
-                        file.delete()
-                    }
-                }
-            }
-        }.onFailure { timber.log.Timber.e(it, "cleanupOrphanedFiles failed") }
-    }
-
-    fun addProfile(profile: Profile) {
+    /**
+     * 刷新配置列表
+     */
+    fun refreshProfiles() {
         viewModelScope.launch {
-            runCatching {
-                val maxOrder = profilesStore.profiles.value.maxOfOrNull { it.order } ?: -1
-                val profileWithOrder = profile.copy(order = maxOrder + 1)
-                profilesStore.addProfile(profileWithOrder)
-                showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(profile.name))
-            }.onFailure { e ->
-                timber.log.Timber.e(e, "addProfile failed")
-                showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: MLang.Util.Error.UnknownError))
+            try {
+                setLoading(true)
+                val allProfiles = profilesRepository.queryAllProfiles()
+                val active = profilesRepository.queryActiveProfile()
+                
+                _profiles.value = allProfiles
+                _activeProfile.value = active
+                
+                Timber.d("Profiles refreshed: ${allProfiles.size} total, active=${active?.name}")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to refresh profiles")
+                showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
+            } finally {
+                setLoading(false)
             }
         }
     }
 
-    suspend fun downloadProfile(profile: Profile, saveToDb: Boolean = true): Profile? {
-        if (profile.id in downloadingProfiles) {
-            timber.log.Timber.w("Profile ${profile.id} 正在下载中，跳过重复下载")
-            return null
+    /**
+     * 创建新配置
+     * @param type 配置类型
+     * @param name 配置名称
+     * @param source 配置来源（URL或文件URI）
+     * @param interval 更新间隔（仅对订阅有效）
+     * @param fileUri 文件URI（仅对文件类型有效，用于复制文件）
+     */
+    fun createProfile(
+        type: Profile.Type,
+        name: String,
+        source: String = "",
+        interval: Long = 0L,
+        fileUri: Uri? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                val normalizedName = resolveInitialName(type, name, source, fileUri)
+                val uuid = profilesRepository.createProfile(type, normalizedName, source)
+
+                _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
+
+                val observer = IFetchObserver { status ->
+                    val percent = if (status.max > 0) {
+                        ((status.progress * 100) / status.max)
+                    } else 0
+
+                    _downloadProgress.value = DownloadProgress(
+                        percent,
+                        when (status.action) {
+                            FetchStatus.Action.FetchConfiguration -> MLang.ProfilesVM.Progress.Preparing
+                            FetchStatus.Action.FetchProviders -> MLang.ProfilesVM.Progress.Verifying
+                            FetchStatus.Action.Verifying -> MLang.ProfilesVM.Progress.Verifying
+                        }
+                    )
+                }
+
+                // 对于文件类型，需要先复制文件到pending目录
+                if (type == Profile.Type.File && fileUri != null) {
+                    copyFileToPendingDir(fileUri, uuid)
+                }
+
+                profilesRepository.commitProfile(uuid, observer)
+                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
+
+                showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(normalizedName))
+                refreshProfiles()
+                Timber.i("Profile created: $uuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to create profile")
+                showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: "Unknown"))
+                _downloadProgress.value = null
+            } finally {
+                setLoading(false)
+            }
         }
+    }
 
-        if (profile.type != ProfileType.URL && profile.type != ProfileType.FILE) {
-            showError(MLang.ProfilesVM.Error.OnlyUrlOrFile)
-            return null
-        }
+    private suspend fun resolveInitialName(
+        type: Profile.Type,
+        name: String,
+        source: String,
+        fileUri: Uri?
+    ): String {
+        val trimmed = name.trim()
+        if (trimmed.isNotBlank()) return trimmed
 
-        val isUrl = profile.type == ProfileType.URL
-        val remoteUrl = profile.remoteUrl
-        if (isUrl && remoteUrl.isNullOrBlank()) {
-            showError(MLang.ProfilesVM.Error.EmptyUrl)
-            return null
-        }
+        return when (type) {
+            Profile.Type.Url -> {
+                val fallback = source.substringBefore('?').substringBefore('#')
+                    .substringAfterLast('/').substringBeforeLast('.').trim()
+                    .ifBlank { "New Profile" }
 
-        downloadingProfiles.add(profile.id)
-
-        return try {
-            _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
-
-            val subscriptionInfo = if (isUrl) {
                 withContext(Dispatchers.IO) {
                     runCatching {
-                        com.github.yumelira.yumebox.common.util.DownloadUtil.downloadWithSubscriptionInfo(
-                            remoteUrl!!, java.io.File.createTempFile("temp_${profile.id}", ".yaml")
-                        ).second
-                    }.getOrNull()
+                        val tempFile = File.createTempFile("profile_name_", ".yaml")
+                        val (_, info) = DownloadUtil.downloadWithSubscriptionInfo(source, tempFile)
+                        tempFile.delete()
+
+                        info?.title?.takeIf { it.isNotBlank() }
+                            ?: info?.filename?.substringBeforeLast(".")?.takeIf { it.isNotBlank() }
+                            ?: fallback
+                    }.getOrDefault(fallback)
                 }
-            } else null
-
-            val result = downloadProfile(
-                profile = profile,
-                workDir = getApplication<Application>().filesDir.resolve("clash"),
-                force = true,
-                onProgress = { msg, progress ->
-                    _downloadProgress.value = DownloadProgress(progress, msg)
-                }
-            )
-
-            if (result.isSuccess) {
-                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.DownloadComplete)
-                val configFilePath = result.getOrThrow()
-                val existingProfile = if (saveToDb) {
-                    profilesStore.profiles.value.find { it.id == profile.id }
-                } else null
-
-                var updated = existingProfile?.copy(updatedAt = System.currentTimeMillis(), config = configFilePath)
-                    ?: profile.copy(updatedAt = System.currentTimeMillis(), config = configFilePath)
-
-                subscriptionInfo?.filename?.let { fileName ->
-                    val nameWithoutExt = if (fileName.contains(".")) {
-                        fileName.substringBeforeLast(".")
-                    } else {
-                        fileName
-                    }
-
-                    val defaultNames = setOf(MLang.ProfilesPage.Input.NewProfile)
-                    if (updated.name.isBlank() || updated.name in defaultNames || updated.name.startsWith("temp_")) {
-                        updated = updated.copy(name = nameWithoutExt)
-                    }
-                }
-
-                subscriptionInfo?.let { info ->
-                    updated = updated.copy(
-                        provider = info.title ?: updated.provider,
-                        expireAt = info.expire ?: updated.expireAt,
-                        usedBytes = info.upload + info.download,
-                        totalBytes = if (info.total > 0) info.total else updated.totalBytes,
-                        lastUpdatedAt = System.currentTimeMillis()
-                    )
-                }
-
-                if (updated.lastUpdatedAt == null) {
-                    updated = updated.copy(lastUpdatedAt = System.currentTimeMillis())
-                }
-
-                if (saveToDb) {
-                    if (existingProfile != null) {
-                        profilesStore.updateProfile(updated)
-                    } else {
-                        profilesStore.addProfile(updated)
-                    }
-                }
-                updated
-            } else {
-                _downloadProgress.value = null
-                val error = result.exceptionOrNull()
-                val errorMsg = if (error is ConfigImportException) {
-                    error.userFriendlyMessage
-                } else {
-                    MLang.ProfilesVM.Progress.DownloadFailed.format(
-                        error?.message ?: MLang.Util.Error.UnknownError
-                    )
-                }
-                showError(errorMsg)
-                null
             }
-        } catch (e: Exception) {
-            _downloadProgress.value = null
-            val errorMsg = if (e is ConfigImportException) {
-                e.userFriendlyMessage
-            } else {
-                MLang.ProfilesVM.Progress.DownloadFailed.format(e.message ?: MLang.Util.Error.UnknownError)
+
+            Profile.Type.File -> {
+                runCatching {
+                    val uriText = fileUri?.toString().orEmpty().ifBlank { source }
+                    Uri.parse(uriText).lastPathSegment
+                        ?.substringBeforeLast('.')
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() }
+                }.getOrNull() ?: "New Profile"
             }
-            showError(errorMsg)
-            null
-        } finally {
-            downloadingProfiles.remove(profile.id)
+
+            Profile.Type.External -> "New Profile"
         }
     }
 
+    /**
+     * 复制文件到pending目录
+     */
+    private suspend fun copyFileToPendingDir(uri: Uri, uuid: UUID) {
+        withContext(Dispatchers.IO) {
+            val context = getApplication<Application>()
+            val pendingDir = File(context.filesDir, "pending/${uuid}")
+            pendingDir.mkdirs()
+
+            val inputFile = context.contentResolver.openInputStream(uri)
+                ?: throw IllegalArgumentException("Failed to open file: $uri")
+
+            val outputFile = File(pendingDir, "config.yaml")
+            outputFile.outputStream().use { output ->
+                inputFile.copyTo(output)
+            }
+            Timber.d("File copied to pending dir: ${outputFile.absolutePath}")
+        }
+    }
+
+    /**
+     * 克隆配置
+     */
+    fun cloneProfile(uuid: UUID) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                val newUuid = profilesRepository.cloneProfile(uuid)
+                showMessage(MLang.ProfilesVM.Message.ProfileAdded.format("Clone"))
+                refreshProfiles()
+                Timber.i("Profile cloned: $uuid -> $newUuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to clone profile")
+                showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: "Unknown"))
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * 删除配置
+     */
+    fun deleteProfile(uuid: UUID) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                profilesRepository.deleteProfile(uuid)
+                showMessage(MLang.ProfilesVM.Message.ProfileDeleted)
+                refreshProfiles()
+                Timber.i("Profile deleted: $uuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to delete profile")
+                showError(MLang.ProfilesVM.Message.DeleteFailed.format(e.message ?: "Unknown"))
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * 激活配置
+     */
+    fun activateProfile(uuid: UUID) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                profilesRepository.setActiveProfile(uuid)
+                showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format("Active"))
+                refreshProfiles()
+                Timber.i("Profile activated: $uuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to activate profile")
+                showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message ?: "Unknown"))
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * 更新配置（重新获取）
+     */
+    fun updateProfile(uuid: UUID) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
+
+                val observer = IFetchObserver { status ->
+                    val percent = if (status.max > 0) {
+                        ((status.progress * 100) / status.max)
+                    } else 0
+
+                    _downloadProgress.value = DownloadProgress(
+                        percent,
+                        when (status.action) {
+                            FetchStatus.Action.FetchConfiguration -> MLang.ProfilesVM.Progress.Preparing
+                            FetchStatus.Action.FetchProviders -> MLang.ProfilesVM.Progress.Verifying
+                            FetchStatus.Action.Verifying -> MLang.ProfilesVM.Progress.Verifying
+                        }
+                    )
+                }
+
+                profilesRepository.updateProfile(uuid, observer)
+
+                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
+                showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(uuid.toString()))
+                refreshProfiles()
+                Timber.i("Profile updated: $uuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to update profile")
+                showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
+                _downloadProgress.value = null
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * 修改配置元数据
+     */
+    fun patchProfile(uuid: UUID, name: String, source: String, interval: Long) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                profilesRepository.patchProfile(uuid, name, source, interval)
+                showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(name))
+                refreshProfiles()
+                Timber.i("Profile patched: $uuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to patch profile")
+                showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * 从文件导入配置
+     */
+    fun importProfileFromFile(uri: Uri, name: String) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.ImportPreparing)
+
+                // 创建 File 类型配置
+                val uuid = profilesRepository.createProfile(
+                    Profile.Type.File,
+                    name,
+                    uri.toString()
+                )
+
+                _downloadProgress.value = DownloadProgress(20, MLang.ProfilesVM.Progress.ImportPreparing)
+
+                // 复制文件到 pending 目录
+                copyFileToPendingDir(uri, uuid)
+
+                _downloadProgress.value = DownloadProgress(40, MLang.ProfilesVM.Progress.Verifying)
+
+                // 提交配置（验证并导入）
+                val observer = IFetchObserver { status ->
+                    val percent = if (status.max > 0) {
+                        40 + ((status.progress * 60) / status.max)
+                    } else 40
+
+                    _downloadProgress.value = DownloadProgress(
+                        percent,
+                        when (status.action) {
+                            FetchStatus.Action.FetchConfiguration -> MLang.ProfilesVM.Progress.Preparing
+                            FetchStatus.Action.FetchProviders -> MLang.ProfilesVM.Progress.Verifying
+                            FetchStatus.Action.Verifying -> MLang.ProfilesVM.Progress.Verifying
+                        }
+                    )
+                }
+
+                profilesRepository.commitProfile(uuid, observer)
+                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
+
+                showMessage(MLang.ProfilesVM.Message.ProfileImported.format(name))
+                refreshProfiles()
+                Timber.i("Profile imported from file: $uuid")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to import profile")
+                showError(MLang.ProfilesVM.Message.ImportFailed.format(e.message ?: "Unknown"))
+                _downloadProgress.value = null
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
+    /**
+     * 重新排序配置
+     */
+    fun reorderProfiles(from: Int, to: Int) {
+        viewModelScope.launch {
+            try {
+                // TODO: 实现配置排序逻辑
+                // CMFA 使用 MMKV 存储顺序，需要在 service 模块实现
+                Timber.d("Reorder profiles: $from -> $to")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to reorder profiles")
+            }
+        }
+    }
+
+    /**
+     * 切换配置启用状态
+     * - 如果当前未激活，则激活此配置
+     * - 如果当前已激活，则禁用此配置（激活另一个默认配置或不激活任何配置）
+     */
+    fun toggleProfileEnabled(uuid: UUID) {
+        viewModelScope.launch {
+            try {
+                val profile = profilesRepository.queryProfileByUUID(uuid)
+                    ?: error("Profile not found: $uuid")
+
+                if (profile.active) {
+                    // 允许全部不启用：清空当前激活
+                    profilesRepository.clearActiveProfile(profile)
+                } else {
+                    // 当前未激活，激活此配置
+                    profilesRepository.setActiveProfile(uuid)
+                    showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(profile.name))
+                }
+                refreshProfiles()
+                Timber.d("Profile toggled: $uuid, active=${!profile.active}")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to toggle profile")
+                showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message ?: "Unknown"))
+            }
+        }
+    }
 
     fun clearDownloadProgress() {
         _downloadProgress.value = null
     }
 
-    suspend fun importProfileFromFile(uri: Uri, name: String, saveToDb: Boolean = true): Profile? {
-        return runCatching {
-            setLoading(true)
-            _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.ImportPreparing)
-            val profileId = UUID.randomUUID().toString()
-            val profileDir =
-                java.io.File(getApplication<Application>().filesDir, "imported/$profileId").apply { mkdirs() }
-            _downloadProgress.value = DownloadProgress(10, MLang.ProfilesVM.Progress.CopyingFile)
-
-            val destFile = java.io.File(profileDir, "config.yaml")
-            getApplication<Application>().contentResolver.openInputStream(uri)?.use { input ->
-                destFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw IOException(MLang.ProfilesVM.Error.CannotReadFile)
-
-            _downloadProgress.value = DownloadProgress(30, MLang.ProfilesVM.Progress.Verifying)
-            // 注意：这里不设置 lastUpdatedAt，等验证成功后再设置
-            val profile = Profile(
-                id = profileId, name = name, type = ProfileType.FILE,
-                config = destFile.absolutePath, createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
-            )
-
-            val result = downloadProfile(
-                profile = profile,
-                workDir = getApplication<Application>().filesDir.resolve("clash"),
-                force = true,
-                onProgress = { msg, p ->
-                    _downloadProgress.value = DownloadProgress(30 + (p * 0.7).toInt().coerceIn(0, 70), msg)
-                }
-            )
-
-            if (result.isSuccess) {
-                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
-                val configPath = result.getOrThrow()
-                val updatedProfile = profile.copy(
-                    config = configPath,
-                    lastUpdatedAt = System.currentTimeMillis()
-                )
-                if (saveToDb) {
-                    profilesStore.addProfile(updatedProfile)
-                    showMessage(MLang.ProfilesVM.Message.ProfileImported.format(name))
-                }
-                updatedProfile
-            } else {
-                withContext(Dispatchers.IO) {
-                    profileDir.deleteRecursively()
-                }
-                _downloadProgress.value = null
-                val error = result.exceptionOrNull()
-                val errorMsg = if (error is ConfigImportException) {
-                    error.userFriendlyMessage
-                } else {
-                    MLang.ProfilesVM.Progress.ImportFailed.format(error?.message ?: MLang.Util.Error.UnknownError)
-                }
-                showError(errorMsg)
-                null
-            }
-        }.getOrElse { e ->
-            _downloadProgress.value = null
-            val errorMsg = if (e is ConfigImportException) {
-                e.userFriendlyMessage
-            } else {
-                MLang.ProfilesVM.Message.ImportFailed.format(e.message ?: MLang.Util.Error.UnknownError)
-            }
-            showError(errorMsg)
-            null
-        }.also { setLoading(false) }
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 
-    fun removeProfile(profileId: String) {
-        viewModelScope.launch {
-            runCatching {
-                profilesStore.removeProfile(profileId)
-                withContext(Dispatchers.IO) {
-                    getApplication<Application>().filesDir.resolve("imported/$profileId")
-                        .takeIf { it.exists() }?.deleteRecursively()
-                }
-                showMessage(MLang.ProfilesVM.Message.ProfileDeleted)
-            }.onFailure { e ->
-                timber.log.Timber.e(e, "removeProfile failed")
-                showError(MLang.ProfilesVM.Message.DeleteFailed.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
-        }
+    fun clearMessage() {
+        _uiState.update { it.copy(message = null) }
     }
 
-    fun updateProfile(profile: Profile) {
-        viewModelScope.launch {
-            runCatching {
-                profilesStore.updateProfile(profile)
-                showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(profile.name))
-            }.onFailure { e ->
-                timber.log.Timber.e(e, "updateProfile failed")
-                showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
-        }
+    private fun setLoading(loading: Boolean) {
+        _uiState.update { it.copy(isLoading = loading) }
     }
 
-    fun toggleProfileEnabled(profile: Profile, enabled: Boolean, onProfileEnabled: ((Profile) -> Unit)? = null) {
-        viewModelScope.launch {
-            runCatching {
-                val profiles = profilesStore.profiles.value
-                val updated = if (enabled) {
-                    profiles.map { if (it.id == profile.id) it.copy(enabled = true) else it.copy(enabled = false) }
-                } else {
-                    profiles.map { if (it.id == profile.id) it.copy(enabled = false) else it }
-                }
-                updated.forEach { profilesStore.updateProfile(it) }
-                if (enabled) {
-                    profilesStore.updateLastUsedProfileId(profile.id)
-                    onProfileEnabled?.invoke(profile.copy(enabled = true))
-                }
-            }.onFailure { e ->
-                timber.log.Timber.e(e, "toggleProfileEnabled failed")
-                showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
-        }
+    private fun showError(message: String) {
+        _uiState.update { it.copy(error = message) }
     }
 
-    private fun setLoading(loading: Boolean) = _uiState.update { it.copy(isLoading = loading) }
-    private fun showMessage(message: String) = _uiState.update { it.copy(message = message) }
-    private fun showError(error: String) = _uiState.update { it.copy(error = error) }
-
-    fun clearMessage() = _uiState.update { it.copy(message = null) }
-    fun clearError() = _uiState.update { it.copy(error = null) }
-
-    fun reorderProfiles(fromIndex: Int, toIndex: Int) {
-        viewModelScope.launch {
-            runCatching {
-                val currentList = profiles.value.toMutableList()
-                if (fromIndex !in currentList.indices || toIndex !in currentList.indices) {
-                    return@launch
-                }
-                
-                val movedItem = currentList.removeAt(fromIndex)
-                currentList.add(toIndex, movedItem)
-                
-                profilesStore.reorderProfiles(currentList)
-            }.onFailure { e ->
-                timber.log.Timber.e(e, "reorderProfiles failed")
-                showError(MLang.ProfilesVM.Message.SortFailed.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
-        }
+    private fun showMessage(message: String) {
+        _uiState.update { it.copy(message = message) }
     }
-
-    data class ConfigUiState(
-        val isLoading: Boolean = false,
-        val message: String? = null,
-        val error: String? = null
-    )
-
-    data class DownloadProgress(
-        val progress: Int,
-        val message: String
-    )
 }
+
+// UI State
+data class ProfilesUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val message: String? = null
+)
+
+// Download Progress
+data class DownloadProgress(
+    val percent: Int,
+    val message: String
+)

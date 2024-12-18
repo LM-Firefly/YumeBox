@@ -19,8 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.clash.isConfigSaved
-import com.github.yumelira.yumebox.data.model.Profile
+import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.data.model.*
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -56,7 +56,7 @@ fun ProfileCard(
     val actionIconTint =
         remember(isDark) { colorScheme.onSurface.copy(alpha = if (isDark) 0.7f else 0.9f) }
 
-    val isConfigSaved = remember(profile.id, profile.updatedAt) {
+    val isConfigSaved = remember(profile.uuid, profile.updatedAt) {
         profile.isConfigSaved(workDir)
     }
 
@@ -104,7 +104,7 @@ fun ProfileCard(
             Switch(
                 checked = profile.enabled,
                 enabled = !isDownloading,
-                onCheckedChange = { newValue -> onToggleEnabled(profile.copy(enabled = newValue)) })
+                onCheckedChange = { onToggleEnabled(profile) })
         }
 
 

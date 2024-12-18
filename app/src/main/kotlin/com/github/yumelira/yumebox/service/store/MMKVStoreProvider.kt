@@ -1,0 +1,63 @@
+package com.github.yumelira.yumebox.service.store
+
+import com.tencent.mmkv.MMKV
+
+/**
+ * MMKV implementation of StoreProvider
+ */
+class MMKVStoreProvider(private val mmkv: MMKV) : StoreProvider {
+    override fun getInt(key: String, defaultValue: Int): Int {
+        return mmkv.decodeInt(key, defaultValue)
+    }
+
+    override fun setInt(key: String, value: Int) {
+        mmkv.encode(key, value)
+    }
+
+    override fun getLong(key: String, defaultValue: Long): Long {
+        return mmkv.decodeLong(key, defaultValue)
+    }
+
+    override fun setLong(key: String, value: Long) {
+        mmkv.encode(key, value)
+    }
+
+    override fun getString(key: String, defaultValue: String): String {
+        return mmkv.decodeString(key, defaultValue) ?: defaultValue
+    }
+
+    override fun setString(key: String, value: String) {
+        mmkv.encode(key, value)
+    }
+
+    override fun getStringSet(key: String, defaultValue: Set<String>): Set<String> {
+        return mmkv.decodeStringSet(key, defaultValue) ?: defaultValue
+    }
+
+    override fun setStringSet(key: String, value: Set<String>) {
+        mmkv.encode(key, value)
+    }
+
+    override fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return mmkv.decodeBool(key, defaultValue)
+    }
+
+    override fun setBoolean(key: String, value: Boolean) {
+        mmkv.encode(key, value)
+    }
+
+    override fun remove(key: String) {
+        mmkv.removeValueForKey(key)
+    }
+
+    override fun clear() {
+        mmkv.clearAll()
+    }
+}
+
+/**
+ * Extension to convert MMKV to StoreProvider
+ */
+fun MMKV.asStoreProvider(): StoreProvider {
+    return MMKVStoreProvider(this)
+}

@@ -37,12 +37,12 @@ data class TrafficData(
 
         private fun decodeHalf(encoded: Long): Long {
             val type = (encoded ushr 30) and 0x3L
-            val data = (encoded and 0x3FFFFFFFL) / 100.0
+            val data = encoded and 0x3FFFFFFFL
             return when (type.toInt()) {
-                0 -> data.toLong()
-                1 -> (data * 1024.0).toLong()
-                2 -> (data * 1024.0 * 1024.0).toLong()
-                3 -> (data * 1024.0 * 1024.0 * 1024.0).toLong()
+                0 -> data
+                1 -> (data * 1024L) / 100L
+                2 -> (data * 1024L * 1024L) / 100L
+                3 -> (data * 1024L * 1024L * 1024L) / 100L
                 else -> 0L
             }
         }
