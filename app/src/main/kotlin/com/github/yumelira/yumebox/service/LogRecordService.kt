@@ -27,9 +27,10 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.github.yumelira.yumebox.MainActivity
-import com.github.yumelira.yumebox.clash.manager.ClashManager
+import com.github.yumelira.yumebox.remote.ServiceClient
+import com.github.yumelira.yumebox.service.remote.ILogObserver
+import com.github.yumelira.yumebox.core.model.LogMessage
 import kotlinx.coroutines.*
-import org.koin.android.ext.android.inject
 import timber.log.Timber
 import java.io.BufferedWriter
 import java.io.File
@@ -83,7 +84,6 @@ class LogRecordService : Service() {
         }
     }
 
-    private val clashManager: ClashManager by inject()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var logWriter: BufferedWriter? = null
@@ -130,16 +130,31 @@ class LogRecordService : Service() {
             startForeground(NOTIFICATION_ID, createNotification())
 
             logCollectJob = serviceScope.launch {
-                clashManager.logs.collect { log ->
-                    if (isRecording) {
-                        runCatching {
-                            val line = "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
-                            logWriter?.write(line)
-                            logWriter?.flush()
-                        }.onFailure { e ->
-                            Timber.tag(TAG).e(e, "写入日志失败")
+                try {
+                    val observer = object : ILogObserver {
+                        override fun newItem(log: LogMessage) {
+                            if (isRecording) {
+                                runCatching {
+                                    val line = "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
+                                    logWriter?.write(line)
+                                    logWriter?.flush()
+                                }.onFailure { e ->
+                                    Timber.tag(TAG).e(e, "写入日志失败")
+                                }
+                            }
                         }
                     }
+                    ServiceClient.connect(applicationContext)
+                    val clash = ServiceClient.clash()
+                    clash.setLogObserver(observer)
+                    
+                    try {
+                        awaitCancellation()
+                    } finally {
+                        runCatching { clash.setLogObserver(null) }
+                    }
+                } catch (e: Exception) {
+                    Timber.tag(TAG).e(e, "设置日志观察者失败")
                 }
             }
         }.onFailure { e ->

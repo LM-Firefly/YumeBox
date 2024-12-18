@@ -1,23 +1,23 @@
 package com.github.yumelira.yumebox.data.repository
 
+import android.content.Context
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
+import com.github.yumelira.yumebox.remote.ServiceClient
 
-class OverrideRepository {
+class OverrideRepository(
+    private val context: Context
+) {
+    suspend fun loadPersist(): Result<ConfigurationOverride> =
+        query(Clash.OverrideSlot.Persist)
 
-    fun loadPersist(): Result<ConfigurationOverride> {
-        return query(Clash.OverrideSlot.Persist)
-    }
+    suspend fun savePersist(override: ConfigurationOverride): Result<Unit> =
+        save(Clash.OverrideSlot.Persist, override)
 
-    fun savePersist(override: ConfigurationOverride): Result<Unit> {
-        return save(Clash.OverrideSlot.Persist, override)
-    }
+    suspend fun clearPersist(): Result<Unit> =
+        clear(Clash.OverrideSlot.Persist)
 
-    fun clearPersist(): Result<Unit> {
-        return clear(Clash.OverrideSlot.Persist)
-    }
-
-    fun update(
+    suspend fun update(
         slot: Clash.OverrideSlot,
         transform: (ConfigurationOverride) -> ConfigurationOverride
     ): Result<ConfigurationOverride> {
@@ -30,37 +30,31 @@ class OverrideRepository {
         return Result.success(updated)
     }
 
-    fun updatePersist(transform: (ConfigurationOverride) -> ConfigurationOverride): Result<ConfigurationOverride> {
-        return update(Clash.OverrideSlot.Persist, transform)
-    }
+    suspend fun updatePersist(
+        transform: (ConfigurationOverride) -> ConfigurationOverride
+    ): Result<ConfigurationOverride> =
+        update(Clash.OverrideSlot.Persist, transform)
 
-    fun updateSession(transform: (ConfigurationOverride) -> ConfigurationOverride): Result<ConfigurationOverride> {
-        return update(Clash.OverrideSlot.Session, transform)
-    }
+    suspend fun updateSession(
+        transform: (ConfigurationOverride) -> ConfigurationOverride
+    ): Result<ConfigurationOverride> =
+        update(Clash.OverrideSlot.Session, transform)
 
-    private fun query(slot: Clash.OverrideSlot): Result<ConfigurationOverride> {
-        return try {
-            Result.success(Clash.queryOverride(slot))
-        } catch (e: Exception) {
-            Result.failure(e)
+    private suspend fun query(slot: Clash.OverrideSlot): Result<ConfigurationOverride> =
+        runCatching {
+            ServiceClient.connect(context)
+            ServiceClient.clash().queryOverride(slot)
         }
-    }
 
-    private fun save(slot: Clash.OverrideSlot, override: ConfigurationOverride): Result<Unit> {
-        return try {
-            Clash.patchOverride(slot, override)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+    private suspend fun save(slot: Clash.OverrideSlot, override: ConfigurationOverride): Result<Unit> =
+        runCatching {
+            ServiceClient.connect(context)
+            ServiceClient.clash().patchOverride(slot, override)
         }
-    }
 
-    private fun clear(slot: Clash.OverrideSlot): Result<Unit> {
-        return try {
-            Clash.clearOverride(slot)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
+    private suspend fun clear(slot: Clash.OverrideSlot): Result<Unit> =
+        runCatching {
+            ServiceClient.connect(context)
+            ServiceClient.clash().clearOverride(slot)
         }
-    }
 }

@@ -2,11 +2,12 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.repository.OverrideRepository
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
+import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
@@ -17,9 +18,10 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class ProxyViewModel(
-    private val clashManager: ClashManager,
     private val overrideRepository: OverrideRepository,
-    private val proxyDisplaySettingsStore: ProxyDisplaySettingsStore
+    private val proxyFacade: ProxyFacade,
+    private val proxyDisplaySettingsStore: ProxyDisplaySettingsStore,
+    private val profilesRepository: ProfilesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProxyUiState())
@@ -40,7 +42,7 @@ class ProxyViewModel(
     private val _selectedGroupIndex = MutableStateFlow(0)
     val selectedGroupIndex: StateFlow<Int> = _selectedGroupIndex.asStateFlow()
 
-    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = clashManager.proxyGroups
+    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
 
 
     val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
@@ -54,47 +56,55 @@ class ProxyViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    fun ensureCoreLoaded() {
+        Timber.d("ensureCoreLoaded: no-op")
+    }
+
     fun patchMode(mode: TunnelState.Mode) {
         proxyDisplaySettingsStore.proxyMode.set(mode)
         viewModelScope.launch {
-            val persistResult = overrideRepository.updatePersist {
-                it.copy(mode = mode)
-            }
-            if (persistResult.isFailure) {
-                val error = persistResult.exceptionOrNull()
-                Timber.e(error, "代理模式切换失败：$mode")
-                showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
-                return@launch
-            }
+            try {
+                val persistResult = overrideRepository.updatePersist {
+                    it.copy(mode = mode)
+                }
+                if (persistResult.isFailure) {
+                    val error = persistResult.exceptionOrNull()
+                    Timber.e(error, "代理模式切换失败：$mode")
+                    showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
+                    return@launch
+                }
 
-            val sessionResult = overrideRepository.updateSession {
-                it.copy(mode = mode)
-            }
-            if (sessionResult.isFailure) {
-                val error = sessionResult.exceptionOrNull()
-                Timber.e(error, "代理模式切换失败：$mode")
-                showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
-                return@launch
-            }
+                val sessionResult = overrideRepository.updateSession {
+                    it.copy(mode = mode)
+                }
+                if (sessionResult.isFailure) {
+                    val error = sessionResult.exceptionOrNull()
+                    Timber.e(error, "代理模式切换失败：$mode")
+                    showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
+                    return@launch
+                }
 
-            val reloadResult = clashManager.reloadCurrentProfile()
-            if (reloadResult.isFailure) {
-                val error = reloadResult.exceptionOrNull()
-                Timber.e(error, "代理模式切换失败：$mode")
-                showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
-                return@launch
-            }
+                val reloadResult = proxyFacade.reloadCurrentProfile()
+                if (reloadResult.isFailure) {
+                    val error = reloadResult.exceptionOrNull()
+                    Timber.e(error, "代理模式切换失败：$mode")
+                    showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
+                    return@launch
+                }
 
-            // reloadCurrentProfile 已经触发了同步，等待一段时间确保完成
-            delay(500)
-            
-            val modeName = when (mode) {
-                TunnelState.Mode.Direct -> MLang.Proxy.Mode.Direct
-                TunnelState.Mode.Global -> MLang.Proxy.Mode.Global
-                TunnelState.Mode.Rule -> MLang.Proxy.Mode.Rule
-                else -> MLang.Proxy.Mode.Unknown
+                delay(500)
+                
+                val modeName = when (mode) {
+                    TunnelState.Mode.Direct -> MLang.Proxy.Mode.Direct
+                    TunnelState.Mode.Global -> MLang.Proxy.Mode.Global
+                    TunnelState.Mode.Rule -> MLang.Proxy.Mode.Rule
+                    else -> MLang.Proxy.Mode.Unknown
+                }
+                showMessage(MLang.Proxy.Mode.Switched.format(modeName))
+            } catch (e: Exception) {
+                Timber.e(e, "代理模式切换异常")
+                showError(MLang.Proxy.Mode.SwitchFailed.format(e.message))
             }
-            showMessage(MLang.Proxy.Mode.Switched.format(modeName))
         }
     }
 
@@ -107,17 +117,24 @@ class ProxyViewModel(
                 if (groupName != null) {
                     _testingGroupNames.update { it + groupName }
                     showMessage(MLang.Proxy.Testing.Group.format(groupName))
-                    val result = clashManager.healthCheck(groupName)
-                    if (result.isSuccess) {
-                        showMessage(MLang.Proxy.Testing.RequestSent)
-                    } else {
-                        showError(MLang.Proxy.Testing.Failed.format(result.exceptionOrNull()?.message))
-                    }
+                    proxyFacade.healthCheck(groupName, refreshAfter = true)
+                    showMessage(MLang.Proxy.Testing.RequestSent)
                 } else {
+                    // 测试所有组
                     showMessage(MLang.Proxy.Testing.All)
-                    val result = clashManager.healthCheckAll()
-                    if (result.isFailure) {
-                        showError(MLang.Proxy.Testing.Failed.format(result.exceptionOrNull()?.message))
+                    val groups = proxyGroups.value
+                    groups.forEach { group ->
+                        try {
+                            proxyFacade.healthCheck(group.name, refreshAfter = false)
+                        } catch (e: Exception) {
+                            Timber.w(e, "Health check failed for group: ${group.name}")
+                        }
+                    }
+
+                    // 批量测试完后统一刷新几次，避免每个组都刷导致 UI 卡死
+                    repeat(4) {
+                        delay(600)
+                        proxyFacade.refreshProxyGroups()
                     }
                 }
             } catch (e: Exception) {
@@ -149,13 +166,14 @@ class ProxyViewModel(
     fun selectProxy(groupName: String, proxyName: String) {
         viewModelScope.launch {
             try {
-                val success = clashManager.selectProxy(groupName, proxyName)
+                val success = proxyFacade.selectProxy(groupName, proxyName)
                 if (success) {
                     showMessage(MLang.Proxy.Selection.Switched.format(proxyName))
                 } else {
                     showError(MLang.Proxy.Selection.Failed)
                 }
             } catch (e: Exception) {
+                Timber.e(e, "Failed to select proxy")
                 showError(MLang.Proxy.Selection.Error.format(e.message))
             }
         }

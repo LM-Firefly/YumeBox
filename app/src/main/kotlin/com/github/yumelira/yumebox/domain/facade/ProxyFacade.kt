@@ -1,92 +1,433 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025.
+ *
+ */
+
 package com.github.yumelira.yumebox.domain.facade
 
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
-import com.github.yumelira.yumebox.clash.manager.ClashManager
+import android.content.IntentFilter
+import android.net.VpnService
+import android.os.Build
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.Traffic
 import com.github.yumelira.yumebox.core.model.TunnelState
-import com.github.yumelira.yumebox.data.model.Profile
-import com.github.yumelira.yumebox.data.model.Selection
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
-import com.github.yumelira.yumebox.data.repository.SelectionDao
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.domain.model.ProxyState
-import com.github.yumelira.yumebox.domain.model.RunningMode
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.service.data.model.Profile
+import kotlinx.coroutines.delay
+import com.github.yumelira.yumebox.remote.ServiceClient
+import com.github.yumelira.yumebox.remote.VpnPermissionRequired
+import com.github.yumelira.yumebox.service.ClashService
+import com.github.yumelira.yumebox.service.TunService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import timber.log.Timber
 
-class ProxyFacade(
-    private val clashManager: ClashManager,
-    private val proxyConnectionService: ProxyConnectionService,
-    private val selectionDao: SelectionDao
-) {
+/**
+ * ProxyFacade - proxy management facade
+ */
+class ProxyFacade(private val context: Context) {
+    private val appContext: Context = context.applicationContext
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    val proxyState: StateFlow<ProxyState> = clashManager.proxyState
+    // NOTE: service 模块的 Intents 依赖 service 进程的 Global.application，不能在 app 进程直接引用。
+    // 这里用应用包名动态拼 action，保持与 service/common/constants/Intents.kt 一致。
+    private val actionServiceRecreated: String get() = "${appContext.packageName}.intent.action.CLASH_RECREATED"
+    private val actionClashStarted: String get() = "${appContext.packageName}.intent.action.CLASH_STARTED"
+    private val actionClashStopped: String get() = "${appContext.packageName}.intent.action.CLASH_STOPPED"
+    private val actionClashRequestStop: String get() = "${appContext.packageName}.intent.action.CLASH_REQUEST_STOP"
+    private val actionProfileChanged: String get() = "${appContext.packageName}.intent.action.PROFILE_CHANGED"
+    private val actionProfileLoaded: String get() = "${appContext.packageName}.intent.action.PROFILE_LOADED"
+    private val actionOverrideChanged: String get() = "${appContext.packageName}.intent.action.OVERRIDE_CHANGED"
 
-    val isRunning: StateFlow<Boolean> = clashManager.isRunning
+    // Service running state
+    private val _isRunning = MutableStateFlow(false)
+    val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
-    val currentProfile: StateFlow<Profile?> = clashManager.currentProfile
+    // Proxy groups
+    private val _proxyGroups = MutableStateFlow<List<ProxyGroupInfo>>(emptyList())
+    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = _proxyGroups.asStateFlow()
 
-    val trafficNow: StateFlow<TrafficData> = clashManager.trafficNow
+    // Current profile
+    private val _currentProfile = MutableStateFlow<Profile?>(null)
+    val currentProfile: StateFlow<Profile?> = _currentProfile.asStateFlow()
 
-    val trafficTotal: StateFlow<TrafficData> = clashManager.trafficTotal
+    // Traffic statistics
+    private val _trafficNow = MutableStateFlow<Traffic>(0L)
+    val trafficNow: StateFlow<Traffic> = _trafficNow.asStateFlow()
 
-    val tunnelState: StateFlow<TunnelState?> = clashManager.tunnelState
+    private val _trafficTotal = MutableStateFlow<Traffic>(0L)
+    val trafficTotal: StateFlow<Traffic> = _trafficTotal.asStateFlow()
 
-    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = clashManager.proxyStateRepository.proxyGroups
+    private var trafficPollingJob: Job? = null
 
-    val isSyncing: StateFlow<Boolean> = clashManager.proxyStateRepository.isSyncing
-
-    val runningMode: StateFlow<RunningMode> = clashManager.runningMode
-
-    val logs = clashManager.logs
-
-    suspend fun startProxy(profileId: String, forceTunMode: Boolean? = null): Result<Intent?> {
-        return proxyConnectionService.prepareAndStart(profileId, forceTunMode)
-    }
-
-    suspend fun stopProxy(): Result<Unit> {
-        return proxyConnectionService.stop(runningMode.value)
-    }
-
-    suspend fun selectProxy(groupName: String, proxyName: String): Result<Boolean> {
-        val result = clashManager.proxyStateRepository.selectProxy(groupName, proxyName)
-
-        if (result.isSuccess && result.getOrNull() == true) {
-            val profile = currentProfile.value
-            if (profile != null) {
-                try {
-                    selectionDao.setSelected(Selection(profile.id, groupName, proxyName))
-                } catch (e: Exception) {
-                    Timber.e(e, "保存节点选择失败")
+    private val serviceEventsReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val action = intent?.action ?: return
+            when (action) {
+                actionClashStarted -> {
+                    updateServiceState(true)
+                    startTrafficPolling()
+                    scope.launch { refreshAllSafely() }
+                }
+                actionClashStopped -> {
+                    updateServiceState(false)
+                    stopTrafficPolling()
+                    _currentProfile.value = null
+                    _proxyGroups.value = emptyList()
+                    _trafficNow.value = 0L
+                    _trafficTotal.value = 0L
+                }
+                actionProfileLoaded,
+                actionProfileChanged,
+                actionOverrideChanged,
+                actionServiceRecreated -> {
+                    scope.launch { refreshAllSafely() }
                 }
             }
         }
-
-        return result
     }
 
-    suspend fun testDelay(groupName: String): Result<Unit> {
-        return clashManager.proxyStateRepository.testGroupDelay(groupName)
+    init {
+        registerServiceEventReceiver()
+
+        // Best-effort sync when app process starts while proxy is already running.
+        scope.launch {
+            runCatching {
+                ServiceClient.connect(appContext)
+                refreshCurrentProfile()
+                val groups = ServiceClient.clash().queryProxyGroupNames(excludeNotSelectable = false)
+                if (groups.isNotEmpty()) {
+                    updateServiceState(true)
+                    startTrafficPolling()
+                    refreshAll()
+                }
+            }.onFailure { e ->
+                Timber.d(e, "Initial proxy state sync skipped")
+            }
+        }
     }
 
-    suspend fun testAllDelay(): Result<Unit> {
-        return clashManager.proxyStateRepository.testAllDelay()
+    private fun startTrafficPolling() {
+        if (trafficPollingJob?.isActive == true) return
+        trafficPollingJob = scope.launch {
+            while (true) {
+                runCatching {
+                    ServiceClient.connect(appContext)
+                    queryTrafficNow()
+                    if ((System.currentTimeMillis() / 5000L) % 2L == 0L) {
+                        queryTrafficTotal()
+                    }
+                }
+                kotlinx.coroutines.delay(1000L)
+            }
+        }
     }
 
-    fun getCachedDelay(nodeName: String): Int? {
-        return clashManager.proxyStateRepository.getCachedDelay(nodeName)
+    private fun stopTrafficPolling() {
+        trafficPollingJob?.cancel()
+        trafficPollingJob = null
     }
 
-    fun findGroup(groupName: String): ProxyGroupInfo? {
-        return clashManager.proxyStateRepository.findGroup(groupName)
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private fun registerServiceEventReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(actionClashStarted)
+            addAction(actionClashStopped)
+            addAction(actionProfileChanged)
+            addAction(actionProfileLoaded)
+            addAction(actionOverrideChanged)
+            addAction(actionServiceRecreated)
+        }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                appContext.registerReceiver(serviceEventsReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                appContext.registerReceiver(serviceEventsReceiver, filter)
+            }
+        }.onFailure { e ->
+            Timber.w(e, "Failed to register service event receiver")
+        }
     }
 
-    fun getCurrentSelection(groupName: String): String? {
-        return clashManager.proxyStateRepository.getCurrentSelection(groupName)
+    /**
+     * Start proxy service
+     * @param useTun Whether to use TUN mode (VPN)
+     * @throws VpnPermissionRequired if VPN permission is needed but not granted
+     */
+    suspend fun startProxy(useTun: Boolean = false) {
+        Timber.i("Starting proxy service, useTun=$useTun")
+        ServiceClient.connect(appContext)
+
+        // Ensure an active profile exists before starting clash runtime, otherwise service will
+        // be stuck on "loading" and then stop due to ConfigurationModule load failure.
+        val activeProfile = ServiceClient.profile().queryActive()
+        if (activeProfile == null) {
+            Timber.w("No active profile, abort start")
+            throw IllegalStateException("No profile selected")
+        }
+
+        // Check VPN permission if needed
+        if (useTun) {
+            val vpnIntent = VpnService.prepare(context)
+            if (vpnIntent != null) {
+                Timber.w("VPN permission required")
+                throw VpnPermissionRequired(vpnIntent)
+            }
+        }
+
+        // Start appropriate service
+        val serviceIntent = if (useTun) {
+            Intent(context, TunService::class.java)
+        } else {
+            Intent(context, ClashService::class.java)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
+
+        // Best-effort readiness check with timeout to avoid UI getting stuck in "loading".
+        val ready = withTimeoutOrNull(5_000L) {
+            while (true) {
+                val groups = withContext(Dispatchers.IO) {
+                    runCatching {
+                        ServiceClient.clash().queryProxyGroupNames(excludeNotSelectable = false)
+                    }.getOrNull()
+                }
+
+                if (!groups.isNullOrEmpty()) return@withTimeoutOrNull true
+
+                delay(250)
+            }
+        } == true
+
+        if (!ready) {
+            Timber.w("Proxy runtime readiness timed out; continue with async refresh")
+        }
+
+        updateServiceState(true)
+        startTrafficPolling()
+        refreshAllSafely()
+        Timber.i("Proxy service started successfully: ${activeProfile.name}")
     }
 
-    fun isSelectableGroup(groupName: String): Boolean {
-        return clashManager.proxyStateRepository.isSelectableGroup(groupName)
+    /**
+     * Stop proxy service
+     */
+    suspend fun stopProxy() {
+        Timber.i("Stopping proxy service")
+
+        runCatching {
+            ServiceClient.connect(appContext)
+            ServiceClient.clash().requestStop()
+        }.onFailure {
+            appContext.sendBroadcast(Intent(actionClashRequestStop).setPackage(appContext.packageName))
+            context.stopService(Intent(context, TunService::class.java))
+            context.stopService(Intent(context, ClashService::class.java))
+        }
+
+        runCatching { ServiceClient.disconnect() }
+
+        updateServiceState(false)
+        stopTrafficPolling()
+        _currentProfile.value = null
+        _trafficNow.value = 0L
+        _trafficTotal.value = 0L
+
+        Timber.i("Proxy service stopped")
+    }
+
+    /**
+     * Query all proxy group names
+     * @param excludeNotSelectable Exclude non-selectable groups
+     * @return List of proxy group names
+     */
+    suspend fun queryProxyGroupNames(excludeNotSelectable: Boolean = false): List<String> {
+        return ServiceClient.clash().queryProxyGroupNames(excludeNotSelectable)
+    }
+
+    /**
+     * Query proxy group details
+     * @param name Group name
+     * @param sort Proxy sorting method
+     * @return ProxyGroup details
+     */
+    suspend fun queryProxyGroup(
+        name: String,
+        sort: ProxySort = ProxySort.Default
+    ): ProxyGroup {
+        return ServiceClient.clash().queryProxyGroup(name, sort)
+    }
+
+    /**
+     * Select proxy in a group
+     * @param group Group name
+     * @param proxyName Proxy name to select
+     * @return True if selection successful
+     */
+    suspend fun selectProxy(group: String, proxyName: String): Boolean {
+        Timber.d("Selecting proxy: group=$group, proxy=$proxyName")
+        val ok = ServiceClient.clash().patchSelector(group, proxyName)
+        if (ok) {
+            // Clash 会异步更新 selector 的 now 值，稍等再刷新一把 UI
+            delay(200)
+            refreshProxyGroups()
+        }
+        return ok
+    }
+
+    /**
+     * Perform health check on proxy group
+     * @param group Group name
+     */
+    suspend fun healthCheck(group: String, refreshAfter: Boolean = true) {
+        Timber.d("Health check: group=$group")
+        ServiceClient.clash().healthCheck(group)
+        if (refreshAfter) {
+            // 延迟测试结果是异步写回的，刷新几次确保 UI 能拿到 delay
+            repeat(4) {
+                delay(600)
+                refreshProxyGroups()
+            }
+        }
+    }
+
+    /**
+     * Query current tunnel state
+     * @return TunnelState
+     */
+    suspend fun queryTunnelState(): TunnelState {
+        return ServiceClient.clash().queryTunnelState()
+    }
+
+    /**
+     * Query total traffic
+     * @return Total traffic in bytes
+     */
+    suspend fun queryTrafficTotal(): Long {
+        val traffic = ServiceClient.clash().queryTrafficTotal()
+        _trafficTotal.value = traffic
+        return traffic
+    }
+
+    /**
+     * Query current traffic (upload/download speed)
+     */
+    suspend fun queryTrafficNow(): Long {
+        val traffic = ServiceClient.clash().queryTrafficNow()
+        _trafficNow.value = traffic
+        return traffic
+    }
+
+    /**
+     * Reload current profile configuration
+     */
+    suspend fun reloadCurrentProfile(): Result<Unit> {
+        return runCatching {
+            // Query current profile from ProfileManager
+            val profileManager = ServiceClient.profile()
+            val currentProfile = profileManager.queryActive()
+            if (currentProfile != null) {
+                // Reload profile to apply configuration changes
+                profileManager.setActive(currentProfile)
+                _currentProfile.value = currentProfile
+                // 等待 service 侧 ConfigurationModule 完成 load，再刷 UI
+                delay(600)
+                refreshAll()
+            }
+        }
+    }
+
+    /**
+     * Update service running state
+     */
+    fun updateServiceState(isRunning: Boolean) {
+        _isRunning.value = isRunning
+    }
+
+    /**
+     * Refresh proxy groups
+     */
+    suspend fun refreshProxyGroups() {
+        runCatching {
+            if (!_isRunning.value) return@runCatching
+            
+            val groupNames = queryProxyGroupNames(excludeNotSelectable = false)
+            val groups = groupNames.map { name ->
+                val proxyGroup = queryProxyGroup(name)
+                ProxyGroupInfo(
+                    name = name,
+                    type = proxyGroup.type,
+                    proxies = proxyGroup.proxies,
+                    now = proxyGroup.now ?: "",
+                    icon = proxyGroup.icon
+                )
+            }
+            _proxyGroups.value = groups
+        }.onFailure { e ->
+            Timber.e(e, "Failed to refresh proxy groups")
+        }
+    }
+
+    /**
+     * Refresh current profile
+     */
+    suspend fun refreshCurrentProfile() {
+        runCatching {
+            val profile = ServiceClient.profile().queryActive()
+            _currentProfile.value = profile
+        }.onFailure { e ->
+            Timber.e(e, "Failed to refresh current profile")
+        }
+    }
+
+    /**
+     * Refresh all state
+     */
+    suspend fun refreshAll() {
+        refreshCurrentProfile()
+        refreshProxyGroups()
+        queryTrafficNow()
+        queryTrafficTotal()
+    }
+
+    private suspend fun refreshAllSafely() {
+        runCatching {
+            ServiceClient.connect(appContext)
+            refreshAll()
+        }.onFailure { e ->
+            Timber.w(e, "refreshAllSafely failed")
+        }
     }
 
 }

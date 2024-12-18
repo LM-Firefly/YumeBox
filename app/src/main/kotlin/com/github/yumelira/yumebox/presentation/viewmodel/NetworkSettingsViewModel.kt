@@ -23,14 +23,13 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
+import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.Preference
-import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -44,9 +43,8 @@ import kotlinx.coroutines.launch
 class NetworkSettingsViewModel(
     application: Application,
     storage: NetworkSettingsStorage,
-    private val profilesStore: ProfilesStore,
-    private val proxyConnectionService: ProxyConnectionService,
-    private val clashManager: ClashManager,
+    private val profilesRepository: ProfilesRepository,
+    private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
 
     private var restartJob: Job? = null
@@ -61,7 +59,7 @@ class NetworkSettingsViewModel(
     val accessControlMode: Preference<AccessControlMode> = storage.accessControlMode
 
 
-    val serviceState: StateFlow<ServiceState> = clashManager.isRunning
+    val serviceState: StateFlow<ServiceState> = proxyFacade.isRunning
         .map { running -> if (running) ServiceState.Running else ServiceState.Stopped }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Stopped)
 
@@ -124,24 +122,49 @@ class NetworkSettingsViewModel(
     }
 
 
-    fun startService(proxyMode: ProxyMode) {
+    fun startService(mode: ProxyMode) {
         viewModelScope.launch {
-            val profileId = resolveProfileId() ?: return@launch
-            val runningMode = clashManager.runningMode.value
-            if (runningMode != RunningMode.None) {
-                proxyConnectionService.stop(runningMode)
+            try {
+                val activeProfile = profilesRepository.queryActiveProfile()
+                if (activeProfile == null) {
+                    // TODO: show error
+                    return@launch
+                }
+                
+                // 停止现有服务并启动新服务
+                if (proxyFacade.isRunning.value) {
+                    proxyFacade.stopProxy()
+                    delay(500)
+                }
+                
+                val useTun = mode == ProxyMode.Tun
+                proxyFacade.startProxy(useTun)
+            } catch (e: Exception) {
+                // TODO: handle error
             }
-            proxyConnectionService.startDirect(profileId, proxyMode)
         }
     }
 
     fun restartService() {
         viewModelScope.launch {
-            val runningMode = clashManager.runningMode.value
-            if (runningMode == RunningMode.None) return@launch
-            proxyConnectionService.stop(runningMode)
-            val profileId = resolveProfileId() ?: return@launch
-            proxyConnectionService.startDirect(profileId, proxyMode.value)
+            try {
+                if (!proxyFacade.isRunning.value) return@launch
+                
+                val activeProfile = profilesRepository.queryActiveProfile()
+                if (activeProfile == null) {
+                    // TODO: show error
+                    return@launch
+                }
+                
+                // 停止并重启服务
+                proxyFacade.stopProxy()
+                delay(500)
+                
+                val useTun = proxyMode.value == ProxyMode.Tun
+                proxyFacade.startProxy(useTun)
+            } catch (e: Exception) {
+                // TODO: handle error
+            }
         }
     }
 
@@ -153,11 +176,6 @@ class NetworkSettingsViewModel(
                 restartService()
             }
         }
-    }
-
-    private fun resolveProfileId(): String? {
-        return profilesStore.lastUsedProfileId.takeIf { it.isNotBlank() }
-            ?: profilesStore.getRecommendedProfile()?.id
     }
 
 }

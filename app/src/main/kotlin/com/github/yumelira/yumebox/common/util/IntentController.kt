@@ -22,16 +22,15 @@ package com.github.yumelira.yumebox.common.util
 
 import android.content.Context
 import android.content.Intent
-import com.github.yumelira.yumebox.clash.manager.ClashManager
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
+import java.util.UUID
 
 class IntentController(
     private val context: Context, private val scope: CoroutineScope
@@ -42,11 +41,9 @@ class IntentController(
         private const val ACTION_STOP_CLASH = "com.github.yumelira.yumebox.action.STOP_CLASH"
     }
 
-    private val proxyConnectionService: ProxyConnectionService by inject()
+    private val proxyFacade: ProxyFacade by inject()
     private val profilesRepository: ProfilesRepository by inject()
     private val networkSettingsStorage: NetworkSettingsStorage by inject()
-    private val profilesStore: ProfilesStore by inject()
-    private val clashManager: ClashManager by inject()
 
     fun handleIntent(intent: Intent?) {
         intent?.let { safeIntent ->
@@ -61,26 +58,22 @@ class IntentController(
 
     private fun handleStartClash() {
         scope.launch {
-            val profiles = profilesRepository.profiles.value
-            val recommendedProfile = profilesRepository.recommendedProfile.value
-            val targetProfile = recommendedProfile ?: profiles.find { it.enabled }
+            runCatching {
+                val activeProfile = profilesRepository.queryActiveProfile()
+                if (activeProfile == null) {
+                    Timber.w("No active profile, ignore external START_CLASH")
+                    return@launch
+                }
 
-            if (targetProfile == null) {
-                Timber.w("No available profile to start Clash via external intent")
-                return@launch
-            }
-
-            Timber.i("Starting Clash via external intent for profile: ${targetProfile.name}")
-
-            val proxyMode = networkSettingsStorage.proxyMode.value
-            val result = proxyConnectionService.startDirect(
-                profileId = targetProfile.id, mode = proxyMode
-            )
-
-            if (result.isSuccess) {
+                Timber.i("Starting Clash via external intent for profile: ${activeProfile.name}")
+                 
+                // Start proxy with TUN based on network settings
+                val useTun = networkSettingsStorage.proxyMode.value == com.github.yumelira.yumebox.data.model.ProxyMode.Tun
+                proxyFacade.startProxy(useTun)
+                
                 Timber.i("Clash started successfully via external intent")
-            } else {
-                Timber.e("Failed to start Clash via external intent: ${result.exceptionOrNull()?.message}")
+            }.onFailure { e ->
+                Timber.e(e, "Failed to start Clash via external intent")
             }
         }
     }
@@ -88,9 +81,10 @@ class IntentController(
     private fun handleStopClash() {
         scope.launch {
             Timber.i("Stopping Clash via external intent")
-            val currentRunningMode = clashManager.runningMode.value
-            val result = proxyConnectionService.stop(currentRunningMode)
-            result.onFailure { e ->
+            try {
+                proxyFacade.stopProxy()
+                Timber.i("Clash stopped successfully via external intent")
+            } catch (e: Exception) {
                 Timber.e(e, "Failed to stop Clash via external intent")
             }
         }

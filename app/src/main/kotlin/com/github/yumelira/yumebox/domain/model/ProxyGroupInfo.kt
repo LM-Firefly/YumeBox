@@ -21,7 +21,9 @@
 package com.github.yumelira.yumebox.domain.model
 
 import com.github.yumelira.yumebox.core.model.Proxy
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ProxyGroupInfo(
     val name: String,
     val type: Proxy.Type,

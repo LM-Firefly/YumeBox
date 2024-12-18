@@ -24,40 +24,51 @@ import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
-import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
 import com.github.yumelira.yumebox.data.repository.NetworkInfoService
 import com.github.yumelira.yumebox.data.repository.ProxyChainResolver
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.service.data.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import timber.log.Timber
 
 class HomeViewModel(
     application: Application,
     private val proxyFacade: ProxyFacade,
     private val profilesRepository: ProfilesRepository,
     appSettingsStorage: AppSettingsStorage,
-    private val clashManager: ClashManager,
     private val networkInfoService: NetworkInfoService,
     private val proxyChainResolver: ProxyChainResolver
 ) : AndroidViewModel(application) {
 
-    val profiles: StateFlow<List<Profile>> = profilesRepository.profiles
-    val recommendedProfile: StateFlow<Profile?> = profilesRepository.recommendedProfile
-    val hasEnabledProfile: Flow<Boolean> = profiles.map { it.any { profile -> profile.enabled } }
+    // State flows for profiles
+    private val _profiles = MutableStateFlow<List<Profile>>(emptyList())
+    val profiles: StateFlow<List<Profile>> = _profiles.asStateFlow()
+    
+    private val _recommendedProfile = MutableStateFlow<Profile?>(null)
+    val recommendedProfile: StateFlow<Profile?> = _recommendedProfile.asStateFlow()
+
+    private val _profilesLoaded = MutableStateFlow(false)
+    val profilesLoaded: StateFlow<Boolean> = _profilesLoaded.asStateFlow()
+    
+    // 检查是否有激活的配置
+    val hasEnabledProfile: Flow<Boolean> = profiles.map { list -> 
+        list.any { it.active } 
+    }
 
     val isRunning = proxyFacade.isRunning
     val currentProfile = proxyFacade.currentProfile
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
-    val tunnelState = proxyFacade.tunnelState
 
     val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
     val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
@@ -94,9 +105,7 @@ class HomeViewModel(
         mainProxyNode.map { it?.name }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val selectedServerPing: StateFlow<Int?> = mainProxyNode.map { node ->
-        node?.let {
-            proxyFacade.getCachedDelay(it.name)?.takeIf { d -> d > 0 } ?: it.delay.takeIf { d -> d > 0 }
-        }
+        node?.delay?.takeIf { d -> d > 0 }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -108,12 +117,35 @@ class HomeViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IpMonitoringState.Loading)
 
-    private val _recentLogs = MutableStateFlow<List<LogMessage>>(emptyList())
-
     init {
+        refreshProfiles()
         syncDisplayState()
-        subscribeToLogs()
         startSpeedSampling()
+        observeProfileChanges()
+    }
+
+    private fun refreshProfiles() {
+        viewModelScope.launch {
+            try {
+                val allProfiles = profilesRepository.queryAllProfiles()
+                val active = profilesRepository.queryActiveProfile()
+                _profiles.value = allProfiles
+                _recommendedProfile.value = active
+                _profilesLoaded.value = true
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to refresh profiles")
+                _profilesLoaded.value = true
+            }
+        }
+    }
+
+    private fun observeProfileChanges() {
+        viewModelScope.launch {
+            proxyFacade.currentProfile.collect {
+                // active profile can change even when proxy isn't running
+                refreshProfiles()
+            }
+        }
     }
 
     private fun syncDisplayState() {
@@ -129,26 +161,25 @@ class HomeViewModel(
         }
     }
 
-    suspend fun reloadProfile(profileId: String) {
+    suspend fun reloadProfile() {
         try {
             setLoading(true)
-            // 从 ProfilesStore 获取配置
-            val profile = profilesRepository.profiles.value.find { it.id == profileId }
-            if (profile == null) {
+            
+            // 查询活动配置
+            val activeProfile = profilesRepository.queryActiveProfile()
+            if (activeProfile == null) {
                 showError(MLang.Home.Message.ConfigSwitchFailed.format(MLang.ProfilesVM.Error.ProfileNotExist))
                 return
             }
 
-            // 重新加载配置
-            val result = clashManager.loadProfile(profile)
-            if (result.isSuccess) {
-                showMessage(MLang.Home.Message.ConfigSwitched)
-            } else {
-                showError(
-                    MLang.Home.Message.ConfigSwitchFailed.format(result.exceptionOrNull()?.message)
-                )
-            }
+            // 先更新配置文件（下载/导入）
+            profilesRepository.updateProfile(activeProfile.uuid)
+
+            // 热重载：不重启服务，直接让 service 侧重新 load 当前 profile
+            proxyFacade.reloadCurrentProfile().getOrThrow()
+            showMessage(MLang.Home.Message.ConfigSwitched)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to reload profile")
             showError(MLang.Home.Message.ConfigSwitchFailed.format(e.message))
         } finally {
             setLoading(false)
@@ -168,23 +199,39 @@ class HomeViewModel(
                 )
             }
 
-            val result = proxyFacade.startProxy(profileId, useTunMode)
-
-            result.fold(onSuccess = { intent ->
-                if (intent != null) {
-                    _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                    _vpnPrepareIntent.emit(intent)
-                    _displayRunning.value = false
-                    _isToggling.value = false
-                } else {
-                    _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
+            try {
+                // 设置活动配置
+                if (profileId.isNotBlank()) {
+                    profilesRepository.setActiveProfile(java.util.UUID.fromString(profileId))
                 }
-            }, onFailure = { error ->
+                
+                // 启动代理
+                val useTun = useTunMode ?: false
+                withTimeout(15_000L) {
+                    proxyFacade.startProxy(useTun)
+                }
+                
+                _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
+                _isToggling.value = false
+            } catch (e: com.github.yumelira.yumebox.remote.VpnPermissionRequired) {
+                // VPN 权限需要请求
+                _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
+                _vpnPrepareIntent.emit(e.intent)
+                _displayRunning.value = false
+                _isToggling.value = false
+                Timber.i("VPN permission required")
+            } catch (e: TimeoutCancellationException) {
+                _isToggling.value = false
+                _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
+                Timber.w(e, "Start proxy timeout")
+                showError(MLang.Home.Message.StartFailed.format("启动超时"))
+            } catch (e: Exception) {
                 _displayRunning.value = false
                 _isToggling.value = false
                 _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                showError(MLang.Home.Message.StartFailed.format(error.message))
-            })
+                Timber.e(e, "Failed to start proxy")
+                showError(MLang.Home.Message.StartFailed.format(e.message))
+            }
         }
     }
 
@@ -196,12 +243,14 @@ class HomeViewModel(
             _displayRunning.value = false
             setLoading(true)
 
-            val result = proxyFacade.stopProxy()
-            result.onSuccess {
+            try {
+                proxyFacade.stopProxy()
                 showMessage(MLang.Home.Message.ProxyStopped)
-            }.onFailure { e ->
+                _isToggling.value = false
+            } catch (e: Exception) {
                 _displayRunning.value = true
                 _isToggling.value = false
+                Timber.e(e, "Failed to stop proxy")
                 showError(MLang.Home.Message.StopFailed.format(e.message))
             }
 
@@ -209,24 +258,13 @@ class HomeViewModel(
         }
     }
 
-    private fun subscribeToLogs() {
-        viewModelScope.launch {
-            proxyFacade.logs.collect { log ->
-                _recentLogs.update { currentLogs ->
-                    buildList {
-                        add(log)
-                        addAll(currentLogs.take(49))
-                    }
-                }
-            }
-        }
-    }
-
     private fun startSpeedSampling(sampleLimit: Int = 24) {
         viewModelScope.launch {
             flow {
                 while (true) {
-                    emit(proxyFacade.trafficNow.value.download.coerceAtLeast(0L))
+                    val t = proxyFacade.trafficNow.value
+                    val d = TrafficData.from(t)
+                    emit((d.upload + d.download).coerceAtLeast(0L))
                     kotlinx.coroutines.delay(1000L)
                 }
             }.catch { }.collect { sample ->

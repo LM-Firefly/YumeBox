@@ -84,25 +84,25 @@
                 android:theme="@android:style/Theme.Material.Light.NoActionBar"/>
 
         <service
-                android:name=".service.ClashVpnService"
-                android:exported="false"
-                android:foregroundServiceType="specialUse"
-                android:permission="android.permission.BIND_VPN_SERVICE">
-            <intent-filter>
-                <action android:name="android.net.VpnService"/>
-            </intent-filter>
-            <property
-                    android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                    android:value="vpn_service"/>
-        </service>
-
-        <service
-                android:name=".service.ClashHttpService"
+                android:name=".service.TunService"
+                android:permission="android.permission.BIND_VPN_SERVICE"
                 android:exported="false"
                 android:foregroundServiceType="specialUse">
             <property
                     android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                    android:value="http_proxy_service"/>
+                    android:value="clash_vpn"/>
+            <intent-filter>
+                <action android:name="android.net.VpnService"/>
+            </intent-filter>
+        </service>
+
+        <service
+                android:name=".service.ClashService"
+                android:exported="false"
+                android:foregroundServiceType="specialUse">
+            <property
+                    android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                    android:value="clash_proxy"/>
         </service>
 
         <service
@@ -189,5 +189,12 @@
                     android:name="android.support.FILE_PROVIDER_PATHS"
                     android:resource="@xml/file_paths"/>
         </provider>
+
+        <provider
+                android:name=".service.StatusProvider"
+                android:authorities="${applicationId}.status"
+                android:enabled="true"
+                android:exported="false"/>
+
     </application>
 </manifest>

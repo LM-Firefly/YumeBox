@@ -18,45 +18,17 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -76,25 +48,16 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.data.model.Profile
-import com.github.yumelira.yumebox.data.model.ProfileType
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.ProfileLink
-import com.github.yumelira.yumebox.presentation.component.CenteredText
-import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
-import com.github.yumelira.yumebox.presentation.component.LocalBottomBarScrollBehavior
-import com.github.yumelira.yumebox.presentation.component.ProfileCard
-import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
-import com.github.yumelira.yumebox.presentation.icon.yume.Chromium
-import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
-import com.github.yumelira.yumebox.presentation.icon.yume.`Link-2`
-import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProfilesViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
+import com.github.yumelira.yumebox.service.data.model.Profile
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -107,29 +70,15 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.androidx.compose.koinViewModel
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SpinnerEntry
-import top.yukonga.miuix.kmp.extra.WindowBottomSheet
-import top.yukonga.miuix.kmp.extra.WindowDialog
-import top.yukonga.miuix.kmp.extra.WindowDropdown
-import top.yukonga.miuix.kmp.extra.WindowSpinner
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import java.io.File
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
@@ -238,9 +187,9 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                             if (!isDownloading) {
                                 isDownloading = true
                                 scope.launch {
-                                    profiles.filter { it.type == ProfileType.URL }.forEach { p ->
+                                    profiles.filter { it.type == Profile.Type.Url }.forEach { p ->
                                         try {
-                                            profilesViewModel.downloadProfile(p)
+                                            profilesViewModel.updateProfile(p.uuid)
                                         } catch (_: Exception) {
                                         }
                                     }
@@ -286,7 +235,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier.fillMaxSize().scrollEndHaptic().overScrollVertical()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scrollEndHaptic()
+                    .overScrollVertical()
                     .nestedScroll(scrollBehavior.nestedScrollConnection).let { mod ->
                         if (bottomBarScrollBehavior != null) {
                             mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
@@ -298,18 +250,19 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 ),
                 overscrollEffect = null,
             ) {
-                items(profiles.size, key = { profiles[it].id }) { index ->
+                items(
+                    items = profiles,
+                    key = { it.uuid.toString() }
+                ) { profile ->
                     ReorderableItem(
                         reorderableLazyListState,
-                        key = profiles[index].id
+                        key = profile.uuid.toString()
                     ) { isDragging ->
-                        val profile = profiles[index]
-
                         ProfileCard(
                             profile = profile,
                             workDir = File(
                                 com.github.yumelira.yumebox.App.instance.filesDir,
-                                "clash"
+                                "imported"
                             ),
                             isDownloading = isDownloading,
                             modifier = Modifier
@@ -325,7 +278,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                 if (!isDownloading) {
                                     isDownloading = true
                                     scope.launch {
-                                        profilesViewModel.downloadProfile(profile)
+                                        profilesViewModel.updateProfile(profile.uuid)
                                         isDownloading = false
                                     }
                                 }
@@ -340,19 +293,13 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                     showEditDialog.value = true
                                 }
                             },
-                            onToggleEnabled = { updatedProfile ->
+                            onToggleEnabled = { profile ->
                                 if (!isDownloading) {
                                     scope.launch {
-                                        profilesViewModel.toggleProfileEnabled(
-                                            profile = updatedProfile,
-                                            enabled = updatedProfile.enabled,
-                                            onProfileEnabled = { enabledProfile ->
-                                                if (isRunning) {
-                                                    scope.launch {
-                                                        homeViewModel.reloadProfile(enabledProfile.id)
-                                                    }
-                                                }
-                                            })
+                                        profilesViewModel.toggleProfileEnabled(profile.uuid)
+                                        if (isRunning) {
+                                            homeViewModel.reloadProfile()
+                                        }
                                     }
                                 }
                             })
@@ -367,12 +314,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
         show = showAddBottomSheet,
         profileToEdit = profileToEdit,
         importUrl = importUrlFromScheme ?: scannedUrl,
-        onAddProfile = { profile ->
-
-            profilesViewModel.addProfile(profile)
+        onAddProfile = { name, source, type, interval, fileUri ->
+            profilesViewModel.createProfile(type, name, source, interval, fileUri)
         },
-        onUpdateProfile = { profile ->
-            profilesViewModel.updateProfile(profile)
+        onUpdateProfile = { uuid, name, source, interval ->
+            profilesViewModel.patchProfile(uuid, name, source, interval)
         },
         onDownloadComplete = {
             isDownloading = false
@@ -384,7 +330,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     showDeleteDialog?.let { profile ->
         DeleteConfirmDialog(profileName = profile.name, onConfirm = {
-            profilesViewModel.removeProfile(profile.id)
+            profilesViewModel.deleteProfile(profile.uuid)
             showDeleteDialog = null
         }, onDismiss = { showDeleteDialog = null })
     }
@@ -400,10 +346,12 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             },
             onConfirm = { newName ->
                 if (newName.isNotBlank()) {
-                    val updatedProfile = currentProfileToEdit.copy(
-                        name = newName, updatedAt = System.currentTimeMillis()
+                    profilesViewModel.patchProfile(
+                        currentProfileToEdit.uuid,
+                        newName,
+                        currentProfileToEdit.source,
+                        currentProfileToEdit.interval
                     )
-                    profilesViewModel.updateProfile(updatedProfile)
                     showEditDialog.value = false
                 }
             })
@@ -419,14 +367,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 profilesViewModel.setOpenMode(mode)
             },
             onDefaultLinkChange = { linkId ->
-                profilesViewModel.setDefaultLink(linkId)
+                profilesViewModel.defaultLinkId.set(linkId)
             },
             onAddLink = {
                 linkToEdit = null
                 showAddLinkDialog.value = true
             },
             onDeleteLink = { linkId ->
-                profilesViewModel.removeLink(linkId)
+                val currentLinks = links
+                profilesViewModel.links.set(currentLinks.filter { it.id != linkId })
             },
             onOpenLink = { link ->
                 val context = com.github.yumelira.yumebox.App.instance
@@ -456,13 +405,22 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 newLinkUrl = ""
             },
             onConfirm = {
+                val currentLinks = links
                 if (currentLinkToEdit != null) {
-                    profilesViewModel.updateLink(currentLinkToEdit.id, newLinkName, newLinkUrl)
+                    // Update existing link
+                    profilesViewModel.links.set(currentLinks.map { 
+                        if (it.id == currentLinkToEdit.id) 
+                            it.copy(name = newLinkName, url = newLinkUrl)
+                        else it
+                    })
                 } else {
+                    // Add new link
                     val newLink = ProfileLink(
-                        id = UUID.randomUUID().toString(), name = newLinkName, url = newLinkUrl
+                        id = UUID.randomUUID().toString(), 
+                        name = newLinkName, 
+                        url = newLinkUrl
                     )
-                    profilesViewModel.addLink(newLink)
+                    profilesViewModel.links.set(currentLinks + newLink)
                 }
                 showAddLinkDialog.value = false
                 linkToEdit = null
@@ -477,16 +435,19 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             profileToShare = null
         }, onShareFile = { profile ->
             val context = com.github.yumelira.yumebox.App.instance
-            val importedDir = File(context.filesDir, "imported")
-            val profileDir = File(importedDir, profile.id)
-            val file = File(profileDir, "config.yaml")
-            if (file.exists()) {
-                try {
+            val file = File(File(context.filesDir, "imported"), "${profile.uuid}/config.yaml")
+                .takeIf { it.exists() }
+                ?: File(File(context.filesDir, "clash"), "profiles/${profile.uuid}/config.yaml").takeIf { it.exists() }
+
+            if (file == null) {
+                Toast.makeText(context, "配置文件不存在", Toast.LENGTH_SHORT).show()
+            } else {
+                runCatching {
                     val uri = FileProvider.getUriForFile(
                         context, "${context.packageName}.fileprovider", file
                     )
                     val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
+                        type = "application/x-yaml"
                         putExtra(Intent.EXTRA_STREAM, uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -497,18 +458,19 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         ).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         })
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                }.onFailure {
+                    Toast.makeText(context, it.message ?: "share failed", Toast.LENGTH_SHORT).show()
                 }
             }
             showShareDialog.value = false
             profileToShare = null
         }, onShareLink = { profile ->
             val context = com.github.yumelira.yumebox.App.instance
-            profile.remoteUrl?.let { url ->
+            val url = if (profile.type == Profile.Type.Url) profile.source else null
+            url?.let {
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, url)
+                    putExtra(Intent.EXTRA_TEXT, it)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(
@@ -578,8 +540,8 @@ private fun AddProfileSheet(
     show: MutableState<Boolean>,
     profileToEdit: Profile? = null,
     importUrl: String? = null,
-    onAddProfile: (Profile) -> Unit,
-    onUpdateProfile: (Profile) -> Unit = {},
+    onAddProfile: (name: String, source: String, type: Profile.Type, interval: Long, fileUri: android.net.Uri?) -> Unit,
+    onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long) -> Unit,
     onDownloadComplete: () -> Unit,
     profilesViewModel: ProfilesViewModel
 ) {
@@ -689,13 +651,13 @@ private fun AddProfileSheet(
             clearAllState()
             if (profileToEdit != null) {
                 name = profileToEdit.name
-                if (profileToEdit.type == ProfileType.URL) {
+                if (profileToEdit.type == Profile.Type.Url) {
                     selectedTypeIndex = 0
-                    url = profileToEdit.remoteUrl ?: ""
+                    url = profileToEdit.source
                 } else {
                     selectedTypeIndex = 1
-                    filePath = profileToEdit.config
-                    fileName = File(profileToEdit.config).name
+                    filePath = profileToEdit.source
+                    fileName = if (profileToEdit.source.isNotEmpty()) File(profileToEdit.source).name else ""
                 }
             } else if (!importUrl.isNullOrBlank()) {
                 selectedTypeIndex = 0
@@ -724,7 +686,7 @@ private fun AddProfileSheet(
     LaunchedEffect(downloadProgress) {
         val progress = downloadProgress
         if (progress != null) {
-            val currentProgress = progress.progress
+            val currentProgress = progress.percent
 
             if (downloadStartTime == 0L && currentProgress > 0) {
                 downloadStartTime = System.currentTimeMillis()
@@ -773,7 +735,7 @@ private fun AddProfileSheet(
 
             lastProgress = actualProgress
 
-            if (progress.progress == 100 && displayedProgress == 100 && !hasShownCompleteAnimation) {
+            if (progress.percent == 100 && displayedProgress == 100 && !hasShownCompleteAnimation) {
                 hasShownCompleteAnimation = true
 
                 delay(300)
@@ -1148,57 +1110,37 @@ private fun AddProfileSheet(
 
                                                 if (typeIndex == 0) {
                                                     if (profileToEdit != null) {
-                                                        val updatedProfile = profileToEdit.copy(
-                                                            name = name,
-                                                            remoteUrl = url,
-                                                            updatedAt = System.currentTimeMillis()
+                                                        onUpdateProfile(
+                                                            profileToEdit.uuid,
+                                                            name,
+                                                            url,
+                                                            profileToEdit.interval
                                                         )
-                                                        onUpdateProfile(updatedProfile)
-                                                        show.value = false
                                                     } else {
-                                                        scope.launch {
-                                                            val profile = Profile(
-                                                                id = UUID.randomUUID().toString(),
-                                                                name = name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
-                                                                config = "",
-                                                                remoteUrl = url,
-                                                                type = ProfileType.URL,
-                                                                createdAt = System.currentTimeMillis(),
-                                                                updatedAt = System.currentTimeMillis()
-                                                            )
-
-                                                            val downloadedProfile =
-                                                                profilesViewModel.downloadProfile(
-                                                                    profile, saveToDb = true
-                                                                )
-                                                            if (downloadedProfile != null && downloadedProfile.config.isNotBlank()) {
-                                                            } else {
-                                                                isDownloading = false
-                                                                profilesViewModel.clearDownloadProgress()
-                                                            }
-                                                        }
+                                                        onAddProfile(
+                                                            name.trim(),
+                                                            url,
+                                                            Profile.Type.Url,
+                                                            0L,
+                                                            null  // URL类型不需要fileUri
+                                                        )
                                                     }
                                                 } else {
                                                     if (profileToEdit != null) {
-                                                        val updatedProfile = profileToEdit.copy(
-                                                            name = name,
-                                                            updatedAt = System.currentTimeMillis()
+                                                        onUpdateProfile(
+                                                            profileToEdit.uuid,
+                                                            name,
+                                                            profileToEdit.source,
+                                                            profileToEdit.interval
                                                         )
-                                                        onUpdateProfile(updatedProfile)
-                                                        show.value = false
                                                     } else {
-                                                        scope.launch {
-                                                            val importedProfile =
-                                                                profilesViewModel.importProfileFromFile(
-                                                                    filePath.toUri(),
-                                                                    name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
-                                                                    saveToDb = true
-                                                                )
-                                                            isDownloading = false
-                                                            if (importedProfile != null) {
-                                                                show.value = false
-                                                            }
-                                                        }
+                                                        onAddProfile(
+                                                            name.trim(),
+                                                            filePath,
+                                                            Profile.Type.File,
+                                                            0L,
+                                                            android.net.Uri.parse(filePath)  // File类型需要传递fileUri
+                                                        )
                                                     }
                                                 }
                                             },
@@ -1614,7 +1556,7 @@ private fun ShareOptionsDialog(
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (profile.remoteUrl != null) {
+            if (profile.type == Profile.Type.Url) {
                 Button(
                     onClick = { onShareLink(profile) },
                     modifier = Modifier.fillMaxWidth(),

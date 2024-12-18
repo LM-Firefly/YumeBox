@@ -66,7 +66,9 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
 fun ProxyPager(
-    mainInnerPadding: PaddingValues, navigator: DestinationsNavigator
+    mainInnerPadding: PaddingValues,
+    navigator: DestinationsNavigator,
+    isActive: Boolean
 ) {
     val context = LocalContext.current
     val proxyViewModel = koinViewModel<ProxyViewModel>()
@@ -83,6 +85,12 @@ fun ProxyPager(
     val showGroupBottomSheet = rememberSaveable { mutableStateOf(false) }
     var sheetGroupName by rememberSaveable { mutableStateOf<String?>(null) }
     val onTestDelay = remember { { proxyViewModel.testDelay() } }
+
+    LaunchedEffect(isActive) {
+        if (isActive) {
+            proxyViewModel.ensureCoreLoaded()
+        }
+    }
 
     Scaffold(
         topBar = {

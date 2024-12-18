@@ -200,7 +200,7 @@ private fun ProjectLinks(context: Context) {
                     imageVector = Yume.Github,
                     contentDescription = null,
                     tint = MiuixTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.padding(end = 10.dp),
                 )
             },
         )
@@ -213,7 +213,7 @@ private fun ProjectLinks(context: Context) {
                     imageVector = Yume.Message,
                     contentDescription = null,
                     tint = MiuixTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.padding(end = 10.dp),
                 )
             },
         )

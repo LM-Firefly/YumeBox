@@ -21,27 +21,22 @@
 package com.github.yumelira.yumebox.core.util
 
 import android.annotation.SuppressLint
+import com.github.yumelira.yumebox.core.model.Traffic
 
 
 @SuppressLint("DefaultLocale")
 private fun trafficString(scaled: Long): String {
     return when {
-        scaled > 1024 * 1024 * 1024 * 100L -> {
-            val data = scaled / 1024 / 1024 / 1024
-
-            String.format("%.2f GiB", data.toFloat() / 100)
+        scaled >= 1024L * 1024L * 1024L -> {
+            String.format("%.2f GiB", scaled.toDouble() / (1024.0 * 1024.0 * 1024.0))
         }
 
-        scaled > 1024 * 1024 * 100L -> {
-            val data = scaled / 1024 / 1024
-
-            String.format("%.2f MiB", data.toFloat() / 100)
+        scaled >= 1024L * 1024L -> {
+            String.format("%.2f MiB", scaled.toDouble() / (1024.0 * 1024.0))
         }
 
-        scaled > 1024 * 100L -> {
-            val data = scaled / 1024
-
-            String.format("%.2f KiB", data.toFloat() / 100)
+        scaled >= 1024L -> {
+            String.format("%.2f KiB", scaled.toDouble() / 1024.0)
         }
 
         else -> {
@@ -52,13 +47,28 @@ private fun trafficString(scaled: Long): String {
 
 private fun scaleTraffic(value: Long): Long {
     val type = (value ushr 30) and 0x3
-    val data = value and 0x3FFFFFFF
+    val data = value and 0x3FFFFFFFL
 
     return when (type) {
         0L -> data
-        1L -> data * 1024
-        2L -> data * 1024 * 1024
-        3L -> data * 1024 * 1024 * 1024
+        1L -> (data * 1024L) / 100L
+        2L -> (data * 1024L * 1024L) / 100L
+        3L -> (data * 1024L * 1024L * 1024L) / 100L
         else -> throw IllegalArgumentException("invalid value type")
     }
+}
+
+fun Traffic.trafficUpload(): String {
+    return trafficString(scaleTraffic(this ushr 32))
+}
+
+fun Traffic.trafficDownload(): String {
+    return trafficString(scaleTraffic(this and 0xFFFFFFFFL))
+}
+
+fun Traffic.trafficTotal(): String {
+    val upload = scaleTraffic(this ushr 32)
+    val download = scaleTraffic(this and 0xFFFFFFFFL)
+
+    return trafficString(upload + download)
 }

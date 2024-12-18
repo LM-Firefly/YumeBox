@@ -20,7 +20,6 @@
 
 package com.github.yumelira.yumebox.di
 
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.repository.*
 import com.github.yumelira.yumebox.data.store.*
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
@@ -51,6 +50,7 @@ val appModule = module {
     single<MMKV>(named("proxy_display")) { get<MMKVProvider>().getMMKV("proxy_display") }
     single<MMKV>(named("traffic_statistics")) { get<MMKVProvider>().getMMKV("traffic_statistics") }
     single<MMKV>(named("profile_links")) { get<MMKVProvider>().getMMKV("profile_links") }
+    single<MMKV>(named("service_cache")) { get<MMKVProvider>().getMMKV("service_cache") }
 
     single { AppSettingsStorage(get<MMKV>(named("settings"))) }
     single { NetworkSettingsStorage(get(named("network_settings"))) }
@@ -60,34 +60,31 @@ val appModule = module {
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
     single { TrafficStatisticsStore(get(named("traffic_statistics"))) }
 
-    single(createdAtStart = false) {
-        ClashManager(
-            androidContext(),
-            androidApplication().filesDir.resolve("clash"),
-            proxyModeProvider = { get<ProxyDisplaySettingsStore>().proxyMode.value }
-        )
-    }
-
+    // Repositories
     single { NetworkInfoService() }
-    single { ProxyConnectionService(androidContext(), get(), get()) }
     single { ProxyChainResolver() }
+    single { OverrideRepository(androidContext()) }
+    single { ProvidersRepository(androidContext()) }
+
+    // Service gateway (singleton)
+    single { com.github.yumelira.yumebox.remote.ServiceClient }
+
+    // Facades
+    single { ProxyFacade(androidContext()) }
+    single { ProfilesRepository(androidContext()) }
+    
+    // Collectors
     single { TrafficStatisticsCollector(get(), get()) }
-    single { SelectionDao(androidContext()) }
-    single { OverrideRepository() }
-    single { ProvidersRepository() }
 
-    single { ProxyFacade(get(), get(), get()) }
-    single { ProfilesRepository(get()) }
-
+    // ViewModels
     viewModel { AppSettingsViewModel(get()) }
-    viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get(), get()) }
     viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
-    viewModel { ProxyViewModel(get<ClashManager>(), get(), get()) }
+    viewModel { ProxyViewModel(get(), get(), get(), get()) }
     viewModel { ProvidersViewModel(get(), get()) }
-    viewModel { LogViewModel(androidApplication()) }
     viewModel { SettingViewModel(get()) }
     viewModel { FeatureViewModel(get(), androidApplication()) }
-    viewModel { NetworkSettingsViewModel(androidApplication(), get(), get(), get(), get()) }
+    viewModel { NetworkSettingsViewModel(androidApplication(), get(), get(), get()) }
     viewModel { AccessControlViewModel(androidApplication(), get()) }
     viewModel { OverrideViewModel(get()) }
     viewModel { TrafficStatisticsViewModel(androidApplication(), get()) }

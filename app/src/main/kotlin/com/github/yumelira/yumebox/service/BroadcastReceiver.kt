@@ -76,7 +76,7 @@ class RestartReceiver : BroadcastReceiver() {
                         context.startService(serviceIntent)
                     }
                 } catch (e: Exception) {
-                    // 忽略启动失败（可能是因为应用在后台）
+                    Timber.e(e, "启动自动重启服务失败")
                 }
             }
         }

@@ -19,7 +19,6 @@
  */
 
 package com.github.yumelira.yumebox.presentation.screen
-
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
