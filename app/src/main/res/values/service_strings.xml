@@ -4,8 +4,6 @@
     <string name="clash_notification_content" translatable="false">%1$s↑\t%2$s↓</string>
 
     <string name="clash_service_status_channel">Clash Status</string>
-    <string name="running">Running</string>
-    <string name="loading">Loading</string>
     <string name="clash_meta_for_android">YumeBox</string>
     <string name="profiles_and_providers">Profiles and Providers</string>
     <string name="configuration_yaml">Configuration.yaml</string>

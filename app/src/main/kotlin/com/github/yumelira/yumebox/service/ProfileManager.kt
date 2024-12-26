@@ -3,6 +3,7 @@ package com.github.yumelira.yumebox.service
 import android.content.Context
 import com.github.yumelira.yumebox.service.data.ImportedDao
 import com.github.yumelira.yumebox.service.data.PendingDao
+import com.github.yumelira.yumebox.service.data.ProfileStore
 import com.github.yumelira.yumebox.service.data.model.Imported
 import com.github.yumelira.yumebox.service.data.model.Pending
 import com.github.yumelira.yumebox.service.data.model.Profile
@@ -186,7 +187,13 @@ class ProfileManager(private val context: Context) : IProfileManager,
             (ImportedDao.queryAllUUIDs() + PendingDao.queryAllUUIDs()).distinct()
         }
 
+        val orderIndex = ProfileStore.loadProfileOrder()
+            .withIndex()
+            .associate { it.value to it.index }
+
         return uuids.mapNotNull { resolveProfile(it) }
+            .sortedWith(compareBy<Profile> { orderIndex[it.uuid] ?: Int.MAX_VALUE }
+                .thenByDescending { it.updatedAt })
     }
 
     override suspend fun queryActive(): Profile? {
@@ -209,6 +216,22 @@ class ProfileManager(private val context: Context) : IProfileManager,
         store.activeProfile = null
         StatusProvider.currentProfile = null
         context.sendProfileChanged(profile.uuid)
+    }
+
+    override suspend fun reorder(uuids: List<UUID>) {
+        val existing = (ImportedDao.queryAllUUIDs() + PendingDao.queryAllUUIDs()).distinct()
+        val existingSet = existing.toSet()
+
+        val normalized = buildList {
+            uuids.forEach { uuid ->
+                if (uuid in existingSet && uuid !in this) add(uuid)
+            }
+            existing.forEach { uuid ->
+                if (uuid !in this) add(uuid)
+            }
+        }
+
+        ProfileStore.saveProfileOrder(normalized)
     }
 
     private suspend fun resolveProfile(uuid: UUID): Profile? {

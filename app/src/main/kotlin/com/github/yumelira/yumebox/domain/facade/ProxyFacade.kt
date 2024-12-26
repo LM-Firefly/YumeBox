@@ -247,16 +247,18 @@ class ProxyFacade(private val context: Context) {
     suspend fun stopProxy() {
         Timber.i("Stopping proxy service")
 
-        runCatching {
-            ServiceClient.connect(appContext)
-            ServiceClient.clash().requestStop()
-        }.onFailure {
-            appContext.sendBroadcast(Intent(actionClashRequestStop).setPackage(appContext.packageName))
-            context.stopService(Intent(context, TunService::class.java))
-            context.stopService(Intent(context, ClashService::class.java))
-        }
+        withContext(Dispatchers.IO) {
+            runCatching {
+                ServiceClient.connect(appContext)
+                ServiceClient.clash().requestStop()
+            }.onFailure {
+                appContext.sendBroadcast(Intent(actionClashRequestStop).setPackage(appContext.packageName))
+                context.stopService(Intent(context, TunService::class.java))
+                context.stopService(Intent(context, ClashService::class.java))
+            }
 
-        runCatching { ServiceClient.disconnect() }
+            runCatching { ServiceClient.disconnect() }
+        }
 
         updateServiceState(false)
         stopTrafficPolling()

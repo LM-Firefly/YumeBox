@@ -26,6 +26,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -69,6 +70,12 @@ fun NetworkSettingsScreen(
     val systemProxy by viewModel.systemProxy.state.collectAsState()
     val tunStack by viewModel.tunStack.state.collectAsState()
     val accessControlMode by viewModel.accessControlMode.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.errors.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
 
 
     val vpnPermissionLauncher = rememberLauncherForActivityResult(

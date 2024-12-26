@@ -10,6 +10,7 @@ import com.tencent.mmkv.MMKV
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import java.util.UUID
 
 /**
  * MMKV-based storage manager for profile data
@@ -62,6 +63,21 @@ object ProfileStore {
         val jsonString = mmkv.decodeString("selections") ?: return emptyList()
         return try {
             json.decodeFromString(ListSerializer(Selection.serializer()), jsonString)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // Profile order operations
+    fun saveProfileOrder(order: List<UUID>) {
+        val jsonString = json.encodeToString(ListSerializer(UUIDSerializer()), order)
+        mmkv.encode("profile_order", jsonString)
+    }
+
+    fun loadProfileOrder(): List<UUID> {
+        val jsonString = mmkv.decodeString("profile_order") ?: return emptyList()
+        return try {
+            json.decodeFromString(ListSerializer(UUIDSerializer()), jsonString)
         } catch (e: Exception) {
             emptyList()
         }

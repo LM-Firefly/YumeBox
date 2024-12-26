@@ -7,7 +7,6 @@ import com.github.yumelira.yumebox.service.notification.ServiceNotificationManag
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.clash.clashRuntime
 import com.github.yumelira.yumebox.service.clash.module.*
-import com.github.yumelira.yumebox.service.util.cancelAndJoinBlocking
 import com.github.yumelira.yumebox.service.util.sendClashStarted
 import com.github.yumelira.yumebox.service.util.sendClashStopped
 import kotlinx.coroutines.Job
@@ -77,7 +76,7 @@ class ClashService : BaseService() {
         notificationManager.createChannel()
         startForeground(
             ServiceNotificationManager.HTTP_CONFIG.notificationId,
-            notificationManager.createLoadingNotification()
+            notificationManager.createInitialNotification()
         )
 
         runtime.launch()
@@ -103,8 +102,6 @@ class ClashService : BaseService() {
         StatusProvider.serviceRunning = false
 
         sendClashStopped(reason)
-
-        cancelAndJoinBlocking()
 
         Log.i("ClashService destroyed: ${reason ?: "successfully"}")
 

@@ -124,6 +124,12 @@ class ProfilesRepository(private val context: Context) {
         ServiceClient.profile().clearActive(profile)
     }
 
+    suspend fun reorderProfiles(uuids: List<UUID>) {
+        Timber.d("Reordering profiles: count=${uuids.size}")
+        ServiceClient.connect(context)
+        ServiceClient.profile().reorder(uuids)
+    }
+
     /**
      * Update profile (fetch latest config)
      * @param uuid UUID of profile to update
