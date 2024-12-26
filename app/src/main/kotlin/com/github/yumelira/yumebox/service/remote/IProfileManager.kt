@@ -16,4 +16,5 @@ interface IProfileManager {
     suspend fun queryActive(): Profile?
     suspend fun setActive(profile: Profile)
     suspend fun clearActive(profile: Profile)
+    suspend fun reorder(uuids: List<UUID>)
 }

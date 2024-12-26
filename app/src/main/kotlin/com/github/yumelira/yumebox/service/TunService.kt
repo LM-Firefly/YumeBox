@@ -15,7 +15,6 @@ import com.github.yumelira.yumebox.service.common.compat.pendingIntentFlags
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.model.AccessControlMode
 import com.github.yumelira.yumebox.service.store.ServiceStore
-import com.github.yumelira.yumebox.service.util.cancelAndJoinBlocking
 import com.github.yumelira.yumebox.service.util.parseCIDR
 import com.github.yumelira.yumebox.service.util.sendClashStarted
 import com.github.yumelira.yumebox.service.util.sendClashStopped
@@ -96,7 +95,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         notificationManager.createChannel()
         startForeground(
             ServiceNotificationManager.VPN_CONFIG.notificationId,
-            notificationManager.createLoadingNotification()
+            notificationManager.createInitialNotification()
         )
 
         runtime.launch()
@@ -120,8 +119,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         StatusProvider.serviceRunning = false
 
         sendClashStopped(reason)
-
-        cancelAndJoinBlocking()
 
         Log.i("TunService destroyed: ${reason ?: "successfully"}")
 

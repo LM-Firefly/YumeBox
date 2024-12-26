@@ -30,15 +30,20 @@ import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.Preference
-import com.github.yumelira.yumebox.domain.model.RunningMode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class NetworkSettingsViewModel(
     application: Application,
@@ -57,6 +62,8 @@ class NetworkSettingsViewModel(
     val systemProxy: Preference<Boolean> = storage.systemProxy
     val tunStack: Preference<TunStack> = storage.tunStack
     val accessControlMode: Preference<AccessControlMode> = storage.accessControlMode
+    private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val errors: SharedFlow<String> = _errors.asSharedFlow()
 
 
     val serviceState: StateFlow<ServiceState> = proxyFacade.isRunning
@@ -125,22 +132,29 @@ class NetworkSettingsViewModel(
     fun startService(mode: ProxyMode) {
         viewModelScope.launch {
             try {
-                val activeProfile = profilesRepository.queryActiveProfile()
+                val activeProfile = withContext(Dispatchers.IO) {
+                    profilesRepository.queryActiveProfile()
+                }
                 if (activeProfile == null) {
-                    // TODO: show error
+                    _errors.tryEmit("No active profile selected")
                     return@launch
                 }
                 
                 // 停止现有服务并启动新服务
                 if (proxyFacade.isRunning.value) {
-                    proxyFacade.stopProxy()
+                    withContext(Dispatchers.IO) {
+                        proxyFacade.stopProxy()
+                    }
                     delay(500)
                 }
                 
                 val useTun = mode == ProxyMode.Tun
-                proxyFacade.startProxy(useTun)
+                withContext(Dispatchers.IO) {
+                    proxyFacade.startProxy(useTun)
+                }
             } catch (e: Exception) {
-                // TODO: handle error
+                Timber.e(e, "Failed to start service in NetworkSettings")
+                _errors.tryEmit(e.message ?: "Failed to start proxy service")
             }
         }
     }
@@ -150,20 +164,27 @@ class NetworkSettingsViewModel(
             try {
                 if (!proxyFacade.isRunning.value) return@launch
                 
-                val activeProfile = profilesRepository.queryActiveProfile()
+                val activeProfile = withContext(Dispatchers.IO) {
+                    profilesRepository.queryActiveProfile()
+                }
                 if (activeProfile == null) {
-                    // TODO: show error
+                    _errors.tryEmit("No active profile selected")
                     return@launch
                 }
                 
                 // 停止并重启服务
-                proxyFacade.stopProxy()
+                withContext(Dispatchers.IO) {
+                    proxyFacade.stopProxy()
+                }
                 delay(500)
                 
                 val useTun = proxyMode.value == ProxyMode.Tun
-                proxyFacade.startProxy(useTun)
+                withContext(Dispatchers.IO) {
+                    proxyFacade.startProxy(useTun)
+                }
             } catch (e: Exception) {
-                // TODO: handle error
+                Timber.e(e, "Failed to restart service in NetworkSettings")
+                _errors.tryEmit(e.message ?: "Failed to restart proxy service")
             }
         }
     }

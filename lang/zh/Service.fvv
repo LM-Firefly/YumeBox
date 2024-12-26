@@ -5,6 +5,7 @@ Service = {
         ActionDisconnect = "断开"
         ConnectedWithProfile = "已连接: %s"
         Connected = "已连接"
+        Running = "运行中"
         TrafficFormat = "总计: %s"
         UnknownProfile = "未知配置"
     }
