@@ -23,6 +23,7 @@ package com.github.yumelira.yumebox.remote
 import android.content.Context
 import com.github.yumelira.yumebox.service.ClashManager
 import com.github.yumelira.yumebox.service.ProfileManager
+import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.IProfileManager
 import kotlinx.coroutines.sync.Mutex
@@ -47,8 +48,7 @@ object ServiceClient {
 
             try {
                 val app = appContext as android.app.Application
-                com.github.yumelira.yumebox.service.common.Global.init(app)
-                com.github.yumelira.yumebox.service.common.util.Global.init(app)
+                initializeServiceGlobal(app)
 
                 clashManager = ClashManager(appContext)
                 profileManager = ProfileManager(appContext)

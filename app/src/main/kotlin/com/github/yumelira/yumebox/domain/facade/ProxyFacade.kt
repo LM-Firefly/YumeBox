@@ -33,6 +33,7 @@ import com.github.yumelira.yumebox.core.model.Traffic
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.common.constants.Intents
 import kotlinx.coroutines.delay
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
@@ -57,15 +58,13 @@ class ProxyFacade(private val context: Context) {
     private val appContext: Context = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // NOTE: service 模块的 Intents 依赖 service 进程的 Global.application，不能在 app 进程直接引用。
-    // 这里用应用包名动态拼 action，保持与 service/common/constants/Intents.kt 一致。
-    private val actionServiceRecreated: String get() = "${appContext.packageName}.intent.action.CLASH_RECREATED"
-    private val actionClashStarted: String get() = "${appContext.packageName}.intent.action.CLASH_STARTED"
-    private val actionClashStopped: String get() = "${appContext.packageName}.intent.action.CLASH_STOPPED"
-    private val actionClashRequestStop: String get() = "${appContext.packageName}.intent.action.CLASH_REQUEST_STOP"
-    private val actionProfileChanged: String get() = "${appContext.packageName}.intent.action.PROFILE_CHANGED"
-    private val actionProfileLoaded: String get() = "${appContext.packageName}.intent.action.PROFILE_LOADED"
-    private val actionOverrideChanged: String get() = "${appContext.packageName}.intent.action.OVERRIDE_CHANGED"
+    private val actionServiceRecreated: String get() = Intents.actionServiceRecreated(appContext.packageName)
+    private val actionClashStarted: String get() = Intents.actionClashStarted(appContext.packageName)
+    private val actionClashStopped: String get() = Intents.actionClashStopped(appContext.packageName)
+    private val actionClashRequestStop: String get() = Intents.actionClashRequestStop(appContext.packageName)
+    private val actionProfileChanged: String get() = Intents.actionProfileChanged(appContext.packageName)
+    private val actionProfileLoaded: String get() = Intents.actionProfileLoaded(appContext.packageName)
+    private val actionOverrideChanged: String get() = Intents.actionOverrideChanged(appContext.packageName)
 
     // Service running state
     private val _isRunning = MutableStateFlow(false)
@@ -216,8 +215,8 @@ class ProxyFacade(private val context: Context) {
             context.startService(serviceIntent)
         }
 
-        // Best-effort readiness check with timeout to avoid UI getting stuck in "loading".
-        val ready = withTimeoutOrNull(5_000L) {
+        // Readiness check: only mark running after proxy groups are available.
+        val ready = withTimeoutOrNull(8_000L) {
             while (true) {
                 val groups = withContext(Dispatchers.IO) {
                     runCatching {
@@ -232,7 +231,19 @@ class ProxyFacade(private val context: Context) {
         } == true
 
         if (!ready) {
-            Timber.w("Proxy runtime readiness timed out; continue with async refresh")
+            val groups = runCatching {
+                ServiceClient.clash().queryProxyGroupNames(excludeNotSelectable = false)
+            }.getOrDefault(emptyList())
+
+            if (groups.isEmpty()) {
+                updateServiceState(false)
+                stopTrafficPolling()
+                _proxyGroups.value = emptyList()
+                _trafficNow.value = 0L
+                _trafficTotal.value = 0L
+                Timber.w("Proxy runtime readiness failed: no proxy groups available")
+                throw IllegalStateException("代理启动失败：配置未成功加载（可能是配置校验失败或网络资源下载失败）")
+            }
         }
 
         updateServiceState(true)

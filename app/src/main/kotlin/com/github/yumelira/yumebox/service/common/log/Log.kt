@@ -1,11 +1,12 @@
 package com.github.yumelira.yumebox.service.common.log
 
-// Re-export from common Log
-import com.github.yumelira.yumebox.service.common.Log as CommonLog
+import android.util.Log as AndroidLog
 
 object Log {
-    fun d(message: String) = CommonLog.d(message)
-    fun i(message: String) = CommonLog.i(message)
-    fun w(message: String, throwable: Throwable? = null) = CommonLog.w(message, throwable)
-    fun e(message: String, throwable: Throwable? = null) = CommonLog.e(message, throwable)
+    private const val TAG = "YumeBox"
+
+    fun d(message: String, throwable: Throwable? = null) = AndroidLog.d(TAG, message, throwable)
+    fun i(message: String, throwable: Throwable? = null) = AndroidLog.i(TAG, message, throwable)
+    fun w(message: String, throwable: Throwable? = null) = AndroidLog.w(TAG, message, throwable)
+    fun e(message: String, throwable: Throwable? = null) = AndroidLog.e(TAG, message, throwable)
 }

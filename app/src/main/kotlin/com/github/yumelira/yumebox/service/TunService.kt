@@ -13,6 +13,7 @@ import com.github.yumelira.yumebox.service.clash.clashRuntime
 import com.github.yumelira.yumebox.service.clash.module.*
 import com.github.yumelira.yumebox.service.common.compat.pendingIntentFlags
 import com.github.yumelira.yumebox.service.common.constants.Components
+import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.model.AccessControlMode
 import com.github.yumelira.yumebox.service.store.ServiceStore
 import com.github.yumelira.yumebox.service.util.parseCIDR
@@ -80,10 +81,9 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     override fun onCreate() {
         super.onCreate()
-        // Ensure service-side Globals are initialized for constants/broadcasts.
+        // Ensure service-side globals are initialized for constants/broadcasts.
         val app = applicationContext as android.app.Application
-        com.github.yumelira.yumebox.service.common.Global.init(app)
-        com.github.yumelira.yumebox.service.common.util.Global.init(app)
+        initializeServiceGlobal(app)
 
         if (StatusProvider.serviceRunning)
             return stopSelf()
