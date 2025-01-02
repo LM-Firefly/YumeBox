@@ -11,5 +11,9 @@ object Global {
     }
 }
 
+fun initializeServiceGlobal(app: Application) {
+    Global.init(app)
+}
+
 val packageName: String
     get() = Global.application.packageName
