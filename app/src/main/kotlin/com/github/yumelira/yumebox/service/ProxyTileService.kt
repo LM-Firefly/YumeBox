@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.service
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -92,7 +93,7 @@ class ProxyTileService : TileService() {
                         val intent = Intent(this@ProxyTileService, MainActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
-                        startActivityAndCollapse(intent)
+                        startActivityAndCollapseCompat(intent)
                         return@launch
                     }
                     
@@ -102,12 +103,27 @@ class ProxyTileService : TileService() {
                     } catch (e: VpnPermissionRequired) {
                         val intent = e.intent
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivityAndCollapse(intent)
+                        startActivityAndCollapseCompat(intent)
                     }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error toggling proxy from tile")
             }
+        }
+    }
+
+    private fun startActivityAndCollapseCompat(intent: Intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            startActivityAndCollapse(pendingIntent)
+        } else {
+            @Suppress("DEPRECATION")
+            startActivityAndCollapse(intent)
         }
     }
 

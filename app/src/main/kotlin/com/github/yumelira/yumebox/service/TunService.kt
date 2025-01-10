@@ -13,6 +13,7 @@ import com.github.yumelira.yumebox.service.clash.clashRuntime
 import com.github.yumelira.yumebox.service.clash.module.*
 import com.github.yumelira.yumebox.service.common.compat.pendingIntentFlags
 import com.github.yumelira.yumebox.service.common.constants.Components
+import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.model.AccessControlMode
 import com.github.yumelira.yumebox.service.store.ServiceStore
@@ -31,6 +32,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         ServiceNotificationManager(this, ServiceNotificationManager.VPN_CONFIG)
     }
     private var notificationJob: Job? = null
+    private var periodicGcJob: Job? = null
 
     private val runtime = clashRuntime {
         val close = install(CloseModule(self))
@@ -92,6 +94,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         Log.i("TunService created in pid=${android.os.Process.myPid()}")
 
+        CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
+
         notificationManager.createChannel()
         startForeground(
             ServiceNotificationManager.VPN_CONFIG.notificationId,
@@ -113,6 +117,8 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     override fun onDestroy() {
         notificationJob?.cancel()
         notificationJob = null
+        periodicGcJob?.cancel()
+        periodicGcJob = null
 
         TunModule.requestStop()
 

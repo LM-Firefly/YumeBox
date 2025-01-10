@@ -7,6 +7,7 @@ import com.github.yumelira.yumebox.service.notification.ServiceNotificationManag
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.clash.clashRuntime
 import com.github.yumelira.yumebox.service.clash.module.*
+import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
 import com.github.yumelira.yumebox.service.util.sendClashStarted
 import com.github.yumelira.yumebox.service.util.sendClashStopped
 import kotlinx.coroutines.Job
@@ -24,6 +25,7 @@ class ClashService : BaseService() {
         ServiceNotificationManager(this, ServiceNotificationManager.HTTP_CONFIG)
     }
     private var notificationJob: Job? = null
+    private var periodicGcJob: Job? = null
 
     private val runtime = clashRuntime {
         val close = install(CloseModule(self))
@@ -73,6 +75,8 @@ class ClashService : BaseService() {
 
         Log.i("ClashService created in pid=${android.os.Process.myPid()}")
 
+        CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
+
         notificationManager.createChannel()
         startForeground(
             ServiceNotificationManager.HTTP_CONFIG.notificationId,
@@ -98,6 +102,8 @@ class ClashService : BaseService() {
     override fun onDestroy() {
         notificationJob?.cancel()
         notificationJob = null
+        periodicGcJob?.cancel()
+        periodicGcJob = null
 
         StatusProvider.serviceRunning = false
 
