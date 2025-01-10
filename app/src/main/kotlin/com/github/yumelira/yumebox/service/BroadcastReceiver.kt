@@ -31,6 +31,7 @@ class DialerReceiver : BroadcastReceiver() {
 
     companion object {
         private const val SECRET_CODE = "*#*#0721#*#*"
+        private const val ACTION_NEW_OUTGOING_CALL = "android.intent.action.NEW_OUTGOING_CALL"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -39,7 +40,7 @@ class DialerReceiver : BroadcastReceiver() {
                 startMainActivity(context)
             }
 
-            Intent.ACTION_NEW_OUTGOING_CALL -> {
+            ACTION_NEW_OUTGOING_CALL -> {
                 val phoneNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER)
                 if (SECRET_CODE == phoneNumber) {
                     setResultData(null)

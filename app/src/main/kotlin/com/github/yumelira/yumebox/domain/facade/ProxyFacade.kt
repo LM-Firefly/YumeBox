@@ -38,6 +38,7 @@ import kotlinx.coroutines.delay
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
 import com.github.yumelira.yumebox.service.ClashService
+import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.TunService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -117,19 +118,23 @@ class ProxyFacade(private val context: Context) {
     init {
         registerServiceEventReceiver()
 
-        // Best-effort sync when app process starts while proxy is already running.
-        scope.launch {
-            runCatching {
-                ServiceClient.connect(appContext)
-                refreshCurrentProfile()
-                val groups = ServiceClient.clash().queryProxyGroupNames(excludeNotSelectable = false)
-                if (groups.isNotEmpty()) {
-                    updateServiceState(true)
-                    startTrafficPolling()
-                    refreshAll()
+        // In single-process mode, avoid touching Clash core when service is not running.
+        // Querying proxy groups here would initialize native core eagerly and increase idle RSS.
+        if (StatusProvider.serviceRunning) {
+            // Best-effort sync when service is already running in current process.
+            scope.launch {
+                runCatching {
+                    ServiceClient.connect(appContext)
+                    refreshCurrentProfile()
+                    val groups = ServiceClient.clash().queryProxyGroupNames(excludeNotSelectable = false)
+                    if (groups.isNotEmpty()) {
+                        updateServiceState(true)
+                        startTrafficPolling()
+                        refreshAll()
+                    }
+                }.onFailure { e ->
+                    Timber.d(e, "Initial proxy state sync skipped")
                 }
-            }.onFailure { e ->
-                Timber.d(e, "Initial proxy state sync skipped")
             }
         }
     }
