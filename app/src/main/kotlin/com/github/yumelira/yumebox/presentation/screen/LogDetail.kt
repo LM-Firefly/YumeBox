@@ -22,10 +22,6 @@ package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
@@ -54,13 +51,13 @@ import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.viewmodel.LogViewModel
-import dev.oom_wg.purejoy.mlang.MLang
-import com.github.yumelira.yumebox.service.LogRecordService
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
@@ -73,54 +70,58 @@ import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 @Composable
 @Destination<RootGraph>
 fun LogDetailScreen(
     navigator: DestinationsNavigator,
-    filePath: String
+    fileName: String,
 ) {
     val viewModel = koinViewModel<LogViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
     val isRecording by viewModel.isRecording.collectAsState()
 
-    val file = remember { File(filePath) }
-    var logEntries by remember { mutableStateOf<List<LogViewModel.LogEntry>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var logEntries by remember(fileName) { mutableStateOf<List<LogViewModel.LogEntry>>(emptyList()) }
+    var isLoading by remember(fileName) { mutableStateOf(true) }
+    var lastFileSize by remember(fileName) { mutableStateOf<Long?>(null) }
 
-    val isCurrentFileRecording = isRecording && file.name == LogRecordService.currentLogFileName
+    val isCurrentFileRecording = isRecording && viewModel.isCurrentRecordingFile(fileName)
 
     val saveFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
-        uri?.let {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                        file.inputStream().use { inputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-                } catch (e: Exception) {
-                    timber.log.Timber.e(e, "Failed to save log file")
+        uri ?: return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val success = viewModel.exportLogFile(fileName, uri)
+            if (!success) {
+                launch(Dispatchers.Main) {
+                    context.toast(MLang.Util.Error.UnknownError)
                 }
             }
         }
     }
 
-    LaunchedEffect(filePath) {
-        logEntries = viewModel.readLogContent(file).reversed()
-        isLoading = false
+    LaunchedEffect(Unit) {
+        viewModel.refreshLogFiles()
     }
 
-    LaunchedEffect(isCurrentFileRecording) {
+    LaunchedEffect(fileName, isCurrentFileRecording) {
+        isLoading = true
+        logEntries = viewModel.readLogContent(fileName).asReversed()
+        lastFileSize = viewModel.getLogFileSize(fileName)
+        isLoading = false
+
         if (isCurrentFileRecording) {
-            while (true) {
+            while (isActive) {
                 delay(1000)
-                logEntries = viewModel.readLogContent(file).reversed()
+                val latestFileSize = viewModel.getLogFileSize(fileName)
+                if (latestFileSize != lastFileSize) {
+                    logEntries = viewModel.readLogContent(fileName).asReversed()
+                    lastFileSize = latestFileSize
+                }
             }
         }
     }
@@ -128,17 +129,13 @@ fun LogDetailScreen(
     Scaffold(
         topBar = {
             TopBar(
-                title = if (isCurrentFileRecording) MLang.Log.Detail.RealTimeLog else file.name,
+                title = if (isCurrentFileRecording) MLang.Log.Detail.RealTimeLog else fileName,
                 scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    NavigationBackIcon(navigator = navigator)
-                },
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     if (isCurrentFileRecording) {
                         IconButton(
-                            onClick = {
-                                viewModel.stopRecording()
-                            },
+                            onClick = { viewModel.stopRecording() },
                             modifier = Modifier.padding(end = 24.dp)
                         ) {
                             Icon(
@@ -148,9 +145,7 @@ fun LogDetailScreen(
                         }
                     } else {
                         IconButton(
-                            onClick = {
-                                saveFileLauncher.launch(file.name)
-                            },
+                            onClick = { saveFileLauncher.launch(fileName) },
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Icon(
@@ -160,7 +155,7 @@ fun LogDetailScreen(
                         }
                         IconButton(
                             onClick = {
-                                viewModel.deleteLogFile(file)
+                                viewModel.deleteLogFile(fileName)
                                 navigator.navigateUp()
                             },
                             modifier = Modifier.padding(end = 24.dp)
@@ -179,7 +174,7 @@ fun LogDetailScreen(
             isLoading -> {
                 CenteredText(
                     firstLine = MLang.Log.Detail.Loading,
-                    secondLine = ""
+                    secondLine = "",
                 )
             }
 
@@ -190,7 +185,7 @@ fun LogDetailScreen(
                         MLang.Log.Detail.WillShowWhenGenerated
                     } else {
                         MLang.Log.Detail.NoLogContent
-                    }
+                    },
                 )
             }
 
@@ -200,13 +195,9 @@ fun LogDetailScreen(
                     innerPadding = innerPadding,
                     topPadding = 20.dp,
                 ) {
-                    logEntries.forEachIndexed { index, entry ->
-                        item(key = "${logEntries.size}_$index") {
-                            LogEntryCard(
-                                entry = entry,
-                                index = index,
-                                isNewEntry = isCurrentFileRecording && index < 3
-                            )
+                    logEntries.forEach { entry ->
+                        item {
+                            LogEntryRow(entry = entry)
                         }
                     }
                 }
@@ -216,11 +207,7 @@ fun LogDetailScreen(
 }
 
 @Composable
-private fun LogEntryCard(
-    entry: LogViewModel.LogEntry,
-    index: Int = 0,
-    isNewEntry: Boolean = false
-) {
+private fun LogEntryRow(entry: LogViewModel.LogEntry) {
     val levelColor = when (entry.level) {
         LogMessage.Level.Debug -> Color(0xFF9E9E9E)
         LogMessage.Level.Info -> MiuixTheme.colorScheme.primary
@@ -230,59 +217,43 @@ private fun LogEntryCard(
         LogMessage.Level.Unknown -> Color(0xFF9E9E9E)
     }
 
-    var visible by remember { mutableStateOf(!isNewEntry) }
-    LaunchedEffect(Unit) {
-        if (isNewEntry) {
-            delay(index * 50L)
-            visible = true
-        }
-    }
-
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(animationSpec = tween(200)) + slideInVertically(
-            animationSpec = tween(200),
-            initialOffsetY = { -it / 2 }
-        )
-    ) {
-        Card(modifier = Modifier.padding(vertical = 4.dp)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+    Card(modifier = Modifier.padding(vertical = 4.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = entry.time,
-                        style = MiuixTheme.textStyles.body2.copy(
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace
-                        ),
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                    )
-                    Text(
-                        text = entry.level.name.uppercase().take(1),
-                        style = MiuixTheme.textStyles.body2.copy(
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace
-                        ),
-                        color = levelColor
-                    )
-                }
-                Spacer(modifier = Modifier.size(6.dp))
                 Text(
-                    text = entry.message,
+                    text = entry.time,
                     style = MiuixTheme.textStyles.body2.copy(
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.Monospace
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
                     ),
-                    color = MiuixTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth()
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                )
+                Text(
+                    text = entry.level.name.uppercase().take(1),
+                    style = MiuixTheme.textStyles.body2.copy(
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                    ),
+                    color = levelColor,
                 )
             }
+            Spacer(modifier = Modifier.size(6.dp))
+            Text(
+                text = entry.message,
+                style = MiuixTheme.textStyles.body2.copy(
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                ),
+                color = MiuixTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

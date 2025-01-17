@@ -1,6 +1,6 @@
-package com.github.yumelira.yumebox.service.data
+package com.github.yumelira.yumebox.service.runtime.records
 
-import com.github.yumelira.yumebox.service.data.model.Pending
+import com.github.yumelira.yumebox.service.runtime.entity.Pending
 import java.util.*
 
 /**

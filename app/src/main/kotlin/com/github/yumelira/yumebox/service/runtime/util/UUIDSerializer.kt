@@ -1,4 +1,4 @@
-package com.github.yumelira.yumebox.service.util
+package com.github.yumelira.yumebox.service.runtime.util
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

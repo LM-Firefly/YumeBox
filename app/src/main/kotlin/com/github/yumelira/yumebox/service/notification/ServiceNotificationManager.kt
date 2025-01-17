@@ -12,9 +12,9 @@ import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.data.ImportedDao
-import com.github.yumelira.yumebox.service.data.PendingDao
-import com.github.yumelira.yumebox.service.store.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.records.PendingDao
+import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.tencent.mmkv.MMKV
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +34,7 @@ class ServiceNotificationManager(
         val channelName: String,
     )
 
-    private val serviceStore by lazy { ServiceStore(service) }
+    private val serviceStore by lazy { ServiceStore() }
     private val settingsStore by lazy { MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE) }
     private val notificationManager by lazy { NotificationManagerCompat.from(service) }
 

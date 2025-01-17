@@ -1,7 +1,7 @@
-package com.github.yumelira.yumebox.service.util
+package com.github.yumelira.yumebox.service.runtime.util
 
-import com.github.yumelira.yumebox.service.data.ImportedDao
-import com.github.yumelira.yumebox.service.data.PendingDao
+import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.records.PendingDao
 import java.util.*
 
 suspend fun generateProfileUUID(): UUID {

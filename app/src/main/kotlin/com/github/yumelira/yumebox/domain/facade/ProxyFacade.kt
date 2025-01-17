@@ -32,7 +32,7 @@ import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.core.model.Traffic
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import kotlinx.coroutines.delay
 import com.github.yumelira.yumebox.remote.ServiceClient

@@ -27,7 +27,7 @@ import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.repository.NetworkSettingsRepository
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +40,7 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val storage: NetworkSettingsStorage,
+    private val repository: NetworkSettingsRepository,
 ) : AndroidViewModel(application) {
 
     data class AppInfo(
@@ -119,7 +119,7 @@ class AccessControlViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            val selectedPackages = storage.accessControlPackages.value
+            val selectedPackages = repository.accessControlPackages.value
             val apps = withContext(Dispatchers.IO) {
                 loadInstalledApps(selectedPackages)
             }
@@ -303,7 +303,7 @@ class AccessControlViewModel(
 
 
         val packagesToSave = _uiState.value.selectedPackages
-        storage.accessControlPackages.set(packagesToSave)
+        repository.accessControlPackages.set(packagesToSave)
     }
 
     fun selectAll() {
@@ -333,7 +333,7 @@ class AccessControlViewModel(
             )
         }
 
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        repository.accessControlPackages.set(_uiState.value.selectedPackages)
     }
 
     fun deselectAll() {
@@ -363,7 +363,7 @@ class AccessControlViewModel(
             )
         }
 
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        repository.accessControlPackages.set(_uiState.value.selectedPackages)
     }
 
     fun invertSelection() {
@@ -393,7 +393,7 @@ class AccessControlViewModel(
                 )
             )
         }
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        repository.accessControlPackages.set(_uiState.value.selectedPackages)
     }
 
     fun exportPackages(): String {
@@ -432,7 +432,7 @@ class AccessControlViewModel(
             )
         }
 
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        repository.accessControlPackages.set(_uiState.value.selectedPackages)
         return packages.intersect(_uiState.value.apps.map { it.packageName }.toSet()).size
     }
 }

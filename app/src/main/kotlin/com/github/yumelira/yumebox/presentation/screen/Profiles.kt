@@ -57,7 +57,7 @@ import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProfilesViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
-import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning

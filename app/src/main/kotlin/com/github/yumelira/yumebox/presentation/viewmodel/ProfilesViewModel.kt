@@ -25,12 +25,12 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.common.util.DownloadUtil
+import com.github.yumelira.yumebox.data.repository.ProfileLinksRepository
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.data.store.ProfileLink
-import com.github.yumelira.yumebox.data.store.ProfileLinksStorage
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
-import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
 import com.github.yumelira.yumebox.core.model.FetchStatus
 import dev.oom_wg.purejoy.mlang.MLang
@@ -48,13 +48,13 @@ import java.util.*
 class ProfilesViewModel(
     application: Application,
     private val profilesRepository: ProfilesRepository,
-    profileLinksStorage: ProfileLinksStorage
+    profileLinksRepository: ProfileLinksRepository
 ) : AndroidViewModel(application) {
 
     // 链接管理
-    val linkOpenMode: Preference<LinkOpenMode> = profileLinksStorage.linkOpenMode
-    val links: Preference<List<ProfileLink>> = profileLinksStorage.links
-    val defaultLinkId: Preference<String> = profileLinksStorage.defaultLinkId
+    val linkOpenMode: Preference<LinkOpenMode> = profileLinksRepository.linkOpenMode
+    val links: Preference<List<ProfileLink>> = profileLinksRepository.links
+    val defaultLinkId: Preference<String> = profileLinksRepository.defaultLinkId
 
     fun setOpenMode(mode: LinkOpenMode) = linkOpenMode.set(mode)
 
@@ -91,7 +91,6 @@ class ProfilesViewModel(
                 _profiles.value = allProfiles
                 _activeProfile.value = active
                 
-                Timber.d("Profiles refreshed: ${allProfiles.size} total, active=${active?.name}")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to refresh profiles")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
@@ -149,7 +148,6 @@ class ProfilesViewModel(
 
                 showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(normalizedName))
                 refreshProfiles()
-                Timber.i("Profile created: $uuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to create profile")
                 showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: "Unknown"))
@@ -218,7 +216,6 @@ class ProfilesViewModel(
             outputFile.outputStream().use { output ->
                 inputFile.copyTo(output)
             }
-            Timber.d("File copied to pending dir: ${outputFile.absolutePath}")
         }
     }
 
@@ -232,7 +229,6 @@ class ProfilesViewModel(
                 val newUuid = profilesRepository.cloneProfile(uuid)
                 showMessage(MLang.ProfilesVM.Message.ProfileAdded.format("Clone"))
                 refreshProfiles()
-                Timber.i("Profile cloned: $uuid -> $newUuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to clone profile")
                 showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: "Unknown"))
@@ -252,7 +248,6 @@ class ProfilesViewModel(
                 profilesRepository.deleteProfile(uuid)
                 showMessage(MLang.ProfilesVM.Message.ProfileDeleted)
                 refreshProfiles()
-                Timber.i("Profile deleted: $uuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to delete profile")
                 showError(MLang.ProfilesVM.Message.DeleteFailed.format(e.message ?: "Unknown"))
@@ -272,7 +267,6 @@ class ProfilesViewModel(
                 profilesRepository.setActiveProfile(uuid)
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format("Active"))
                 refreshProfiles()
-                Timber.i("Profile activated: $uuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to activate profile")
                 showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message ?: "Unknown"))
@@ -311,7 +305,6 @@ class ProfilesViewModel(
                 _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(uuid.toString()))
                 refreshProfiles()
-                Timber.i("Profile updated: $uuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to update profile")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
@@ -332,7 +325,6 @@ class ProfilesViewModel(
                 profilesRepository.patchProfile(uuid, name, source, interval)
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(name))
                 refreshProfiles()
-                Timber.i("Profile patched: $uuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to patch profile")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
@@ -386,7 +378,6 @@ class ProfilesViewModel(
 
                 showMessage(MLang.ProfilesVM.Message.ProfileImported.format(name))
                 refreshProfiles()
-                Timber.i("Profile imported from file: $uuid")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to import profile")
                 showError(MLang.ProfilesVM.Message.ImportFailed.format(e.message ?: "Unknown"))
@@ -414,7 +405,6 @@ class ProfilesViewModel(
 
                 _profiles.value = reordered
                 profilesRepository.reorderProfiles(reordered.map { it.uuid })
-                Timber.d("Reorder profiles: $from -> $to")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to reorder profiles")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
@@ -443,7 +433,6 @@ class ProfilesViewModel(
                     showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(profile.name))
                 }
                 refreshProfiles()
-                Timber.d("Profile toggled: $uuid, active=${!profile.active}")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to toggle profile")
                 showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message ?: "Unknown"))
