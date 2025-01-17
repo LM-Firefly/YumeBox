@@ -245,9 +245,6 @@ fun AppSettingsScreen(
         show = showEditCustomUserAgentDialog,
         title = MLang.AppSettings.EditDialog.UserAgentTitle,
         textFieldValue = customUserAgentTextFieldState,
-        onConfirm = {
-            viewModel.onCustomUserAgentChange(it)
-            viewModel.applyCustomUserAgent(it)
-        },
+        onConfirm = { viewModel.applyCustomUserAgent(it) },
     )
 }

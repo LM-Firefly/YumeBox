@@ -27,17 +27,16 @@ import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
 import com.github.yumelira.yumebox.data.model.ProfileTrafficUsage
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TimeSlot
-import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import com.github.yumelira.yumebox.data.repository.TrafficStatisticsRepository
 import com.github.yumelira.yumebox.presentation.component.BarChartItem
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
 class TrafficStatisticsViewModel(
     application: Application,
-    private val trafficStatisticsStore: TrafficStatisticsStore
+    private val trafficStatisticsRepository: TrafficStatisticsRepository,
 ) : AndroidViewModel(application) {
 
     private val _selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
@@ -46,17 +45,17 @@ class TrafficStatisticsViewModel(
     private val _selectedBarIndex = MutableStateFlow(-1)
     val selectedBarIndex: StateFlow<Int> = _selectedBarIndex.asStateFlow()
 
-    val todaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsStore.dailySummaries
-        .map { trafficStatisticsStore.getTodaySummary() }
+    val todaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsRepository.dailySummaries
+        .map { trafficStatisticsRepository.getTodaySummary() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
 
-    val yesterdaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsStore.dailySummaries
-        .map { trafficStatisticsStore.getYesterdaySummary() }
+    val yesterdaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsRepository.dailySummaries
+        .map { trafficStatisticsRepository.getYesterdaySummary() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
 
-    val weekSummary: StateFlow<Long> = trafficStatisticsStore.dailySummaries
+    val weekSummary: StateFlow<Long> = trafficStatisticsRepository.dailySummaries
         .map {
-            trafficStatisticsStore.getDailySummaries(7).sumOf { it.total }
+            trafficStatisticsRepository.getDailySummaries(7).sumOf { it.total }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
@@ -66,7 +65,7 @@ class TrafficStatisticsViewModel(
 
     val chartItems: StateFlow<List<BarChartItem>> = combine(
         _selectedTimeRange,
-        trafficStatisticsStore.dailySummaries
+        trafficStatisticsRepository.dailySummaries
     ) { timeRange, _ ->
         when (timeRange) {
             StatisticsTimeRange.TODAY -> getTodayHourlyChartItems()
@@ -74,7 +73,7 @@ class TrafficStatisticsViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val profileUsages: StateFlow<List<ProfileTrafficUsage>> = trafficStatisticsStore.profileUsages
+    val profileUsages: StateFlow<List<ProfileTrafficUsage>> = trafficStatisticsRepository.profileUsages
         .map { usages ->
             usages.values
                 .sortedByDescending { it.totalBytes }
@@ -92,7 +91,7 @@ class TrafficStatisticsViewModel(
     }
 
     private fun getTodayHourlyChartItems(): List<BarChartItem> {
-        val hourlyData = trafficStatisticsStore.getTodayHourlyData()
+        val hourlyData = trafficStatisticsRepository.getTodayHourlyData()
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val currentSlot = TimeSlot.fromHour(currentHour)
 
@@ -107,7 +106,7 @@ class TrafficStatisticsViewModel(
     }
 
     private fun getDailyChartItems(days: Int): List<BarChartItem> {
-        val summaries = trafficStatisticsStore.getDailySummaries(days)
+        val summaries = trafficStatisticsRepository.getDailySummaries(days)
         val dateFormat = SimpleDateFormat("M/d", Locale.getDefault())
         val todayKey = getDayKey(Calendar.getInstance())
 

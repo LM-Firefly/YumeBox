@@ -214,8 +214,8 @@ private fun AnimatedContentTransitionScope<HomeDisplayState>.createHomeTransitio
 
 private fun handleProxyToggle(
     isRunning: Boolean,
-    recommendedProfile: com.github.yumelira.yumebox.service.data.model.Profile?,
-    onStart: (com.github.yumelira.yumebox.service.data.model.Profile) -> Unit,
+    recommendedProfile: com.github.yumelira.yumebox.service.runtime.entity.Profile?,
+    onStart: (com.github.yumelira.yumebox.service.runtime.entity.Profile) -> Unit,
     onStop: () -> Unit
 ) {
     if (!isRunning) {

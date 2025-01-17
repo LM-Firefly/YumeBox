@@ -6,7 +6,7 @@ import android.os.Build
 import androidx.core.content.getSystemService
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.util.asSocketAddressText
+import com.github.yumelira.yumebox.service.runtime.util.asSocketAddressText
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select

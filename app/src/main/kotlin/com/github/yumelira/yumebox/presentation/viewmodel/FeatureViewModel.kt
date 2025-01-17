@@ -27,10 +27,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.common.native.NativeLibraryManager
 import com.github.yumelira.yumebox.common.util.DeviceUtil
-import com.github.yumelira.yumebox.common.util.DownloadProgress
 import com.github.yumelira.yumebox.common.util.DownloadUtil
 import com.github.yumelira.yumebox.data.model.AutoCloseMode
-import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.substore.SubStorePaths
 import com.github.yumelira.yumebox.substore.SubStoreService
@@ -44,15 +43,15 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class FeatureViewModel(
-    featureStore: FeatureStore,
+    repository: FeatureSettingsRepository,
     private val application: Application,
 ) : ViewModel() {
 
     val isServiceRunning: Boolean get() = SubStoreService.isRunning
-    val allowLanAccess: Preference<Boolean> = featureStore.allowLanAccess
-    val backendPort: Preference<Int> = featureStore.backendPort
-    val frontendPort: Preference<Int> = featureStore.frontendPort
-    val selectedPanelType: Preference<Int> = featureStore.selectedPanelType
+    val allowLanAccess: Preference<Boolean> = repository.allowLanAccess
+    val backendPort: Preference<Int> = repository.backendPort
+    val frontendPort: Preference<Int> = repository.frontendPort
+    val selectedPanelType: Preference<Int> = repository.selectedPanelType
 
     private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
     val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()
@@ -61,8 +60,6 @@ class FeatureViewModel(
     val serviceRunningState: StateFlow<Boolean> = _serviceRunningState.asStateFlow()
 
     private var autoCloseJob: Job? = null
-
-    private val _panelPaths = MutableStateFlow<List<String>>(emptyList())
 
     private val _panelInstallStatus = MutableStateFlow(listOf(false, false))
     val panelInstallStatus: StateFlow<List<Boolean>> = _panelInstallStatus.asStateFlow()
@@ -75,10 +72,6 @@ class FeatureViewModel(
 
     private val _isDownloadingSubStoreBackend = MutableStateFlow(false)
     val isDownloadingSubStoreBackend: StateFlow<Boolean> = _isDownloadingSubStoreBackend.asStateFlow()
-
-    private val _subStoreFrontendDownloadProgress = MutableStateFlow<DownloadProgress?>(null)
-
-    private val _subStoreBackendDownloadProgress = MutableStateFlow<DownloadProgress?>(null)
 
 
     private val _isSubStoreInitialized = MutableStateFlow(false)
@@ -192,18 +185,13 @@ class FeatureViewModel(
     private fun updatePanelPaths() {
         viewModelScope.launch {
             val filesDir = application.filesDir.absolutePath
-            val paths = mutableListOf<String>()
             val installStatus = mutableListOf<Boolean>()
-            PANEL_NAMES.forEachIndexed { index, name ->
+            PANEL_NAMES.forEach { name ->
                 val panelDir = File("$filesDir/panel/$name")
                 val entryFile = findPanelEntryFile(panelDir)
                 val isInstalled = panelDir.exists() && entryFile != null
                 installStatus.add(isInstalled)
-                if (isInstalled) {
-                    paths.add("${panelDisplayName(index)}: ${entryFile.absolutePath.substring(filesDir.length)}")
-                }
             }
-            _panelPaths.value = paths
             _panelInstallStatus.value = installStatus
         }
     }
@@ -222,14 +210,13 @@ class FeatureViewModel(
         if (_isDownloadingSubStoreFrontend.value) return
         viewModelScope.launch {
             _isDownloadingSubStoreFrontend.value = true
-            _subStoreFrontendDownloadProgress.value = null
             runCatching {
                 SubStorePaths.ensureStructure()
                 SubStorePaths.frontendDir.apply { if (!exists()) mkdirs() }
                 val success = DownloadUtil.downloadAndExtract(
                     url = "https://github.com/sub-store-org/Sub-Store-Front-End/releases/latest/download/dist.zip",
                     targetDir = SubStorePaths.frontendDir,
-                    onProgress = { _subStoreFrontendDownloadProgress.value = it })
+                )
                 showToast(
                     if (success) {
                         MLang.Feature.SubStore.FrontendDownloadSuccess
@@ -239,11 +226,9 @@ class FeatureViewModel(
                 )
                 if (success) _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
             }.onFailure { e ->
-                timber.log.Timber.e(e, "下载前端失败")
                 showToast(MLang.Feature.SubStore.DownloadError.format(e.message ?: MLang.Util.Error.UnknownError))
             }
             _isDownloadingSubStoreFrontend.value = false
-            _subStoreFrontendDownloadProgress.value = null
         }
     }
 
@@ -251,14 +236,13 @@ class FeatureViewModel(
         if (_isDownloadingSubStoreBackend.value) return
         viewModelScope.launch {
             _isDownloadingSubStoreBackend.value = true
-            _subStoreBackendDownloadProgress.value = null
             runCatching {
                 SubStorePaths.ensureStructure()
                 SubStorePaths.backendDir.apply { if (!exists()) mkdirs() }
                 val success = DownloadUtil.download(
                     url = "https://github.com/sub-store-org/Sub-Store/releases/latest/download/sub-store.bundle.js",
                     targetFile = SubStorePaths.backendBundle,
-                    onProgress = { _subStoreBackendDownloadProgress.value = it })
+                )
                 showToast(
                     if (success) {
                         MLang.Feature.SubStore.BackendDownloadSuccess
@@ -268,18 +252,19 @@ class FeatureViewModel(
                 )
                 if (success) _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
             }.onFailure { e ->
-                timber.log.Timber.e(e, "下载后端失败")
                 showToast(MLang.Feature.SubStore.DownloadError.format(e.message ?: MLang.Util.Error.UnknownError))
             }
             _isDownloadingSubStoreBackend.value = false
-            _subStoreBackendDownloadProgress.value = null
         }
     }
 
     fun downloadSubStoreAll() {
         viewModelScope.launch {
+            if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value) return@launch
             downloadSubStoreFrontend()
-            delay(1000)
+            while (_isDownloadingSubStoreFrontend.value) {
+                delay(200)
+            }
             downloadSubStoreBackend()
         }
     }
@@ -307,7 +292,6 @@ class FeatureViewModel(
                 )
                 if (success) updatePanelPaths()
             }.onFailure { e ->
-                timber.log.Timber.e(e, "下载面板失败")
                 showToast(MLang.Feature.SubStore.PanelInstallError.format(e.message ?: MLang.Util.Error.UnknownError))
             }
             _isDownloadingPanel.value = false

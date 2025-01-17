@@ -1,11 +1,9 @@
-package com.github.yumelira.yumebox.service.store
+package com.github.yumelira.yumebox.service.runtime.config
 
-import android.content.Context
-import com.github.yumelira.yumebox.service.model.AccessControlMode
 import com.tencent.mmkv.MMKV
 import java.util.*
 
-class ServiceStore(context: Context) {
+class ServiceStore {
     private val store = Store(
         MMKV.mmkvWithID("service", MMKV.MULTI_PROCESS_MODE).asStoreProvider()
     )

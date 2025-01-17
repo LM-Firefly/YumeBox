@@ -46,7 +46,6 @@ import com.github.yumelira.yumebox.presentation.icon.yume.`Wifi-cog`
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
-import com.github.yumelira.yumebox.substore.SubStoreService
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.ActivationWizardScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
@@ -195,8 +194,8 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                 Card {
                     SuperArrow(
                         title = MLang.Settings.Function.SubStore,
-                        onClick = { viewModel.onSubStoreCardClicked(isAllowed = SubStoreService.isRunning) },
-                        enabled = !is32BitDevice() && SubStoreService.isRunning,
+                        onClick = { viewModel.onSubStoreCardClicked() },
+                        enabled = !is32BitDevice() && viewModel.isSubStoreRunning,
                         startAction = {
                             CircularIcon(
                                 imageVector = Yume.Atom, contentDescription = null

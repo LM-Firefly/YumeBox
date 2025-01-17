@@ -1,6 +1,6 @@
 package com.github.yumelira.yumebox.service.remote
 
-import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import java.util.*
 
 interface IProfileManager {

@@ -4,17 +4,17 @@ import android.content.Context
 import androidx.core.net.toUri
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.data.ImportedDao
-import com.github.yumelira.yumebox.service.data.PendingDao
-import com.github.yumelira.yumebox.service.data.model.Imported
-import com.github.yumelira.yumebox.service.data.model.Pending
-import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.records.PendingDao
+import com.github.yumelira.yumebox.service.runtime.entity.Imported
+import com.github.yumelira.yumebox.service.runtime.entity.Pending
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.store.ServiceStore
-import com.github.yumelira.yumebox.service.util.importedDir
-import com.github.yumelira.yumebox.service.util.pendingDir
-import com.github.yumelira.yumebox.service.util.processingDir
-import com.github.yumelira.yumebox.service.util.sendProfileChanged
+import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.util.importedDir
+import com.github.yumelira.yumebox.service.runtime.util.pendingDir
+import com.github.yumelira.yumebox.service.runtime.util.processingDir
+import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
@@ -704,7 +704,7 @@ object ProfileProcessor {
                 if (!ImportedDao.exists(uuid)) {
                     throw IllegalArgumentException("profile $uuid is not available")
                 }
-                val store = ServiceStore(context)
+                val store = ServiceStore()
                 store.activeProfile = uuid
                 context.sendProfileChanged(uuid)
             }

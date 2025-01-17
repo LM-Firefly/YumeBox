@@ -1,12 +1,12 @@
 @file:UseSerializers(UUIDSerializer::class)
 
-package com.github.yumelira.yumebox.service.data.model
+package com.github.yumelira.yumebox.service.runtime.entity
 
 import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
 import com.github.yumelira.yumebox.core.util.Parcelizer
-import com.github.yumelira.yumebox.service.util.UUIDSerializer
+import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import java.util.*

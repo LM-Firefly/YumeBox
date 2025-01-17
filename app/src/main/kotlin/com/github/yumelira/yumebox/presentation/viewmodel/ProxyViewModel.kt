@@ -5,8 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.repository.OverrideRepository
-import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
-import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.data.repository.ProxyDisplaySettingsRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
@@ -15,13 +14,11 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 class ProxyViewModel(
     private val overrideRepository: OverrideRepository,
     private val proxyFacade: ProxyFacade,
-    private val proxyDisplaySettingsStore: ProxyDisplaySettingsStore,
-    private val profilesRepository: ProfilesRepository
+    private val proxyDisplaySettingsRepository: ProxyDisplaySettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProxyUiState())
@@ -30,13 +27,13 @@ class ProxyViewModel(
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
 
-    val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsStore.proxyMode.state
+    val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsRepository.proxyMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, TunnelState.Mode.Rule)
 
-    val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsStore.displayMode.state
+    val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsRepository.displayMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxyDisplayMode.SINGLE_DETAILED)
 
-    val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
+    val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsRepository.sortMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxySortMode.DEFAULT)
 
     private val _selectedGroupIndex = MutableStateFlow(0)
@@ -57,124 +54,113 @@ class ProxyViewModel(
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun ensureCoreLoaded() {
-        Timber.d("ensureCoreLoaded: no-op")
+        // no-op
     }
 
     fun patchMode(mode: TunnelState.Mode) {
-        proxyDisplaySettingsStore.proxyMode.set(mode)
+        val previousMode = proxyDisplaySettingsRepository.proxyMode.value
+        proxyDisplaySettingsRepository.proxyMode.set(mode)
         viewModelScope.launch {
-            try {
-                val persistResult = overrideRepository.updatePersist {
-                    it.copy(mode = mode)
-                }
-                if (persistResult.isFailure) {
-                    val error = persistResult.exceptionOrNull()
-                    Timber.e(error, "代理模式切换失败：$mode")
-                    showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
-                    return@launch
-                }
-
-                val sessionResult = overrideRepository.updateSession {
-                    it.copy(mode = mode)
-                }
-                if (sessionResult.isFailure) {
-                    val error = sessionResult.exceptionOrNull()
-                    Timber.e(error, "代理模式切换失败：$mode")
-                    showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
-                    return@launch
-                }
-
-                val reloadResult = proxyFacade.reloadCurrentProfile()
-                if (reloadResult.isFailure) {
-                    val error = reloadResult.exceptionOrNull()
-                    Timber.e(error, "代理模式切换失败：$mode")
-                    showError(MLang.Proxy.Mode.SwitchFailed.format(error?.message))
-                    return@launch
-                }
-
-                delay(500)
-                
-                val modeName = when (mode) {
-                    TunnelState.Mode.Direct -> MLang.Proxy.Mode.Direct
-                    TunnelState.Mode.Global -> MLang.Proxy.Mode.Global
-                    TunnelState.Mode.Rule -> MLang.Proxy.Mode.Rule
-                    else -> MLang.Proxy.Mode.Unknown
-                }
-                showMessage(MLang.Proxy.Mode.Switched.format(modeName))
-            } catch (e: Exception) {
-                Timber.e(e, "代理模式切换异常")
-                showError(MLang.Proxy.Mode.SwitchFailed.format(e.message))
+            val persistError = overrideRepository.updatePersist { it.copy(mode = mode) }.exceptionOrNull()
+            if (persistError != null) {
+                proxyDisplaySettingsRepository.proxyMode.set(previousMode)
+                showError(MLang.Proxy.Mode.SwitchFailed.format(persistError.message))
+                return@launch
             }
+
+            val sessionError = overrideRepository.updateSession { it.copy(mode = mode) }.exceptionOrNull()
+            if (sessionError != null) {
+                proxyDisplaySettingsRepository.proxyMode.set(previousMode)
+                showError(MLang.Proxy.Mode.SwitchFailed.format(sessionError.message))
+                return@launch
+            }
+
+            val reloadError = proxyFacade.reloadCurrentProfile().exceptionOrNull()
+            if (reloadError != null) {
+                proxyDisplaySettingsRepository.proxyMode.set(previousMode)
+                showError(MLang.Proxy.Mode.SwitchFailed.format(reloadError.message))
+                return@launch
+            }
+
+            delay(500)
+            showMessage(MLang.Proxy.Mode.Switched.format(mode.toModeName()))
         }
     }
 
     fun testDelay(groupName: String? = null) {
         viewModelScope.launch {
-            try {
-                setLoading(true)
-                clearError()
+            setLoading(true)
+            clearError()
+            if (groupName != null) {
+                _testingGroupNames.update { it + groupName }
+            }
 
+            val result = runCatching {
                 if (groupName != null) {
-                    _testingGroupNames.update { it + groupName }
                     showMessage(MLang.Proxy.Testing.Group.format(groupName))
                     proxyFacade.healthCheck(groupName, refreshAfter = true)
                     showMessage(MLang.Proxy.Testing.RequestSent)
                 } else {
-                    // 测试所有组
                     showMessage(MLang.Proxy.Testing.All)
                     val groups = proxyGroups.value
+                    var firstError: Throwable? = null
                     groups.forEach { group ->
-                        try {
+                        runCatching {
                             proxyFacade.healthCheck(group.name, refreshAfter = false)
-                        } catch (e: Exception) {
-                            Timber.w(e, "Health check failed for group: ${group.name}")
+                        }.onFailure { error ->
+                            if (firstError == null) {
+                                firstError = error
+                            }
                         }
                     }
-
-                    // 批量测试完后统一刷新几次，避免每个组都刷导致 UI 卡死
                     repeat(4) {
                         delay(600)
                         proxyFacade.refreshProxyGroups()
                     }
+                    firstError?.let { throw it }
                 }
-            } catch (e: Exception) {
-                Timber.e(e, "延迟测试异常")
-                showError(MLang.Proxy.Testing.Failed.format(e.message))
-            } finally {
-                if (groupName != null) {
-                    _testingGroupNames.update { it - groupName }
-                }
-                setLoading(false)
+            }
+
+            if (groupName != null) {
+                _testingGroupNames.update { it - groupName }
+            }
+            setLoading(false)
+
+            result.exceptionOrNull()?.let { error ->
+                showError(MLang.Proxy.Testing.Failed.format(error.message))
             }
         }
     }
 
     fun setSelectedGroup(index: Int) {
         val groups = proxyGroups.value
+        if (groups.isEmpty()) {
+            _selectedGroupIndex.value = 0
+            return
+        }
         _selectedGroupIndex.value = index.coerceIn(0, groups.size - 1)
     }
 
 
     fun setDisplayMode(mode: ProxyDisplayMode) {
-        proxyDisplaySettingsStore.displayMode.set(mode)
+        proxyDisplaySettingsRepository.displayMode.set(mode)
     }
 
     fun setSortMode(mode: ProxySortMode) {
-        proxyDisplaySettingsStore.sortMode.set(mode)
+        proxyDisplaySettingsRepository.sortMode.set(mode)
     }
 
     fun selectProxy(groupName: String, proxyName: String) {
         viewModelScope.launch {
-            try {
+            runCatching {
                 val success = proxyFacade.selectProxy(groupName, proxyName)
                 if (success) {
                     showMessage(MLang.Proxy.Selection.Switched.format(proxyName))
                 } else {
                     showError(MLang.Proxy.Selection.Failed)
                 }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to select proxy")
-                showError(MLang.Proxy.Selection.Error.format(e.message))
+            }.onFailure { error ->
+                showError(MLang.Proxy.Selection.Error.format(error.message))
             }
         }
     }
@@ -199,6 +185,13 @@ class ProxyViewModel(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    private fun TunnelState.Mode.toModeName(): String = when (this) {
+        TunnelState.Mode.Direct -> MLang.Proxy.Mode.Direct
+        TunnelState.Mode.Global -> MLang.Proxy.Mode.Global
+        TunnelState.Mode.Rule -> MLang.Proxy.Mode.Rule
+        else -> MLang.Proxy.Mode.Unknown
     }
 
     data class ProxyUiState(

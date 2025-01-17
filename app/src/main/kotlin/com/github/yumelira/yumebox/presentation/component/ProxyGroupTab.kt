@@ -23,6 +23,7 @@ package com.github.yumelira.yumebox.presentation.component
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -65,10 +66,10 @@ fun LazyListScope.proxyGroupGridItems(
     val showDetail = displayMode.showDetail
 
     items(
-        count = groups.size,
-        key = { index -> "group_${groups[index].name}_$index" },
-    ) { index ->
-        val group = groups[index]
+        items = groups,
+        key = { group -> "${group.type.name}:${group.name}" },
+        contentType = { "ProxyGroupCard" },
+    ) { group ->
         ProxyGroupCard(
             group = group,
             showDetail = showDetail,

@@ -20,146 +20,116 @@
 
 package com.github.yumelira.yumebox.presentation.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.net.Uri
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.service.LogRecordService
+import com.github.yumelira.yumebox.data.repository.LogRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 
 class LogViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val repository: LogRepository,
+) : ViewModel() {
 
-    private val _isRecording = MutableStateFlow(false)
+    private val _isRecording = MutableStateFlow(repository.isRecording())
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
     private val _logFiles = MutableStateFlow<List<LogFileInfo>>(emptyList())
     val logFiles: StateFlow<List<LogFileInfo>> = _logFiles.asStateFlow()
-
-    private val logDir: File
-        get() = LogRecordService.getLogDir(getApplication())
 
     init {
         refreshLogFiles()
     }
 
     fun startRecording() {
-        LogRecordService.start(getApplication())
+        repository.startRecording()
         _isRecording.value = true
         viewModelScope.launch {
-            kotlinx.coroutines.delay(300)
+            delay(300)
             refreshLogFiles()
         }
     }
 
     fun stopRecording() {
-        LogRecordService.stop(getApplication())
+        repository.stopRecording()
         _isRecording.value = false
         viewModelScope.launch {
-            kotlinx.coroutines.delay(300)
+            delay(300)
             refreshLogFiles()
         }
     }
 
     fun refreshLogFiles() {
         viewModelScope.launch(Dispatchers.IO) {
-            val isCurrentlyRecording = LogRecordService.isRecording
-            val currentFileName = LogRecordService.currentLogFileName
-
-            _isRecording.value = isCurrentlyRecording
-
-            val files = logDir.listFiles { file ->
-                file.isFile && file.name.startsWith(LogRecordService.LOG_PREFIX) && file.name.endsWith(LogRecordService.LOG_SUFFIX)
-            }?.sortedByDescending { it.lastModified() } ?: emptyList()
-
-            val fileInfos = files.map { file ->
+            val files = repository.listLogFiles()
+            _isRecording.value = repository.isRecording()
+            _logFiles.value = files.map {
                 LogFileInfo(
-                    file = file,
-                    name = file.name,
-                    createdAt = file.lastModified(),
-                    size = file.length(),
-                    isRecording = isCurrentlyRecording && file.name == currentFileName
+                    name = it.name,
+                    createdAt = it.createdAt,
+                    size = it.size,
+                    isRecording = it.isRecording,
                 )
             }
-            _logFiles.value = fileInfos
         }
     }
 
-    fun deleteLogFile(file: File) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val currentFileName = LogRecordService.currentLogFileName
-            if (LogRecordService.isRecording && file.name == currentFileName) {
-                LogRecordService.stop(getApplication())
-                _isRecording.value = false
-                kotlinx.coroutines.delay(500)
-            }
+    fun isCurrentRecordingFile(fileName: String): Boolean {
+        return repository.isCurrentRecordingFile(fileName)
+    }
 
-            if (file.exists()) {
-                val deleted = file.delete()
-                if (!deleted) {
-                    timber.log.Timber.e("删除文件失败: ${file.absolutePath}")
-                }
-            }
+    fun deleteLogFile(fileName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteLogFile(fileName)
+            _isRecording.value = repository.isRecording()
+            _logFiles.update { files -> files.filterNot { it.name == fileName } }
             refreshLogFiles()
         }
     }
 
     fun deleteAllLogs() {
         viewModelScope.launch(Dispatchers.IO) {
-            if (LogRecordService.isRecording) {
-                LogRecordService.stop(getApplication())
-                _isRecording.value = false
-                kotlinx.coroutines.delay(500)
-            }
-
-            logDir.listFiles()?.forEach { file ->
-                if (file.exists()) {
-                    file.delete()
-                }
-            }
+            repository.deleteAllLogs()
+            _isRecording.value = repository.isRecording()
+            _logFiles.value = emptyList()
             refreshLogFiles()
         }
     }
 
-    suspend fun readLogContent(file: File): List<LogEntry> = withContext(Dispatchers.IO) {
-        try {
-            if (!file.exists()) return@withContext emptyList()
-            file.readLines().mapNotNull { line ->
-                parseLogLine(line)
-            }
-        } catch (e: Exception) {
-            timber.log.Timber.e(e, "读取日志文件失败")
-            emptyList()
+    suspend fun getLogFileSize(fileName: String): Long? {
+        return repository.getLogFileSize(fileName)
+    }
+
+    suspend fun readLogContent(fileName: String): List<LogEntry> {
+        return repository.readLogEntries(fileName).map {
+            LogEntry(
+                time = it.time,
+                level = it.level,
+                message = it.message,
+            )
         }
     }
 
-    private fun parseLogLine(line: String): LogEntry? {
-        if (line.isBlank()) return null
-        val regex = """\[(.+?)] \[(.+?)] (.+)""".toRegex()
-        val match = regex.find(line) ?: return null
-        val (timeStr, levelStr, message) = match.destructured
-
-        val level = try {
-            LogMessage.Level.valueOf(levelStr)
-        } catch (_: Exception) {
-            LogMessage.Level.Unknown
-        }
-
-        return LogEntry(time = timeStr, level = level, message = message)
+    suspend fun exportLogFile(fileName: String, targetUri: Uri): Boolean {
+        return repository.exportLogFile(fileName, targetUri)
     }
 
     data class LogFileInfo(
-        val file: File, val name: String, val createdAt: Long, val size: Long, val isRecording: Boolean
+        val name: String,
+        val createdAt: Long,
+        val size: Long,
+        val isRecording: Boolean,
     )
 
     data class LogEntry(
-        val time: String, val level: LogMessage.Level, val message: String
+        val time: String,
+        val level: LogMessage.Level,
+        val message: String,
     )
 }

@@ -8,8 +8,8 @@ import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.clash.clashRuntime
 import com.github.yumelira.yumebox.service.clash.module.*
 import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
-import com.github.yumelira.yumebox.service.util.sendClashStarted
-import com.github.yumelira.yumebox.service.util.sendClashStopped
+import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
+import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.isActive

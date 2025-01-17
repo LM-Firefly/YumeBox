@@ -26,9 +26,9 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
+import com.github.yumelira.yumebox.data.repository.NetworkSettingsRepository
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.Preference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,25 +43,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import timber.log.Timber
 
 class NetworkSettingsViewModel(
     application: Application,
-    storage: NetworkSettingsStorage,
+    repository: NetworkSettingsRepository,
     private val profilesRepository: ProfilesRepository,
     private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
 
     private var restartJob: Job? = null
 
-    val proxyMode: Preference<ProxyMode> = storage.proxyMode
-    val bypassPrivateNetwork: Preference<Boolean> = storage.bypassPrivateNetwork
-    val dnsHijack: Preference<Boolean> = storage.dnsHijack
-    val allowBypass: Preference<Boolean> = storage.allowBypass
-    val enableIPv6: Preference<Boolean> = storage.enableIPv6
-    val systemProxy: Preference<Boolean> = storage.systemProxy
-    val tunStack: Preference<TunStack> = storage.tunStack
-    val accessControlMode: Preference<AccessControlMode> = storage.accessControlMode
+    val proxyMode: Preference<ProxyMode> = repository.proxyMode
+    val bypassPrivateNetwork: Preference<Boolean> = repository.bypassPrivateNetwork
+    val dnsHijack: Preference<Boolean> = repository.dnsHijack
+    val allowBypass: Preference<Boolean> = repository.allowBypass
+    val enableIPv6: Preference<Boolean> = repository.enableIPv6
+    val systemProxy: Preference<Boolean> = repository.systemProxy
+    val tunStack: Preference<TunStack> = repository.tunStack
+    val accessControlMode: Preference<AccessControlMode> = repository.accessControlMode
     private val _errors = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val errors: SharedFlow<String> = _errors.asSharedFlow()
 
@@ -131,74 +130,53 @@ class NetworkSettingsViewModel(
 
     fun startService(mode: ProxyMode) {
         viewModelScope.launch {
-            try {
-                val activeProfile = withContext(Dispatchers.IO) {
-                    profilesRepository.queryActiveProfile()
-                }
-                if (activeProfile == null) {
-                    _errors.tryEmit("No active profile selected")
-                    return@launch
-                }
-                
-                // 停止现有服务并启动新服务
-                if (proxyFacade.isRunning.value) {
-                    withContext(Dispatchers.IO) {
-                        proxyFacade.stopProxy()
-                    }
-                    delay(500)
-                }
-                
-                val useTun = mode == ProxyMode.Tun
-                withContext(Dispatchers.IO) {
-                    proxyFacade.startProxy(useTun)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to start service in NetworkSettings")
-                _errors.tryEmit(e.message ?: "Failed to start proxy service")
+            switchService(mode).onFailure { error ->
+                _errors.tryEmit(error.message ?: "Failed to start proxy service")
             }
         }
     }
 
     fun restartService() {
         viewModelScope.launch {
-            try {
-                if (!proxyFacade.isRunning.value) return@launch
-                
-                val activeProfile = withContext(Dispatchers.IO) {
-                    profilesRepository.queryActiveProfile()
-                }
-                if (activeProfile == null) {
-                    _errors.tryEmit("No active profile selected")
-                    return@launch
-                }
-                
-                // 停止并重启服务
-                withContext(Dispatchers.IO) {
-                    proxyFacade.stopProxy()
-                }
-                delay(500)
-                
-                val useTun = proxyMode.value == ProxyMode.Tun
-                withContext(Dispatchers.IO) {
-                    proxyFacade.startProxy(useTun)
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to restart service in NetworkSettings")
-                _errors.tryEmit(e.message ?: "Failed to restart proxy service")
+            if (!proxyFacade.isRunning.value) return@launch
+            switchService(proxyMode.value).onFailure { error ->
+                _errors.tryEmit(error.message ?: "Failed to restart proxy service")
             }
+        }
+    }
+
+    private suspend fun switchService(mode: ProxyMode): Result<Unit> = runCatching {
+        val hasActiveProfile = withContext(Dispatchers.IO) {
+            profilesRepository.queryActiveProfile() != null
+        }
+        check(hasActiveProfile) { "No active profile selected" }
+
+        if (proxyFacade.isRunning.value) {
+            withContext(Dispatchers.IO) {
+                proxyFacade.stopProxy()
+            }
+            delay(SERVICE_RESTART_DELAY_MS)
+        }
+
+        withContext(Dispatchers.IO) {
+            proxyFacade.startProxy(mode == ProxyMode.Tun)
         }
     }
 
     private fun updateServiceConfig() {
         restartJob?.cancel()
         restartJob = viewModelScope.launch {
-            delay(300)
+            delay(RESTART_DEBOUNCE_DELAY_MS)
             if (serviceState.value == ServiceState.Running) {
                 restartService()
             }
         }
     }
 
+    companion object {
+        private const val RESTART_DEBOUNCE_DELAY_MS = 300L
+        private const val SERVICE_RESTART_DELAY_MS = 500L
+    }
 }
 
 data class NetworkSettingsUiState(

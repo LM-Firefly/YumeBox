@@ -1,4 +1,4 @@
-package com.github.yumelira.yumebox.service.util
+package com.github.yumelira.yumebox.service.runtime.util
 
 data class IPNet(val ip: String, val prefix: Int)
 

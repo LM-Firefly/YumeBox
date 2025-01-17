@@ -45,7 +45,6 @@ abstract class GolangExtension {
 
 object GolangUtils {
     fun getGoBinary(): String = System.getenv("GO_EXECUTABLE") ?: "go"
-    fun getBuildTimestamp(): String = System.currentTimeMillis().toString()
     fun getClangPath(ndkDir: String, abi: String): String {
         val osName = System.getProperty("os.name").lowercase()
         val host = when {

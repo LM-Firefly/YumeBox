@@ -22,7 +22,7 @@ package com.github.yumelira.yumebox.domain.facade
 
 import android.content.Context
 import com.github.yumelira.yumebox.remote.ServiceClient
-import com.github.yumelira.yumebox.service.data.model.Profile
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
 import timber.log.Timber
 import java.util.*
