@@ -27,12 +27,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.WindowDialog 
+import top.yukonga.miuix.kmp.extra.WindowDialog
 
 enum class MessageType {
     SUCCESS,
@@ -54,23 +55,23 @@ fun MessageHost(
     message: Message?,
     onDismiss: () -> Unit,
 ) {
-
     val showDialog = remember { mutableStateOf(false) }
-
+    val onDismissLatest = rememberUpdatedState(onDismiss)
+    val dismissDialog: () -> Unit = {
+        showDialog.value = false
+        onDismissLatest.value()
+    }
 
     LaunchedEffect(message) {
-        showDialog.value = (message != null)
+        showDialog.value = message != null
     }
 
     if (message != null) {
-        WindowDialog (
+        WindowDialog(
             title = getTitle(message.type, message.title),
             summary = message.content,
             show = showDialog,
-            onDismissRequest = {
-                showDialog.value = false
-                onDismiss()
-            },
+            onDismissRequest = dismissDialog,
         ) {
             Box(
                 modifier = Modifier
@@ -80,20 +81,15 @@ fun MessageHost(
             ) {
                 SuperArrow(
                     title = MLang.Component.Message.Confirm,
-                    onClick = {
-                        showDialog.value = false
-                        onDismiss()
-                    },
+                    onClick = dismissDialog,
                 )
             }
         }
 
-
         if (message.autoClose) {
-            LaunchedEffect(message) {
+            LaunchedEffect(message.title, message.content, message.type, message.autoCloseDelay) {
                 kotlinx.coroutines.delay(message.autoCloseDelay)
-                showDialog.value = false
-                onDismiss()
+                dismissDialog()
             }
         }
     }
@@ -147,4 +143,3 @@ fun SuccessMessage(
         )
     }
 }
-

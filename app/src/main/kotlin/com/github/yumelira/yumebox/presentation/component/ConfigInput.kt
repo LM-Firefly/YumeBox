@@ -40,46 +40,34 @@ fun PortInput(
     value: Int?,
     onValueChange: (Int?) -> Unit,
 ) {
-    var textValue by remember(value) { mutableStateOf(value?.toString() ?: "") }
-    var showDialog by remember { mutableStateOf(false) }
+    val showDialog = remember { mutableStateOf(false) }
+    var textValue by remember { mutableStateOf(value?.toString() ?: "") }
 
     SuperArrow(
         title = title,
         summary = if (value != null) "$value" else MLang.Component.Selector.NotModify,
-        onClick = { showDialog = true },
+        onClick = {
+            textValue = value?.toString() ?: ""
+            showDialog.value = true
+        },
     )
 
-    if (showDialog) {
-        WindowBottomSheet(
-            show = remember(showDialog) { mutableStateOf(true) },
-            title = title,
-            onDismissRequest = { showDialog = false },
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                TextField(
-                    value = textValue,
-                    onValueChange = { textValue = it.filter { c -> c.isDigit() } },
-                    label = MLang.Component.ConfigInput.PortLabel,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                DialogButtonRow(
-                    onCancel = {
-                        onValueChange(null)
-                        showDialog = false
-                    },
-                    onConfirm = {
-                        val port = textValue.toIntOrNull()
-                        if (port == null || (port in 1..65535)) {
-                            onValueChange(port)
-                        }
-                        showDialog = false
-                    },
-                    cancelText = MLang.Component.Button.Clear,
-                )
+    ConfigTextInputDialog(
+        show = showDialog,
+        title = title,
+        textValue = textValue,
+        label = MLang.Component.ConfigInput.PortLabel,
+        onTextValueChange = { input ->
+            textValue = input.filter(Char::isDigit)
+        },
+        onClear = { onValueChange(null) },
+        onConfirm = {
+            val port = textValue.toIntOrNull()
+            if (port == null || (port in 1..65535)) {
+                onValueChange(port)
             }
-        }
-    }
+        },
+    )
 }
 
 @Composable
@@ -89,43 +77,27 @@ fun StringInput(
     placeholder: String = "",
     onValueChange: (String?) -> Unit,
 ) {
-    var textValue by remember(value) { mutableStateOf(value ?: "") }
-    var showDialog by remember { mutableStateOf(false) }
+    val showDialog = remember { mutableStateOf(false) }
+    var textValue by remember { mutableStateOf(value ?: "") }
 
     SuperArrow(
         title = title,
         summary = value?.takeIf { it.isNotEmpty() } ?: MLang.Component.Selector.NotModify,
-        onClick = { showDialog = true },
+        onClick = {
+            textValue = value ?: ""
+            showDialog.value = true
+        },
     )
 
-    if (showDialog) {
-        WindowBottomSheet(
-            show = remember(showDialog) { mutableStateOf(true) },
-            title = title,
-            onDismissRequest = { showDialog = false },
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                TextField(
-                    value = textValue,
-                    onValueChange = { textValue = it },
-                    label = placeholder,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                DialogButtonRow(
-                    onCancel = {
-                        onValueChange(null)
-                        showDialog = false
-                    },
-                    onConfirm = {
-                        onValueChange(textValue.takeIf { it.isNotEmpty() })
-                        showDialog = false
-                    },
-                    cancelText = MLang.Component.Button.Clear,
-                )
-            }
-        }
-    }
+    ConfigTextInputDialog(
+        show = showDialog,
+        title = title,
+        textValue = textValue,
+        label = placeholder,
+        onTextValueChange = { textValue = it },
+        onClear = { onValueChange(null) },
+        onConfirm = { onValueChange(textValue.takeIf { it.isNotEmpty() }) },
+    )
 }
 
 @Composable
@@ -188,4 +160,43 @@ fun StringMapInput(
             navigator.navigate(KeyValueEditorScreenDestination)
         },
     )
+}
+
+@Composable
+private fun ConfigTextInputDialog(
+    show: MutableState<Boolean>,
+    title: String,
+    textValue: String,
+    label: String,
+    onTextValueChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (!show.value) return
+    WindowBottomSheet(
+        show = show,
+        title = title,
+        onDismissRequest = { show.value = false },
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            TextField(
+                value = textValue,
+                onValueChange = onTextValueChange,
+                label = label,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            DialogButtonRow(
+                onCancel = {
+                    onClear()
+                    show.value = false
+                },
+                onConfirm = {
+                    onConfirm()
+                    show.value = false
+                },
+                cancelText = MLang.Component.Button.Clear,
+            )
+        }
+    }
 }

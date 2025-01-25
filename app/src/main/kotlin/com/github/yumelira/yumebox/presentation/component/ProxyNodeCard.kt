@@ -29,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,8 +72,7 @@ internal fun ProxySelectableCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(backgroundColor)
+            .background(backgroundColor, shape)
             .let {
                 if (onClick != null) {
                     it.clickable(
@@ -98,16 +96,20 @@ internal fun ProxySelectableCard(
 fun ProxyNodeCard(
     proxy: Proxy,
     isSelected: Boolean,
-    onClick: (() -> Unit)?,
+    onClick: ((String) -> Unit)?,
     modifier: Modifier = Modifier,
     isSingleColumn: Boolean = false,
     showDetail: Boolean = false,
     isDelayTesting: Boolean = false,
     onDelayTestClick: (() -> Unit)? = null,
+    showCountryFlag: Boolean = true,
 ) {
+    val onCardClick = remember(proxy.name, onClick) {
+        onClick?.let { click -> { click(proxy.name) } }
+    }
     ProxySelectableCard(
         isSelected = isSelected,
-        onClick = onClick,
+        onClick = onCardClick,
         modifier = modifier,
         paddingVertical = 12.dp,
     ) {
@@ -117,115 +119,111 @@ fun ProxyNodeCard(
             MiuixTheme.colorScheme.onSurface
         }
         val flagged = remember(proxy.name) { extractFlaggedName(proxy.name) }
+        val countryCode = flagged.countryCode
         val delayDisplay = remember(proxy.delay, isSingleColumn) {
             delayDisplay(proxy.delay, withUnit = isSingleColumn)
         }
         if (isSingleColumn) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val countryCode = flagged.countryCode
-                    if (countryCode != null) {
-                        CountryFlagCircle(countryCode = countryCode, size = 16.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = flagged.displayName,
-                        style = MiuixTheme.textStyles.body2,
-                        color = textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                ProxyTitleRow(
+                    displayName = flagged.displayName,
+                    countryCode = countryCode.takeIf { showCountryFlag },
+                    textColor = textColor,
+                    allowSoftWrap = true,
+                )
                 if (showDetail) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = proxy.type.name,
-                            style = MiuixTheme.textStyles.footnote1,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        ProxyDelayIndicator(
-                            delayDisplay = delayDisplay,
-                            isDelayTesting = isDelayTesting,
-                            onDelayTestClick = onDelayTestClick,
-                        )
-                    }
+                    ProxyDetailRow(
+                        typeName = proxy.type.name,
+                        delayDisplay = delayDisplay,
+                        isDelayTesting = isDelayTesting,
+                        onDelayTestClick = onDelayTestClick,
+                        allowSoftWrap = true,
+                    )
                 }
             }
         } else if (showDetail) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val countryCode = flagged.countryCode
-                    if (countryCode != null) {
-                        CountryFlagCircle(countryCode = countryCode, size = 16.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = flagged.displayName,
-                        style = MiuixTheme.textStyles.body2,
-                        color = textColor,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                ProxyTitleRow(
+                    displayName = flagged.displayName,
+                    countryCode = countryCode.takeIf { showCountryFlag },
+                    textColor = textColor,
+                    allowSoftWrap = false,
+                )
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = proxy.type.name,
-                        style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    ProxyDelayIndicator(
-                        delayDisplay = delayDisplay,
-                        isDelayTesting = isDelayTesting,
-                        onDelayTestClick = onDelayTestClick,
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val countryCode = flagged.countryCode
-                if (countryCode != null) {
-                    CountryFlagCircle(countryCode = countryCode, size = 16.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    text = flagged.displayName,
-                    style = MiuixTheme.textStyles.body2,
-                    color = textColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                ProxyDetailRow(
+                    typeName = proxy.type.name,
+                    delayDisplay = delayDisplay,
+                    isDelayTesting = isDelayTesting,
+                    onDelayTestClick = onDelayTestClick,
+                    allowSoftWrap = false,
                 )
             }
+        } else {
+            ProxyTitleRow(
+                displayName = flagged.displayName,
+                countryCode = countryCode.takeIf { showCountryFlag },
+                textColor = textColor,
+                allowSoftWrap = true,
+            )
         }
+    }
+}
+
+@Composable
+private fun ProxyTitleRow(
+    displayName: String,
+    countryCode: String?,
+    textColor: Color,
+    allowSoftWrap: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (countryCode != null) {
+            CountryFlagCircle(countryCode = countryCode, size = 16.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Text(
+            text = displayName,
+            style = MiuixTheme.textStyles.body2,
+            color = textColor,
+            maxLines = 1,
+            softWrap = allowSoftWrap,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun ProxyDetailRow(
+    typeName: String,
+    delayDisplay: Pair<String, Color>?,
+    isDelayTesting: Boolean,
+    onDelayTestClick: (() -> Unit)?,
+    allowSoftWrap: Boolean,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = typeName,
+            style = MiuixTheme.textStyles.footnote1,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            maxLines = 1,
+            softWrap = allowSoftWrap,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        ProxyDelayIndicator(
+            delayDisplay = delayDisplay,
+            isDelayTesting = isDelayTesting,
+            onDelayTestClick = onDelayTestClick,
+        )
     }
 }
 

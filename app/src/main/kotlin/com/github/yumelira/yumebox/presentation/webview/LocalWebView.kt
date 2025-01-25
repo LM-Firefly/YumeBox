@@ -24,7 +24,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -150,15 +149,12 @@ private fun createWebView(
 
             cacheMode = WebSettings.LOAD_DEFAULT
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-            }
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         }
 
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val url = request?.url?.toString() ?: return false
-                val scheme = request.url?.scheme
+                val scheme = request?.url?.scheme
                 
                 // 处理自定义 scheme (非 http/https)
                 if (scheme != null && scheme != "http" && scheme != "https" && scheme != "file") {
@@ -219,9 +215,6 @@ private fun createWebView(
                 failingUrl: String?,
             ) {
                 @Suppress("DEPRECATION") super.onReceivedError(view, errorCode, description, failingUrl)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                    onPageError(failingUrl ?: "unknown", "Error $errorCode: $description")
-                }
             }
         }
 
