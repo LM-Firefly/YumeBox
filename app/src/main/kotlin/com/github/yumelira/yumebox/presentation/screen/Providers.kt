@@ -33,13 +33,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -77,6 +78,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private data class ProviderSection(
+    val title: String,
+    val providers: List<Provider>,
+)
+
 @Composable
 @Destination<RootGraph>
 fun ProvidersScreen(navigator: DestinationsNavigator) {
@@ -105,6 +111,29 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
         uiState.error?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             viewModel.clearError()
+        }
+    }
+
+    val sections = remember(providers) {
+        buildList {
+            val proxyProviders = providers.filter { it.type == Provider.Type.Proxy }
+            if (proxyProviders.isNotEmpty()) {
+                add(
+                    ProviderSection(
+                        title = MLang.Providers.Type.ProxyProviders.format(proxyProviders.size),
+                        providers = proxyProviders,
+                    )
+                )
+            }
+            val ruleProviders = providers.filter { it.type == Provider.Type.Rule }
+            if (ruleProviders.isNotEmpty()) {
+                add(
+                    ProviderSection(
+                        title = MLang.Providers.Type.RuleProviders.format(ruleProviders.size),
+                        providers = ruleProviders,
+                    )
+                )
+            }
         }
     }
 
@@ -144,41 +173,15 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
                 scrollBehavior = scrollBehavior,
                 innerPadding = innerPadding,
             ) {
-                val proxyProviders = providers.filter { it.type == Provider.Type.Proxy }
-                val ruleProviders = providers.filter { it.type == Provider.Type.Rule }
-
-                if (proxyProviders.isNotEmpty()) {
-                    item {
-                        SmallTitle(MLang.Providers.Type.ProxyProviders.format(proxyProviders.size))
-                    }
-                    proxyProviders.forEach { provider ->
-                        val providerKey = "${provider.type}_${provider.name}"
-                        item(key = providerKey) {
-                            ProviderCard(
-                                provider = provider,
-                                isUpdating = uiState.updatingProviders.contains(providerKey),
-                                onUpdate = { viewModel.updateProvider(provider) },
-                                onUpload = { uri -> viewModel.uploadProviderFile(context, provider, uri) }
-                            )
-                        }
-                    }
-                }
-
-                if (ruleProviders.isNotEmpty()) {
-                    item {
-                        SmallTitle(MLang.Providers.Type.RuleProviders.format(ruleProviders.size))
-                    }
-                    ruleProviders.forEach { provider ->
-                        val providerKey = "${provider.type}_${provider.name}"
-                        item(key = providerKey) {
-                            ProviderCard(
-                                provider = provider,
-                                isUpdating = uiState.updatingProviders.contains(providerKey),
-                                onUpdate = { viewModel.updateProvider(provider) },
-                                onUpload = { uri -> viewModel.uploadProviderFile(context, provider, uri) }
-                            )
-                        }
-                    }
+                sections.forEach { section ->
+                    providerSection(
+                        section = section,
+                        isUpdating = { providerKey -> uiState.updatingProviders.contains(providerKey) },
+                        onUpdate = { provider -> viewModel.updateProvider(provider) },
+                        onUpload = { provider, uri ->
+                            viewModel.uploadProviderFile(context, provider, uri)
+                        },
+                    )
                 }
             }
         }
@@ -274,8 +277,7 @@ private fun ProviderCard(
                         }
                     }
 
-                    val items = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
-                    var selectedIndex by remember { mutableStateOf(0) }
+                    val popupItems = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
 
                     WindowListPopup  (
                         show = showPopup,
@@ -284,13 +286,12 @@ private fun ProviderCard(
                         onDismissRequest = { showPopup.value = false }
                     ) {
                         ListPopupColumn {
-                            items.forEachIndexed { index, item ->
+                            popupItems.forEachIndexed { index, item ->
                                 DropdownImpl(
                                     text = item,
-                                    optionSize = items.size,
-                                    isSelected = selectedIndex == index,
+                                    optionSize = popupItems.size,
+                                    isSelected = false,
                                     onSelectedIndexChange = {
-                                        selectedIndex = index
                                         showPopup.value = false
                                         when (index) {
                                             0 -> onUpdate()
@@ -305,6 +306,30 @@ private fun ProviderCard(
                 }
             }
         }
+    }
+}
+
+private fun LazyListScope.providerSection(
+    section: ProviderSection,
+    isUpdating: (String) -> Boolean,
+    onUpdate: (Provider) -> Unit,
+    onUpload: (Provider, Uri) -> Unit,
+) {
+    item(key = "title_${section.title}") {
+        SmallTitle(section.title)
+    }
+    items(
+        items = section.providers,
+        key = { provider -> "${provider.type}_${provider.name}" },
+        contentType = { "ProviderCard" },
+    ) { provider ->
+        val providerKey = "${provider.type}_${provider.name}"
+        ProviderCard(
+            provider = provider,
+            isUpdating = isUpdating(providerKey),
+            onUpdate = { onUpdate(provider) },
+            onUpload = { uri -> onUpload(provider, uri) },
+        )
     }
 }
 
