@@ -20,6 +20,7 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -45,7 +46,7 @@ fun ProxyNodeGrid(
     isDelayTesting: Boolean = false,
     onDelayTestClick: (() -> Unit)? = null,
     listStateKey: String? = null,
-    modifier: Modifier = Modifier,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val showDetail = displayMode.showDetail

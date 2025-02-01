@@ -6,6 +6,7 @@ import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.records.PendingDao
+import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.entity.Imported
 import com.github.yumelira.yumebox.service.runtime.entity.Pending
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
@@ -668,6 +669,7 @@ object ProfileProcessor {
             profileLock.withLock {
                 ImportedDao.remove(uuid)
                 PendingDao.remove(uuid)
+                SelectionDao.clear(uuid)
 
                 val pending = context.pendingDir.resolve(uuid.toString())
                 val imported = context.importedDir.resolve(uuid.toString())

@@ -13,6 +13,7 @@ import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class ProxyViewModel(
@@ -36,11 +37,10 @@ class ProxyViewModel(
     val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsRepository.sortMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxySortMode.DEFAULT)
 
-    private val _selectedGroupIndex = MutableStateFlow(0)
-    val selectedGroupIndex: StateFlow<Int> = _selectedGroupIndex.asStateFlow()
-
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
 
+    private var screenActive = false
+    private var externalSelectionSyncJob: Job? = null
 
     val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
         combine(proxyGroups, sortMode) { groups, mode ->
@@ -53,8 +53,14 @@ class ProxyViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun ensureCoreLoaded() {
-        // no-op
+    fun ensureCoreLoaded(isActive: Boolean) {
+        if (screenActive == isActive) return
+        screenActive = isActive
+        if (isActive) {
+            startExternalSelectionSync()
+        } else {
+            stopExternalSelectionSync()
+        }
     }
 
     fun patchMode(mode: TunnelState.Mode) {
@@ -132,16 +138,6 @@ class ProxyViewModel(
         }
     }
 
-    fun setSelectedGroup(index: Int) {
-        val groups = proxyGroups.value
-        if (groups.isEmpty()) {
-            _selectedGroupIndex.value = 0
-            return
-        }
-        _selectedGroupIndex.value = index.coerceIn(0, groups.size - 1)
-    }
-
-
     fun setDisplayMode(mode: ProxyDisplayMode) {
         proxyDisplaySettingsRepository.displayMode.set(mode)
     }
@@ -185,6 +181,26 @@ class ProxyViewModel(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    private fun startExternalSelectionSync() {
+        if (externalSelectionSyncJob?.isActive == true) return
+        externalSelectionSyncJob = viewModelScope.launch {
+            while (true) {
+                proxyFacade.refreshProxyGroups()
+                delay(1500)
+            }
+        }
+    }
+
+    private fun stopExternalSelectionSync() {
+        externalSelectionSyncJob?.cancel()
+        externalSelectionSyncJob = null
+    }
+
+    override fun onCleared() {
+        stopExternalSelectionSync()
+        super.onCleared()
     }
 
     private fun TunnelState.Mode.toModeName(): String = when (this) {
