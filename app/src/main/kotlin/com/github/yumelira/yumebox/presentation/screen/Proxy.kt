@@ -40,6 +40,7 @@ import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import com.github.yumelira.yumebox.presentation.component.CenteredText
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.ProxyNodeGrid
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.proxyGroupGridItems
@@ -53,6 +54,7 @@ import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -85,6 +87,7 @@ fun ProxyPager(
     val sortMode by proxyViewModel.sortMode.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
     val scrollBehavior = MiuixScrollBehavior()
+    val topBarHazeState = LocalTopBarHazeState.current
 
     val showSettingsBottomSheet = rememberSaveable { mutableStateOf(false) }
     val showGroupBottomSheet = rememberSaveable { mutableStateOf(false) }
@@ -116,7 +119,9 @@ fun ProxyPager(
                 onTestDelay = onTestDelay,
                 onShowSettings = { showSettingsBottomSheet.value = true })
         }) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .let { mod -> if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod }) {
             if (proxyGroups.isEmpty()) {
                 CenteredText(
                     firstLine = MLang.Proxy.Empty.NoNodes, secondLine = MLang.Proxy.Empty.Hint

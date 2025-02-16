@@ -63,6 +63,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -218,11 +219,18 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 })
         },
     ) { innerPadding ->
+        val topBarHazeState = LocalTopBarHazeState.current
+
         if (profiles.isEmpty()) {
 
             CenteredText(
                 firstLine = MLang.ProfilesPage.Empty.NoProfiles,
-                secondLine = MLang.ProfilesPage.Empty.Hint
+                secondLine = MLang.ProfilesPage.Empty.Hint,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { mod ->
+                        if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod
+                    }
             )
         } else {
             val lazyListState = rememberLazyListState()
@@ -239,6 +247,9 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     .fillMaxSize()
                     .scrollEndHaptic()
                     .overScrollVertical()
+                    .let { mod ->
+                        if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod
+                    }
                     .nestedScroll(scrollBehavior.nestedScrollConnection).let { mod ->
                         if (bottomBarScrollBehavior != null) {
                             mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
