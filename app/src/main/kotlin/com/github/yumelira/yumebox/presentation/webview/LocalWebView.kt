@@ -24,8 +24,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
@@ -41,6 +39,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 
+private object NoOpWebViewClient : WebViewClient()
+private object NoOpWebChromeClient : WebChromeClient()
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun LocalWebView(
@@ -50,7 +51,6 @@ fun LocalWebView(
     onPageFinished: (String) -> Unit = {},
     onPageError: (String, String) -> Unit = { _, _ -> },
 ) {
-    LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val webViewRef = remember { mutableStateOf<WebView?>(null) }
 
@@ -85,11 +85,13 @@ fun LocalWebView(
                 webView.stopLoading()
                 webView.onPause()
                 webView.visibility = View.GONE
+                webView.webChromeClient = NoOpWebChromeClient
+                webView.webViewClient = NoOpWebViewClient
+                webView.loadUrl("about:blank")
+                webView.clearHistory()
                 webView.removeAllViews()
                 (webView.parent as? ViewGroup)?.removeView(webView)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    webView.destroy()
-                }, 300)
+                webView.destroy()
             }
             webViewRef.value = null
         }
@@ -163,8 +165,7 @@ private fun createWebView(
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                         return true
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+                    } catch (_: Exception) {
                         return true
                     }
                 }

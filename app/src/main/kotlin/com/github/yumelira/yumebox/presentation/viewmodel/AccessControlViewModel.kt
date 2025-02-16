@@ -23,7 +23,6 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -46,7 +45,6 @@ class AccessControlViewModel(
     data class AppInfo(
         val packageName: String,
         val label: String,
-        val icon: Drawable?,
         val isSystemApp: Boolean,
         val isSelected: Boolean,
         val installTime: Long = 0L,
@@ -153,7 +151,6 @@ class AccessControlViewModel(
             AppInfo(
                 packageName = appInfo.packageName,
                 label = appInfo.loadLabel(pm).toString(),
-                icon = runCatching { appInfo.loadIcon(pm) }.getOrNull(),
                 isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                 isSelected = selectedPackages.contains(appInfo.packageName),
                 installTime = pkgInfo?.firstInstallTime ?: 0L,

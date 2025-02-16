@@ -36,6 +36,9 @@ import kotlinx.coroutines.launch
 class LogViewModel(
     private val repository: LogRepository,
 ) : ViewModel() {
+    private companion object {
+        const val MAX_LOG_ENTRIES = 2000
+    }
 
     private val _isRecording = MutableStateFlow(repository.isRecording())
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
@@ -107,7 +110,7 @@ class LogViewModel(
     }
 
     suspend fun readLogContent(fileName: String): List<LogEntry> {
-        return repository.readLogEntries(fileName).map {
+        return repository.readLogEntries(fileName, MAX_LOG_ENTRIES).map {
             LogEntry(
                 time = it.time,
                 level = it.level,

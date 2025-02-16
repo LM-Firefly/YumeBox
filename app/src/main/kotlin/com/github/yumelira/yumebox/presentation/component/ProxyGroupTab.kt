@@ -31,21 +31,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.github.panpf.sketch.request.ImageRequest
-import com.github.panpf.sketch.state.IntColorDrawableStateImage
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
+import coil3.compose.AsyncImage
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 
 private fun delayLabel(delay: Int?): Pair<String, Color>? = when {
     delay == null -> null
@@ -343,18 +340,14 @@ private fun ProxyGroupIcon(
     iconUri: String,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val placeholderColorInt = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.10f).toArgb()
-    val request = remember(context, iconUri, placeholderColorInt) {
-        ImageRequest(context, iconUri) {
-            placeholder(IntColorDrawableStateImage(placeholderColorInt))
-            error(IntColorDrawableStateImage(placeholderColorInt))
-            crossfade(true)
-        }
+    val placeholderColor = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+    val placeholderPainter = remember(placeholderColor) {
+        ColorPainter(placeholderColor)
     }
-
-    SketchAsyncImage(
-        request,
+    AsyncImage(
+        model = iconUri,
+        placeholder = placeholderPainter,
+        error = placeholderPainter,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = modifier,

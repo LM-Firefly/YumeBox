@@ -54,12 +54,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -79,6 +81,8 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Button
@@ -408,13 +412,12 @@ private fun ExpandedSearchOverlay(
                         title = app.label,
                         summary = app.packageName,
                         startAction = {
-                            app.icon?.let { icon ->
-                                Image(
-                                    bitmap = icon.toBitmap(width = 80, height = 80).asImageBitmap(),
-                                    contentDescription = app.label,
-                                    modifier = Modifier.size(40.dp)
-                                )
-                            }
+                            AppIcon(
+                                packageName = app.packageName,
+                                contentDescription = app.label,
+                                imageSize = 40.dp,
+                                bitmapSize = 80
+                            )
                         },
                         endActions = {
                             Checkbox(
@@ -445,15 +448,13 @@ private fun AppCard(
             title = app.label,
             summary = app.packageName,
             startAction = {
-                app.icon?.let { icon ->
-                    Image(
-                        bitmap = icon.toBitmap(width = 80, height = 80).asImageBitmap(),
-                        contentDescription = app.label,
-                        modifier = Modifier
-                            .size(45.dp)
-                            .padding(end = 12.dp)
-                    )
-                }
+                AppIcon(
+                    packageName = app.packageName,
+                    contentDescription = app.label,
+                    imageSize = 45.dp,
+                    bitmapSize = 80,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
             },
             endActions = {
                 Checkbox(
@@ -464,4 +465,32 @@ private fun AppCard(
             onClick = onClick
         )
     }
+}
+
+@Composable
+private fun AppIcon(
+    packageName: String,
+    contentDescription: String,
+    imageSize: androidx.compose.ui.unit.Dp,
+    bitmapSize: Int,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val iconBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = packageName, key2 = bitmapSize) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                context.packageManager
+                    .getApplicationIcon(packageName)
+                    .toBitmap(width = bitmapSize, height = bitmapSize)
+                    .asImageBitmap()
+            }.getOrNull()
+        }
+    }
+
+    val bitmap = iconBitmap ?: return
+    Image(
+        bitmap = bitmap,
+        contentDescription = contentDescription,
+        modifier = modifier.size(imageSize)
+    )
 }

@@ -35,6 +35,7 @@ import com.github.yumelira.yumebox.presentation.component.Card
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
@@ -105,6 +106,7 @@ fun StringListEditorScreen(
     navigator: DestinationsNavigator,
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val topBarHazeState = LocalTopBarHazeState.current
     var editableItems by remember { mutableStateOf(EditorDataHolder.listEditorItems.toMutableList()) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -152,10 +154,17 @@ fun StringListEditorScreen(
         },
     ) { innerPadding ->
         if (editableItems.isEmpty()) {
-            EmptyState(modifier = Modifier.padding(innerPadding))
+            EmptyState(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { mod -> if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod }
+                    .padding(innerPadding)
+            )
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { mod -> if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod },
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
@@ -239,6 +248,7 @@ fun KeyValueEditorScreen(
     navigator: DestinationsNavigator,
 ) {
     val scrollBehavior = MiuixScrollBehavior()
+    val topBarHazeState = LocalTopBarHazeState.current
     var editableItems by remember { mutableStateOf(EditorDataHolder.mapEditorItems.toMutableMap()) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -287,10 +297,17 @@ fun KeyValueEditorScreen(
         },
     ) { innerPadding ->
         if (editableItems.isEmpty()) {
-            EmptyState(modifier = Modifier.padding(innerPadding))
+            EmptyState(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { mod -> if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod }
+                    .padding(innerPadding)
+            )
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { mod -> if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod },
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
