@@ -8,6 +8,7 @@ import com.github.yumelira.yumebox.data.repository.OverrideRepository
 import com.github.yumelira.yumebox.data.repository.ProxyDisplaySettingsRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
+import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import dev.oom_wg.purejoy.mlang.MLang
@@ -41,6 +42,9 @@ class ProxyViewModel(
 
     val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsRepository.sortMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxySortMode.DEFAULT)
+
+    val groupOpenMode: StateFlow<ProxyGroupOpenMode> = proxyDisplaySettingsRepository.groupOpenMode.state
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ProxyGroupOpenMode.FULL_SCREEN)
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
 
@@ -150,6 +154,10 @@ class ProxyViewModel(
 
     fun setSortMode(mode: ProxySortMode) {
         proxyDisplaySettingsRepository.sortMode.set(mode)
+    }
+
+    fun setGroupOpenMode(mode: ProxyGroupOpenMode) {
+        proxyDisplaySettingsRepository.groupOpenMode.set(mode)
     }
 
     fun selectProxy(groupName: String, proxyName: String) {

@@ -18,12 +18,21 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
+package com.github.yumelira.yumebox.presentation.screen.node
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -35,18 +44,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-internal object ProxyCardDefaults {
+internal object NodeCardDefaults {
     val CornerRadius = 12.dp
     val PaddingHorizontal = 12.dp
     val PaddingVertical = 16.dp
     val TextSpacing = 8.dp
 }
 
-private fun delayDisplay(delay: Int, withUnit: Boolean): Pair<String, Color>? = when {
+private fun latencyDisplay(delay: Int, withUnit: Boolean): Pair<String, Color>? = when {
     delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
     delay in 1..800 -> "${delay}${if (withUnit) "ms" else ""}" to Color(0xFF4CAF50)
     delay in 801..5000 -> "${delay}${if (withUnit) "ms" else ""}" to Color(0xFFFFA726)
@@ -54,15 +64,15 @@ private fun delayDisplay(delay: Int, withUnit: Boolean): Pair<String, Color>? = 
 }
 
 @Composable
-internal fun ProxySelectableCard(
+internal fun NodeSelectableCard(
     isSelected: Boolean,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    paddingVertical: Dp = ProxyCardDefaults.PaddingVertical,
-    content: @Composable BoxScope.() -> Unit
+    paddingVertical: Dp = NodeCardDefaults.PaddingVertical,
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val shape = RoundedCornerShape(ProxyCardDefaults.CornerRadius)
+    val shape = RoundedCornerShape(NodeCardDefaults.CornerRadius)
     val backgroundColor = if (isSelected) {
         MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
     } else {
@@ -85,7 +95,7 @@ internal fun ProxySelectableCard(
                 }
             }
             .padding(
-                horizontal = ProxyCardDefaults.PaddingHorizontal,
+                horizontal = NodeCardDefaults.PaddingHorizontal,
                 vertical = paddingVertical,
             ),
         content = content,
@@ -93,7 +103,7 @@ internal fun ProxySelectableCard(
 }
 
 @Composable
-fun ProxyNodeCard(
+internal fun NodeCard(
     proxy: Proxy,
     isSelected: Boolean,
     onClick: ((String) -> Unit)?,
@@ -107,7 +117,7 @@ fun ProxyNodeCard(
     val onCardClick = remember(proxy.name, onClick) {
         onClick?.let { click -> { click(proxy.name) } }
     }
-    ProxySelectableCard(
+    NodeSelectableCard(
         isSelected = isSelected,
         onClick = onCardClick,
         modifier = modifier,
@@ -121,11 +131,12 @@ fun ProxyNodeCard(
         val flagged = remember(proxy.name) { extractFlaggedName(proxy.name) }
         val countryCode = flagged.countryCode
         val delayDisplay = remember(proxy.delay, isSingleColumn) {
-            delayDisplay(proxy.delay, withUnit = isSingleColumn)
+            latencyDisplay(proxy.delay, withUnit = isSingleColumn)
         }
+
         if (isSingleColumn) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                ProxyTitleRow(
+                NodeTitleRow(
                     displayName = flagged.displayName,
                     countryCode = countryCode.takeIf { showCountryFlag },
                     textColor = textColor,
@@ -133,7 +144,7 @@ fun ProxyNodeCard(
                 )
                 if (showDetail) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    ProxyDetailRow(
+                    NodeDetailRow(
                         typeName = proxy.type.name,
                         delayDisplay = delayDisplay,
                         isDelayTesting = isDelayTesting,
@@ -144,14 +155,14 @@ fun ProxyNodeCard(
             }
         } else if (showDetail) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                ProxyTitleRow(
+                NodeTitleRow(
                     displayName = flagged.displayName,
                     countryCode = countryCode.takeIf { showCountryFlag },
                     textColor = textColor,
                     allowSoftWrap = false,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                ProxyDetailRow(
+                NodeDetailRow(
                     typeName = proxy.type.name,
                     delayDisplay = delayDisplay,
                     isDelayTesting = isDelayTesting,
@@ -160,7 +171,7 @@ fun ProxyNodeCard(
                 )
             }
         } else {
-            ProxyTitleRow(
+            NodeTitleRow(
                 displayName = flagged.displayName,
                 countryCode = countryCode.takeIf { showCountryFlag },
                 textColor = textColor,
@@ -171,7 +182,7 @@ fun ProxyNodeCard(
 }
 
 @Composable
-private fun ProxyTitleRow(
+private fun NodeTitleRow(
     displayName: String,
     countryCode: String?,
     textColor: Color,
@@ -198,7 +209,7 @@ private fun ProxyTitleRow(
 }
 
 @Composable
-private fun ProxyDetailRow(
+private fun NodeDetailRow(
     typeName: String,
     delayDisplay: Pair<String, Color>?,
     isDelayTesting: Boolean,
@@ -219,7 +230,7 @@ private fun ProxyDetailRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        ProxyDelayIndicator(
+        NodeDelayIndicator(
             delayDisplay = delayDisplay,
             isDelayTesting = isDelayTesting,
             onDelayTestClick = onDelayTestClick,
@@ -228,7 +239,7 @@ private fun ProxyDetailRow(
 }
 
 @Composable
-private fun ProxyDelayIndicator(
+private fun NodeDelayIndicator(
     delayDisplay: Pair<String, Color>?,
     isDelayTesting: Boolean,
     onDelayTestClick: (() -> Unit)?,
