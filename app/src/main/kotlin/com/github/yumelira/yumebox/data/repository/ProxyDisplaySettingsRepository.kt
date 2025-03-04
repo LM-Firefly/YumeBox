@@ -14,4 +14,5 @@ class ProxyDisplaySettingsRepository(
     val displayMode: Preference<ProxyDisplayMode> = store.displayMode
     val sortMode: Preference<ProxySortMode> = store.sortMode
     val groupOpenMode: Preference<ProxyGroupOpenMode> = store.groupOpenMode
+    val sheetHeightFraction: Preference<Float> = store.sheetHeightFraction
 }

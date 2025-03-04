@@ -7,11 +7,11 @@ import android.content.Intent
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.records.PendingDao
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
@@ -83,7 +83,14 @@ class ServiceNotificationManager(
         val contentIntent = PendingIntent.getActivity(
             service,
             0,
-            Intent(service, MainActivity::class.java),
+            Intent().apply {
+                component = Components.PROXY_SHEET_ACTIVITY
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_NO_ANIMATION
+                )
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 

@@ -358,6 +358,7 @@ fun ProxyNodePage(
                         isDelayTesting = testingGroupNames.contains(selected.name),
                         onClick = {},
                         onDelayClick = { proxyViewModel.testDelay(selected.name) },
+                        textAlpha = 0f,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .fillMaxWidth()

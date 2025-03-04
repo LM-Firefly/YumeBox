@@ -38,17 +38,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import com.github.panpf.sketch.request.ImageRequest
+import com.github.panpf.sketch.state.IntColorDrawableStateImage
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.component.LoadingDotsWave
@@ -56,6 +60,7 @@ import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 
 internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
     delay == null -> null
@@ -73,6 +78,7 @@ internal fun LazyListScope.nodeGroupItems(
     onGroupDelayClick: (ProxyGroupInfo) -> Unit,
     testingGroupNames: Set<String> = emptySet(),
     onGroupBoundsChanged: ((String, Rect) -> Unit)? = null,
+    itemVerticalPadding: Dp = 6.dp,
 ) {
     val showDetail = displayMode.showDetail
 
@@ -89,7 +95,7 @@ internal fun LazyListScope.nodeGroupItems(
             onDelayClick = { onGroupDelayClick(group) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
+                .padding(vertical = itemVerticalPadding),
             onBoundsChanged = onGroupBoundsChanged?.let { callback ->
                 { bounds -> callback(group.name, bounds) }
             },
@@ -106,11 +112,19 @@ internal fun NodeGroupCard(
     onDelayClick: () -> Unit,
     modifier: Modifier = Modifier,
     onBoundsChanged: ((Rect) -> Unit)? = null,
+    textAlpha: Float = 1f,
 ) {
-    val summary = remember(group.now) {
-        extractFlaggedName(group.now).displayName.ifBlank { MLang.Proxy.Mode.Direct }
+    val resolvedTextAlpha = textAlpha.coerceIn(0f, 1f)
+    val currentNode = remember(group.now) { extractFlaggedName(group.now) }
+    val summary = remember(currentNode.displayName) {
+        currentNode.displayName.ifBlank { MLang.Proxy.Mode.Direct }
     }
-    val iconUri = remember(group.icon) { group.icon?.trim()?.takeIf { it.isNotEmpty() } }
+    val iconUri = remember(group.icon) {
+        group.icon
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(::normalizeNodeGroupIconUri)
+    }
     val delay = remember(group.proxies, group.now) {
         group.proxies.firstOrNull { it.name == group.now }?.delay
     }
@@ -156,6 +170,7 @@ internal fun NodeGroupCard(
                     color = MiuixTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.alpha(resolvedTextAlpha),
                 )
 
                 if (showDetail) {
@@ -166,6 +181,7 @@ internal fun NodeGroupCard(
                         color = MiuixTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.alpha(resolvedTextAlpha),
                     )
                 }
             }
@@ -177,7 +193,9 @@ internal fun NodeGroupCard(
                         .padding(start = 8.dp),
                     contentAlignment = Alignment.CenterEnd,
                 ) {
-                    LoadingDotsWave(color = testingColor)
+                    Box(modifier = Modifier.alpha(resolvedTextAlpha)) {
+                        LoadingDotsWave(color = testingColor)
+                    }
                 }
             } else if (delayLabel != null) {
                 val (delayText, delayColor) = delayLabel
@@ -190,6 +208,7 @@ internal fun NodeGroupCard(
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .then(delaySlotModifier)
+                        .alpha(resolvedTextAlpha)
                         .clickable(onClick = onDelayClick),
                 )
             }
@@ -203,19 +222,29 @@ private object NodeIconDefaults {
     val Shape = RoundedCornerShape(6.dp)
 }
 
+private fun normalizeNodeGroupIconUri(raw: String): String {
+    if (raw.startsWith("//")) return "https:$raw"
+    if (raw.startsWith("www.", ignoreCase = true)) return "https://$raw"
+    return raw
+}
+
 @Composable
 private fun NodeGroupIcon(
     iconUri: String,
     modifier: Modifier = Modifier,
 ) {
-    val placeholderColor = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.10f)
-    val placeholderPainter = remember(placeholderColor) {
-        ColorPainter(placeholderColor)
+    val context = LocalContext.current
+    val placeholderColorInt = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.10f).toArgb()
+    val request = remember(context, iconUri, placeholderColorInt) {
+        ImageRequest(context, iconUri) {
+            placeholder(IntColorDrawableStateImage(placeholderColorInt))
+            error(IntColorDrawableStateImage(placeholderColorInt))
+            crossfade(true)
+        }
     }
-    AsyncImage(
-        model = iconUri,
-        placeholder = placeholderPainter,
-        error = placeholderPainter,
+
+    SketchAsyncImage(
+        request = request,
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = modifier,
