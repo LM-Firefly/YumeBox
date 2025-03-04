@@ -24,6 +24,7 @@ import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
+import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_DEFAULT
 import com.tencent.mmkv.MMKV
 
 class ProxyDisplaySettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
@@ -31,5 +32,6 @@ class ProxyDisplaySettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmk
     val sortMode by enumFlow(ProxySortMode.DEFAULT)
     val displayMode by enumFlow(ProxyDisplayMode.SINGLE_DETAILED)
     val proxyMode by enumFlow(TunnelState.Mode.Rule)
-    val groupOpenMode by enumFlow(ProxyGroupOpenMode.FULL_SCREEN)
+    val groupOpenMode by enumFlow(ProxyGroupOpenMode.BOTTOM_SHEET)
+    val sheetHeightFraction by floatFlow(PROXY_SHEET_HEIGHT_FRACTION_DEFAULT)
 }

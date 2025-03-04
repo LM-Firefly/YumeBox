@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.webview
+package com.github.yumelira.yumebox
 
 import android.app.Activity
 import android.content.Context
@@ -31,6 +31,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import com.github.yumelira.yumebox.presentation.webview.WebViewScreen
 
 class WebViewActivity : ComponentActivity() {
 

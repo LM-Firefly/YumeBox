@@ -66,6 +66,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+                android:name=".ProxySheetActivity"
+                android:exported="false"
+                android:excludeFromRecents="true"
+                android:finishOnTaskLaunch="true"
+                android:launchMode="singleInstance"
+                android:taskAffinity=""
+                android:theme="@style/Theme.YumeBox.Translucent.Popup"/>
+
         <activity-alias
                 android:name=".MainActivityAlias"
                 android:exported="true"
@@ -77,7 +86,7 @@
         </activity-alias>
 
         <activity
-                android:name=".presentation.webview.WebViewActivity"
+                android:name=".WebViewActivity"
                 android:exported="false"
                 android:configChanges="orientation|screenSize|keyboardHidden"
                 android:hardwareAccelerated="true"

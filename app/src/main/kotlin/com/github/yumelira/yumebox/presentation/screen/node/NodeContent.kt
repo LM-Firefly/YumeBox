@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,10 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import dev.chrisbanes.haze.HazeProgressive
@@ -40,6 +42,13 @@ import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+val NodeSheetContentPadding = PaddingValues(
+    start = 0.dp,
+    end = 0.dp,
+    top = 8.dp,
+    bottom = 16.dp,
+)
 
 private fun Modifier.nodeTabHaze(state: HazeState?, style: HazeStyle?): Modifier {
     if (state == null || style == null) return this
@@ -63,7 +72,6 @@ internal fun NodeTabs(
 ) {
     val hazeState = LocalTopBarHazeState.current
     val hazeStyle = LocalTopBarHazeStyle.current
-    val hazeEnabled = hazeState != null && hazeStyle != null
     val listState = rememberLazyListState()
 
     LaunchedEffect(selectedIndex, groups.size) {
@@ -118,35 +126,61 @@ internal fun NodeTabs(
 }
 
 @Composable
+internal fun rememberNodeSheetHeight(sheetHeightFraction: Float): Dp {
+    val normalized = normalizeProxySheetHeightFraction(sheetHeightFraction)
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    return remember(screenHeightDp, normalized) { screenHeightDp.dp * normalized }
+}
+
+@Composable
+internal fun NodeGroupSheetContent(
+    groups: List<ProxyGroupInfo>,
+    displayMode: ProxyDisplayMode,
+    testingGroupNames: Set<String>,
+    sheetHeightFraction: Float,
+    onGroupClick: (ProxyGroupInfo) -> Unit,
+    onGroupDelayClick: (ProxyGroupInfo) -> Unit,
+) {
+    val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(sheetHeight),
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = NodeSheetContentPadding,
+            overscrollEffect = null,
+        ) {
+            nodeGroupItems(
+                groups = groups,
+                displayMode = displayMode,
+                onGroupClick = onGroupClick,
+                onGroupDelayClick = onGroupDelayClick,
+                testingGroupNames = testingGroupNames,
+                onGroupBoundsChanged = null,
+                itemVerticalPadding = 0.dp,
+            )
+        }
+    }
+}
+
+@Composable
 fun NodeSheetContent(
     group: ProxyGroupInfo,
     displayMode: ProxyDisplayMode,
     onSelectProxy: (String) -> Unit,
     isDelayTesting: Boolean,
     onTestDelay: () -> Unit,
+    sheetHeightFraction: Float,
 ) {
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
-    val (minSheetHeight, maxSheetHeight) = remember(screenHeightDp) {
-        val screenHeight = screenHeightDp.dp
-        val minHeight = (screenHeight * 0.42f).coerceAtLeast(280.dp).coerceAtMost(380.dp)
-        val maxHeight = (screenHeight * 0.72f).coerceAtLeast(420.dp).coerceAtMost(620.dp)
-        minHeight to maxHeight
-    }
-
-    val shouldShowLoading = remember(group.proxies.size) {
-        group.proxies.size > 10
-    }
+    val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .let { base ->
-                if (shouldShowLoading) {
-                    base.height(maxSheetHeight)
-                } else {
-                    base.heightIn(min = minSheetHeight, max = maxSheetHeight)
-                }
-            },
+            .height(sheetHeight),
         contentAlignment = Alignment.Center,
     ) {
         NodeList(
@@ -162,7 +196,7 @@ fun NodeSheetContent(
             isDelayTesting = isDelayTesting,
             onTestDelay = onTestDelay,
             listStateKeyPrefix = "node_sheet",
-            contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
+            contentPadding = NodeSheetContentPadding,
             modifier = Modifier.fillMaxSize(),
         )
     }
