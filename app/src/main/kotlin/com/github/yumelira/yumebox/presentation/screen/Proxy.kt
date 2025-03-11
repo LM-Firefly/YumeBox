@@ -37,6 +37,8 @@ import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_MAX
+import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_MIN
 import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.presentation.component.CenteredText
@@ -65,6 +67,20 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import kotlin.math.roundToInt
+
+private fun fractionToSliderValue(fraction: Float): Float {
+    val normalized = normalizeProxySheetHeightFraction(fraction)
+    val range = PROXY_SHEET_HEIGHT_FRACTION_MAX - PROXY_SHEET_HEIGHT_FRACTION_MIN
+    if (range <= 0f) return 0f
+    return ((normalized - PROXY_SHEET_HEIGHT_FRACTION_MIN) / range).coerceIn(0f, 1f)
+}
+
+private fun sliderValueToFraction(sliderValue: Float): Float {
+    val range = PROXY_SHEET_HEIGHT_FRACTION_MAX - PROXY_SHEET_HEIGHT_FRACTION_MIN
+    return normalizeProxySheetHeightFraction(
+        PROXY_SHEET_HEIGHT_FRACTION_MIN + sliderValue.coerceIn(0f, 1f) * range
+    )
+}
 
 @Composable
 fun ProxyPager(
@@ -371,13 +387,13 @@ private fun ProxySettingsContent(
             modifier = Modifier.padding(bottom = 8.dp)
         )
         var sliderValue by remember(sheetHeightFraction) {
-            mutableFloatStateOf(normalizeProxySheetHeightFraction(sheetHeightFraction))
+            mutableFloatStateOf(fractionToSliderValue(sheetHeightFraction))
         }
         Slider(
             value = sliderValue,
             onValueChange = { value ->
                 sliderValue = value
-                proxyViewModel.setSheetHeightFraction(value)
+                proxyViewModel.setSheetHeightFraction(sliderValueToFraction(value))
             },
         )
 
