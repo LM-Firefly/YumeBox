@@ -145,6 +145,13 @@ private fun ProxySheet(
                 IconButton(onClick = { showSortPopup.value = true }) {
                     Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Settings.SortMode)
                 }
+
+                NodeSortPopup(
+                    show = showSortPopup,
+                    onDismiss = { showSortPopup.value = false },
+                    sortMode = sortMode,
+                    onSortSelected = proxyViewModel::setSortMode,
+                )
             }
         },
         endAction = {
@@ -225,11 +232,4 @@ private fun ProxySheet(
             }
         }
     }
-
-    NodeSortPopup(
-        show = showSortPopup,
-        onDismiss = { showSortPopup.value = false },
-        sortMode = sortMode,
-        onSortSelected = proxyViewModel::setSortMode,
-    )
 }

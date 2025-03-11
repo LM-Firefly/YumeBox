@@ -20,7 +20,6 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.formatBytes
-import com.github.yumelira.yumebox.data.model.ProfileTrafficUsage
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.viewmodel.TrafficStatisticsViewModel
@@ -59,7 +57,6 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
     val trafficDifference by viewModel.trafficDifference.collectAsState()
     val selectedTimeRange by viewModel.selectedTimeRange.collectAsState()
     val chartItems by viewModel.chartItems.collectAsState()
-    val profileUsages by viewModel.profileUsages.collectAsState()
     val selectedBarIndex by viewModel.selectedBarIndex.collectAsState()
 
     Scaffold(
@@ -182,64 +179,6 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                     }
                 }
             }
-
-
-
-            item {
-                SmallTitle(MLang.TrafficStatistics.ProfileUsage.Section)
-            }
-            if (profileUsages.isEmpty()) {
-                item {
-                    top.yukonga.miuix.kmp.basic.Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = MLang.TrafficStatistics.ProfileUsage.Empty,
-                                style = MiuixTheme.textStyles.body2,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                            )
-                        }
-                    }
-                }
-            } else {
-                item {
-                    top.yukonga.miuix.kmp.basic.Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        ) {
-                            profileUsages.forEachIndexed { index, usage ->
-                                ProfileUsageItem(
-                                    usage = usage,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                                )
-                                if (index < profileUsages.size - 1) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp)
-                                            .height(0.5.dp)
-                                            .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.2f))
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -283,41 +222,5 @@ private fun TimeRangeSelector(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ProfileUsageItem(
-    usage: ProfileTrafficUsage,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = usage.profileName,
-                style = MiuixTheme.textStyles.body1,
-                color = MiuixTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "↑ ${formatBytes(usage.totalUpload)}  ↓ ${formatBytes(usage.totalDownload)}",
-                style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-            )
-        }
-
-        Text(
-            text = formatBytes(usage.totalBytes),
-            style = MiuixTheme.textStyles.body1,
-            color = MiuixTheme.colorScheme.primary
-        )
     }
 }
