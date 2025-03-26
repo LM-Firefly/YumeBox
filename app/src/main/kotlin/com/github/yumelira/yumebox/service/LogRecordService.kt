@@ -144,7 +144,6 @@ class LogRecordService : Service() {
                             }
                         }
                     }
-                    ServiceClient.connect(applicationContext)
                     val clash = ServiceClient.clash()
                     clash.setLogObserver(observer)
                     

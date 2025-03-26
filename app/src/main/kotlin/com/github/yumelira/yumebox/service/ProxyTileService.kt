@@ -21,7 +21,6 @@
 package com.github.yumelira.yumebox.service
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -75,7 +74,7 @@ class ProxyTileService : TileService() {
         super.onClick()
         scope.launch {
             val isRunning = proxyFacade.isRunning.first()
-            
+
             // Sync with actual state if inconsistent
             val tileState = qsTile?.state
             if ((isRunning && tileState == Tile.STATE_INACTIVE) || (!isRunning && tileState == Tile.STATE_ACTIVE)) {
@@ -93,17 +92,17 @@ class ProxyTileService : TileService() {
                         val intent = Intent(this@ProxyTileService, MainActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
-                        startActivityAndCollapseCompat(intent)
+                        startActivityAndCollapse(intent)
                         return@launch
                     }
-                    
+
                     try {
                         // Defaulting to Tun mode for Tile quick start
                         proxyFacade.startProxy(useTun = true)
                     } catch (e: VpnPermissionRequired) {
                         val intent = e.intent
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivityAndCollapseCompat(intent)
+                        startActivityAndCollapse(intent)
                     }
                 }
             } catch (e: Exception) {
@@ -112,31 +111,16 @@ class ProxyTileService : TileService() {
         }
     }
 
-    private fun startActivityAndCollapseCompat(intent: Intent) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
-            startActivityAndCollapse(pendingIntent)
-        } else {
-            @Suppress("DEPRECATION")
-            startActivityAndCollapse(intent)
-        }
-    }
-
     private fun updateTileState(isRunning: Boolean) {
         val tile = qsTile ?: return
         tile.state = if (isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        
+
         tile.label = if (isRunning) {
             MLang.Home.Control.Stop
         } else {
             MLang.Home.Control.Start
         }
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             tile.subtitle = if (isRunning) {
                 MLang.Service.Notification.Connected
@@ -149,7 +133,7 @@ class ProxyTileService : TileService() {
             this,
             if (isRunning) R.drawable.ic_logo_service else R.drawable.ic_logo_service
         )
-        
+
         tile.updateTile()
     }
 }

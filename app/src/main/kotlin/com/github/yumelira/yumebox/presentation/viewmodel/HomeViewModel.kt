@@ -27,25 +27,23 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
 import com.github.yumelira.yumebox.data.repository.NetworkInfoService
 import com.github.yumelira.yumebox.data.repository.ProxyChainResolver
-import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
+import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import timber.log.Timber
 
 class HomeViewModel(
     application: Application,
     private val proxyFacade: ProxyFacade,
     private val profilesRepository: ProfilesRepository,
-    appSettingsRepository: AppSettingsRepository,
+    appSettingsStorage: AppSettingsStorage,
     private val networkInfoService: NetworkInfoService,
     private val proxyChainResolver: ProxyChainResolver
 ) : AndroidViewModel(application) {
@@ -70,8 +68,8 @@ class HomeViewModel(
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
 
-    val oneWord: StateFlow<String> = appSettingsRepository.oneWord.state
-    val oneWordAuthor: StateFlow<String> = appSettingsRepository.oneWordAuthor.state
+    val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
+    val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -207,9 +205,7 @@ class HomeViewModel(
                 
                 // 启动代理
                 val useTun = useTunMode ?: false
-                withTimeout(15_000L) {
-                    proxyFacade.startProxy(useTun)
-                }
+                proxyFacade.startProxy(useTun)
                 
                 _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
                 _isToggling.value = false
@@ -219,10 +215,7 @@ class HomeViewModel(
                 _vpnPrepareIntent.emit(e.intent)
                 _displayRunning.value = false
                 _isToggling.value = false
-            } catch (e: TimeoutCancellationException) {
-                _isToggling.value = false
-                _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                showError(MLang.Home.Message.StartFailed.format("启动超时"))
+                Timber.i("VPN permission required")
             } catch (e: Exception) {
                 _displayRunning.value = false
                 _isToggling.value = false

@@ -51,6 +51,10 @@ AppSettings = {
         
         HideIconTitle = "隐藏应用图标"
         HideIconSummary = "隐藏后可通过拨号盘 *#*#0721#*#* 打开"
+
+        IconWithSelectedLabelTitle = "导航栏仅选中时显示文本"
+        IconWithSelectedLabelSummary = "始终显示图标，仅选中时显示文本"
+
         
         LanguageTitle = "语言"
         LanguageSummary = "选择应用显示语言"

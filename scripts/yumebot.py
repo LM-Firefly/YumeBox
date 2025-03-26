@@ -6,17 +6,48 @@ import json
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 MESSAGE_THREAD_ID = os.environ.get("MESSAGE_THREAD_ID")
-COMMIT_MESSAGE = os.environ.get("COMMIT_MESSAGE")
 TITLE = os.environ.get("TITLE")
 BRANCH = os.environ.get("BRANCH")
+WORKFLOW_NAME = os.environ.get("WORKFLOW_NAME", "")
+EVENT_NAME = os.environ.get("EVENT_NAME", "")
+RUN_NUMBER = os.environ.get("RUN_NUMBER", "")
+COMMIT_SHA = os.environ.get("COMMIT_SHA", "")
+REPOSITORY = os.environ.get("REPOSITORY", "")
+RUN_ID = os.environ.get("RUN_ID", "")
+SERVER_URL = os.environ.get("SERVER_URL", "https://github.com")
 
 
 def get_caption():
-    msg = f"""**{TITLE}**
+    workflow_label = "Normal"
+    workflow_name_lower = WORKFLOW_NAME.lower()
+    title_lower = TITLE.lower()
+
+    if "smart" in workflow_name_lower or "smart" in title_lower:
+        workflow_label = "Smart"
+    elif "test" in workflow_name_lower:
+        workflow_label = "Test"
+
+    trigger_label = "Manual"
+    if EVENT_NAME == "push":
+        trigger_label = "Push"
+    elif EVENT_NAME == "schedule":
+        trigger_label = "Nightly"
+    elif EVENT_NAME == "workflow_dispatch":
+        trigger_label = "Manual"
+
+    action_url = ""
+    if REPOSITORY and RUN_ID:
+        action_url = f"{SERVER_URL}/{REPOSITORY}/actions/runs/{RUN_ID}"
+    else:
+        action_url = "(unavailable)"
+
+    msg = f"""**{TITLE} [{workflow_label}]**
+Trigger: {trigger_label}
+Workflow: {WORKFLOW_NAME}
 Branch: {BRANCH}
-```
-{COMMIT_MESSAGE}
-```"""
+Run: #{RUN_NUMBER}
+Commit: `{COMMIT_SHA[:7] if COMMIT_SHA else "unknown"}`
+Action: {action_url}"""
     return msg
 
 

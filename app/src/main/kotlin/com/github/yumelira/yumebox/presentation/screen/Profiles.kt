@@ -47,7 +47,6 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.MainActivity
-import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.ProfileLink
@@ -57,13 +56,13 @@ import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProfilesViewModel
+import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -219,18 +218,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 })
         },
     ) { innerPadding ->
-        val topBarHazeState = LocalTopBarHazeState.current
-
         if (profiles.isEmpty()) {
 
             CenteredText(
                 firstLine = MLang.ProfilesPage.Empty.NoProfiles,
-                secondLine = MLang.ProfilesPage.Empty.Hint,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .let { mod ->
-                        if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod
-                    }
+                secondLine = MLang.ProfilesPage.Empty.Hint
             )
         } else {
             val lazyListState = rememberLazyListState()
@@ -247,9 +239,6 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     .fillMaxSize()
                     .scrollEndHaptic()
                     .overScrollVertical()
-                    .let { mod ->
-                        if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod
-                    }
                     .nestedScroll(scrollBehavior.nestedScrollConnection).let { mod ->
                         if (bottomBarScrollBehavior != null) {
                             mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
@@ -1129,7 +1118,7 @@ private fun AddProfileSheet(
                                                         )
                                                     } else {
                                                         onAddProfile(
-                                                            name.trim(),
+                                                            name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                                                             url,
                                                             Profile.Type.Url,
                                                             0L,
@@ -1146,7 +1135,7 @@ private fun AddProfileSheet(
                                                         )
                                                     } else {
                                                         onAddProfile(
-                                                            name.trim(),
+                                                            name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                                                             filePath,
                                                             Profile.Type.File,
                                                             0L,

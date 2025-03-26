@@ -1,17 +1,27 @@
-name: Smart Release
+name: Build YumeBox Smart
 
 on:
+  push:
+    branches: [ "Yume", "dev", "ci" ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  schedule:
+    - cron: '20 18 * * *'
   workflow_dispatch:
-
-permissions:
-  contents: write
+  workflow_call:
 
 concurrency:
-  group: Smart-Release
+  group: Build-Smart-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,10 +38,11 @@ jobs:
           java-version: '25'
           cache: 'gradle'
 
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: "1.26"
 
       - uses: actions/cache@v4
         with:
@@ -70,6 +81,10 @@ jobs:
         run: |
           chmod +x scripts/sync-kernel.sh
           ./scripts/sync-kernel.sh smart
+
+      - name: Check upload availability
+        id: check_upload
+        run: echo "UPLOAD=${{ secrets.BOT_TOKEN != '' }}" >> $GITHUB_OUTPUT
 
       - name: Write signing config
         run: |
@@ -125,58 +140,62 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
 
-      - name: Delete existing Smart release assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # 获取 Smart release
-          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/Smart --jq '.id' 2>/dev/null || echo "")
-          
-          if [ -n "$RELEASE_ID" ]; then
-            echo "Found Smart release (ID: $RELEASE_ID), deleting assets..."
-            
-            # 获取所有资源并删除
-            gh api repos/${{ github.repository }}/releases/$RELEASE_ID/assets --jq '.[].id' | while read ASSET_ID; do
-              echo "Deleting asset $ASSET_ID..."
-              gh api -X DELETE repos/${{ github.repository }}/releases/assets/$ASSET_ID
-            done
-            
-            echo "All assets deleted"
-          else
-            echo "Smart release not found, will create new one"
-          fi
+      - name: Upload arm64-v8a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yumebox-arm64-v8a
+          path: app/build/outputs/apk/release/*arm64-v8a*.apk
 
-      - name: Create or update Smart release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # 尝试获取 Smart release
-          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/Smart --jq '.id' 2>/dev/null || echo "")
-          
-          if [ -n "$RELEASE_ID" ]; then
-            echo "Updating existing Smart release..."
-            gh api -X PATCH repos/${{ github.repository }}/releases/$RELEASE_ID \
-              -f name="Smart" \
-              -f body="" \
-              -F prerelease=true
-          else
-            echo "Creating new Smart release..."
-            gh release create Smart \
-              --title "Smart" \
-              --notes "" \
-              --prerelease
-          fi
+      - name: Upload armeabi-v7a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yumebox-armeabi-v7a
+          path: app/build/outputs/apk/release/*armeabi-v7a*.apk
 
-      - name: Upload APKs to Smart release
+      - name: Upload x86_64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yumebox-x86_64
+          path: app/build/outputs/apk/release/*x86_64*.apk
+
+      - name: Upload x86 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yumebox-x86
+          path: app/build/outputs/apk/release/*x86*.apk
+
+      - name: Upload universal APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yumebox-universal
+          path: app/build/outputs/apk/release/*universal*.apk
+
+      - name: Upload mappings
+        uses: actions/upload-artifact@v4
+        with:
+          name: mappings
+          path: app/build/outputs/mapping/release/
+
+      - name: Bot session cache
+        if: steps.check_upload.outputs.UPLOAD == 'true'
+        uses: actions/cache@v4
+        with:
+          path: scripts/yumebot.session
+          key: ${{ runner.os }}-bot-session
+
+      - name: Upload to Telegram
+        if: steps.check_upload.outputs.UPLOAD == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # 上传所有 APK
-          for apk in app/build/outputs/apk/release/*.apk; do
-            if [ -f "$apk" ]; then
-              echo "Uploading $(basename $apk)..."
-              gh release upload Smart "$apk" --clobber
-            fi
-          done
-          
-          echo "All APKs uploaded to Smart release"
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
+          TITLE: YumeBox Smart
+          BRANCH: ${{ github.ref_name }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+        run: python3 $GITHUB_WORKSPACE/scripts/yumebot.py

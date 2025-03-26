@@ -21,8 +21,8 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
 import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.presentation.theme.AppColorTheme
 
@@ -42,6 +42,8 @@ class AppSettingsViewModel(
     val bottomBarFloating: Preference<Boolean> = repository.bottomBarFloating
     val showDivider: Preference<Boolean> = repository.showDivider
     val bottomBarAutoHide: Preference<Boolean> = repository.bottomBarAutoHide
+
+    val iconWithSelectedLabel: Preference<Boolean> = repository.iconWithSelectedLabel
 
     val oneWord: Preference<String> = repository.oneWord
     val oneWordAuthor: Preference<String> = repository.oneWordAuthor

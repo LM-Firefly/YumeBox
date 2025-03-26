@@ -21,6 +21,8 @@ class AppSettingsRepository(
     val showDivider: Preference<Boolean> = storage.showDivider
     val bottomBarAutoHide: Preference<Boolean> = storage.bottomBarAutoHide
 
+    val iconWithSelectedLabel: Preference<Boolean> = storage.iconWithSelectedLabel
+
     val oneWord: Preference<String> = storage.oneWord
     val oneWordAuthor: Preference<String> = storage.oneWordAuthor
     val customUserAgent: Preference<String> = storage.customUserAgent

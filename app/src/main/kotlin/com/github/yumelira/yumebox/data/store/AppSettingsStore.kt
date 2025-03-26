@@ -39,6 +39,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val bottomBarFloating by boolFlow(false)
     val showDivider by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
+    val iconWithSelectedLabel by boolFlow(true)
 
     val oneWord by strFlow("もうサヨウナラ，もう終わらなきゃ")
 
