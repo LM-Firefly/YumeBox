@@ -20,21 +20,10 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -53,9 +42,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
-import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationItem
+import top.yukonga.miuix.kmp.basic.*
 
 val LocalPagerState = compositionLocalOf<PagerState> { error("LocalPagerState is not provided") }
 val LocalHandlePageChange = compositionLocalOf<(Int) -> Unit> { error("LocalHandlePageChange is not provided") }
@@ -76,13 +63,7 @@ fun BottomBar(
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val bottomBarFloating by appSettingsViewModel.bottomBarFloating.state.collectAsState()
     val showDivider by appSettingsViewModel.showDivider.state.collectAsState()
-
-    val items = BottomBarDestination.entries.map { destination ->
-        NavigationItem(
-            label = destination.label,
-            icon = destination.icon,
-        )
-    }
+    val iconWithSelectedLabel by appSettingsViewModel.iconWithSelectedLabel.state.collectAsState()
 
     val onItemClick: (Int) -> Unit = onItemClick@{ index ->
         if (index == pagerState.currentPage && !pagerState.isScrollInProgress) return@onItemClick
@@ -121,20 +102,34 @@ fun BottomBar(
             FloatingNavigationBar(
                 modifier = modifier,
                 color = Color.Transparent,
-                items = items,
-                selected = page,
-                onClick = onItemClick,
                 showDivider = showDivider,
-            )
+                mode = NavigationDisplayMode.IconOnly,
+            ) {
+                BottomBarDestination.entries.forEachIndexed { index, destination ->
+                    FloatingNavigationBarItem(
+                        selected = page == index,
+                        onClick = { onItemClick(index) },
+                        icon = destination.icon,
+                        label = destination.label,
+                    )
+                }
+            }
         } else {
             NavigationBar(
                 modifier = modifier,
                 color = Color.Transparent,
-                items = items,
-                selected = page,
-                onClick = onItemClick,
                 showDivider = showDivider,
-            )
+                mode = if (iconWithSelectedLabel) NavigationDisplayMode.IconWithSelectedLabel else NavigationDisplayMode.IconAndText,
+            ) {
+                BottomBarDestination.entries.forEachIndexed { index, destination ->
+                    NavigationBarItem(
+                        selected = page == index,
+                        onClick = { onItemClick(index) },
+                        icon = destination.icon,
+                        label = destination.label,
+                    )
+                }
+            }
         }
     }
 }

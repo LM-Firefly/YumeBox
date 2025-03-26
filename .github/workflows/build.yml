@@ -7,12 +7,17 @@ on:
       - '**.md'
       - 'docs/**'
       - '.gitignore'
+  schedule:
+    - cron: '0 18 * * *'
   workflow_dispatch:
   workflow_call:
 
 concurrency:
   group: Build-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 
 jobs:
@@ -37,7 +42,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: "1.26"
 
       - uses: actions/cache@v4
         with:
@@ -184,7 +189,13 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
           TITLE: YumeBox
           BRANCH: ${{ github.ref_name }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          COMMIT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
         run: python3 $GITHUB_WORKSPACE/scripts/yumebot.py
