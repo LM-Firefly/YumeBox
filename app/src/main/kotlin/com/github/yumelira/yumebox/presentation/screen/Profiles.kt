@@ -24,7 +24,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
@@ -78,8 +76,6 @@ import top.yukonga.miuix.kmp.extra.WindowSpinner
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.overScrollVertical
-import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import java.io.File
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -234,24 +230,13 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     profilesViewModel.reorderProfiles(from.index, to.index)
                 }
 
-            val bottomBarScrollBehavior = LocalBottomBarScrollBehavior.current
-
-            LazyColumn(
-                state = lazyListState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .scrollEndHaptic()
-                    .overScrollVertical()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection).let { mod ->
-                        if (bottomBarScrollBehavior != null) {
-                            mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
-                        } else mod
-                    },
-                contentPadding = PaddingValues(
+            ScreenLazyColumn(
+                lazyListState = lazyListState,
+                scrollBehavior = scrollBehavior,
+                innerPadding = PaddingValues(
                     top = innerPadding.calculateTopPadding() + 20.dp,
                     bottom = innerPadding.calculateBottomPadding() + mainInnerPadding.calculateBottomPadding() + LocalSpacing.current.md,
                 ),
-                overscrollEffect = null,
             ) {
                 items(
                     items = profiles,
@@ -360,77 +345,73 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             })
     }
 
-    if (showLinkSettingsDialog.value) {
-        LinkSettingsDialog(
-            show = showLinkSettingsDialog,
-            links = links,
-            linkOpenMode = linkOpenMode,
-            defaultLinkId = defaultLinkId,
-            onOpenModeChange = { mode ->
-                profilesViewModel.setOpenMode(mode)
-            },
-            onDefaultLinkChange = { linkId ->
-                profilesViewModel.defaultLinkId.set(linkId)
-            },
-            onAddLink = {
-                linkToEdit = null
-                showAddLinkDialog.value = true
-            },
-            onDeleteLink = { linkId ->
-                val currentLinks = links
-                profilesViewModel.links.set(currentLinks.filter { it.id != linkId })
-            },
-            onOpenLink = { link ->
-                val context = com.github.yumelira.yumebox.App.instance
-                if (linkOpenMode == LinkOpenMode.IN_APP) {
-                    WebViewActivity.start(context, link.url)
-                } else {
-                    val intent = Intent(Intent.ACTION_VIEW, link.url.toUri())
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                }
-            })
-    }
+    LinkSettingsDialog(
+        show = showLinkSettingsDialog,
+        links = links,
+        linkOpenMode = linkOpenMode,
+        defaultLinkId = defaultLinkId,
+        onOpenModeChange = { mode ->
+            profilesViewModel.setOpenMode(mode)
+        },
+        onDefaultLinkChange = { linkId ->
+            profilesViewModel.defaultLinkId.set(linkId)
+        },
+        onAddLink = {
+            linkToEdit = null
+            showAddLinkDialog.value = true
+        },
+        onDeleteLink = { linkId ->
+            val currentLinks = links
+            profilesViewModel.links.set(currentLinks.filter { it.id != linkId })
+        },
+        onOpenLink = { link ->
+            val context = com.github.yumelira.yumebox.App.instance
+            if (linkOpenMode == LinkOpenMode.IN_APP) {
+                WebViewActivity.start(context, link.url)
+            } else {
+                val intent = Intent(Intent.ACTION_VIEW, link.url.toUri())
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+        })
 
-    if (showAddLinkDialog.value) {
-        val currentLinkToEdit = linkToEdit
-        AddLinkDialog(
-            show = showAddLinkDialog,
-            linkToEdit = currentLinkToEdit,
-            linkName = newLinkName,
-            onNameChange = { newLinkName = it },
-            linkUrl = newLinkUrl,
-            onUrlChange = { newLinkUrl = it },
-            onDismiss = {
-                showAddLinkDialog.value = false
-                linkToEdit = null
-                newLinkName = ""
-                newLinkUrl = ""
-            },
-            onConfirm = {
-                val currentLinks = links
-                if (currentLinkToEdit != null) {
-                    // Update existing link
-                    profilesViewModel.links.set(currentLinks.map { 
-                        if (it.id == currentLinkToEdit.id) 
-                            it.copy(name = newLinkName, url = newLinkUrl)
-                        else it
-                    })
-                } else {
-                    // Add new link
-                    val newLink = ProfileLink(
-                        id = UUID.randomUUID().toString(), 
-                        name = newLinkName, 
-                        url = newLinkUrl
-                    )
-                    profilesViewModel.links.set(currentLinks + newLink)
-                }
-                showAddLinkDialog.value = false
-                linkToEdit = null
-                newLinkName = ""
-                newLinkUrl = ""
-            })
-    }
+    val currentLinkToEdit = linkToEdit
+    AddLinkDialog(
+        show = showAddLinkDialog,
+        linkToEdit = currentLinkToEdit,
+        linkName = newLinkName,
+        onNameChange = { newLinkName = it },
+        linkUrl = newLinkUrl,
+        onUrlChange = { newLinkUrl = it },
+        onDismiss = {
+            showAddLinkDialog.value = false
+            linkToEdit = null
+            newLinkName = ""
+            newLinkUrl = ""
+        },
+        onConfirm = {
+            val currentLinks = links
+            if (currentLinkToEdit != null) {
+                // Update existing link
+                profilesViewModel.links.set(currentLinks.map {
+                    if (it.id == currentLinkToEdit.id)
+                        it.copy(name = newLinkName, url = newLinkUrl)
+                    else it
+                })
+            } else {
+                // Add new link
+                val newLink = ProfileLink(
+                    id = UUID.randomUUID().toString(),
+                    name = newLinkName,
+                    url = newLinkUrl
+                )
+                profilesViewModel.links.set(currentLinks + newLink)
+            }
+            showAddLinkDialog.value = false
+            linkToEdit = null
+            newLinkName = ""
+            newLinkUrl = ""
+        })
 
     if (showShareDialog.value && profileToShare != null) {
         ShareOptionsDialog(show = showShareDialog, profile = profileToShare!!, onDismiss = {
