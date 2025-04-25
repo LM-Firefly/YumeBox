@@ -31,16 +31,17 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.common.util.WebViewUtils.getLocalBaseUrl
+import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getPanelUrl
+import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_MAX
 import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_MIN
 import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
-import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -60,6 +61,7 @@ import com.ramcosta.composedestinations.generated.destinations.ProxyNodeScreenDe
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
@@ -99,6 +101,7 @@ fun ProxyPager(
     val groupOpenMode by proxyViewModel.groupOpenMode.collectAsState()
     val sheetHeightFraction by proxyViewModel.sheetHeightFraction.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
+    val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
     val scrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
 
@@ -107,12 +110,26 @@ fun ProxyPager(
     val showSortPopup = rememberSaveable { mutableStateOf(false) }
     val groupCardBounds = remember { mutableStateMapOf<String, Rect>() }
     var sheetGroupName by rememberSaveable { mutableStateOf<String?>(null) }
+    var sheetGroupSnapshot by remember { mutableStateOf<ProxyGroupInfo?>(null) }
     val onTestDelay = remember { { proxyViewModel.testDelay() } }
     val proxyGroupsByName = remember(proxyGroups) { proxyGroups.associateBy { it.name } }
     val sheetGroup by remember(sheetGroupName, proxyGroupsByName) {
         derivedStateOf {
             val name = sheetGroupName ?: return@derivedStateOf null
             proxyGroupsByName[name]
+        }
+    }
+    LaunchedEffect(sheetGroup) {
+        sheetGroup?.let { sheetGroupSnapshot = it }
+    }
+    val displaySheetGroup = sheetGroup ?: sheetGroupSnapshot
+    LaunchedEffect(showGroupBottomSheet.value) {
+        if (!showGroupBottomSheet.value) {
+            delay(220)
+            if (!showGroupBottomSheet.value) {
+                sheetGroupName = null
+                showSortPopup.value = false
+            }
         }
     }
 
@@ -126,6 +143,7 @@ fun ProxyPager(
                 scrollBehavior = scrollBehavior,
                 context = context,
                 selectedPanelType = selectedPanelType,
+                panelOpenMode = panelOpenMode,
                 onNavigateToProviders = { navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true } },
                 onTestDelay = onTestDelay,
                 onShowSettings = { showSettingsBottomSheet.value = true })
@@ -177,6 +195,7 @@ fun ProxyPager(
             title = MLang.Proxy.Settings.Title,
             onDismissRequest = { showSettingsBottomSheet.value = false },
             insideMargin = DpSize(32.dp, 16.dp),
+            enableNestedScroll = false
         ) {
             ProxySettingsContent(
                 proxyViewModel = proxyViewModel, onDismiss = { showSettingsBottomSheet.value = false })
@@ -184,7 +203,7 @@ fun ProxyPager(
 
         WindowBottomSheet(
             show = showGroupBottomSheet,
-            title = sheetGroup?.name.orEmpty(),
+            title = displaySheetGroup?.name.orEmpty(),
             startAction = {
                 IconButton(onClick = { showSortPopup.value = true }) {
                     Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Settings.SortMode)
@@ -198,7 +217,7 @@ fun ProxyPager(
                 )
             },
             endAction = {
-                val group = sheetGroup ?: return@WindowBottomSheet
+                val group = displaySheetGroup ?: return@WindowBottomSheet
                 IconButton(onClick = { proxyViewModel.testDelay(group.name) }) {
                     Icon(Yume.Speed, contentDescription = MLang.Proxy.Action.Test)
                 }
@@ -206,11 +225,11 @@ fun ProxyPager(
             onDismissRequest = {
                 showSortPopup.value = false
                 showGroupBottomSheet.value = false
-                sheetGroupName = null
             },
             insideMargin = DpSize(16.dp, 16.dp),
+            enableNestedScroll = false
         ) {
-            val group = sheetGroup ?: return@WindowBottomSheet
+            val group = displaySheetGroup ?: return@WindowBottomSheet
             NodeSheetContent(
                 group = group,
                 displayMode = displayMode,
@@ -231,6 +250,7 @@ private fun ProxyTopBar(
     scrollBehavior: ScrollBehavior,
     context: Context,
     selectedPanelType: Int,
+    panelOpenMode: LinkOpenMode,
     onNavigateToProviders: () -> Unit,
     onTestDelay: (() -> Unit)?,
     onShowSettings: () -> Unit
@@ -245,13 +265,11 @@ private fun ProxyTopBar(
 
             IconButton(
                 onClick = {
-                    val panelUrl = getPanelUrl(context, selectedPanelType)
-                    val webViewUrl = panelUrl.ifEmpty {
-                        val localUrl = getLocalBaseUrl(context)
-                        if (localUrl.isNotEmpty()) localUrl + "index.html" else ""
-                    }
-                    if (webViewUrl.isNotEmpty()) {
-                        WebViewActivity.start(context, webViewUrl)
+                    val panelUrl = getPanelUrl(selectedPanelType)
+                    if (panelUrl.isEmpty()) return@IconButton
+                    when (panelOpenMode) {
+                        LinkOpenMode.IN_APP -> WebViewActivity.start(context, panelUrl)
+                        LinkOpenMode.EXTERNAL_BROWSER -> openUrl(context, panelUrl)
                     }
                 }) {
                 Icon(Yume.Zashboard, contentDescription = MLang.Proxy.Action.Panel)
