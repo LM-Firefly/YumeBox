@@ -34,13 +34,16 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
+import dev.oom_wg.purejoy.mlang.MLang
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
+import top.yukonga.miuix.kmp.basic.PullToRefresh
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 val NodeSheetContentPadding = PaddingValues(
@@ -138,30 +141,68 @@ internal fun NodeGroupSheetContent(
     displayMode: ProxyDisplayMode,
     testingGroupNames: Set<String>,
     sheetHeightFraction: Float,
+    onRefreshAllGroups: () -> Unit,
     onGroupClick: (ProxyGroupInfo) -> Unit,
     onGroupDelayClick: (ProxyGroupInfo) -> Unit,
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
+    val refreshTexts = remember {
+        listOf(
+            MLang.Proxy.PullToRefresh.PullToTestAllGroups,
+            MLang.Proxy.PullToRefresh.ReleaseToTestAllGroups,
+            MLang.Proxy.PullToRefresh.TestingAllGroups,
+            MLang.Proxy.Testing.RequestSent,
+        )
+    }
+    val pullToRefreshState = rememberPullToRefreshState()
+    var pullRefreshing by remember { mutableStateOf(false) }
+    var pullRefreshObservedTesting by remember { mutableStateOf(false) }
+    LaunchedEffect(pullRefreshing, testingGroupNames) {
+        if (!pullRefreshing) return@LaunchedEffect
+        val isTesting = testingGroupNames.isNotEmpty()
+        if (!pullRefreshObservedTesting) {
+            if (isTesting) {
+                pullRefreshObservedTesting = true
+            }
+            return@LaunchedEffect
+        }
+        if (!isTesting) {
+            pullRefreshing = false
+            pullRefreshObservedTesting = false
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(sheetHeight),
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = NodeSheetContentPadding,
-            overscrollEffect = null,
+        PullToRefresh(
+            isRefreshing = pullRefreshing,
+            onRefresh = {
+                if (pullRefreshing) return@PullToRefresh
+                pullRefreshObservedTesting = false
+                pullRefreshing = true
+                onRefreshAllGroups()
+            },
+            pullToRefreshState = pullToRefreshState,
+            refreshTexts = refreshTexts,
         ) {
-            nodeGroupItems(
-                groups = groups,
-                displayMode = displayMode,
-                onGroupClick = onGroupClick,
-                onGroupDelayClick = onGroupDelayClick,
-                testingGroupNames = testingGroupNames,
-                onGroupBoundsChanged = null,
-                itemVerticalPadding = 0.dp,
-            )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = NodeSheetContentPadding,
+                overscrollEffect = null,
+            ) {
+                nodeGroupItems(
+                    groups = groups,
+                    displayMode = displayMode,
+                    onGroupClick = onGroupClick,
+                    onGroupDelayClick = onGroupDelayClick,
+                    testingGroupNames = testingGroupNames,
+                    onGroupBoundsChanged = null,
+                    itemVerticalPadding = 0.dp,
+                )
+            }
         }
     }
 }
@@ -176,6 +217,32 @@ fun NodeSheetContent(
     sheetHeightFraction: Float,
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
+    val refreshTexts = remember {
+        listOf(
+            MLang.Proxy.PullToRefresh.PullToTestCurrentGroup,
+            MLang.Proxy.PullToRefresh.ReleaseToTestCurrentGroup,
+            MLang.Proxy.PullToRefresh.TestingCurrentGroup,
+            MLang.Proxy.Testing.RequestSent,
+        )
+    }
+    val pullToRefreshState = rememberPullToRefreshState()
+    var pullRefreshing by remember { mutableStateOf(false) }
+    var pullRefreshObservedTesting by remember { mutableStateOf(false) }
+    var pullRefreshListStateVersion by remember(group.name) { mutableStateOf(0) }
+    LaunchedEffect(pullRefreshing, isDelayTesting) {
+        if (!pullRefreshing) return@LaunchedEffect
+        if (!pullRefreshObservedTesting) {
+            if (isDelayTesting) {
+                pullRefreshObservedTesting = true
+            }
+            return@LaunchedEffect
+        }
+        if (!isDelayTesting) {
+            pullRefreshListStateVersion += 1
+            pullRefreshing = false
+            pullRefreshObservedTesting = false
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -183,22 +250,34 @@ fun NodeSheetContent(
             .height(sheetHeight),
         contentAlignment = Alignment.Center,
     ) {
-        NodeList(
-            group = group,
-            displayMode = displayMode,
-            onProxyClick = { proxyName ->
-                if (group.type == Proxy.Type.Selector) {
-                    onSelectProxy(proxyName)
-                } else {
-                    onTestDelay()
-                }
+        PullToRefresh(
+            isRefreshing = pullRefreshing,
+            onRefresh = {
+                if (pullRefreshing) return@PullToRefresh
+                pullRefreshObservedTesting = false
+                pullRefreshing = true
+                onTestDelay()
             },
-            isDelayTesting = isDelayTesting,
-            onTestDelay = onTestDelay,
-            listStateKeyPrefix = "node_sheet",
-            contentPadding = NodeSheetContentPadding,
-            modifier = Modifier.fillMaxSize(),
-        )
+            pullToRefreshState = pullToRefreshState,
+            refreshTexts = refreshTexts,
+        ) {
+            NodeList(
+                group = group,
+                displayMode = displayMode,
+                onProxyClick = { proxyName ->
+                    if (group.type == Proxy.Type.Selector) {
+                        onSelectProxy(proxyName)
+                    } else {
+                        onTestDelay()
+                    }
+                },
+                isDelayTesting = isDelayTesting,
+                onTestDelay = onTestDelay,
+                listStateKeyPrefix = "node_sheet:$pullRefreshListStateVersion",
+                contentPadding = NodeSheetContentPadding,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 

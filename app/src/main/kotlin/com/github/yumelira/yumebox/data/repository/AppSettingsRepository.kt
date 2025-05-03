@@ -17,6 +17,7 @@ class AppSettingsRepository(
     val themeSeedColorArgb: Preference<Long> = storage.themeSeedColorArgb
     val automaticRestart: Preference<Boolean> = storage.automaticRestart
     val hideAppIcon: Preference<Boolean> = storage.hideAppIcon
+    val excludeFromRecents: Preference<Boolean> = storage.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification
     val bottomBarFloating: Preference<Boolean> = storage.bottomBarFloating
     val showDivider: Preference<Boolean> = storage.showDivider

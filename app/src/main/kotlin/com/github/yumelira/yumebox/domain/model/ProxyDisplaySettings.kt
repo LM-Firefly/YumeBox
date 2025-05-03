@@ -62,14 +62,3 @@ enum class ProxySortMode {
             BY_LATENCY -> MLang.Proxy.SortMode.ByLatency
         }
 }
-
-enum class ProxyGroupOpenMode {
-    FULL_SCREEN,
-    BOTTOM_SHEET;
-
-    val displayName: String
-        get() = when (this) {
-            FULL_SCREEN -> "全屏页面"
-            BOTTOM_SHEET -> "底部弹窗"
-        }
-}

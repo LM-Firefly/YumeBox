@@ -9,6 +9,12 @@ import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.extra.WindowListPopup
 
+internal val NodeSortModes = listOf(
+    ProxySortMode.DEFAULT,
+    ProxySortMode.BY_NAME,
+    ProxySortMode.BY_LATENCY,
+)
+
 @Composable
 internal fun NodeSortPopup(
     show: MutableState<Boolean>,
