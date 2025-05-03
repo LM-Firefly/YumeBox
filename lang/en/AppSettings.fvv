@@ -49,6 +49,8 @@ AppSettings = {
         
         HideIconTitle = "Hide App Icon"
         HideIconSummary = "After hiding, you can open via dialer *#*#0721#*#*"
+        HideFromRecentsTitle = "Hide Recents Card"
+        HideFromRecentsSummary = "Do not show this app in the recent tasks list (recents card)"
 
         IconWithSelectedLabelTitle = "Navigation bar shows text only when selected"
         IconWithSelectedLabelSummary = "Always show icons, text only when selected"

@@ -36,6 +36,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val appLanguage by enumFlow(AppLanguage.System)
     val automaticRestart by boolFlow(false)
     val hideAppIcon by boolFlow(false)
+    val excludeFromRecents by boolFlow(false)
     val showTrafficNotification by boolFlow(true)
     val bottomBarFloating by boolFlow(false)
     val showDivider by boolFlow(true)

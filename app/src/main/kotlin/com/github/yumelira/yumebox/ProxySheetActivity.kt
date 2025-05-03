@@ -206,6 +206,7 @@ private fun ProxySheet(
                 NodeGroupSheetContent(
                     groups = proxyGroups,
                     displayMode = displayMode,
+                    onRefreshAllGroups = { proxyViewModel.testDelay() },
                     onGroupClick = { group ->
                         selectedGroupName = group.name
                     },
@@ -236,4 +237,3 @@ private fun ProxySheet(
         }
     }
 }
-

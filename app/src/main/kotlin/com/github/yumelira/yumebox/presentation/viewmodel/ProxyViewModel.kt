@@ -8,7 +8,6 @@ import com.github.yumelira.yumebox.data.repository.OverrideRepository
 import com.github.yumelira.yumebox.data.repository.ProxyDisplaySettingsRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
-import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_DEFAULT
@@ -45,9 +44,6 @@ class ProxyViewModel(
 
     val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsRepository.sortMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxySortMode.DEFAULT)
-
-    val groupOpenMode: StateFlow<ProxyGroupOpenMode> = proxyDisplaySettingsRepository.groupOpenMode.state
-        .stateIn(viewModelScope, SharingStarted.Eagerly, ProxyGroupOpenMode.FULL_SCREEN)
 
     val sheetHeightFraction: StateFlow<Float> = proxyDisplaySettingsRepository.sheetHeightFraction.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, PROXY_SHEET_HEIGHT_FRACTION_DEFAULT)
@@ -169,10 +165,6 @@ class ProxyViewModel(
 
     fun setSortMode(mode: ProxySortMode) {
         proxyDisplaySettingsRepository.sortMode.set(mode)
-    }
-
-    fun setGroupOpenMode(mode: ProxyGroupOpenMode) {
-        proxyDisplaySettingsRepository.groupOpenMode.set(mode)
     }
 
     fun setSheetHeightFraction(value: Float) {

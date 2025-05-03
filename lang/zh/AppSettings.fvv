@@ -49,6 +49,8 @@ AppSettings = {
         
         HideIconTitle = "隐藏应用图标"
         HideIconSummary = "隐藏后可通过拨号盘 *#*#0721#*#* 打开"
+        HideFromRecentsTitle = "隐藏后台卡片"
+        HideFromRecentsSummary = "启用后不在最近任务列表（后台卡片）中显示应用"
 
         IconWithSelectedLabelTitle = "导航栏仅选中时显示文本"
         IconWithSelectedLabelSummary = "始终显示图标，仅选中时显示文本"
@@ -88,4 +90,3 @@ AppSettings = {
         Apply = "应用"
     }
 }
-
