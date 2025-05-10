@@ -20,7 +20,6 @@
 
 package com.github.yumelira.yumebox.data.store
 
-import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.theme.AppColorTheme
 import com.tencent.mmkv.MMKV
@@ -33,7 +32,6 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val themeMode by enumFlow(ThemeMode.Auto)
     val colorTheme by enumFlow(AppColorTheme.ClassicMonochrome)
     val themeSeedColorArgb by longFlow(0xFFFFFFFFL)
-    val appLanguage by enumFlow(AppLanguage.System)
     val automaticRestart by boolFlow(false)
     val hideAppIcon by boolFlow(false)
     val excludeFromRecents by boolFlow(false)
@@ -43,9 +41,19 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val bottomBarAutoHide by boolFlow(true)
     val iconWithSelectedLabel by boolFlow(true)
 
-    val oneWord by strFlow("正義の仮面被り永劫救ってダーリン")
+    val oneWord by strFlow("本当は未来なんかよりも，瞬間の方が欲しいです")
 
-    val oneWordAuthor by strFlow("紫色の向日葵")
+    val oneWordAuthor by strFlow("紅のドレス")
 
     val customUserAgent by strFlow("")
+
+    fun resetOneWordToDefault() {
+        mmkv.remove("oneWord")
+        oneWord.refresh()
+    }
+
+    fun resetOneWordAuthorToDefault() {
+        mmkv.remove("oneWordAuthor")
+        oneWordAuthor.refresh()
+    }
 }

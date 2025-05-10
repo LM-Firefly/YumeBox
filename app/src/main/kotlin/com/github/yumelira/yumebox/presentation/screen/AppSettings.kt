@@ -291,6 +291,11 @@ fun AppSettingsScreen(
         title = MLang.AppSettings.EditDialog.OneWordTitle,
         textFieldValue = oneWordTextFieldState,
         onConfirm = { viewModel.onOneWordChange(it) },
+        secondaryButtonText = MLang.AppSettings.Button.Restore,
+        onSecondaryClick = {
+            viewModel.resetOneWordToDefault()
+            showEditOneWordDialog.value = false
+        },
     )
 
     TextEditBottomSheet(
@@ -298,6 +303,11 @@ fun AppSettingsScreen(
         title = MLang.AppSettings.EditDialog.AuthorTitle,
         textFieldValue = oneWordAuthorTextFieldState,
         onConfirm = { viewModel.onOneWordAuthorChange(it) },
+        secondaryButtonText = MLang.AppSettings.Button.Restore,
+        onSecondaryClick = {
+            viewModel.resetOneWordAuthorToDefault()
+            showEditOneWordAuthorDialog.value = false
+        },
     )
 
     TextEditBottomSheet(
