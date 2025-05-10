@@ -46,9 +46,13 @@ class ProxyTileService : TileService() {
 
     private val proxyFacade: ProxyFacade by inject()
     private val profilesRepository: ProfilesRepository by inject()
+    private val tileLabelText: String by lazy {
+        applicationInfo.loadLabel(packageManager)?.toString().orEmpty().ifBlank { "YumeBox" }
+    }
 
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var updateJob: Job? = null
+    private var toggleJob: Job? = null
 
     override fun onDestroy() {
         super.onDestroy()
@@ -72,7 +76,9 @@ class ProxyTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
-        scope.launch {
+        if (toggleJob?.isActive == true) return
+
+        toggleJob = scope.launch {
             val isRunning = proxyFacade.isRunning.first()
 
             // Sync with actual state if inconsistent
@@ -84,10 +90,12 @@ class ProxyTileService : TileService() {
 
             try {
                 if (isRunning) {
+                    updateTilePendingState(isStarting = false)
                     proxyFacade.stopProxy()
                 } else {
                     val activeProfile = profilesRepository.queryActiveProfile()
                     if (activeProfile == null) {
+                        updateTileInactiveState(subtitle = MLang.Service.Tile.ClickToOpen)
                         // Open app to select profile
                         val intent = Intent(this@ProxyTileService, MainActivity::class.java).apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -98,8 +106,10 @@ class ProxyTileService : TileService() {
 
                     try {
                         // Defaulting to Tun mode for Tile quick start
+                        updateTilePendingState(isStarting = true)
                         proxyFacade.startProxy(useTun = true)
                     } catch (e: VpnPermissionRequired) {
+                        updateTileInactiveState(subtitle = MLang.Service.Tile.ClickToOpen)
                         val intent = e.intent
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         startActivityAndCollapse(intent)
@@ -107,6 +117,8 @@ class ProxyTileService : TileService() {
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error toggling proxy from tile")
+            } finally {
+                updateTileState(proxyFacade.isRunning.first())
             }
         }
     }
@@ -115,17 +127,13 @@ class ProxyTileService : TileService() {
         val tile = qsTile ?: return
         tile.state = if (isRunning) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
 
-        tile.label = if (isRunning) {
-            MLang.Home.Control.Stop
-        } else {
-            MLang.Home.Control.Start
-        }
+        tile.label = tileLabelText
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             tile.subtitle = if (isRunning) {
-                MLang.Service.Notification.Connected
+                MLang.Service.Tile.ClickToStopProxy
             } else {
-                MLang.Home.Message.ProxyStopped
+                MLang.Service.Tile.ClickToStartProxy
             }
         }
 
@@ -134,6 +142,36 @@ class ProxyTileService : TileService() {
             if (isRunning) R.drawable.ic_logo_service else R.drawable.ic_logo_service
         )
 
+        tile.updateTile()
+    }
+
+    private fun updateTilePendingState(isStarting: Boolean) {
+        val tile = qsTile ?: return
+        tile.state = if (isStarting) Tile.STATE_INACTIVE else Tile.STATE_ACTIVE
+        tile.label = tileLabelText
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            tile.subtitle = if (isStarting) {
+                MLang.Service.Tile.Connecting
+            } else {
+                MLang.Service.Tile.Disconnecting
+            }
+        }
+
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
+        tile.updateTile()
+    }
+
+    private fun updateTileInactiveState(subtitle: String) {
+        val tile = qsTile ?: return
+        tile.state = Tile.STATE_INACTIVE
+        tile.label = tileLabelText
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            tile.subtitle = subtitle
+        }
+
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
         tile.updateTile()
     }
 }

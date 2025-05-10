@@ -86,7 +86,7 @@ AppSettings = {
 
     Button = {
         Cancel = "Cancel"
+        Restore = "Restore"
         Apply = "Apply"
     }
 }
-

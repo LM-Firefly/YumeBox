@@ -47,6 +47,8 @@ fun TextEditBottomSheet(
     textFieldValue: MutableState<TextFieldValue>,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit = { show.value = false },
+    secondaryButtonText: String = MLang.Component.Button.Cancel,
+    onSecondaryClick: () -> Unit = onDismiss,
 ) {
     WindowBottomSheet(
         show = show, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
@@ -60,8 +62,8 @@ fun TextEditBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
-                    onClick = onDismiss, modifier = Modifier.weight(1f)
-                ) { Text(MLang.Component.Button.Cancel) }
+                    onClick = onSecondaryClick, modifier = Modifier.weight(1f)
+                ) { Text(secondaryButtonText) }
                 Button(
                     onClick = {
                         onConfirm(textFieldValue.value.text)

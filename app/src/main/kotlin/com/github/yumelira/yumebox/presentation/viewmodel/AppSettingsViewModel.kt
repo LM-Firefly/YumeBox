@@ -66,6 +66,8 @@ class AppSettingsViewModel(
 
     fun onOneWordChange(text: String) = oneWord.set(text)
     fun onOneWordAuthorChange(author: String) = oneWordAuthor.set(author)
+    fun resetOneWordToDefault() = repository.resetOneWordToDefault()
+    fun resetOneWordAuthorToDefault() = repository.resetOneWordAuthorToDefault()
     fun applyCustomUserAgent(userAgent: String) = repository.applyCustomUserAgent(userAgent)
 
     fun setOnboardingCompleted(completed: Boolean) = onboardingCompleted.set(completed)

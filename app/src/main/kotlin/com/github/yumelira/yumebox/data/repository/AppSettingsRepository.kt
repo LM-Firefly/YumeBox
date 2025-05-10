@@ -33,4 +33,8 @@ class AppSettingsRepository(
         customUserAgent.set(userAgent)
         Clash.setCustomUserAgent(userAgent)
     }
+
+    fun resetOneWordToDefault() = storage.resetOneWordToDefault()
+
+    fun resetOneWordAuthorToDefault() = storage.resetOneWordAuthorToDefault()
 }

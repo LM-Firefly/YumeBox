@@ -59,10 +59,17 @@ abstract class Module<E>(val service: Service) {
             run()
         } finally {
             withContext(NonCancellable) {
-                receivers.forEach {
-                    it.onReceive(null, null)
+                val registeredReceivers = receivers.toList()
+                receivers.clear()
 
-                    service.unregisterReceiver(it)
+                registeredReceivers.forEach { receiver ->
+                    receiver.onReceive(null, null)
+
+                    runCatching {
+                        service.unregisterReceiver(receiver)
+                    }.onFailure { e ->
+                        Log.w("$moduleName: unregisterReceiver ignored (${receiver.javaClass.simpleName})", e)
+                    }
                 }
 
                 Log.d("$moduleName: destroyed")
