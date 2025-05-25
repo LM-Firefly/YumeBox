@@ -137,7 +137,7 @@ jobs:
 
       - name: Inject aliyun-emas-services.json
         run: |
-          if [ -n "${{ secrets.ALIYUN_SERVICES_JSON }}" ]; then
+          if [ -n "${{ secrets.ALIYUN_SERVICES_JSON_SMART }}" ]; then
             echo "Using real aliyun-emas-services.json from secrets"
             echo "${{ secrets.ALIYUN_SERVICES_JSON }}" | base64 --decode > app/aliyun-emas-services.json
           fi
@@ -169,13 +169,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: yumebox-x86
-          path: app/build/outputs/apk/release/*x86*.apk
+          path: |
+            app/build/outputs/apk/release/*x86*.apk
+            !app/build/outputs/apk/release/*x86_64*.apk
 
       - name: Upload universal APK
         uses: actions/upload-artifact@v4
         with:
           name: yumebox-universal
           path: app/build/outputs/apk/release/*universal*.apk
+          if-no-files-found: error
 
       - name: Upload mappings
         uses: actions/upload-artifact@v4
