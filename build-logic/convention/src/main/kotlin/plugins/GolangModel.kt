@@ -23,6 +23,7 @@ package plugins
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
+import java.io.File
 
 abstract class GolangExtension {
     abstract val sourceDir: DirectoryProperty
@@ -44,22 +45,40 @@ abstract class GolangExtension {
 }
 
 object GolangUtils {
-    fun getGoBinary(): String = System.getenv("GO_EXECUTABLE") ?: "go"
-    fun getClangPath(ndkDir: String, abi: String): String {
+    private fun ndkHostTag(): String {
         val osName = System.getProperty("os.name").lowercase()
-        val host = when {
+        return when {
             osName.contains("windows") -> "windows-x86_64"
             osName.contains("mac") || osName.contains("darwin") -> "darwin-x86_64"
             osName.contains("linux") -> "linux-x86_64"
             else -> error("Unsupported OS: $osName")
         }
-        val prefix = when (abi) {
-            "armeabi-v7a" -> "armv7a-linux-androideabi21-clang"
-            "arm64-v8a" -> "aarch64-linux-android21-clang"
-            "x86" -> "i686-linux-android21-clang"
-            "x86_64" -> "x86_64-linux-android21-clang"
-            else -> error("Unsupported ABI: $abi")
-        }
+    }
+
+    fun getGoBinary(): String = System.getenv("GO_EXECUTABLE") ?: "go"
+
+    fun getLlvmStripPath(ndkDir: String): String {
+        val host = ndkHostTag()
+        return "$ndkDir/toolchains/llvm/prebuilt/$host/bin/llvm-strip"
+    }
+
+    fun getClangPath(ndkDir: String, abi: String): String {
+        val host = ndkHostTag()
+        val prefix = clangPrefixForAbi(abi)
         return "$ndkDir/toolchains/llvm/prebuilt/$host/bin/$prefix"
+    }
+
+    fun taskSuffixForAbi(abi: String): String = abi.replace("-", "")
+
+    fun outputSoFile(outputDir: File): File = outputDir.resolve("libclash.so")
+
+    fun outputHeaderFile(outputDir: File): File = outputDir.resolve("libclash.h")
+
+    private fun clangPrefixForAbi(abi: String): String = when (abi) {
+        "armeabi-v7a" -> "armv7a-linux-androideabi21-clang"
+        "arm64-v8a" -> "aarch64-linux-android21-clang"
+        "x86" -> "i686-linux-android21-clang"
+        "x86_64" -> "x86_64-linux-android21-clang"
+        else -> error("Unsupported ABI: $abi")
     }
 }
