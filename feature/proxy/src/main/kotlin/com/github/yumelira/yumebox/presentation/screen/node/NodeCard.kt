@@ -20,47 +20,94 @@
 
 package com.github.yumelira.yumebox.presentation.screen.node
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.BadgeDollarSign
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
+import com.github.yumelira.yumebox.presentation.util.extractNodeTags
+import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.SinkFeedback
+import top.yukonga.miuix.kmp.utils.pressable
 
 internal object NodeCardDefaults {
-    val CornerRadius = 12.dp
-    val PaddingHorizontal = 12.dp
+    val CornerRadius = 24.dp
+    val PaddingHorizontal = 16.dp
     val PaddingVertical = 16.dp
     val TextSpacing = 8.dp
 }
 
-private fun latencyDisplay(delay: Int, withUnit: Boolean): Pair<String, Color>? = when {
+// Shared latency helpers — also used by NodeGroups.kt
+internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
+    delay == null -> null
     delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
-    delay in 1..800 -> "${delay}${if (withUnit) "ms" else ""}" to Color(0xFF4CAF50)
-    delay in 801..5000 -> "${delay}${if (withUnit) "ms" else ""}" to Color(0xFFFFA726)
+    delay == 0 -> null
+    delay in 1..800 -> "${delay}ms" to Color(0xFF4CAF50)
+    delay in 801..5000 -> "${delay}ms" to Color(0xFFFFA726)
     else -> null
+}
+
+@Composable
+internal fun RotatingRefreshIcon(
+    isRotating: Boolean,
+    modifier: Modifier = Modifier,
+    tint: Color = MiuixTheme.colorScheme.primary,
+    contentDescription: String? = MLang.Proxy.Action.Test,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "node_refresh_icon_rotation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+        ),
+        label = "node_refresh_icon_rotation_value",
+    )
+
+    Icon(
+        imageVector = MiuixIcons.Refresh,
+        contentDescription = contentDescription,
+        tint = tint,
+        modifier = if (isRotating) modifier.rotate(rotation) else modifier,
+    )
 }
 
 @Composable
@@ -73,43 +120,39 @@ internal fun NodeSelectableCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val shape = RoundedCornerShape(NodeCardDefaults.CornerRadius)
-    val backgroundColor = if (isSelected) {
-        MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
-    } else {
-        MiuixTheme.colorScheme.background
-    }
+    val primary = MiuixTheme.colorScheme.primary
+    val backgroundColor = MiuixTheme.colorScheme.background
+    val borderColor = if (isSelected) primary.copy(alpha = 0.38f) else Color.Transparent
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(backgroundColor, shape)
             .let {
-                if (onClick != null) {
-                    it.clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = onClick,
-                    )
-                } else {
-                    it
-                }
+                if (onClick != null) it.pressable(interactionSource = interactionSource, indication = SinkFeedback())
+                else it
             }
-            .padding(
-                horizontal = NodeCardDefaults.PaddingHorizontal,
-                vertical = paddingVertical,
-            ),
+            .clip(shape)
+            .background(backgroundColor)
+            .border(1.dp, borderColor, shape)
+            .let {
+                if (onClick != null) it.clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                ) else it
+            }
+            .padding(horizontal = NodeCardDefaults.PaddingHorizontal, vertical = paddingVertical),
         content = content,
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun NodeCard(
     proxy: Proxy,
     isSelected: Boolean,
     onClick: ((String) -> Unit)?,
     modifier: Modifier = Modifier,
-    isSingleColumn: Boolean = false,
-    showDetail: Boolean = false,
     isDelayTesting: Boolean = false,
     onDelayTestClick: (() -> Unit)? = null,
     showCountryFlag: Boolean = true,
@@ -117,168 +160,149 @@ internal fun NodeCard(
     val onCardClick = remember(proxy.name, onClick) {
         onClick?.let { click -> { click(proxy.name) } }
     }
+
     NodeSelectableCard(
         isSelected = isSelected,
         onClick = onCardClick,
         modifier = modifier,
         paddingVertical = 12.dp,
     ) {
-        val textColor = if (isSelected) {
-            MiuixTheme.colorScheme.primary
-        } else {
-            MiuixTheme.colorScheme.onSurface
-        }
         val flagged = remember(proxy.name) { extractFlaggedName(proxy.name) }
-        val countryCode = flagged.countryCode
-        val delayDisplay = remember(proxy.delay, isSingleColumn) {
-            latencyDisplay(proxy.delay, withUnit = isSingleColumn)
-        }
+        val tags = remember(proxy.name) { extractNodeTags(proxy.name) }
+        val delayLabel = remember(proxy.delay) { nodeLatencyLabel(proxy.delay) }
 
-        if (isSingleColumn) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                NodeTitleRow(
-                    displayName = flagged.displayName,
-                    countryCode = countryCode.takeIf { showCountryFlag },
-                    textColor = textColor,
-                    allowSoftWrap = true,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Large icon – left side, spans full card height
+            NodeLargeIcon(
+                countryCode = flagged.countryCode.takeIf { showCountryFlag },
+                typeName = proxy.type.name,
+                isSelected = isSelected,
+            )
+
+            // Right column: name (top) + tags+delay (bottom)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = flagged.displayName,
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                if (showDetail) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    NodeDetailRow(
-                        typeName = proxy.type.name,
-                        delayDisplay = delayDisplay,
-                        isDelayTesting = isDelayTesting,
-                        onDelayTestClick = onDelayTestClick,
-                        allowSoftWrap = true,
-                    )
+
+                // Tags + delay/check on same row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FlowRow(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        NodeTagChip(label = proxy.type.name)
+                        tags.keywords.forEach { kw -> NodeTagChip(label = kw) }
+                        tags.multiplier?.let { m ->
+                            if (m > 0f) NodeMultiplierChip(multiplier = m)
+                        }
+                    }
+                    if (!isDelayTesting && delayLabel != null) {
+                        val (delayText, delayColor) = delayLabel
+                        Text(
+                            text = delayText,
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = delayColor,
+                            maxLines = 1,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .let { m ->
+                                    if (onDelayTestClick != null) m.clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = onDelayTestClick,
+                                    ) else m
+                                },
+                        )
+                    }
                 }
             }
-        } else if (showDetail) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                NodeTitleRow(
-                    displayName = flagged.displayName,
-                    countryCode = countryCode.takeIf { showCountryFlag },
-                    textColor = textColor,
-                    allowSoftWrap = false,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                NodeDetailRow(
-                    typeName = proxy.type.name,
-                    delayDisplay = delayDisplay,
-                    isDelayTesting = isDelayTesting,
-                    onDelayTestClick = onDelayTestClick,
-                    allowSoftWrap = false,
-                )
-            }
+        }
+    }
+}
+
+@Composable
+internal fun NodeLargeIcon(
+    countryCode: String?,
+    typeName: String,
+    isSelected: Boolean,
+) {
+    val neutral = MiuixTheme.colorScheme.onSurface
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(neutral.copy(alpha = 0.06f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (countryCode != null) {
+            CountryFlagCircle(countryCode = countryCode, size = 28.dp)
         } else {
-            NodeTitleRow(
-                displayName = flagged.displayName,
-                countryCode = countryCode.takeIf { showCountryFlag },
-                textColor = textColor,
-                allowSoftWrap = true,
+            Text(
+                text = typeName.take(2),
+                style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
         }
     }
 }
 
 @Composable
-private fun NodeTitleRow(
-    displayName: String,
-    countryCode: String?,
-    textColor: Color,
-    allowSoftWrap: Boolean,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (countryCode != null) {
-            CountryFlagCircle(countryCode = countryCode, size = 16.dp)
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-        Text(
-            text = displayName,
-            style = MiuixTheme.textStyles.body2,
-            color = textColor,
-            maxLines = 1,
-            softWrap = allowSoftWrap,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
-private fun NodeDetailRow(
-    typeName: String,
-    delayDisplay: Pair<String, Color>?,
-    isDelayTesting: Boolean,
-    onDelayTestClick: (() -> Unit)?,
-    allowSoftWrap: Boolean,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = typeName,
-            style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            maxLines = 1,
-            softWrap = allowSoftWrap,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        NodeDelayIndicator(
-            delayDisplay = delayDisplay,
-            isDelayTesting = isDelayTesting,
-            onDelayTestClick = onDelayTestClick,
-        )
-    }
-}
-
-@Composable
-private fun NodeDelayIndicator(
-    delayDisplay: Pair<String, Color>?,
-    isDelayTesting: Boolean,
-    onDelayTestClick: (() -> Unit)?,
-) {
-    val slotModifier = Modifier.width(56.dp)
-    if (isDelayTesting) {
-        Text(
-            text = "...",
-            style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.primary,
-            maxLines = 1,
-            softWrap = false,
-            textAlign = TextAlign.End,
-            modifier = slotModifier,
-        )
-        return
-    }
-
-    if (delayDisplay == null) return
-    val (delayText, delayColor) = delayDisplay
-
+private fun NodeTagChip(label: String) {
+    val primary = MiuixTheme.colorScheme.primary
     Text(
-        text = delayText,
-        style = MiuixTheme.textStyles.footnote1,
-        color = delayColor,
-        maxLines = 1,
-        softWrap = false,
-        textAlign = TextAlign.End,
-        modifier = Modifier.let { base ->
-            val slotted = base.then(slotModifier)
-            if (onDelayTestClick != null) {
-                slotted.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDelayTestClick,
-                )
-            } else {
-                slotted
-            }
-        },
+        text = label,
+        style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
+        color = primary,
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(primary.copy(alpha = 0.1f))
+            .padding(horizontal = 7.dp, vertical = 2.dp),
     )
+}
+
+@Composable
+private fun NodeMultiplierChip(multiplier: Float) {
+    val isHigh = multiplier >= 2.0f
+    val primary = MiuixTheme.colorScheme.primary
+    val chipBg = if (isHigh) Color(0x1AFF3B30) else primary.copy(alpha = 0.1f)
+    val chipColor = if (isHigh) Color(0xFFFF3B30) else primary
+    val label = if (multiplier == multiplier.toLong().toFloat()) "x${multiplier.toLong()}" else "x$multiplier"
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(chipBg)
+            .padding(horizontal = 7.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(
+            imageVector = Yume.BadgeDollarSign,
+            contentDescription = null,
+            tint = chipColor,
+            modifier = Modifier.size(9.dp),
+        )
+        Text(
+            text = label,
+            style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
+            color = chipColor,
+        )
+    }
 }

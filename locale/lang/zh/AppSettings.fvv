@@ -4,7 +4,6 @@ AppSettings = {
     
     Section = {
         Behavior = "行为"
-        Home = "首页"
         Interface = "界面"
         Service = "服务"
         Language = "语言"
@@ -15,12 +14,7 @@ AppSettings = {
         AutoStartTitle = "自动启动"
         AutoStartSummary = "应用启动和开机时自动启动代理服务"
         OneChinaTitle = "坚持一个中国原则"
-        OneChinaSummary = "自动将港澳台地区旗帜及区域码显示为中国"
-    }
-    
-    Home = {
-        OneWordTitle = "一言"
-        OneWordAuthorTitle = "作者"
+        OneChinaSummary = "自动将台湾地区旗帜及区域码显示为中国"
     }
     
     Interface = {
@@ -41,8 +35,14 @@ AppSettings = {
         FloatingNavbarTitle = "浮动导航栏"
         FloatingNavbarSummary = "使用浮动样式的底部导航栏"
 
+        TopBarBlurTitle = "顶部栏背景模糊"
+        TopBarBlurSummary = "滚动内容时，为顶部栏应用动态模糊背景"
+
         AutoHideNavbarTitle = "滑动隐藏底栏"
         AutoHideNavbarSummary = "向下滑动时自动隐藏底栏，向上滑动时显示"
+
+        PageScaleTitle = "页面缩放"
+        PageScaleSummary = "调整应用界面的整体缩放比例"
         
         ShowDividerTitle = "显示分割线"
         ShowDividerSummary = "在列表项之间显示分割线"
@@ -80,7 +80,6 @@ AppSettings = {
     }
     
     EditDialog = {
-        OneWordTitle = "编辑一言"
         AuthorTitle = "编辑作者"
         UserAgentTitle = "编辑 User-Agent"
     }

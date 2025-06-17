@@ -24,9 +24,11 @@ dependencies {
     // Temporary: local in-process gateway still directly instantiates runtime service managers.
     implementation(project(":runtime:service"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
     implementation(mmkvDependency)
-    implementation("io.insert-koin:koin-core:4.1.1")
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
+    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
+
+

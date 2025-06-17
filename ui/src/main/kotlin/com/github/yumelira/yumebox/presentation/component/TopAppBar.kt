@@ -46,7 +46,7 @@ private fun Modifier.topBarHazeEffect(
 
     return hazeEffect(state) {
         this.style = style
-        blurRadius = 30.dp
+        blurRadius = 10.dp
         noiseFactor = 0f
         progressive = HazeProgressive.verticalGradient(
             startIntensity = 1f,

@@ -12,11 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.presentation.util.enabled
-import com.github.yumelira.yumebox.presentation.util.getDisplayProvider
-import com.github.yumelira.yumebox.presentation.util.getInfoText
-import com.github.yumelira.yumebox.presentation.util.isConfigSaved
-import com.github.yumelira.yumebox.presentation.util.shouldShowUpdateButton
+import com.github.yumelira.yumebox.presentation.util.*
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
@@ -58,7 +54,6 @@ fun ProfileCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp),
         insideMargin = PaddingValues(16.dp)
     ) {

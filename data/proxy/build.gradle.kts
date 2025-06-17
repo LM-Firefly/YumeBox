@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.library")
     kotlin("plugin.serialization")
@@ -18,11 +19,13 @@ dependencies {
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("io.ktor:ktor-client-core:3.4.0")
-    implementation("io.ktor:ktor-client-android:3.4.0")
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.0")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.0")
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
+    implementation("io.ktor:ktor-client-core:${gropify.dep.version.ktor}")
+    implementation("io.ktor:ktor-client-android:${gropify.dep.version.ktor}")
+    implementation("io.ktor:ktor-client-content-negotiation:${gropify.dep.version.ktor}")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:${gropify.dep.version.ktor}")
+    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
+
+

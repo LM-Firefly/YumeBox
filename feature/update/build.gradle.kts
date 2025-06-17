@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.library")
     kotlin("plugin.compose")
@@ -17,23 +18,22 @@ android {
 dependencies {
     implementation(project(":locale"))
 
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
+    val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
 
-    val miuixVersion = "0.8.3"
-    implementation("top.yukonga.miuix.kmp:miuix:$miuixVersion")
+    implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
+    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 
-    val updateVersion = "1.3.0-open"
-    implementation("com.taobao.android:update-main:$updateVersion")
-    implementation("com.taobao.android:update-common:$updateVersion")
-    implementation("com.taobao.android:update-datasource:$updateVersion")
-    implementation("com.taobao.android:update-adapter:$updateVersion")
+    implementation("com.taobao.android:update-main:${gropify.dep.version.taobaoUpdate}")
+    implementation("com.taobao.android:update-common:${gropify.dep.version.taobaoUpdate}")
+    implementation("com.taobao.android:update-datasource:${gropify.dep.version.taobaoUpdate}")
+    implementation("com.taobao.android:update-adapter:${gropify.dep.version.taobaoUpdate}")
 }
+
 

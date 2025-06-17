@@ -4,7 +4,6 @@ AppSettings = {
     
     Section = {
         Behavior = "Behavior"
-        Home = "Home"
         Interface = "Interface"
         Service = "Service"
         Language = "Language"
@@ -15,12 +14,7 @@ AppSettings = {
         AutoStartTitle = "Auto Start"
         AutoStartSummary = "Automatically start proxy service on app launch and boot"
         OneChinaTitle = "One-China Policy"
-        OneChinaSummary = "Automatically display HK/MO/TW region flags and codes as China"
-    }
-    
-    Home = {
-        OneWordTitle = "Quote"
-        OneWordAuthorTitle = "Author"
+        OneChinaSummary = "Automatically display TW region flags and codes as China"
     }
     
     Interface = {
@@ -41,8 +35,14 @@ AppSettings = {
         FloatingNavbarTitle = "Floating Navbar"
         FloatingNavbarSummary = "Use floating style bottom navigation bar"
 
+        TopBarBlurTitle = "Blur Top Bar"
+        TopBarBlurSummary = "Apply a dynamic blur background to the top bar while scrolling"
+
         AutoHideNavbarTitle = "Auto-hide Navbar"
         AutoHideNavbarSummary = "Hide navbar on scroll down and show on scroll up"
+
+        PageScaleTitle = "Page Scale"
+        PageScaleSummary = "Adjust the overall UI scaling ratio of the app"
         
         ShowDividerTitle = "Show Dividers"
         ShowDividerSummary = "Show dividers between list items"
@@ -79,7 +79,6 @@ AppSettings = {
     }
     
     EditDialog = {
-        OneWordTitle = "Edit Quote"
         AuthorTitle = "Edit Author"
         UserAgentTitle = "Edit User-Agent"
     }

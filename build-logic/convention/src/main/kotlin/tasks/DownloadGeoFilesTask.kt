@@ -10,6 +10,8 @@ import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import org.tukaani.xz.LZMA2Options
+import org.tukaani.xz.XZOutputStream
 
 abstract class DownloadGeoFilesTask : DefaultTask() {
     companion object {
@@ -27,13 +29,33 @@ abstract class DownloadGeoFilesTask : DefaultTask() {
     fun download() {
         val destinationDir = outputDirectory.get().asFile
         destinationDir.mkdirs()
+        val expectedFiles = assetUrls.get().keys
+
+        destinationDir.listFiles()?.forEach { stale ->
+            if (stale.name !in expectedFiles) {
+                stale.deleteRecursively()
+            }
+        }
 
         assetUrls.get().forEach { (fileName, url) ->
             val outputFile = destinationDir.resolve(fileName)
             runCatching {
                 val validatedUri = validateDownloadUri(url)
                 validatedUri.toURL().openStream().use { input ->
-                    Files.copy(input, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                    val sourceIsXz = validatedUri.path.lowercase().endsWith(".xz")
+                    val targetIsXz = fileName.lowercase().endsWith(".xz")
+                    when {
+                        targetIsXz && !sourceIsXz -> {
+                            outputFile.outputStream().buffered().use { rawOutput ->
+                                XZOutputStream(rawOutput, LZMA2Options()).use { xzOutput ->
+                                    input.copyTo(xzOutput)
+                                }
+                            }
+                        }
+                        else -> {
+                            Files.copy(input, outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                        }
+                    }
                 }
                 logger.lifecycle("$fileName downloaded to ${outputFile.absolutePath}")
             }.onFailure { error ->

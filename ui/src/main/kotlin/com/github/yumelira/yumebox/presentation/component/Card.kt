@@ -20,18 +20,24 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.theme.horizontalPadding
 import top.yukonga.miuix.kmp.basic.Card
 
 @Composable
 fun Card(
     modifier: Modifier = Modifier,
+    cornerRadius: Int = 24,
+    insideMargin: PaddingValues = PaddingValues(0.dp),
     content: @Composable () -> Unit,
 ) {
     Card(
         modifier = modifier.horizontalPadding(),
+        cornerRadius = cornerRadius.dp,
+        insideMargin = insideMargin
     ) {
         content()
     }

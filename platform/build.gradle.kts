@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.library")
     kotlin("plugin.compose")
@@ -15,11 +16,13 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
+    val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("com.android.tools.build:apksig:8.12.3")
-    implementation("com.jakewharton.timber:timber:5.0.1")
+    implementation("androidx.core:core-ktx:${gropify.dep.version.coreKtx}")
+    implementation("com.android.tools.build:apksig:${gropify.dep.version.apksig}")
+    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
+
+

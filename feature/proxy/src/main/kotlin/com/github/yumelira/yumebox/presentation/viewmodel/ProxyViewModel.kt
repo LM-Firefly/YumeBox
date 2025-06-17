@@ -35,6 +35,7 @@ class ProxyViewModel(
 
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
+    private val _groupOriginalOrder = MutableStateFlow<Map<String, List<String>>>(emptyMap())
 
     val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsRepository.proxyMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, TunnelState.Mode.Rule)
@@ -53,22 +54,31 @@ class ProxyViewModel(
     private var screenActive = false
     private var externalSelectionSyncJob: Job? = null
 
-    val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
-        combine(proxyGroups, sortMode, testingGroupNames) { groups, mode, testingNames ->
-            if (mode == ProxySortMode.DEFAULT) {
-                groups
-            } else {
-                groups.map { group ->
-                    val shouldFreezeLatencySort =
-                        mode == ProxySortMode.BY_LATENCY && testingNames.contains(group.name)
-                    group.copy(
-                        proxies = if (shouldFreezeLatencySort) {
-                            group.proxies
-                        } else {
-                            sortProxies(group.proxies, mode)
-                        }
-                    )
+    init {
+        viewModelScope.launch {
+            proxyGroups.collect { groups ->
+                _groupOriginalOrder.update { current ->
+                    updateGroupOrderCache(current, groups)
                 }
+            }
+        }
+    }
+
+    val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
+        combine(
+            proxyGroups,
+            sortMode,
+            _groupOriginalOrder,
+        ) { groups, mode, originalOrderCache ->
+            groups.map { group ->
+                val originalOrder = originalOrderCache[group.name].orEmpty()
+                group.copy(
+                    proxies = sortProxies(
+                        proxies = group.proxies,
+                        sortMode = mode,
+                        originalOrder = originalOrder,
+                    )
+                )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -186,11 +196,23 @@ class ProxyViewModel(
         }
     }
 
-    private fun sortProxies(proxies: List<Proxy>, sortMode: ProxySortMode): List<Proxy> = when (sortMode) {
-        ProxySortMode.DEFAULT -> proxies
-        ProxySortMode.BY_NAME -> proxies.sortedBy { it.name }
+    private fun sortProxies(
+        proxies: List<Proxy>,
+        sortMode: ProxySortMode,
+        originalOrder: List<String>,
+    ): List<Proxy> = when (sortMode) {
+        ProxySortMode.DEFAULT -> reorderByNameSequence(proxies, originalOrder)
+        ProxySortMode.BY_NAME -> {
+            val originalIndex = originalOrder.withIndex().associate { (index, name) -> name to index }
+            proxies.sortedWith(
+                compareBy<Proxy>(
+                    { it.name.lowercase() },
+                    { originalIndex[it.name] ?: Int.MAX_VALUE },
+                )
+            )
+        }
         ProxySortMode.BY_LATENCY -> {
-            val originalIndex = proxies.withIndex().associate { (index, proxy) -> proxy.name to index }
+            val originalIndex = originalOrder.withIndex().associate { (index, name) -> name to index }
             proxies.sortedWith(
                 compareBy<Proxy>(
                     { proxy ->
@@ -204,6 +226,75 @@ class ProxyViewModel(
                 )
             )
         }
+    }
+
+    private fun reorderByNameSequence(
+        proxies: List<Proxy>,
+        orderedNames: List<String>,
+    ): List<Proxy> {
+        if (proxies.isEmpty()) return proxies
+        if (orderedNames.isEmpty()) return proxies
+
+        val proxyByName = proxies.associateBy { it.name }
+        val consumed = HashSet<String>(proxies.size)
+        val reordered = ArrayList<Proxy>(proxies.size)
+
+        orderedNames.forEach { name ->
+            val proxy = proxyByName[name] ?: return@forEach
+            reordered += proxy
+            consumed += name
+        }
+        proxies.forEach { proxy ->
+            if (consumed.add(proxy.name)) reordered += proxy
+        }
+        return reordered
+    }
+
+    private fun updateGroupOrderCache(
+        current: Map<String, List<String>>,
+        groups: List<ProxyGroupInfo>,
+    ): Map<String, List<String>> {
+        val next = current.toMutableMap()
+        var changed = false
+        val activeGroupNames = groups.mapTo(HashSet(groups.size)) { it.name }
+
+        if (next.keys.removeAll { it !in activeGroupNames }) {
+            changed = true
+        }
+
+        groups.forEach { group ->
+            val latestNames = group.proxies.map { it.name }
+            val previous = next[group.name]
+            val merged = if (previous == null) {
+                latestNames
+            } else {
+                mergeStableOrder(previous, latestNames)
+            }
+            if (previous != merged) {
+                next[group.name] = merged
+                changed = true
+            }
+        }
+
+        return if (changed) next else current
+    }
+
+    private fun mergeStableOrder(
+        previousOrder: List<String>,
+        latestNames: List<String>,
+    ): List<String> {
+        if (previousOrder.isEmpty()) return latestNames
+        if (latestNames.isEmpty()) return emptyList()
+
+        val latestSet = latestNames.toHashSet()
+        val merged = ArrayList<String>(latestNames.size)
+        previousOrder.forEach { name ->
+            if (name in latestSet) merged += name
+        }
+        latestNames.forEach { name ->
+            if (name !in merged) merged += name
+        }
+        return merged
     }
 
     private fun setLoading(loading: Boolean) {
@@ -263,4 +354,3 @@ class ProxyViewModel(
         val error: String? = null
     )
 }
-

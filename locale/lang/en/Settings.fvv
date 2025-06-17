@@ -4,27 +4,29 @@ Settings = {
     
     Section = {
         UiSettings = "UI Settings"
-        Function = "Function"
         More = "More"
     }
     
     UiSettings = {
         App = "App"
+        AppSummary = "Appearance · Language · Theme"
         Network = "Network"
+        NetworkSummary = "DNS · Port · Inbound"
         Override = "Override"
+        OverrideSummary = "Rule Override"
         MetaFeatures = "Meta Features"
-    }
-    
-    Function = {
-        SubStore = "Sub-Store"
-        FeatureManagement = "Feature Management"
+        MetaFeaturesSummary = "Meta Extensions"
     }
     
     More = {
         TrafficStatistics = "Traffic Statistics"
         OnboardingWizard = "Onboarding Wizard"
+        Lab = "Lab"
+        LabSummary = "SubStore · Experiments"
         Logs = "Logs"
+        LogsSummary = "Runtime Logs"
         About = "About"
+        AboutSummary = "Version & License"
     }
     
     Error = {

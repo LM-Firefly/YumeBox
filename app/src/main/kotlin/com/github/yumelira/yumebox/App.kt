@@ -39,6 +39,7 @@ import org.koin.core.context.startKoin
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
+import org.tukaani.xz.XZInputStream
 
 class App : Application() {
 
@@ -98,9 +99,11 @@ class App : Application() {
             val targetFile = File(clashDir, filename)
             if (!targetFile.exists()) {
                 try {
-                    assets.open(filename).use { input ->
-                        targetFile.outputStream().use { output ->
-                            input.copyTo(output)
+                    if (!extractCompressedAssetIfExists("$filename.xz", targetFile)) {
+                        assets.open(filename).use { input ->
+                            targetFile.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
                     }
                 } catch (_: IOException) {
@@ -111,6 +114,21 @@ class App : Application() {
 
         if (failedFiles.isNotEmpty()) {
             Timber.w("Failed to extract geo files: ${failedFiles.joinToString()}")
+        }
+    }
+
+    private fun extractCompressedAssetIfExists(assetName: String, targetFile: File): Boolean {
+        return try {
+            assets.open(assetName).use { input ->
+                XZInputStream(input.buffered()).use { xzInput ->
+                    targetFile.outputStream().buffered().use { output ->
+                        xzInput.copyTo(output)
+                    }
+                }
+            }
+            true
+        } catch (_: IOException) {
+            false
         }
     }
 }

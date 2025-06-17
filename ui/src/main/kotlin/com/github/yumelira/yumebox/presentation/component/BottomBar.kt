@@ -21,26 +21,40 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Arrow-down-up`
 import com.github.yumelira.yumebox.presentation.icon.yume.Bolt
 import com.github.yumelira.yumebox.presentation.icon.yume.House
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
+import com.kyant.shapes.Capsule
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import dev.chrisbanes.haze.HazeProgressive
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.*
+import kotlinx.coroutines.launch
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 val LocalPagerState = compositionLocalOf<PagerState> { error("LocalPagerState is not provided") }
@@ -49,11 +63,6 @@ val LocalNavigator = compositionLocalOf<DestinationsNavigator> { error("LocalNav
 
 @Composable
 fun BottomBarContent(
-    hazeState: HazeState,
-    hazeStyle: HazeStyle,
-    bottomBarFloating: Boolean,
-    showDivider: Boolean,
-    iconWithSelectedLabel: Boolean,
     isVisible: Boolean = true,
 ) {
     val pagerState = LocalPagerState.current
@@ -88,54 +97,38 @@ fun BottomBarContent(
         ),
         label = "BottomBarVisibility"
     ) {
-        val modifier = Modifier.hazeEffect(hazeState) {
-            style = hazeStyle
-            blurRadius = 30.dp
-            noiseFactor = 0f
-            progressive = HazeProgressive.verticalGradient(
-                startIntensity = 0f,
-                endIntensity = 1f,
-                preferPerformance = true,
-            )
-        }
-        val colorScheme = MiuixTheme.colorScheme
-        val bottomBarColorScheme = colorScheme.copy(
-            onSurfaceContainer = colorScheme.primary,
-            onSurfaceContainerVariant = colorScheme.primary.copy(alpha = 0.3f),
-        )
+        val selectedColor = MiuixTheme.colorScheme.primary
+        val unselectedColor = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+        val containerColor = MiuixTheme.colorScheme.background
+        val indicatorContainerColor = selectedColor.copy(alpha = 0.1f)
 
-        MiuixTheme(colors = bottomBarColorScheme) {
-            if (bottomBarFloating) {
-                FloatingNavigationBar(
-                    modifier = modifier,
-                    color = Color.Transparent,
-                    showDivider = showDivider,
-                    mode = NavigationDisplayMode.IconOnly,
-                ) {
-                    BottomBarDestination.entries.forEachIndexed { index, destination ->
-                        FloatingNavigationBarItem(
-                            selected = page == index,
-                            onClick = { onItemClick(index) },
-                            icon = destination.icon,
-                            label = destination.label,
+        BottomNavigationBar(
+            selectedIndex = page,
+            tabsCount = BottomBarDestination.entries.size,
+            containerColor = containerColor,
+            indicatorContainerColor = indicatorContainerColor,
+            modifier = Modifier.padding(start = 48.dp, end = 48.dp, top = 6.dp, bottom = 30.dp),
+        ) {
+            BottomBarDestination.entries.forEachIndexed { index, destination ->
+                val itemColor: Color = if (page == index) selectedColor else unselectedColor
+                BottomNavigationTabItem(onClick = { onItemClick(index) }) {
+                    Box(
+                        modifier = Modifier.size(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = destination.icon,
+                            contentDescription = destination.label,
+                            tint = itemColor
                         )
                     }
-                }
-            } else {
-                NavigationBar(
-                    modifier = modifier,
-                    color = Color.Transparent,
-                    showDivider = showDivider,
-                    mode = if (iconWithSelectedLabel) NavigationDisplayMode.IconWithSelectedLabel else NavigationDisplayMode.IconAndText,
-                ) {
-                    BottomBarDestination.entries.forEachIndexed { index, destination ->
-                        NavigationBarItem(
-                            selected = page == index,
-                            onClick = { onItemClick(index) },
-                            icon = destination.icon,
-                            label = destination.label,
+                    BasicText(
+                        destination.label,
+                        style = TextStyle(
+                            color = itemColor,
+                            fontSize = 11.sp
                         )
-                    }
+                    )
                 }
             }
         }
@@ -150,4 +143,98 @@ enum class BottomBarDestination(
     Proxy(MLang.Component.BottomBar.Proxy, Yume.`Arrow-down-up`),
     Config(MLang.Component.BottomBar.Config, Yume.`Package-check`),
     Setting(MLang.Component.BottomBar.Setting, Yume.Bolt),
+}
+
+@Composable
+private fun BottomNavigationBar(
+    selectedIndex: Int,
+    tabsCount: Int,
+    containerColor: Color,
+    indicatorContainerColor: Color,
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val isLightTheme = !isSystemInDarkTheme()
+    val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
+    val safeSelectedIndex = selectedIndex.coerceIn(0, tabsCount - 1)
+
+    var indicatorIndex by remember { mutableIntStateOf(safeSelectedIndex) }
+    val indicatorPosition = remember { Animatable(safeSelectedIndex.toFloat()) }
+    val indicatorScale = remember { Animatable(1f) }
+
+    LaunchedEffect(safeSelectedIndex) {
+        if (indicatorIndex == safeSelectedIndex) return@LaunchedEffect
+        launch {
+            indicatorPosition.animateTo(
+                targetValue = safeSelectedIndex.toFloat(),
+                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+            )
+        }
+        launch {
+            indicatorScale.animateTo(0.88f, tween(90, easing = FastOutSlowInEasing))
+            indicatorScale.animateTo(1f, tween(170, easing = FastOutSlowInEasing))
+        }
+        indicatorIndex = safeSelectedIndex
+    }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .height(56.dp)
+            .clip(Capsule())
+            .background(containerColor, Capsule())
+            .border(
+                width = 0.3.dp,
+                color = if (isLightTheme) Color.Black.copy(alpha = 0.05f) else Color.White.copy(alpha = 0.05f),
+                shape = Capsule(),
+            )
+            .padding(4.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        val tabWidth = constraints.maxWidth.toFloat() / tabsCount
+
+        Box(
+            Modifier
+                .graphicsLayer {
+                    translationX =
+                        if (isLtr) indicatorPosition.value * tabWidth
+                        else size.width - (indicatorPosition.value + 1f) * tabWidth
+                    scaleX = indicatorScale.value
+                    scaleY = indicatorScale.value
+                }
+                .height(48.dp)
+                .fillMaxWidth(1f / tabsCount)
+                .background(indicatorContainerColor, Capsule()),
+        )
+
+        Row(
+            Modifier
+                .height(48.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.BottomNavigationTabItem(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier
+            .clip(Capsule())
+            .clickable(
+                interactionSource = null,
+                indication = null,
+                role = Role.Tab,
+                onClick = onClick,
+            )
+            .fillMaxHeight()
+            .weight(1f),
+        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        content = content,
+    )
 }

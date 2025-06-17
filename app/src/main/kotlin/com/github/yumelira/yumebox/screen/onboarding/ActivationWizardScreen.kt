@@ -21,10 +21,8 @@
 package com.github.yumelira.yumebox.screen.onboarding
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.viewmodel.AppSettingsViewModel
@@ -38,7 +36,10 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
 @Destination<RootGraph>
-fun ActivationWizardScreen(navigator: DestinationsNavigator) {
+fun ActivationWizardScreen(
+    navigator: DestinationsNavigator,
+    previewMode: Boolean = false,
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
@@ -47,25 +48,28 @@ fun ActivationWizardScreen(navigator: DestinationsNavigator) {
         context = context,
         lifecycleOwner = lifecycleOwner,
         appSettingsViewModel = appSettingsViewModel,
+        resetPrivacyAcceptedOnOpen = !previewMode,
     )
 
-    var showPrivacySheet by remember { mutableStateOf(false) }
+    val showPrivacySheet = remember { mutableStateOf(false) }
 
     Scaffold {
         OnboardingWizard(
             state = wizardState,
-            onPrivacySheetRequest = { showPrivacySheet = true },
+            onPrivacySheetRequest = { showPrivacySheet.value = true },
             onComplete = {
-                appSettingsViewModel.setOnboardingCompleted(true)
-                navigator.navigate(MainScreenDestination(initialPage = 0)) {
-                    popUpTo(ActivationWizardScreenDestination) { inclusive = true }
-                    launchSingleTop = true
+                if (previewMode) {
+                    navigator.popBackStack()
+                } else {
+                    appSettingsViewModel.setOnboardingCompleted(true)
+                    navigator.navigate(MainScreenDestination(initialPage = 0)) {
+                        popUpTo(ActivationWizardScreenDestination) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             },
         )
     }
 
-    if (showPrivacySheet) {
-        PrivacyPolicySheet(onDismiss = { showPrivacySheet = false })
-    }
+    PrivacyPolicySheet(show = showPrivacySheet)
 }

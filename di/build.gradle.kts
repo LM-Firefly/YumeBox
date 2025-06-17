@@ -22,7 +22,7 @@ dependencies {
     implementation(project(":runtime:client"))
 
     implementation(mmkvDependency)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("io.insert-koin:koin-core:4.1.1")
-    implementation("io.insert-koin:koin-android:4.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
+    implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
+    implementation("io.insert-koin:koin-android:${gropify.dep.version.koin}")
 }

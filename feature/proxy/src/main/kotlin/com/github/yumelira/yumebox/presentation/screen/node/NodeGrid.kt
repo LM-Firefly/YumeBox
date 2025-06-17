@@ -23,19 +23,46 @@ package com.github.yumelira.yumebox.presentation.screen.node
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
+import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+
+internal fun LazyListScope.nodeGridItems(
+    proxies: List<Proxy>,
+    selectedProxyName: String,
+    displayMode: ProxyDisplayMode,
+    onProxyClick: ((String) -> Unit)? = null,
+    isDelayTesting: Boolean = false,
+    onDelayTestClick: (() -> Unit)? = null,
+    outerHorizontalPadding: Dp = 0.dp,
+    itemVerticalPadding: Dp = 0.dp,
+) {
+    items(items = proxies, key = { it.name }, contentType = { "NodeCard1" }) { proxy ->
+        NodeCard(
+            proxy = proxy,
+            isSelected = proxy.name == selectedProxyName,
+            onClick = onProxyClick,
+            isDelayTesting = isDelayTesting,
+            onDelayTestClick = onDelayTestClick,
+            showCountryFlag = true,
+            modifier = Modifier.padding(
+                horizontal = outerHorizontalPadding,
+                vertical = itemVerticalPadding,
+            ),
+        )
+    }
+}
 
 @Composable
 internal fun NodeGrid(
@@ -49,71 +76,25 @@ internal fun NodeGrid(
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
-    val showDetail = displayMode.showDetail
-    val isSingleColumn = displayMode.isSingleColumn
-    val listState = rememberSaveable(listStateKey, isSingleColumn, saver = LazyListState.Saver) {
+    val listState = rememberSaveable(listStateKey, saver = LazyListState.Saver) {
         LazyListState()
     }
-    val renderCard: @Composable (Proxy, Modifier, Boolean) -> Unit = { proxy, itemModifier, singleColumn ->
-        NodeCard(
-            proxy = proxy,
-            isSelected = proxy.name == selectedProxyName,
-            onClick = onProxyClick,
-            isSingleColumn = singleColumn,
-            showDetail = showDetail,
-            isDelayTesting = isDelayTesting,
-            onDelayTestClick = onDelayTestClick,
-            showCountryFlag = true,
-            modifier = itemModifier,
-        )
-    }
-
-    if (isSingleColumn) {
-        LazyColumn(
-            modifier = modifier,
-            state = listState,
-            contentPadding = contentPadding,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            overscrollEffect = null,
-        ) {
-            items(
-                items = proxies,
-                key = { it.name },
-                contentType = { "NodeCard1" },
-            ) { proxy ->
-                renderCard(proxy, Modifier, true)
-            }
-        }
-        return
-    }
-
-    val rowCount = remember(proxies) { (proxies.size + 1) / 2 }
     LazyColumn(
-        modifier = modifier,
+        modifier = modifier
+            .scrollEndHaptic()
+            .overScrollVertical(),
         state = listState,
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(12.dp),
         overscrollEffect = null,
     ) {
-        items(
-            count = rowCount,
-            key = { rowIndex -> proxies[rowIndex * 2].name },
-            contentType = { "NodeRow2" },
-        ) { rowIndex ->
-            val left = proxies[rowIndex * 2]
-            val right = proxies.getOrNull(rowIndex * 2 + 1)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                renderCard(left, Modifier.weight(1f), false)
-
-                if (right != null) {
-                    renderCard(right, Modifier.weight(1f), false)
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
-        }
+        nodeGridItems(
+            proxies = proxies,
+            selectedProxyName = selectedProxyName,
+            displayMode = displayMode,
+            onProxyClick = onProxyClick,
+            isDelayTesting = isDelayTesting,
+            onDelayTestClick = onDelayTestClick,
+        )
     }
 }

@@ -26,8 +26,7 @@ fun extractFlaggedName(rawName: String): FlaggedName {
         return FlaggedName(countryCode = null, displayName = trimmed)
     }
 
-    val secondIndex = firstChars
-    val second = trimmed.codePointAt(secondIndex)
+    val second = trimmed.codePointAt(firstChars)
     if (!isRegionalIndicator(second)) {
         return FlaggedName(countryCode = null, displayName = trimmed)
     }
@@ -37,7 +36,7 @@ fun extractFlaggedName(rawName: String): FlaggedName {
         append(('A'.code + (second - REGIONAL_INDICATOR_BASE)).toChar())
     }
 
-    val afterSecond = secondIndex + Character.charCount(second)
+    val afterSecond = firstChars + Character.charCount(second)
     val rest = trimmed.substring(afterSecond).trimStart { it.isNameSeparator() }
     return FlaggedName(countryCode = countryCode, displayName = rest.ifEmpty { trimmed })
 }

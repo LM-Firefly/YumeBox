@@ -27,6 +27,7 @@ import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import com.github.yumelira.yumebox.data.model.ThemeMode
 
 internal data class WizardState(
     val pagerState: PagerState,
@@ -35,6 +36,11 @@ internal data class WizardState(
     val privacyAccepted: Boolean,
     val onPrivacyAcceptedChange: (Boolean) -> Unit,
     val permissionState: PermissionState,
+    val themeMode: ThemeMode,
+    val onThemeModeChange: (ThemeMode) -> Unit,
+    val themeSeedColorArgb: Long,
+    val onThemeSeedColorChange: (Long) -> Unit,
+    val onResetThemeSeedColor: () -> Unit,
 ) {
     val currentPage: Int get() = pagerState.currentPage
 }
@@ -61,4 +67,3 @@ internal fun rememberPagerAndFling(
     )
     return pagerState to flingBehavior
 }
-

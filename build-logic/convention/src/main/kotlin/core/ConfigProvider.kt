@@ -83,9 +83,11 @@ fun Project.mmkvDependencyNotation(): String = "com.tencent:mmkv:${mmkvVersionFo
 
 fun Project.mmkvVersionForCurrentAbi(): String {
     val targetAbi = findProperty("android.injected.build.abi") as String?
+    val mmkv64 = gropifyString("dep.version.mmkv64", "2.2.4")
+    val mmkv32 = gropifyString("dep.version.mmkv32", "1.3.14")
     return when (targetAbi) {
-        "arm64-v8a", "x86_64" -> "2.2.4"
-        else -> "1.3.14"
+        "arm64-v8a", "x86_64" -> mmkv64
+        else -> mmkv32
     }
 }
 

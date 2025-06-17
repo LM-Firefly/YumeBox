@@ -45,32 +45,42 @@ require_cmd git
 require_cmd go
 
 update_kernel_properties() {
-  tmp_file="$(mktemp 2>/dev/null || mktemp -t switch_mihomo)"
-  awk -v repo="$REPO_URL" -v branch="$BRANCH_NAME" -v suffix="$VERSION_SUFFIX" '
-    BEGIN {
-      target["external.mihomo.repo"]=repo
-      target["external.mihomo.branch"]=branch
-      target["external.mihomo.suffix"]=suffix
-    }
-    {
-      if ($0 ~ /^[ \t]*#/ || $0 !~ /=/) { print; next }
-      split($0, kv, "=")
-      key = kv[1]
-      if (key in target) {
-        print key "=" target[key]
-        seen[key]=1
-      } else {
-        print
-      }
-    }
-    END {
-      for (k in target) {
-        if (!(k in seen)) {
-          print k "=" target[k]
-        }
-      }
-    }
-  ' "$KERNEL_PROPERTIES" > "$tmp_file"
+  tmp_file="$KERNEL_PROPERTIES.tmp.$$"
+  : > "$tmp_file"
+  seen_repo=0
+  seen_branch=0
+  seen_suffix=0
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      external.mihomo.repo=*)
+        echo "external.mihomo.repo=$REPO_URL" >> "$tmp_file"
+        seen_repo=1
+        ;;
+      external.mihomo.branch=*)
+        echo "external.mihomo.branch=$BRANCH_NAME" >> "$tmp_file"
+        seen_branch=1
+        ;;
+      external.mihomo.suffix=*)
+        echo "external.mihomo.suffix=$VERSION_SUFFIX" >> "$tmp_file"
+        seen_suffix=1
+        ;;
+      *)
+        echo "$line" >> "$tmp_file"
+        ;;
+    esac
+  done < "$KERNEL_PROPERTIES"
+
+  if [ "$seen_repo" -eq 0 ]; then
+    echo "external.mihomo.repo=$REPO_URL" >> "$tmp_file"
+  fi
+  if [ "$seen_branch" -eq 0 ]; then
+    echo "external.mihomo.branch=$BRANCH_NAME" >> "$tmp_file"
+  fi
+  if [ "$seen_suffix" -eq 0 ]; then
+    echo "external.mihomo.suffix=$VERSION_SUFFIX" >> "$tmp_file"
+  fi
+
   mv "$tmp_file" "$KERNEL_PROPERTIES"
   echo "Updated kernel.properties -> repo=$REPO_URL branch=$BRANCH_NAME suffix=$VERSION_SUFFIX"
 }

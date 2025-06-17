@@ -39,6 +39,8 @@ import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.common.util.toast
+import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.screen.component.ThemeModeAndColorItems
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.Message
@@ -50,11 +52,12 @@ import top.yukonga.miuix.kmp.extra.SuperArrow
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private const val TOTAL_PAGES = 4
+private const val TOTAL_PAGES = 5
 private const val PAGE_WELCOME = 0
 private const val PAGE_PERMISSION = 1
 private const val PAGE_PRIVACY = 2
-private const val PAGE_PROJECT = 3
+private const val PAGE_THEME = 3
+private const val PAGE_PROJECT = 4
 
 private const val PAGE_SCROLL_DURATION_MS = 420
 private val PAGE_SCROLL_ANIMATION_SPEC = tween<Float>(
@@ -91,6 +94,13 @@ internal fun OnboardingWizard(
                     onRead = onPrivacySheetRequest,
                     onAcceptedChange = state.onPrivacyAcceptedChange,
                 )
+                PAGE_THEME -> ThemeColorPage(
+                    themeMode = state.themeMode,
+                    onThemeModeChange = state.onThemeModeChange,
+                    themeSeedColorArgb = state.themeSeedColorArgb,
+                    onThemeSeedColorChange = state.onThemeSeedColorChange,
+                    onResetThemeSeedColor = state.onResetThemeSeedColor,
+                )
 
                 PAGE_PROJECT -> ProjectPage()
             }
@@ -101,9 +111,8 @@ internal fun OnboardingWizard(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(horizontal = AppConstants.UI.DEFAULT_HORIZONTAL_PADDING, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            PageIndicator(currentPage = state.currentPage, totalPages = TOTAL_PAGES)
             NavigationButton(
                 currentPage = state.currentPage,
                 privacyAccepted = state.privacyAccepted,
@@ -160,11 +169,36 @@ private fun ProjectPage() {
     val context = LocalContext.current
 
     OnboardingPage(
-        imageRes = R.drawable.i_4,
+        imageRes = R.drawable.i_5,
         title = MLang.Onboarding.Project.Title,
         subtitle = MLang.Onboarding.Project.Subtitle,
     ) {
         ProjectLinks(context = context)
+    }
+}
+
+@Composable
+private fun ThemeColorPage(
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    themeSeedColorArgb: Long,
+    onThemeSeedColorChange: (Long) -> Unit,
+    onResetThemeSeedColor: () -> Unit,
+) {
+    OnboardingPage(
+        imageRes = R.drawable.i_4,
+        title = MLang.AppSettings.Interface.ColorThemePickerTitle,
+        subtitle = MLang.AppSettings.Interface.ThemeModeSummary,
+    ) {
+        Card {
+            ThemeModeAndColorItems(
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
+                themeSeedColorArgb = themeSeedColorArgb,
+                onThemeSeedColorChange = onThemeSeedColorChange,
+                onResetThemeSeedColor = onResetThemeSeedColor,
+            )
+        }
     }
 }
 
@@ -221,33 +255,6 @@ private fun ProjectLinks(context: Context) {
 }
 
 @Composable
-private fun PageIndicator(
-    currentPage: Int,
-    totalPages: Int,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            repeat(totalPages) { index ->
-                val isActive = index == currentPage
-                Box(
-                    modifier = Modifier
-                        .height(8.dp)
-                        .width(if (isActive) 20.dp else 8.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(999.dp))
-                        .background(
-                            if (isActive) MiuixTheme.colorScheme.primary
-                            else MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.35f),
-                        ),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun NavigationButton(
     currentPage: Int,
     privacyAccepted: Boolean,
@@ -260,6 +267,7 @@ private fun NavigationButton(
         PAGE_PRIVACY -> privacyAccepted
         else -> true
     }
+    val showPrevious = currentPage != PAGE_WELCOME
 
     val buttonText = if (currentPage == PAGE_PROJECT) {
         MLang.Onboarding.Navigation.Start
@@ -267,22 +275,73 @@ private fun NavigationButton(
         MLang.Onboarding.Navigation.Next
     }
 
-    Button(
+    if (!showPrevious) {
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isEnabled,
+            onClick = {
+                handleNavigation(
+                    currentPage = currentPage,
+                    privacyAccepted = privacyAccepted,
+                    scope = scope,
+                    pagerState = pagerState,
+                    onComplete = onComplete,
+                    onError = onError,
+                )
+            },
+            colors = ButtonDefaults.buttonColorsPrimary(),
+        ) {
+            Text(text = buttonText, color = MiuixTheme.colorScheme.onPrimary)
+        }
+        return
+    }
+
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        enabled = isEnabled,
-        onClick = {
-            handleNavigation(
-                currentPage = currentPage,
-                privacyAccepted = privacyAccepted,
-                scope = scope,
-                pagerState = pagerState,
-                onComplete = onComplete,
-                onError = onError,
-            )
-        },
-        colors = ButtonDefaults.buttonColorsPrimary(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(text = buttonText, color = MiuixTheme.colorScheme.onPrimary)
+        TextButton(
+            text = "上一步",
+            onClick = {
+                handleBackNavigation(
+                    currentPage = currentPage,
+                    scope = scope,
+                    pagerState = pagerState,
+                )
+            },
+            modifier = Modifier.weight(1f),
+        )
+        Button(
+            modifier = Modifier.weight(1f),
+            enabled = isEnabled,
+            onClick = {
+                handleNavigation(
+                    currentPage = currentPage,
+                    privacyAccepted = privacyAccepted,
+                    scope = scope,
+                    pagerState = pagerState,
+                    onComplete = onComplete,
+                    onError = onError,
+                )
+            },
+            colors = ButtonDefaults.buttonColorsPrimary(),
+        ) {
+            Text(text = buttonText, color = MiuixTheme.colorScheme.onPrimary)
+        }
+    }
+}
+
+private fun handleBackNavigation(
+    currentPage: Int,
+    scope: CoroutineScope,
+    pagerState: PagerState,
+) {
+    if (currentPage <= PAGE_WELCOME) return
+    scope.launch {
+        pagerState.animateScrollToPage(
+            page = currentPage - 1,
+            animationSpec = PAGE_SCROLL_ANIMATION_SPEC,
+        )
     }
 }
 
@@ -295,7 +354,7 @@ private fun handleNavigation(
     onError: (String) -> Unit,
 ) {
     when (currentPage) {
-        PAGE_WELCOME, PAGE_PERMISSION -> scope.launch {
+        PAGE_WELCOME, PAGE_PERMISSION, PAGE_THEME -> scope.launch {
             pagerState.animateScrollToPage(
                 page = currentPage + 1,
                 animationSpec = PAGE_SCROLL_ANIMATION_SPEC,
@@ -305,7 +364,7 @@ private fun handleNavigation(
             if (privacyAccepted) {
                 scope.launch {
                     pagerState.animateScrollToPage(
-                        page = PAGE_PROJECT,
+                        page = PAGE_THEME,
                         animationSpec = PAGE_SCROLL_ANIMATION_SPEC,
                     )
                 }

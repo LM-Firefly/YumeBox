@@ -1,30 +1,19 @@
 package com.github.yumelira.yumebox.presentation.screen.node
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -34,17 +23,19 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
-import dev.oom_wg.purejoy.mlang.MLang
+import com.github.yumelira.yumebox.presentation.util.usePullToRefreshTesting
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.PullToRefresh
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.overScrollHorizontal
+import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 val NodeSheetContentPadding = PaddingValues(
     start = 0.dp,
@@ -90,9 +81,11 @@ internal fun NodeTabs(
         modifier = Modifier
             .fillMaxWidth()
             .nodeTabHaze(hazeState, hazeStyle)
-            .background(MiuixTheme.colorScheme.surface),
+            .background(MiuixTheme.colorScheme.surface)
+            .overScrollHorizontal(),
         contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        overscrollEffect = null,
     ) {
         itemsIndexed(groups, key = { _, group -> group.name }) { index, group ->
             val selected = index == selectedIndex
@@ -128,6 +121,7 @@ internal fun NodeTabs(
     }
 }
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 internal fun rememberNodeSheetHeight(sheetHeightFraction: Float): Dp {
     val normalized = normalizeProxySheetHeightFraction(sheetHeightFraction)
@@ -138,72 +132,28 @@ internal fun rememberNodeSheetHeight(sheetHeightFraction: Float): Dp {
 @Composable
 internal fun NodeGroupSheetContent(
     groups: List<ProxyGroupInfo>,
-    displayMode: ProxyDisplayMode,
     testingGroupNames: Set<String>,
     sheetHeightFraction: Float,
-    onRefreshAllGroups: () -> Unit,
     onGroupClick: (ProxyGroupInfo) -> Unit,
-    onGroupDelayClick: (ProxyGroupInfo) -> Unit,
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
-    val refreshTexts = remember {
-        listOf(
-            MLang.Proxy.PullToRefresh.PullToTestAllGroups,
-            MLang.Proxy.PullToRefresh.ReleaseToTestAllGroups,
-            MLang.Proxy.PullToRefresh.TestingAllGroups,
-            MLang.Proxy.Testing.RequestSent,
-        )
-    }
-    val pullToRefreshState = rememberPullToRefreshState()
-    var pullRefreshing by remember { mutableStateOf(false) }
-    var pullRefreshObservedTesting by remember { mutableStateOf(false) }
-    LaunchedEffect(pullRefreshing, testingGroupNames) {
-        if (!pullRefreshing) return@LaunchedEffect
-        val isTesting = testingGroupNames.isNotEmpty()
-        if (!pullRefreshObservedTesting) {
-            if (isTesting) {
-                pullRefreshObservedTesting = true
-            }
-            return@LaunchedEffect
-        }
-        if (!isTesting) {
-            pullRefreshing = false
-            pullRefreshObservedTesting = false
-        }
-    }
-    Box(
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .height(sheetHeight),
+            .height(sheetHeight)
+            .overScrollVertical(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = NodeSheetContentPadding,
+        overscrollEffect = null,
     ) {
-        PullToRefresh(
-            isRefreshing = pullRefreshing,
-            onRefresh = {
-                if (pullRefreshing) return@PullToRefresh
-                pullRefreshObservedTesting = false
-                pullRefreshing = true
-                onRefreshAllGroups()
-            },
-            pullToRefreshState = pullToRefreshState,
-            refreshTexts = refreshTexts,
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = NodeSheetContentPadding,
-                overscrollEffect = null,
-            ) {
-                nodeGroupItems(
-                    groups = groups,
-                    displayMode = displayMode,
-                    onGroupClick = onGroupClick,
-                    onGroupDelayClick = onGroupDelayClick,
-                    testingGroupNames = testingGroupNames,
-                    onGroupBoundsChanged = null,
-                    itemVerticalPadding = 0.dp,
-                )
-            }
-        }
+        nodeGroupItems(
+            groups = groups,
+            onGroupClick = onGroupClick,
+            testingGroupNames = testingGroupNames,
+            onGroupBoundsChanged = null,
+            itemVerticalPadding = 0.dp,
+        )
     }
 }
 
@@ -226,58 +176,38 @@ fun NodeSheetContent(
         )
     }
     val pullToRefreshState = rememberPullToRefreshState()
-    var pullRefreshing by remember { mutableStateOf(false) }
-    var pullRefreshObservedTesting by remember { mutableStateOf(false) }
-    var pullRefreshListStateVersion by remember(group.name) { mutableStateOf(0) }
-    LaunchedEffect(pullRefreshing, isDelayTesting) {
-        if (!pullRefreshing) return@LaunchedEffect
-        if (!pullRefreshObservedTesting) {
-            if (isDelayTesting) {
-                pullRefreshObservedTesting = true
-            }
-            return@LaunchedEffect
-        }
-        if (!isDelayTesting) {
-            pullRefreshListStateVersion += 1
-            pullRefreshing = false
-            pullRefreshObservedTesting = false
-        }
-    }
+    val (pullRefreshing, pullRefreshObservedTesting) = usePullToRefreshTesting(setOf(group.name))
 
-    Box(
+    PullToRefresh(
         modifier = Modifier
             .fillMaxWidth()
             .height(sheetHeight),
-        contentAlignment = Alignment.Center,
+        isRefreshing = pullRefreshing.value,
+        onRefresh = {
+            if (pullRefreshing.value) return@PullToRefresh
+            pullRefreshObservedTesting.value = false
+            pullRefreshing.value = true
+            onTestDelay()
+        },
+        pullToRefreshState = pullToRefreshState,
+        refreshTexts = refreshTexts,
     ) {
-        PullToRefresh(
-            isRefreshing = pullRefreshing,
-            onRefresh = {
-                if (pullRefreshing) return@PullToRefresh
-                pullRefreshObservedTesting = false
-                pullRefreshing = true
-                onTestDelay()
+        NodeList(
+            group = group,
+            displayMode = displayMode,
+            onProxyClick = { proxyName ->
+                if (group.type == Proxy.Type.Selector) {
+                    onSelectProxy(proxyName)
+                } else {
+                    onTestDelay()
+                }
             },
-            pullToRefreshState = pullToRefreshState,
-            refreshTexts = refreshTexts,
-        ) {
-            NodeList(
-                group = group,
-                displayMode = displayMode,
-                onProxyClick = { proxyName ->
-                    if (group.type == Proxy.Type.Selector) {
-                        onSelectProxy(proxyName)
-                    } else {
-                        onTestDelay()
-                    }
-                },
-                isDelayTesting = isDelayTesting,
-                onTestDelay = onTestDelay,
-                listStateKeyPrefix = "node_sheet:$pullRefreshListStateVersion",
-                contentPadding = NodeSheetContentPadding,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+            isDelayTesting = isDelayTesting,
+            onTestDelay = onTestDelay,
+            listStateKeyPrefix = "node_sheet:${group.name}",
+            contentPadding = NodeSheetContentPadding,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
@@ -292,38 +222,15 @@ internal fun NodeList(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
-    val shouldShowLoading = remember(group.proxies.size) {
-        group.proxies.size > 10
-    }
-    var showContent by remember(group.name, shouldShowLoading) {
-        mutableStateOf(!shouldShowLoading)
-    }
-
-    LaunchedEffect(group.name, shouldShowLoading) {
-        if (!shouldShowLoading) {
-            showContent = true
-            return@LaunchedEffect
-        }
-        showContent = false
-        delay(450)
-        showContent = true
-    }
-
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        if (!showContent && shouldShowLoading) {
-            InfiniteProgressIndicator()
-        } else {
-            NodeGrid(
-                proxies = group.proxies,
-                selectedProxyName = group.now,
-                displayMode = displayMode,
-                onProxyClick = onProxyClick,
-                isDelayTesting = isDelayTesting,
-                onDelayTestClick = onTestDelay,
-                listStateKey = "$listStateKeyPrefix:${group.name}",
-                contentPadding = contentPadding,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
-    }
+    NodeGrid(
+        proxies = group.proxies,
+        selectedProxyName = group.now,
+        displayMode = displayMode,
+        onProxyClick = onProxyClick,
+        isDelayTesting = isDelayTesting,
+        onDelayTestClick = onTestDelay,
+        listStateKey = "$listStateKeyPrefix:${group.name}",
+        contentPadding = contentPadding,
+        modifier = modifier,
+    )
 }

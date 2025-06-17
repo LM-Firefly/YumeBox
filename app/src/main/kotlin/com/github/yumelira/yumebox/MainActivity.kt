@@ -35,19 +35,35 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
-import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.BottomBarContent
+import com.github.yumelira.yumebox.presentation.component.EmasUpdateDialogHost
+import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
+import com.github.yumelira.yumebox.presentation.component.LocalNavigator
+import com.github.yumelira.yumebox.presentation.component.LocalPagerState
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
+import com.github.yumelira.yumebox.presentation.component.rememberBottomBarScrollBehavior
 import com.github.yumelira.yumebox.presentation.screen.ProxyPager
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
@@ -58,6 +74,9 @@ import com.github.yumelira.yumebox.screen.HomePager
 import com.github.yumelira.yumebox.screen.ProfilesPager
 import com.github.yumelira.yumebox.screen.SettingPager
 import com.github.yumelira.yumebox.viewmodel.AppSettingsViewModel
+import com.microsoft.clarity.Clarity
+import com.microsoft.clarity.ClarityConfig
+import com.microsoft.clarity.models.LogLevel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -70,7 +89,6 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,11 +143,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-//        val config = ClarityConfig(
-//            projectId = "v4e5psv4w6",
-//            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
-//        )
-//        Clarity.initialize(applicationContext, config)
+        val config = ClarityConfig(
+            projectId = "v4e5psv4w6",
+            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
+        )
+        Clarity.initialize(applicationContext, config)
 
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
@@ -137,12 +155,19 @@ class MainActivity : ComponentActivity() {
             val colorTheme = appSettingsViewModel.colorTheme.state.collectAsState().value
             val themeSeedColorArgb = appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
             val excludeFromRecents = appSettingsViewModel.excludeFromRecents.state.collectAsState().value
+            val topBarBlurEnabled = appSettingsViewModel.topBarBlurEnabled.state.collectAsState().value
+            val pageScale = appSettingsViewModel.pageScale.state.collectAsState().value
 
             LaunchedEffect(excludeFromRecents) {
                 this@MainActivity.applyExcludeFromRecents(excludeFromRecents)
             }
 
             ProvideAndroidPlatformTheme {
+                val systemDensity = LocalDensity.current
+                val scaledDensity = remember(systemDensity, pageScale) {
+                    Density(systemDensity.density * pageScale, systemDensity.fontScale)
+                }
+                CompositionLocalProvider(LocalDensity provides scaledDensity) {
                 YumeTheme(
                     themeMode = themeMode,
                     colorTheme = colorTheme,
@@ -159,8 +184,8 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
 
                     CompositionLocalProvider(
-                        LocalTopBarHazeState provides topBarHazeState,
-                        LocalTopBarHazeStyle provides topBarHazeStyle,
+                        LocalTopBarHazeState provides if (topBarBlurEnabled) topBarHazeState else null,
+                        LocalTopBarHazeStyle provides if (topBarBlurEnabled) topBarHazeStyle else null,
                     ) {
                         Surface(
                             modifier = Modifier.fillMaxSize(), color = MiuixTheme.colorScheme.surface
@@ -174,6 +199,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                } // CompositionLocalProvider(LocalDensity)
             }
 
             LaunchedEffect(Unit) {
@@ -250,9 +276,6 @@ fun MainScreen(
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val featureViewModel = koinViewModel<FeatureViewModel>()
     val bottomBarAutoHide by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
-    val bottomBarFloating by appSettingsViewModel.bottomBarFloating.state.collectAsState()
-    val showDivider by appSettingsViewModel.showDivider.state.collectAsState()
-    val iconWithSelectedLabel by appSettingsViewModel.iconWithSelectedLabel.state.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
     val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
 
@@ -322,11 +345,6 @@ fun MainScreen(
         Scaffold(
             bottomBar = {
                 BottomBarContent(
-                    hazeState = hazeState,
-                    hazeStyle = hazeStyle,
-                    bottomBarFloating = bottomBarFloating,
-                    showDivider = showDivider,
-                    iconWithSelectedLabel = iconWithSelectedLabel,
                     isVisible = bottomBarScrollBehavior.isBottomBarVisible
                 )
             },
@@ -375,4 +393,3 @@ fun MainScreen(
         }
     }
 }
-

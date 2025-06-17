@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.library")
     kotlin("plugin.compose")
@@ -21,19 +22,19 @@ dependencies {
     implementation(project(":data:settings"))
     implementation(project(":runtime:api"))
 
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
+    val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.core:core-ktx:1.17.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
-    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
-    implementation("dev.chrisbanes.haze:haze:1.7.2")
-
-    val miuixVersion = "0.8.3"
-    implementation("top.yukonga.miuix.kmp:miuix:$miuixVersion")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:$miuixVersion")
+    implementation("androidx.core:core-ktx:${gropify.dep.version.coreKtx}")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
+    implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
+    implementation("io.coil-kt.coil3:coil-compose:${gropify.dep.version.coil3}")
+    implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
+    implementation("io.github.kyant0:shapes:1.2.0")
+    implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
 }
+
 

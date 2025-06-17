@@ -21,11 +21,19 @@
 package com.github.yumelira.yumebox.screen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,7 +45,13 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.AppIconHelper
 import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.EnumSelector
+import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
+import com.github.yumelira.yumebox.presentation.component.SmallTitle
+import com.github.yumelira.yumebox.presentation.component.TextEditBottomSheet
+import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.WarningBottomSheet
 import com.github.yumelira.yumebox.presentation.theme.colorFromArgb
 import com.github.yumelira.yumebox.presentation.theme.colorToArgbLong
 import com.github.yumelira.yumebox.presentation.theme.isDefaultThemeSeedArgb
@@ -53,12 +67,16 @@ import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.ColorPicker
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlin.text.toString
 
 @Composable
 @Destination<RootGraph>
@@ -77,19 +95,17 @@ fun AppSettingsScreen(
     val hideAppIcon = viewModel.hideAppIcon.state.collectAsState().value
     val excludeFromRecents = viewModel.excludeFromRecents.state.collectAsState().value
     val showTrafficNotification = viewModel.showTrafficNotification.state.collectAsState().value
-    val bottomBarFloating = viewModel.bottomBarFloating.state.collectAsState().value
-    val showDivider = viewModel.showDivider.state.collectAsState().value
     val bottomBarAutoHide = viewModel.bottomBarAutoHide.state.collectAsState().value
+    val topBarBlurEnabled = viewModel.topBarBlurEnabled.state.collectAsState().value
+    val pageScaleState = viewModel.pageScale.state.collectAsState().value
+    var pageScaleLocal by remember(pageScaleState) { mutableFloatStateOf(pageScaleState) }
 
-    val oneWord = viewModel.oneWord.state.collectAsState().value
-    val oneWordAuthor = viewModel.oneWordAuthor.state.collectAsState().value
     val customUserAgent = viewModel.customUserAgent.state.collectAsState().value
 
     val showHideIconDialog = remember { mutableStateOf(false) }
-    val showEditOneWordDialog = remember { mutableStateOf(false) }
-    val showEditOneWordAuthorDialog = remember { mutableStateOf(false) }
     val showEditCustomUserAgentDialog = remember { mutableStateOf(false) }
     val showThemeColorPicker = remember { mutableStateOf(false) }
+    val showPageScaleSheet = remember { mutableStateOf(false) }
 
     var editingThemeSeedColor by remember(themeSeedColorArgb) {
         mutableStateOf(runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White))
@@ -98,8 +114,6 @@ fun AppSettingsScreen(
         mutableStateOf(toHexColor(themeSeedColorArgb))
     }
 
-    val oneWordTextFieldState = remember { mutableStateOf(TextFieldValue(oneWord)) }
-    val oneWordAuthorTextFieldState = remember { mutableStateOf(TextFieldValue(oneWordAuthor)) }
     val customUserAgentTextFieldState = remember { mutableStateOf(TextFieldValue(customUserAgent)) }
 
     Scaffold(
@@ -129,25 +143,6 @@ fun AppSettingsScreen(
                             enabled = false,
                         )
                     }
-                }
-                SmallTitle(MLang.AppSettings.Section.Home)
-                Card {
-                    BasicComponent(
-                        title = MLang.AppSettings.Home.OneWordTitle,
-                        summary = oneWord,
-                        onClick = {
-                            oneWordTextFieldState.value = TextFieldValue(oneWord)
-                            showEditOneWordDialog.value = true
-                        }
-                    )
-                    BasicComponent(
-                        title = MLang.AppSettings.Home.OneWordAuthorTitle,
-                        summary = oneWordAuthor,
-                        onClick = {
-                            oneWordAuthorTextFieldState.value = TextFieldValue(oneWordAuthor)
-                            showEditOneWordAuthorDialog.value = true
-                        }
-                    )
                 }
                 SmallTitle(MLang.AppSettings.Section.Interface)
                 Card {
@@ -202,10 +197,10 @@ fun AppSettingsScreen(
                         }
                     )
                     SuperSwitch(
-                        title = MLang.AppSettings.Interface.FloatingNavbarTitle,
-                        summary = MLang.AppSettings.Interface.FloatingNavbarSummary,
-                        checked = bottomBarFloating,
-                        onCheckedChange = { viewModel.onBottomBarFloatingChange(it) },
+                        title = MLang.AppSettings.Interface.TopBarBlurTitle,
+                        summary = MLang.AppSettings.Interface.TopBarBlurSummary,
+                        checked = topBarBlurEnabled,
+                        onCheckedChange = { viewModel.onTopBarBlurEnabledChange(it) },
                     )
                     SuperSwitch(
                         title = MLang.AppSettings.Interface.AutoHideNavbarTitle,
@@ -213,11 +208,27 @@ fun AppSettingsScreen(
                         checked = bottomBarAutoHide,
                         onCheckedChange = { viewModel.onBottomBarAutoHideChange(it) },
                     )
-                    SuperSwitch(
-                        title = MLang.AppSettings.Interface.ShowDividerTitle,
-                        summary = MLang.AppSettings.Interface.ShowDividerSummary,
-                        checked = showDivider,
-                        onCheckedChange = { viewModel.onShowDividerChange(it) },
+                    SuperArrow(
+                        title = MLang.AppSettings.Interface.PageScaleTitle,
+                        summary = MLang.AppSettings.Interface.PageScaleSummary,
+                        endActions = {
+                            Text(
+                                text = "${(pageScaleLocal * 100).toInt()}%",
+                                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                            )
+                        },
+                        onClick = { showPageScaleSheet.value = !showPageScaleSheet.value },
+                        holdDownState = showPageScaleSheet.value,
+                        bottomAction = {
+                            Slider(
+                                value = pageScaleLocal,
+                                onValueChange = { pageScaleLocal = it },
+                                onValueChangeFinished = { viewModel.onPageScaleChange(pageScaleLocal) },
+                                valueRange = 0.8f..1.2f,
+                                magnetThreshold = 0.01f,
+                                hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+                            )
+                        },
                     )
                     SuperSwitch(
                         title = MLang.AppSettings.Interface.HideIconTitle,
@@ -238,12 +249,6 @@ fun AppSettingsScreen(
                         checked = excludeFromRecents,
                         onCheckedChange = { viewModel.onExcludeFromRecentsChange(it) },
                     )
-                    SuperSwitch(
-                        title = MLang.AppSettings.Interface.IconWithSelectedLabelTitle,
-                        summary = MLang.AppSettings.Interface.IconWithSelectedLabelSummary,
-                        checked = viewModel.iconWithSelectedLabel.state.collectAsState().value,
-                        onCheckedChange = { viewModel.iconWithSelectedLabel.set(it) },
-                    )
                 }
                 SmallTitle(MLang.AppSettings.Section.Service)
                 Card {
@@ -258,10 +263,8 @@ fun AppSettingsScreen(
                 Card {
                     BasicComponent(
                         title = MLang.AppSettings.Network.CustomUserAgentTitle,
-                        summary = if (customUserAgent.isEmpty()) {
+                        summary = customUserAgent.ifEmpty {
                             MLang.AppSettings.Network.CustomUserAgentSummaryDefault
-                        } else {
-                            customUserAgent
                         },
                         onClick = {
                             customUserAgentTextFieldState.value = TextFieldValue(customUserAgent)
@@ -287,35 +290,61 @@ fun AppSettingsScreen(
     )
 
     TextEditBottomSheet(
-        show = showEditOneWordDialog,
-        title = MLang.AppSettings.EditDialog.OneWordTitle,
-        textFieldValue = oneWordTextFieldState,
-        onConfirm = { viewModel.onOneWordChange(it) },
-        secondaryButtonText = MLang.AppSettings.Button.Restore,
-        onSecondaryClick = {
-            viewModel.resetOneWordToDefault()
-            showEditOneWordDialog.value = false
-        },
-    )
-
-    TextEditBottomSheet(
-        show = showEditOneWordAuthorDialog,
-        title = MLang.AppSettings.EditDialog.AuthorTitle,
-        textFieldValue = oneWordAuthorTextFieldState,
-        onConfirm = { viewModel.onOneWordAuthorChange(it) },
-        secondaryButtonText = MLang.AppSettings.Button.Restore,
-        onSecondaryClick = {
-            viewModel.resetOneWordAuthorToDefault()
-            showEditOneWordAuthorDialog.value = false
-        },
-    )
-
-    TextEditBottomSheet(
         show = showEditCustomUserAgentDialog,
         title = MLang.AppSettings.EditDialog.UserAgentTitle,
         textFieldValue = customUserAgentTextFieldState,
         onConfirm = { viewModel.applyCustomUserAgent(it) },
     )
+
+    SuperDialog(
+        title = MLang.AppSettings.Interface.PageScaleTitle,
+        summary = "80% - 120%",
+        show = showPageScaleSheet,
+        onDismissRequest = { showPageScaleSheet.value = false },
+    ) {
+        var scaleText by remember(showPageScaleSheet.value) {
+            mutableStateOf((pageScaleLocal * 100).toInt().toString())
+        }
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            value = scaleText,
+            maxLines = 1,
+            trailingIcon = {
+                Text(
+                    text = "%",
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                )
+            },
+            onValueChange = { v ->
+                if (v.isEmpty() || v.all { it.isDigit() }) scaleText = v
+            },
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            TextButton(
+                text = MLang.AppSettings.Button.Cancel,
+                onClick = { showPageScaleSheet.value = false },
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(
+                text = MLang.AppSettings.Button.Apply,
+                onClick = {
+                    val parsed = scaleText.toFloatOrNull()
+                    val clamped = (parsed?.coerceIn(80f, 120f) ?: (pageScaleLocal * 100)) / 100f
+                    pageScaleLocal = clamped
+                    viewModel.onPageScaleChange(clamped)
+                    showPageScaleSheet.value = false
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.textButtonColorsPrimary(),
+            )
+        }
+    }
 
     WindowBottomSheet(
         show = showThemeColorPicker,

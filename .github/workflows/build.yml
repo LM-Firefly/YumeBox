@@ -9,6 +9,7 @@ on:
       - '.gitignore'
   schedule:
     - cron: '0 18 * * *'
+    - cron: '20 18 * * *'
   workflow_dispatch:
   workflow_call:
 
@@ -21,8 +22,42 @@ permissions:
 
 
 jobs:
-  build:
+  prepare-matrix:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Prepare matrix
+        id: set-matrix
+        shell: bash
+        run: |
+          set -eu
+
+          alpha='{"variant":"alpha","cron":"0 18 * * *","kernel_channel":"alpha","title":"YumeBox","artifact_prefix":"yumebox","aliyun_secret_name":"ALIYUN_SERVICES_JSON"}'
+          smart='{"variant":"smart","cron":"20 18 * * *","kernel_channel":"smart","title":"YumeBox Smart","artifact_prefix":"yumebox-smart","aliyun_secret_name":"ALIYUN_SERVICES_JSON_SMART"}'
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            case "${{ github.event.schedule }}" in
+              '0 18 * * *') matrix="{\"include\":[${alpha}]}" ;;
+              '20 18 * * *') matrix="{\"include\":[${smart}]}" ;;
+              *)
+                echo "Unsupported schedule: ${{ github.event.schedule }}" >&2
+                exit 1
+                ;;
+            esac
+          else
+            matrix="{\"include\":[${alpha},${smart}]}"
+          fi
+
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare-matrix
+    name: Build (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout
@@ -77,7 +112,7 @@ jobs:
       - name: Sync kernel
         run: |
           chmod +x scripts/sync-kernel.sh
-          ./scripts/sync-kernel.sh alpha
+          ./scripts/sync-kernel.sh ${{ matrix.kernel_channel }}
 
       - name: Check upload availability
         id: check_upload
@@ -133,10 +168,12 @@ jobs:
           fi
 
       - name: Inject aliyun-emas-services.json
+        env:
+          ALIYUN_SERVICES_JSON_CURRENT: ${{ secrets[matrix.aliyun_secret_name] }}
         run: |
-          if [ -n "${{ secrets.ALIYUN_SERVICES_JSON }}" ]; then
+          if [ -n "${ALIYUN_SERVICES_JSON_CURRENT}" ]; then
             echo "Using real aliyun-emas-services.json from secrets"
-            echo "${{ secrets.ALIYUN_SERVICES_JSON }}" | base64 --decode > app/aliyun-emas-services.json
+            echo "${ALIYUN_SERVICES_JSON_CURRENT}" | base64 --decode > app/aliyun-emas-services.json
           fi
 
       - name: Build Release APKs
@@ -144,52 +181,67 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
 
+      - name: Prepare renamed artifacts
+        run: |
+          set -eu
+          mkdir -p ci-artifacts/apk ci-artifacts/mapping
+
+          find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | while read -r file; do
+            base="$(basename "$file")"
+            cp -f "$file" "ci-artifacts/apk/${{ matrix.artifact_prefix }}-${base}"
+          done
+
+          if [ -d app/build/outputs/mapping/release ]; then
+            cp -r app/build/outputs/mapping/release "ci-artifacts/mapping/${{ matrix.variant }}"
+          fi
+
       - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v6
         with:
-          name: yumebox-arm64-v8a
-          path: app/build/outputs/apk/release/*arm64-v8a*.apk
+          name: ${{ matrix.artifact_prefix }}-arm64-v8a
+          path: ci-artifacts/apk/*arm64-v8a*.apk
 
       - name: Upload armeabi-v7a APK
         uses: actions/upload-artifact@v6
         with:
-          name: yumebox-armeabi-v7a
-          path: app/build/outputs/apk/release/*armeabi-v7a*.apk
+          name: ${{ matrix.artifact_prefix }}-armeabi-v7a
+          path: ci-artifacts/apk/*armeabi-v7a*.apk
 
       - name: Upload x86_64 APK
         uses: actions/upload-artifact@v6
         with:
-          name: yumebox-x86_64
-          path: app/build/outputs/apk/release/*x86_64*.apk
+          name: ${{ matrix.artifact_prefix }}-x86_64
+          path: ci-artifacts/apk/*x86_64*.apk
 
       - name: Upload x86 APK
         uses: actions/upload-artifact@v6
         with:
-          name: yumebox-x86
+          name: ${{ matrix.artifact_prefix }}-x86
           path: |
-            app/build/outputs/apk/release/*x86*.apk
-            !app/build/outputs/apk/release/*x86_64*.apk
+            ci-artifacts/apk/*x86*.apk
+            !ci-artifacts/apk/*x86_64*.apk
 
       - name: Upload universal APK
         uses: actions/upload-artifact@v6
         with:
-          name: yumebox-universal
-          path: app/build/outputs/apk/release/*universal*.apk
+          name: ${{ matrix.artifact_prefix }}-universal
+          path: ci-artifacts/apk/*universal*.apk
           if-no-files-found: error
 
       - name: Upload mappings
         uses: actions/upload-artifact@v6
         with:
-          name: mappings
-          path: app/build/outputs/mapping/release/
+          name: mappings-${{ matrix.variant }}
+          path: ci-artifacts/mapping/${{ matrix.variant }}/
 
       - name: Bot session cache
         if: steps.check_upload.outputs.UPLOAD == 'true'
         uses: actions/cache@v5
         with:
           path: scripts/yumebot.session
-          key: ${{ runner.os }}-bot-session-${{ github.ref_name }}
+          key: ${{ runner.os }}-bot-session-${{ github.ref_name }}-${{ matrix.variant }}
           restore-keys: |
+            ${{ runner.os }}-bot-session-${{ github.ref_name }}-
             ${{ runner.os }}-bot-session-
 
       - name: Upload to Telegram
@@ -198,7 +250,7 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-          TITLE: YumeBox
+          TITLE: ${{ matrix.title }}
           BRANCH: ${{ github.ref_name }}
           WORKFLOW_NAME: ${{ github.workflow }}
           EVENT_NAME: ${{ github.event_name }}
