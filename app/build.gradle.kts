@@ -11,9 +11,7 @@ plugins {
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
     id("com.google.devtools.ksp")
-    id("com.mikepenz.aboutlibraries.plugin")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
+    id("com.mikepenz.aboutlibraries.plugin.android")
     id("yumebox.base.android")
     id("yumebox.build.helpers")
 }
@@ -59,10 +57,6 @@ private fun DependencyHandlerScope.implementationProjects(vararg modules: String
     modules.forEach { implementation(project(it)) }
 }
 
-private fun DependencyHandlerScope.implementationAll(vararg deps: String) {
-    deps.forEach(::implementation)
-}
-
 private fun DependencyHandlerScope.addAppProjectDependencies() {
     implementationProjects(
         ":core",
@@ -100,14 +94,13 @@ val appNamespace = gropify.project.namespace.base
 val appName = gropify.project.name
 val androidJvmTarget = gropify.android.jvm.toString()
 val appAbiList = gropify.abi.app.list.split(",").map { it.trim() }
-val localeList = gropify.locale.app.list.split(",").map { it.trim() }
 private val emasConfig = project.readEmasConfigValues()
 val geoFilesAssetsDir = layout.buildDirectory.dir("generated/assets/geo/main")
 val geoFilesDownloadDir = geoFilesAssetsDir.get()
 val geoAssets = mapOf(
-    "geoip.metadb" to gropify.asset.geoip.url,
-    "geosite.dat" to gropify.asset.geosite.url,
-    "ASN.mmdb" to gropify.asset.asn.url,
+    "geoip.metadb.xz" to gropify.asset.geoip.url,
+    "geosite.dat.xz" to gropify.asset.geosite.url,
+    "ASN.mmdb.xz" to gropify.asset.asn.url,
 )
 val downloadGeoFilesTask = tasks.registerGeoFilesDownloadTask(geoFilesDownloadDir, geoAssets)
 
@@ -134,9 +127,9 @@ android {
     sourceSets {
         named("main") {
             // Explicitly package local JNI libraries from app/src/main/jniLibs
-            jniLibs.srcDir("src/main/jniLibs")
+            jniLibs.directories.add("src/main/jniLibs")
             // Build-generated geo assets merged during packaging/lint
-            assets.srcDir(geoFilesAssetsDir)
+            assets.directories.add(geoFilesDownloadDir.asFile.absolutePath)
         }
     }
 
@@ -152,7 +145,6 @@ android {
     androidResources {
         // Don't generate automatic locale config, we'll specify locales manually
         generateLocaleConfig = false
-        localeFilters.addAll(localeList)
     }
 
     buildFeatures {
@@ -217,6 +209,10 @@ android {
     //noinspection WrongGradleMethod
     androidComponents {
         onVariants { variant ->
+            val variantNameCap = variant.name.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase() else it.toString()
+            }
+
             variant.outputs.forEach { output ->
                 val abiName = output.filters.find {
                     it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
@@ -234,88 +230,72 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:${gropify.dep.version.desugarJdkLibs}")
 
     // Internal modules
     addAppProjectDependencies()
 
     // Compose dependencies (using Jetpack Compose BOM for version management)
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
+    val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
-    implementationAll(
-        "androidx.compose.runtime:runtime",
-        "androidx.compose.foundation:foundation",
-        "androidx.compose.ui:ui",
-        "androidx.compose.ui:ui-tooling-preview",
-        "androidx.activity:activity-compose:1.12.4",
-    )
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.activity:activity-compose:${gropify.dep.version.activityCompose}")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Additional Compose libraries
-    val miuixVersion = "0.8.4"
-    implementation("top.yukonga.miuix.kmp:miuix:$miuixVersion")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:$miuixVersion")
-    implementation("dev.chrisbanes.haze:haze:1.7.2")
+    implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
+    implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
 
     // Storage
     implementation(mmkvDependency)
 
     // Dependency Injection
-    implementationAll(
-        "io.insert-koin:koin-core:4.1.1",
-        "io.insert-koin:koin-android:4.1.1",
-        "io.insert-koin:koin-androidx-compose:4.1.1",
-        "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2",
-    )
+    implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
+    implementation("io.insert-koin:koin-android:${gropify.dep.version.koin}")
+    implementation("io.insert-koin:koin-androidx-compose:${gropify.dep.version.koin}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
 
     // Navigation
-    implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
-    ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
+    implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
+    ksp("io.github.raamcosta.compose-destinations:ksp:${gropify.dep.version.composeDestinations}")
 
     // Utilities
-    implementationAll(
-        "com.jakewharton.timber:timber:5.0.1",
-    )
-
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
-    implementation("com.google.firebase:firebase-crashlytics-ndk")
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.microsoft.clarity:clarity-compose:3.8.1")
+    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
+    implementation("org.tukaani:xz:1.11")
 
     // ML Kit
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation("com.google.mlkit:barcode-scanning:${gropify.dep.version.mlkitBarcodeScanning}")
 
     // Camera
-    val cameraVersion = "1.5.3"
-    implementationAll(
-        "androidx.camera:camera-camera2:$cameraVersion",
-        "androidx.camera:camera-lifecycle:$cameraVersion",
-        "androidx.camera:camera-view:$cameraVersion",
-        "androidx.camera:camera-core:$cameraVersion",
-        "androidx.camera:camera-video:$cameraVersion",
-    )
+    implementation("androidx.camera:camera-camera2:${gropify.dep.version.camera}")
+    implementation("androidx.camera:camera-lifecycle:${gropify.dep.version.camera}")
+    implementation("androidx.camera:camera-view:${gropify.dep.version.camera}")
+    implementation("androidx.camera:camera-core:${gropify.dep.version.camera}")
+    implementation("androidx.camera:camera-video:${gropify.dep.version.camera}")
 
     // Image Loading
-    implementationAll(
-        "io.coil-kt.coil3:coil-compose:3.3.0",
-        "io.coil-kt.coil3:coil-network-okhttp:3.3.0",
-        "io.coil-kt.coil3:coil-svg:3.3.0",
-        "io.github.panpf.sketch4:sketch-compose:4.3.1",
-        "io.github.panpf.sketch4:sketch-http:4.3.1",
-        "io.github.panpf.sketch4:sketch-animated-webp:4.3.1",
-    )
+    implementation("io.coil-kt.coil3:coil-compose:${gropify.dep.version.coil3}")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:${gropify.dep.version.coil3}")
+    implementation("io.coil-kt.coil3:coil-svg:${gropify.dep.version.coil3}")
+    implementation("io.github.panpf.sketch4:sketch-compose:${gropify.dep.version.sketch4}")
+    implementation("io.github.panpf.sketch4:sketch-http:${gropify.dep.version.sketch4}")
+    implementation("io.github.panpf.sketch4:sketch-animated-webp:${gropify.dep.version.sketch4}")
 
     // UI Components
-    implementation("sh.calvin.reorderable:reorderable:3.0.0")
-    implementation("com.mikepenz:aboutlibraries-core:13.2.1")
-    implementation("com.mikepenz:aboutlibraries-compose:13.2.1")
+    implementation("sh.calvin.reorderable:reorderable:${gropify.dep.version.reorderable}")
+    implementation("com.mikepenz:aboutlibraries-core:${gropify.dep.version.aboutLibraries}")
+    implementation("com.mikepenz:aboutlibraries-compose:${gropify.dep.version.aboutLibraries}")
 
     // Lifecycle
-    implementationAll(
-        "androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0",
-        "androidx.lifecycle:lifecycle-runtime-compose:2.10.0",
-    )
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${gropify.dep.version.lifecycle}")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
+
+    implementation ("com.microsoft.clarity:clarity-compose:3.8.1")
+
 }
 
 ksp {

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.github.yumelira.yumebox.common.util.DeviceUtil
 import com.github.yumelira.yumebox.data.model.AutoCloseMode
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.*
@@ -27,10 +28,13 @@ fun FeatureContent(
     val isServiceRunning by viewModel.serviceRunningState.collectAsState()
     val allowLanAccess by viewModel.allowLanAccess.state.collectAsState()
     val frontendPort by viewModel.frontendPort.state.collectAsState()
+    val backendPort by viewModel.backendPort.state.collectAsState()
     val autoCloseMode by viewModel.autoCloseMode.collectAsState()
 
     val host = if (allowLanAccess) "0.0.0.0" else "127.0.0.1"
     val frontendUrl = "http://${host}:${frontendPort}"
+    val backendUrl = "http://${host}:${backendPort}"
+    val subStoreUrl = "${frontendUrl}/subs?api=${backendUrl}"
 
     val isDownloadingSubStoreFrontend by viewModel.isDownloadingSubStoreFrontend.collectAsState()
     val isDownloadingSubStoreBackend by viewModel.isDownloadingSubStoreBackend.collectAsState()
@@ -88,6 +92,18 @@ fun FeatureContent(
                         summary = MLang.Feature.ServiceStatus.AllowLanSummary,
                         checked = allowLanAccess,
                         onCheckedChange = { viewModel.setAllowLanAccess(it) },
+                    )
+                    SuperArrow(
+                        title = "Sub-Store",
+                        summary = subStoreUrl,
+                        enabled = !DeviceUtil.is32BitDevice() && isServiceRunning,
+                        onClick = {
+                            if (!isServiceRunning) return@SuperArrow
+                            when (panelOpenMode) {
+                                LinkOpenMode.IN_APP -> onOpenInAppUrl(subStoreUrl)
+                                LinkOpenMode.EXTERNAL_BROWSER -> onOpenExternalUrl(subStoreUrl)
+                            }
+                        }
                     )
                 }
             }
@@ -149,6 +165,7 @@ fun FeatureContent(
             item {
                 SmallTitle(MLang.Feature.SubStore.SectionHint)
                 Card {
+
                     SuperArrow(
                         title = if (isExtensionInstalled) {
                             MLang.Feature.SubStore.ExtensionInstalled

@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.screen.home
 
 import androidx.compose.foundation.layout.*
@@ -28,6 +8,10 @@ import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
 import com.github.yumelira.yumebox.domain.model.TrafficData
 
+/**
+ * 运行中内容区域（节点/IP/速度图表）。
+ * TrafficDisplay 已移至 Home.kt 统一处理，此组件仅保留节点信息部分。
+ */
 @Composable
 fun HomeRunningContent(
     trafficNow: TrafficData,
@@ -46,12 +30,6 @@ fun HomeRunningContent(
             .padding(vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(32.dp)
     ) {
-        TrafficDisplay(
-            trafficNow = trafficNow,
-            profileName = profileName,
-            tunnelMode = tunnelMode
-        )
-
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             NodeInfoDisplay(
                 serverName = serverName, serverPing = serverPing
@@ -60,7 +38,6 @@ fun HomeRunningContent(
             IpInfoDisplay(state = ipMonitoringState)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SpeedChart(
                 speedHistory = speedHistory, onClick = onChartClick
@@ -68,3 +45,4 @@ fun HomeRunningContent(
         }
     }
 }
+

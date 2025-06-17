@@ -24,7 +24,7 @@ import java.util.*
 
 object LocaleUtil {
 
-    private val CHINA_REGION_CODES = setOf("TW", "HK", "MO")
+    private val CHINA_REGION_CODES = setOf("TW")
 
     fun isChineseLocale(): Boolean {
         val locale = Locale.getDefault()

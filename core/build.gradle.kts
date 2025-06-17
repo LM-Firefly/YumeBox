@@ -15,10 +15,10 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("androidx.annotation:annotation-jvm:1.9.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${gropify.dep.version.coroutines}")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
+    implementation("androidx.annotation:annotation-jvm:${gropify.dep.version.annotationJvm}")
 }
 
 val sixteenKbPageLinkerFlags = listOf("-Wl,-z,max-page-size=16384", "-Wl,-z,common-page-size=16384")
@@ -207,3 +207,5 @@ tasks.configureEach {
         }
     }
 }
+
+

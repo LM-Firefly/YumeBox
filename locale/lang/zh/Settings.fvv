@@ -4,27 +4,29 @@ Settings = {
     
     Section = {
         UiSettings = "界面设置"
-        Function = "功能"
         More = "更多"
     }
     
     UiSettings = {
         App = "应用"
+        AppSummary = "外观 · 语言 · 主题"
         Network = "网络"
+        NetworkSummary = "DNS · 端口 · 入站"
         Override = "覆写"
+        OverrideSummary = "规则覆写"
         MetaFeatures = "Meta 功能"
-    }
-    
-    Function = {
-        SubStore = "Sub-Store"
-        FeatureManagement = "功能管理"
+        MetaFeaturesSummary = "Meta 扩展"
     }
     
     More = {
         TrafficStatistics = "流量统计"
         OnboardingWizard = "初始化向导"
+        Lab = "实验室"
+        LabSummary = "SubStore · 实验功能"
         Logs = "日志"
+        LogsSummary = "运行日志"
         About = "关于"
+        AboutSummary = "版本与许可"
     }
     
     Error = {

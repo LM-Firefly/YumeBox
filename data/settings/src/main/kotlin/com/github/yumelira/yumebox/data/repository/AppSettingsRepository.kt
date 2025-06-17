@@ -19,22 +19,14 @@ class AppSettingsRepository(
     val hideAppIcon: Preference<Boolean> = storage.hideAppIcon
     val excludeFromRecents: Preference<Boolean> = storage.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification
-    val bottomBarFloating: Preference<Boolean> = storage.bottomBarFloating
-    val showDivider: Preference<Boolean> = storage.showDivider
     val bottomBarAutoHide: Preference<Boolean> = storage.bottomBarAutoHide
+    val topBarBlurEnabled: Preference<Boolean> = storage.topBarBlurEnabled
+    val pageScale: Preference<Float> = storage.pageScale
 
-    val iconWithSelectedLabel: Preference<Boolean> = storage.iconWithSelectedLabel
-
-    val oneWord: Preference<String> = storage.oneWord
-    val oneWordAuthor: Preference<String> = storage.oneWordAuthor
     val customUserAgent: Preference<String> = storage.customUserAgent
 
     fun applyCustomUserAgent(userAgent: String) {
         customUserAgent.set(userAgent)
         Clash.setCustomUserAgent(userAgent)
     }
-
-    fun resetOneWordToDefault() = storage.resetOneWordToDefault()
-
-    fun resetOneWordAuthorToDefault() = storage.resetOneWordAuthorToDefault()
 }

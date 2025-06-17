@@ -20,10 +20,11 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":locale"))
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${gropify.dep.version.coroutines}")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
 
     // Keep MMKV as compileOnly here, but version must match app/runtime modules per ABI.
     compileOnly(mmkvDependency)
 }
+
 

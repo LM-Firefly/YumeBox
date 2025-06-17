@@ -36,24 +36,10 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val hideAppIcon by boolFlow(false)
     val excludeFromRecents by boolFlow(false)
     val showTrafficNotification by boolFlow(true)
-    val bottomBarFloating by boolFlow(false)
-    val showDivider by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
-    val iconWithSelectedLabel by boolFlow(true)
-
-    val oneWord by strFlow("本当は未来なんかよりも，瞬間の方が欲しいです")
-
-    val oneWordAuthor by strFlow("紅のドレス")
+    val topBarBlurEnabled by boolFlow(true)
+    val pageScale by floatFlow(1.0f)
 
     val customUserAgent by strFlow("")
 
-    fun resetOneWordToDefault() {
-        mmkv.remove("oneWord")
-        oneWord.refresh()
-    }
-
-    fun resetOneWordAuthorToDefault() {
-        mmkv.remove("oneWordAuthor")
-        oneWordAuthor.refresh()
-    }
 }

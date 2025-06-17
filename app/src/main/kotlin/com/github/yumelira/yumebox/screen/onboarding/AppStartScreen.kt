@@ -45,7 +45,7 @@ fun AppStartScreen(navigator: DestinationsNavigator) {
         val destination = if (onboardingCompleted) {
             MainScreenDestination(initialPage = 0)
         } else {
-            ActivationWizardScreenDestination
+            ActivationWizardScreenDestination()
         }
 
         navigator.navigate(destination) {
@@ -56,4 +56,3 @@ fun AppStartScreen(navigator: DestinationsNavigator) {
 
     Surface(color = MiuixTheme.colorScheme.surface) {}
 }
-

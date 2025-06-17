@@ -59,6 +59,7 @@ private fun ThemeColors.toLightScheme() = lightColorScheme(
     onPrimary = onPrimary,
     primaryVariant = primaryVariant,
     onPrimaryVariant = onPrimaryVariant,
+
     disabledPrimary = disabledPrimary,
     disabledOnPrimary = disabledOnPrimary,
     disabledPrimaryButton = disabledPrimaryButton,

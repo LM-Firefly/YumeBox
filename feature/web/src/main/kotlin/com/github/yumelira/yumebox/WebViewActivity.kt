@@ -23,14 +23,17 @@ package com.github.yumelira.yumebox
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowInsetsController
 import android.webkit.ValueCallback
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowCompat
 import com.github.yumelira.yumebox.presentation.webview.WebViewScreen
 
 class WebViewActivity : ComponentActivity() {
@@ -82,6 +85,20 @@ class WebViewActivity : ComponentActivity() {
         }
 
         super.onCreate(savedInstanceState)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val isDarkMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        val useLightNavigationBarIcons = !isDarkMode
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.setSystemBarsAppearance(
+                if (useLightNavigationBarIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
+                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            WindowCompat.getInsetsController(window, window.decorView)
+                .isAppearanceLightNavigationBars = useLightNavigationBarIcons
+        }
 
         val initialUrl = intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://${filesDir}/frontend/index.html"
 

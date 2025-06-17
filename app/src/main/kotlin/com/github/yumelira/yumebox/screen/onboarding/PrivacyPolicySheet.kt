@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,10 +41,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @SuppressLint("LocalContextResourcesRead")
 @Composable
-internal fun PrivacyPolicySheet(onDismiss: () -> Unit) {
+internal fun PrivacyPolicySheet(show: MutableState<Boolean>) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val show = remember { mutableStateOf(true) }
 
     val policyText = remember {
         runCatching {
@@ -58,7 +57,7 @@ internal fun PrivacyPolicySheet(onDismiss: () -> Unit) {
         show = show,
         title = MLang.Onboarding.Sheet.PrivacyPolicyTitle,
         insideMargin = DpSize(32.dp, 16.dp),
-        onDismissRequest = onDismiss,
+        onDismissRequest = { show.value = false },
     ) {
         Column(
             modifier = Modifier
@@ -79,7 +78,7 @@ internal fun PrivacyPolicySheet(onDismiss: () -> Unit) {
             }
 
             Button(
-                onClick = onDismiss,
+                onClick = { show.value = false },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
