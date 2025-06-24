@@ -60,3 +60,21 @@ func writeOverride(slot C.int, content C.c_string) {
 func clearOverride(slot C.int) {
 	config.ClearOverride(config.OverrideSlot(slot))
 }
+
+//export queryProfileProxyGroupNames
+func queryProfileProxyGroupNames(path C.c_string, excludeNotSelectable C.int) *C.char {
+	names, err := config.QueryProxyGroupNamesFromPath(C.GoString(path), excludeNotSelectable != 0)
+	if err != nil {
+		return nil
+	}
+	return marshalJson(names)
+}
+
+//export queryProfileProxyGroups
+func queryProfileProxyGroups(path C.c_string, excludeNotSelectable C.int) *C.char {
+	groups, err := config.QueryProxyGroupsFromPath(C.GoString(path), excludeNotSelectable != 0)
+	if err != nil {
+		return nil
+	}
+	return marshalJson(groups)
+}

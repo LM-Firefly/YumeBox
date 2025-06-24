@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.service.clash.module
 
 import android.app.Service
@@ -40,12 +60,12 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
 
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            Log.i("NetworkObserve onAvailable network=$network")
+            Log.i("Network available: $network")
             networkInfos[network] = NetworkInfo()
         }
 
         override fun onLosing(network: Network, maxMsToLive: Int) {
-            Log.i("NetworkObserve onLosing network=$network")
+            Log.i("Network losing: $network")
             networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
             notifyDnsChange()
 
@@ -53,7 +73,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
 
         override fun onLost(network: Network) {
-            Log.i("NetworkObserve onLost network=$network")
+            Log.i("Network lost: $network")
             networkInfos.remove(network)
             notifyDnsChange()
 
@@ -61,7 +81,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            Log.i("NetworkObserve onLinkPropertiesChanged network=$network $linkProperties")
+            Log.i("Network props changed: $network")
             networkInfos[network]?.dnsList = linkProperties.dnsServers
             notifyDnsChange()
 
@@ -69,29 +89,29 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
 
         override fun onUnavailable() {
-            Log.i("NetworkObserve onUnavailable")
+            Log.i("Network unavailable")
         }
     }
 
     private fun register(): Boolean {
-        Log.i("NetworkObserve start register")
+        Log.i("Register network callback")
         return try {
             connectivity.registerNetworkCallback(request, callback)
 
             true
         } catch (e: Exception) {
-            Log.w("NetworkObserve register failed", e)
+            Log.w("Register network callback failed", e)
 
             false
         }
     }
 
     private fun unregister(): Boolean {
-        Log.i("NetworkObserve start unregister")
+        Log.i("Unregister network callback")
         try {
             connectivity.unregisterNetworkCallback(callback)
         } catch (e: Exception) {
-            Log.w("NetworkObserve unregister failed", e)
+            Log.w("Unregister network callback failed", e)
         }
 
         return false
@@ -121,7 +141,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             ?: emptyList()).map { x -> x.asSocketAddressText(53) }
         val prevDnsList = curDnsList
         if (dnsList.isNotEmpty() && prevDnsList != dnsList) {
-            Log.i("notifyDnsChange $prevDnsList -> $dnsList")
+            Log.i("DNS changed")
             curDnsList = dnsList
             Clash.notifyDnsChanged(dnsList)
         }
@@ -147,7 +167,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             withContext(NonCancellable) {
                 unregister()
 
-                Log.i("NetworkObserve dns = []")
+                Log.i("DNS cleared")
                 Clash.notifyDnsChanged(emptyList())
             }
         }

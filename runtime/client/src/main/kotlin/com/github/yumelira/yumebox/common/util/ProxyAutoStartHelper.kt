@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -24,8 +24,8 @@ import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.tencent.mmkv.MMKV
-import kotlinx.coroutines.delay
 import timber.log.Timber
 
 object ProxyAutoStartHelper {
@@ -37,50 +37,70 @@ object ProxyAutoStartHelper {
         profilesRepository: ProfilesRepository,
         appSettingsStorage: AppSettingsStorage,
         networkSettingsStorage: NetworkSettingsStorage,
-        serviceCache: MMKV,
-        isBootCompleted: Boolean = false
+        serviceCache: MMKV
     ) {
-        runCatching {
-            val automaticRestart = appSettingsStorage.automaticRestart.value
-            if (!automaticRestart) {
-                return
-            }
+        val activeProfile = try {
+            profilesRepository.queryActiveProfile()
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to load active profile")
+            return
+        }
 
-            if (serviceCache.decodeBool("service_running", false)) {
-                return
-            }
+        tryUpdateActiveProfileOnStart(
+            appSettingsStorage = appSettingsStorage,
+            profilesRepository = profilesRepository,
+            activeProfile = activeProfile
+        )
 
-            val profileId = getProfileToStart(profilesRepository)
-            if (profileId == null) {
-                Timber.tag(TAG).w("没有可用的配置文件，无法自动启动")
-                return
-            }
+        val automaticRestart = appSettingsStorage.automaticRestart.value
+        if (!automaticRestart) {
+            return
+        }
 
-            if (isBootCompleted) {
-                delay(3000)
-            }
+        if (serviceCache.decodeBool("service_running", false)) {
+            return
+        }
 
-            val useTun = networkSettingsStorage.proxyMode.value == com.github.yumelira.yumebox.data.model.ProxyMode.Tun
-            
-            // Set active profile and start
-            profilesRepository.setActiveProfile(java.util.UUID.fromString(profileId))
+        if (activeProfile == null) {
+            Timber.tag(TAG).w("No active profile for auto start")
+            return
+        }
+
+        val useTun = networkSettingsStorage.proxyMode.value == com.github.yumelira.yumebox.data.model.ProxyMode.Tun
+
+        try {
+            profilesRepository.setActiveProfile(activeProfile.uuid)
             proxyFacade.startProxy(useTun)
-            
-            Timber.tag(TAG).i("自动启动代理成功: profileId=$profileId, useTun=$useTun")
-        }.onFailure { e ->
-            Timber.tag(TAG).e(e, "自动启动代理失败: ${e.message}")
+            Timber.tag(TAG).i("Auto start ok: profile=${activeProfile.uuid}, tun=$useTun")
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Auto start failed: ${e.message}")
         }
     }
 
-    private suspend fun getProfileToStart(profilesRepository: ProfilesRepository): String? {
-        val activeProfile = profilesRepository.queryActiveProfile()
-        
-        // 只允许自动启动已激活的配置，默认不自动选择任何配置
-        if (activeProfile != null) {
-            return activeProfile.uuid.toString()
+    private suspend fun tryUpdateActiveProfileOnStart(
+        appSettingsStorage: AppSettingsStorage,
+        profilesRepository: ProfilesRepository,
+        activeProfile: Profile?
+    ) {
+        if (!appSettingsStorage.autoUpdateCurrentProfileOnStart.value) {
+            return
         }
 
-        return null
+        if (activeProfile == null) {
+            Timber.tag(TAG).d("Skip auto update: no active profile")
+            return
+        }
+
+        if (activeProfile.type != Profile.Type.Url) {
+            Timber.tag(TAG).d("Skip auto update: unsupported profile type=${activeProfile.type}")
+            return
+        }
+
+        try {
+            profilesRepository.updateProfile(activeProfile.uuid)
+            Timber.tag(TAG).i("Auto update on start ok: ${activeProfile.uuid}")
+        } catch (e: Exception) {
+            Timber.tag(TAG).w(e, "Auto update on start failed")
+        }
     }
 }
-

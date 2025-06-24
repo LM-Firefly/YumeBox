@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -77,7 +77,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             nodeRuntime!!.allowEval(true)
             nodeRuntime!!.getExecutor(argv2EnvScript).executeVoid()
         } catch (e: Exception) {
-            Timber.e(e, "CaseEngine 初始化失败")
+            Timber.e(e, "CaseEngine init failed")
         }
     }
 
@@ -99,7 +99,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
                 }
             } catch (_: InterruptedException) {
             } catch (e: Exception) {
-                Timber.e(e, "CaseEngine 运行出错")
+                Timber.e(e, "CaseEngine run failed")
             } finally {
                 cleanup()
             }
@@ -127,7 +127,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
                 thread.join(5000)
             }
         } catch (e: Exception) {
-            Timber.e(e, "停止 CaseEngine 失败")
+            Timber.e(e, "CaseEngine stop failed")
         }
     }
 
@@ -142,7 +142,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             }
             nodeRuntime = null
         }.onFailure { e ->
-            Timber.e(e, "CaseEngine 清理失败")
+            Timber.e(e, "CaseEngine cleanup failed")
         }
     }
 }

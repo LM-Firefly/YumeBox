@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2026.
+ *
+ */
+
 @file:Suppress("UnstableApiUsage")
 
 import com.android.build.gradle.tasks.MergeSourceSetFolders
@@ -14,6 +34,8 @@ plugins {
     id("com.mikepenz.aboutlibraries.plugin.android")
     id("yumebox.base.android")
     id("yumebox.build.helpers")
+
+    id("io.sentry.android.gradle") version "6.1.0"
 }
 
 private data class EmasConfigValues(
@@ -61,8 +83,6 @@ private fun DependencyHandlerScope.addAppProjectDependencies() {
     implementationProjects(
         ":core",
         ":platform",
-        ":common",
-        ":di",
         ":locale",
         ":ui",
         ":data:log",
@@ -71,8 +91,6 @@ private fun DependencyHandlerScope.addAppProjectDependencies() {
         ":runtime:api",
         ":runtime:client",
         ":runtime:service",
-        ":feature:update",
-        ":feature:web",
         ":feature:substore",
         ":feature:proxy",
     )
@@ -130,6 +148,9 @@ android {
             jniLibs.directories.add("src/main/jniLibs")
             // Build-generated geo assets merged during packaging/lint
             assets.directories.add(geoFilesDownloadDir.asFile.absolutePath)
+            // Let IDE index compose-destinations generated code without requiring a build refresh cycle
+            // java.srcDir(layout.buildDirectory.dir("generated/ksp/debug/kotlin"))
+            // java.srcDir(layout.buildDirectory.dir("generated/ksp/release/kotlin"))
         }
     }
 
@@ -294,6 +315,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${gropify.dep.version.lifecycle}")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
 
+    // App Update (EMAS)
+    implementation("com.taobao.android:update-main:${gropify.dep.version.taobaoUpdate}")
+    implementation("com.taobao.android:update-common:${gropify.dep.version.taobaoUpdate}")
+    implementation("com.taobao.android:update-datasource:${gropify.dep.version.taobaoUpdate}")
+    implementation("com.taobao.android:update-adapter:${gropify.dep.version.taobaoUpdate}")
+
     implementation ("com.microsoft.clarity:clarity-compose:3.8.1")
 
 }
@@ -327,4 +354,14 @@ aboutLibraries {
     export {
         outputFile = file("src/main/resources/aboutlibraries.json")
     }
+}
+
+
+sentry {
+    org.set("12d34a06e78c")
+    projectName.set("android")
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext.set(true)
 }

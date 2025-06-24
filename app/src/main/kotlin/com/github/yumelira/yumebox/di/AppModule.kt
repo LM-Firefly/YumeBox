@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -23,7 +23,13 @@ package com.github.yumelira.yumebox.di
 import com.github.yumelira.yumebox.data.repository.LogRecordGateway
 import com.github.yumelira.yumebox.di.featureProxyModules
 import com.github.yumelira.yumebox.di.featureSubStoreModules
-import com.github.yumelira.yumebox.viewmodel.*
+import com.github.yumelira.yumebox.screen.home.HomeViewModel
+import com.github.yumelira.yumebox.screen.log.LogViewModel
+import com.github.yumelira.yumebox.screen.profiles.ProfilesViewModel
+import com.github.yumelira.yumebox.screen.settings.AccessControlViewModel
+import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
+import com.github.yumelira.yumebox.screen.settings.NetworkSettingsViewModel
+import com.github.yumelira.yumebox.screen.traffic.TrafficStatisticsViewModel
 import com.github.yumelira.yumebox.service.LogRecordServiceGateway
 import org.koin.android.ext.koin.androidApplication
 import org.koin.core.module.Module

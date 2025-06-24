@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -25,10 +25,10 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.common.native.NativeLibraryManager
+import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
 import com.github.yumelira.yumebox.common.util.DeviceUtil
-import com.github.yumelira.yumebox.common.util.DownloadUtil
-import com.github.yumelira.yumebox.data.model.AutoCloseMode
+import com.github.yumelira.yumebox.substore.util.DownloadUtil
+import com.github.yumelira.yumebox.substore.model.AutoCloseMode
 import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.Preference

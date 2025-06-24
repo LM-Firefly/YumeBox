@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.service
 
 import android.app.Notification
@@ -14,6 +34,7 @@ import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import timber.log.Timber
@@ -39,11 +60,13 @@ class AutoRestartService : Service() {
             createNotificationChannel()
             val notification = createNotification()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    startForeground(
+                        NOTIFICATION_ID,
+                        notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    )
+                }
             } else {
                 startForeground(NOTIFICATION_ID, notification)
             }
@@ -51,9 +74,9 @@ class AutoRestartService : Service() {
 
         serviceScope.launch {
             runCatching {
-                checkAndAutoStart(isBootCompleted = true)
+                checkAndAutoStart()
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "自动启动失败: ${e.message}")
+                Timber.tag(TAG).e(e, "Auto start failed: ${e.message}")
             }
             ServiceCompat.stopForeground(this@AutoRestartService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -62,17 +85,17 @@ class AutoRestartService : Service() {
         return START_NOT_STICKY
     }
 
-    private suspend fun checkAndAutoStart(isBootCompleted: Boolean) {
+    private suspend fun checkAndAutoStart() {
         if (!appSettingsStorage.automaticRestart.value) return
         if (!StatusProvider.shouldStartClashOnBoot) return
 
         val activeProfile = profileManager.queryActive()
         if (activeProfile == null) {
-            Timber.tag(TAG).w("没有可用的配置文件，无法自动启动")
+            Timber.tag(TAG).w("No active profile for auto start")
             return
         }
 
-        if (isBootCompleted) delay(3000)
+        tryUpdateActiveProfileOnStart(activeProfile)
 
         val useTun = networkSettingsStorage.proxyMode.value == ProxyMode.Tun
         val serviceIntent = Intent(
@@ -85,7 +108,25 @@ class AutoRestartService : Service() {
             startService(serviceIntent)
         }
 
-        Timber.tag(TAG).i("自动启动代理已触发: profile=${activeProfile.name}, useTun=$useTun")
+        Timber.tag(TAG).i("Auto start triggered: profile=${activeProfile.name}, tun=$useTun")
+    }
+
+    private suspend fun tryUpdateActiveProfileOnStart(activeProfile: Profile) {
+        if (!appSettingsStorage.autoUpdateCurrentProfileOnStart.value) {
+            return
+        }
+
+        if (activeProfile.type != Profile.Type.Url) {
+            Timber.tag(TAG).d("Skip boot update: unsupported profile type=${activeProfile.type}")
+            return
+        }
+
+        try {
+            profileManager.update(activeProfile.uuid, null)
+            Timber.tag(TAG).i("Boot update ok: ${activeProfile.uuid}")
+        } catch (e: Exception) {
+            Timber.tag(TAG).w(e, "Boot update failed")
+        }
     }
 
     private fun createNotificationChannel() {
@@ -118,4 +159,3 @@ class AutoRestartService : Service() {
         super.onDestroy()
     }
 }
-

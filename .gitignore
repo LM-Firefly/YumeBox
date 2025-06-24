@@ -74,3 +74,6 @@ Thumbs.db
 /AGENTS.md
 /app/aliyun-emas-services.json
 /scripts/rewrite-git-email.sh
+
+# Sentry Config File
+sentry.properties

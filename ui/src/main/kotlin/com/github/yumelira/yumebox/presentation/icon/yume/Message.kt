@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2026.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
-public val Yume.Message: ImageVector
+val Yume.Message: ImageVector
     get() {
         if (_MessageCircleQuestionMark != null) {
             return _MessageCircleQuestionMark!!

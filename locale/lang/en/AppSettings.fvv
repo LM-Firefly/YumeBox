@@ -13,6 +13,8 @@ AppSettings = {
     Behavior = {
         AutoStartTitle = "Auto Start"
         AutoStartSummary = "Automatically start proxy service on app launch and boot"
+        AutoUpdateOnStartTitle = "Update on Start"
+        AutoUpdateOnStartSummary = "Auto-update the active subscription profile on start"
         OneChinaTitle = "One-China Policy"
         OneChinaSummary = "Automatically display TW region flags and codes as China"
     }

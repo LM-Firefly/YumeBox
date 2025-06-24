@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -69,7 +69,7 @@ class TrafficStatisticsCollector(
                     delay(COLLECTION_INTERVAL_MS)
                 }.onFailure { e ->
                     if (e is CancellationException) throw e
-                    Timber.tag("TrafficStatisticsCollec").e(e, "流量数据收集失败")
+                    Timber.tag(TAG).e(e, "Traffic collection failed")
                     delay(COLLECTION_INTERVAL_MS)
                 }
             }
@@ -118,8 +118,7 @@ class TrafficStatisticsCollector(
                 currentProfileId,
                 currentProfileName
             )
-            Timber.tag("TrafficStatisticsCollec")
-                .v("记录流量: 上传=$uploadDelta, 下载=$downloadDelta, 配置=$currentProfileName")
+            Timber.tag(TAG).v("Traffic recorded: up=$uploadDelta down=$downloadDelta profile=$currentProfileName")
         }
 
         lastTotalUpload = currentUpload
@@ -138,4 +137,3 @@ class TrafficStatisticsCollector(
         collectionJob = null
     }
 }
-

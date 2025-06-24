@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 
 jobs:
@@ -33,8 +33,8 @@ jobs:
         run: |
           set -eu
 
-          alpha='{"variant":"alpha","cron":"0 18 * * *","kernel_channel":"alpha","title":"YumeBox","artifact_prefix":"yumebox","aliyun_secret_name":"ALIYUN_SERVICES_JSON"}'
-          smart='{"variant":"smart","cron":"20 18 * * *","kernel_channel":"smart","title":"YumeBox Smart","artifact_prefix":"yumebox-smart","aliyun_secret_name":"ALIYUN_SERVICES_JSON_SMART"}'
+          alpha='{"variant":"alpha","cron":"0 18 * * *","kernel_channel":"alpha","title":"YumeBox","artifact_prefix":"yumebox","aliyun_secret_name":"ALIYUN_SERVICES_JSON","release_tag":"Pre-release","release_name":"Pre-release"}'
+          smart='{"variant":"smart","cron":"20 18 * * *","kernel_channel":"smart","title":"YumeBox Smart","artifact_prefix":"yumebox-smart","aliyun_secret_name":"ALIYUN_SERVICES_JSON_SMART","release_tag":"Smart","release_name":"Smart"}'
 
           if [ "${{ github.event_name }}" = "schedule" ]; then
             case "${{ github.event.schedule }}" in
@@ -76,7 +76,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.26"
+          go-version: "1.25"
           cache: true
           cache-dependency-path: |
             **/go.sum
@@ -126,45 +126,10 @@ jobs:
             echo "key.password=${{ secrets.SIGNING_KEY_PASSWORD }}" >> signing.properties
             echo "keystore.path=release.keystore" >> signing.properties
           fi
-
-      - name: Inject google-services.json
+      - name: Write sentry config
         run: |
-          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
-            echo "Using real google-services.json from secrets"
-            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
-          else
-            echo "Creating dummy google-services.json for PR/Fork builds"
-            cat > app/google-services.json << 'EOF'
-          {
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "dummy-project",
-              "storage_bucket": "dummy-project.appspot.com"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                  "android_client_info": {
-                    "package_name": "com.github.yumelira.yumebox"
-                  }
-                },
-                "oauth_client": [],
-                "api_key": [
-                  {
-                    "current_key": "AIzaDummyKeyForBuildOnly-0000000000000"
-                  }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": []
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          EOF
+          if [ -n "${{ secrets.SENTRY_AUTH_TOKEN }}" ]; then
+            echo "${{ secrets.SENTRY_AUTH_TOKEN }}" | base64 --decode > sentry.properties
           fi
 
       - name: Inject aliyun-emas-services.json
@@ -196,43 +161,62 @@ jobs:
           fi
 
       - name: Upload arm64-v8a APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_prefix }}-arm64-v8a
           path: ci-artifacts/apk/*arm64-v8a*.apk
+          archive: false
 
       - name: Upload armeabi-v7a APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_prefix }}-armeabi-v7a
           path: ci-artifacts/apk/*armeabi-v7a*.apk
+          archive: false
 
       - name: Upload x86_64 APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_prefix }}-x86_64
           path: ci-artifacts/apk/*x86_64*.apk
+          archive: false
 
       - name: Upload x86 APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_prefix }}-x86
           path: |
             ci-artifacts/apk/*x86*.apk
             !ci-artifacts/apk/*x86_64*.apk
+          archive: false
 
       - name: Upload universal APK
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_prefix }}-universal
           path: ci-artifacts/apk/*universal*.apk
+          archive: false
           if-no-files-found: error
 
       - name: Upload mappings
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: mappings-${{ matrix.variant }}
           path: ci-artifacts/mapping/${{ matrix.variant }}/
+
+      - name: Publish pre-release
+        if: github.event_name != 'workflow_call'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.release_tag }}
+          name: ${{ matrix.release_name }}
+          prerelease: true
+          draft: false
+          target_commitish: ${{ github.sha }}
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: |
+            ci-artifacts/apk/${{ matrix.artifact_prefix }}-*.apk
 
       - name: Bot session cache
         if: steps.check_upload.outputs.UPLOAD == 'true'

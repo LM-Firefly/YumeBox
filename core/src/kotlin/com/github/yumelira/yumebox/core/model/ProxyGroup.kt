@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.core.model
 
 import android.os.Parcel
@@ -8,6 +28,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ProxyGroup(
+    val name: String = "",
     val type: Proxy.Type,
     val proxies: List<Proxy>,
     val now: String,
@@ -36,10 +57,11 @@ data class ProxyGroup(
     }
 
     constructor(parcel: Parcel) : this(
-        Proxy.Type.entries[parcel.readInt()],
-        SliceProxyList(parcel),
-        parcel.readString()!!,
-        parcel.readString(),
+        type = Proxy.Type.entries[parcel.readInt()],
+        proxies = SliceProxyList(parcel),
+        now = parcel.readString().orEmpty(),
+        icon = parcel.readString(),
+        name = if (parcel.dataAvail() > 0) parcel.readString().orEmpty() else "",
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -47,6 +69,7 @@ data class ProxyGroup(
         SliceProxyList(proxies).writeToParcel(parcel, 0)
         parcel.writeString(now)
         parcel.writeString(icon)
+        parcel.writeString(name)
     }
 
     override fun describeContents(): Int {

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -23,7 +23,7 @@ package com.github.yumelira.yumebox.substore
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.github.yumelira.yumebox.common.native.NativeLibraryManager
+import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
 import com.github.yumelira.yumebox.core.Global
 import timber.log.Timber
 
@@ -109,18 +109,18 @@ class SubStoreService : Service() {
         if (!NativeLibraryManager.isLibraryAvailable(javetLibBaseName)) {
             val results = NativeLibraryManager.extractAllLibraries()
             if (results[javetLibBaseName] != true) {
-                Timber.e("Javet 库提取失败")
+                Timber.e("Javet extract failed")
                 return false
             }
         }
 
         val loaded = NativeLibraryManager.loadJniLibrary(javetLibBaseName)
         if (!loaded) {
-            Timber.e("Javet 库加载失败，库状态: ${NativeLibraryManager.getLibraryStatus(javetLibBaseName)}")
+            Timber.e("Javet load failed: ${NativeLibraryManager.getLibraryStatus(javetLibBaseName)}")
         }
         loaded
     }.getOrElse { e ->
-        Timber.e(e, "Javet 库加载异常")
+        Timber.e(e, "Javet load error")
         false
     }
 }
