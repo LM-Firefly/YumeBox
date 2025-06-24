@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -31,6 +31,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.max
 
 val LocalPagerState = compositionLocalOf<PagerState> { error("LocalPagerState is not provided") }
 val LocalHandlePageChange = compositionLocalOf<(Int) -> Unit> { error("LocalHandlePageChange is not provided") }
@@ -97,6 +99,13 @@ fun BottomBarContent(
         ),
         label = "BottomBarVisibility"
     ) {
+        val density = LocalDensity.current
+        val bottomSafeInset = with(density) {
+            val navBottom = WindowInsets.navigationBars.getBottom(this)
+            val gestureBottom = WindowInsets.systemGestures.getBottom(this)
+            max(navBottom, gestureBottom).toDp()
+        }
+
         val selectedColor = MiuixTheme.colorScheme.primary
         val unselectedColor = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         val containerColor = MiuixTheme.colorScheme.background
@@ -107,7 +116,12 @@ fun BottomBarContent(
             tabsCount = BottomBarDestination.entries.size,
             containerColor = containerColor,
             indicatorContainerColor = indicatorContainerColor,
-            modifier = Modifier.padding(start = 48.dp, end = 48.dp, top = 6.dp, bottom = 30.dp),
+            modifier = Modifier.padding(
+                start = 48.dp,
+                end = 48.dp,
+                top = 6.dp,
+                bottom = bottomSafeInset + 12.dp,
+            ),
         ) {
             BottomBarDestination.entries.forEachIndexed { index, destination ->
                 val itemColor: Color = if (page == index) selectedColor else unselectedColor

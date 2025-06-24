@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -31,7 +31,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
@@ -47,13 +52,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
-import com.github.yumelira.yumebox.common.util.WebViewUtils.getPanelUrl
+import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.BottomBarContent
@@ -70,10 +76,10 @@ import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
-import com.github.yumelira.yumebox.screen.HomePager
-import com.github.yumelira.yumebox.screen.ProfilesPager
-import com.github.yumelira.yumebox.screen.SettingPager
-import com.github.yumelira.yumebox.viewmodel.AppSettingsViewModel
+import com.github.yumelira.yumebox.screen.home.HomePager
+import com.github.yumelira.yumebox.screen.profiles.ProfilesPager
+import com.github.yumelira.yumebox.screen.settings.SettingPager
+import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.microsoft.clarity.Clarity
 import com.microsoft.clarity.ClarityConfig
 import com.microsoft.clarity.models.LogLevel
@@ -100,6 +106,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.abs
+import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
 
@@ -143,11 +150,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val config = ClarityConfig(
-            projectId = "v4e5psv4w6",
-            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
-        )
-        Clarity.initialize(applicationContext, config)
+//        val config = ClarityConfig(
+//            projectId = "v4e5psv4w6",
+//            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
+//        )
+//        Clarity.initialize(applicationContext, config)
 
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
@@ -208,8 +215,7 @@ class MainActivity : ComponentActivity() {
                     profilesRepository = profilesRepository,
                     appSettingsStorage = appSettingsStorage,
                     networkSettingsStorage = networkSettingsStorage,
-                    serviceCache = serviceCache,
-                    isBootCompleted = false
+                    serviceCache = serviceCache
                 )
             }
 
@@ -268,10 +274,6 @@ fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 3), pageCount = { 4 })
     val hazeState = remember { HazeState() }
-    val hazeStyle = HazeStyle(
-        backgroundColor = MiuixTheme.colorScheme.background,
-        tint = HazeTint(MiuixTheme.colorScheme.background.copy(0.8f)),
-    )
 
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val featureViewModel = koinViewModel<FeatureViewModel>()
@@ -289,13 +291,12 @@ fun MainScreen(
     val pagerClickAnimationSpec: (Int, Int) -> androidx.compose.animation.core.AnimationSpec<Float> =
         remember {
             { fromPage: Int, toPage: Int ->
-                val distance = abs(fromPage - toPage)
-                val durationMillis = when (distance) {
+                val durationMillis = when (val distance = abs(fromPage - toPage)) {
                     0 -> AnimationSpecs.DURATION_INSTANT
                     1 -> 360
                     else -> (360 + (distance - 1) * 70).coerceAtMost(520)
                 }
-                tween<Float>(
+                tween(
                     durationMillis = durationMillis,
                     easing = AnimationSpecs.Legacy
                 )
@@ -349,6 +350,20 @@ fun MainScreen(
                 )
             },
         ) { innerPadding ->
+            val density = LocalDensity.current
+            val layoutDirection = LocalLayoutDirection.current
+            val systemBottomInset = with(density) {
+                val navBottom = androidx.compose.foundation.layout.WindowInsets.navigationBars.getBottom(this)
+                val gestureBottom = androidx.compose.foundation.layout.WindowInsets.systemGestures.getBottom(this)
+                max(navBottom, gestureBottom).toDp()
+            }
+            val safeMainPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding().coerceAtLeast(systemBottomInset),
+                start = innerPadding.calculateStartPadding(layoutDirection),
+                end = innerPadding.calculateEndPadding(layoutDirection),
+            )
+
             HorizontalPager(
                 modifier = Modifier
                     .hazeSource(state = hazeState)
@@ -366,9 +381,9 @@ fun MainScreen(
                 ),
             ) { page ->
                 when (page) {
-                    0 -> HomePager(innerPadding)
+                    0 -> HomePager(safeMainPadding)
                     1 -> ProxyPager(
-                        mainInnerPadding = innerPadding,
+                        mainInnerPadding = safeMainPadding,
                         onNavigateToProviders = {
                             navigator.navigate(ProvidersScreenDestination) {
                                 launchSingleTop = true
@@ -386,8 +401,8 @@ fun MainScreen(
                         isActive = page == pagerState.currentPage,
                     )
 
-                    2 -> ProfilesPager(innerPadding)
-                    3 -> SettingPager(innerPadding)
+                    2 -> ProfilesPager(safeMainPadding)
+                    3 -> SettingPager(safeMainPadding)
                 }
             }
         }

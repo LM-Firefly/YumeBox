@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -138,7 +138,7 @@ class LogRecordService : Service() {
                                     logWriter?.write(line)
                                     logWriter?.flush()
                                 }.onFailure { e ->
-                                    Timber.tag(TAG).e(e, "写入日志失败")
+                                    Timber.tag(TAG).e(e, "Log write failed")
                                 }
                             }
                         }
@@ -152,11 +152,11 @@ class LogRecordService : Service() {
                         runCatching { clash.setLogObserver(null) }
                     }
                 } catch (e: Exception) {
-                    Timber.tag(TAG).e(e, "设置日志观察者失败")
+                    Timber.tag(TAG).e(e, "Log observer setup failed")
                 }
             }
         }.onFailure { e ->
-            Timber.tag(TAG).e(e, "启动日志记录失败")
+            Timber.tag(TAG).e(e, "Log recording start failed")
             isRecording = false
             currentLogFileName = null
             stopSelf()
@@ -182,7 +182,7 @@ class LogRecordService : Service() {
             logWriter = null
             logFile = null
         }.onFailure { e ->
-            Timber.tag(TAG).e(e, "关闭日志写入器失败")
+            Timber.tag(TAG).e(e, "Log writer close failed")
         }
     }
 

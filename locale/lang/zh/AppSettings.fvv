@@ -13,6 +13,8 @@ AppSettings = {
     Behavior = {
         AutoStartTitle = "自动启动"
         AutoStartSummary = "应用启动和开机时自动启动代理服务"
+        AutoUpdateOnStartTitle = "启动更新配置"
+        AutoUpdateOnStartSummary = "启动时自动更新当前订阅配置"
         OneChinaTitle = "坚持一个中国原则"
         OneChinaSummary = "自动将台湾地区旗帜及区域码显示为中国"
     }

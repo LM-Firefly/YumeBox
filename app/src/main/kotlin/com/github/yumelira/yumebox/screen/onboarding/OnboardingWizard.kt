@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -40,7 +40,7 @@ import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.screen.component.ThemeModeAndColorItems
+import com.github.yumelira.yumebox.screen.settings.component.ThemeModeAndColorItems
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.Message

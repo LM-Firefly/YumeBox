@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.core
 
 import com.github.yumelira.yumebox.core.bridge.*
@@ -112,10 +132,39 @@ object Clash {
         }
     }
 
+    fun queryProfileGroupNames(path: File, excludeNotSelectable: Boolean): List<String> {
+        val namesJson = Bridge.nativeQueryProfileGroupNames(path.absolutePath, excludeNotSelectable)
+            ?: return emptyList()
+        val names = runCatching {
+            Json.decodeFromString(JsonArray.serializer(), namesJson)
+        }.getOrElse {
+            return emptyList()
+        }
+        return names.map {
+            require(it.jsonPrimitive.isString)
+            it.jsonPrimitive.content
+        }
+    }
+
+    fun queryProfileGroups(path: File, excludeNotSelectable: Boolean): List<ProxyGroup> {
+        val groupsJson = Bridge.nativeQueryProfileGroups(path.absolutePath, excludeNotSelectable)
+            ?: return emptyList()
+        val groups = runCatching {
+            Json.decodeFromString(JsonArray.serializer(), groupsJson)
+        }.getOrElse {
+            return emptyList()
+        }
+        return List(groups.size) {
+            runCatching {
+                Json.decodeFromJsonElement(ProxyGroup.serializer(), groups[it])
+            }.getOrDefault(ProxyGroup(type = Proxy.Type.Unknown, proxies = emptyList(), now = ""))
+        }
+    }
+
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)
             ?.let { Json.decodeFromString(ProxyGroup.serializer(), it) }
-            ?: ProxyGroup(Proxy.Type.Unknown, emptyList(), "")
+            ?: ProxyGroup(name = name, type = Proxy.Type.Unknown, proxies = emptyList(), now = "")
     }
 
     fun healthCheck(name: String): CompletableDeferred<Unit> {

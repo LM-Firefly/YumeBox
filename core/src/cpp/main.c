@@ -160,7 +160,7 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeStopHttp(JNIEnv *env, 
 
 JNIEXPORT jstring JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryGroupNames(JNIEnv *env, jobject thiz,
-                                                                     jboolean exclude_not_selectable) {
+                                                                      jboolean exclude_not_selectable) {
     TRACE_METHOD();
 
     scoped_string response = queryGroupNames((int) exclude_not_selectable);
@@ -169,8 +169,38 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryGroupNames(JNIEnv
 }
 
 JNIEXPORT jstring JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryProfileGroupNames(JNIEnv *env, jobject thiz,
+                                                                             jstring path,
+                                                                             jboolean exclude_not_selectable) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+    scoped_string response = queryProfileProxyGroupNames(_path, (int) exclude_not_selectable);
+
+    if (response == NULL)
+        return NULL;
+
+    return new_string(response);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryProfileGroups(JNIEnv *env, jobject thiz,
+                                                                        jstring path,
+                                                                        jboolean exclude_not_selectable) {
+    TRACE_METHOD();
+
+    scoped_string _path = get_string(path);
+    scoped_string response = queryProfileProxyGroups(_path, (int) exclude_not_selectable);
+
+    if (response == NULL)
+        return NULL;
+
+    return new_string(response);
+}
+
+JNIEXPORT jstring JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryGroup(JNIEnv *env, jobject thiz,
-                                                                jstring name, jstring mode) {
+                                                                 jstring name, jstring mode) {
     TRACE_METHOD();
 
     scoped_string _name = get_string(name);
