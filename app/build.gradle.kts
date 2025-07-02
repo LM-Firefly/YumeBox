@@ -93,6 +93,7 @@ private fun DependencyHandlerScope.addAppProjectDependencies() {
         ":runtime:service",
         ":feature:substore",
         ":feature:proxy",
+        ":feature:override",
     )
 }
 
@@ -152,11 +153,12 @@ android {
             // java.srcDir(layout.buildDirectory.dir("generated/ksp/debug/kotlin"))
             // java.srcDir(layout.buildDirectory.dir("generated/ksp/release/kotlin"))
         }
+
     }
 
     compileOptions { isCoreLibraryDesugaringEnabled = true }
 
-    //noinspection WrongGradleMethod
+    // noinspection WrongGradleMethod
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(androidJvmTarget))
@@ -200,10 +202,10 @@ android {
 
     splits {
         abi {
-            //noinspection WrongGradleMethod
+            // noinspection WrongGradleMethod
             isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
-            //noinspection ChromeOsAbiSupport
+            // noinspection ChromeOsAbiSupport
             include(*appAbiList.toTypedArray())
             isUniversalApk = true
         }
@@ -227,7 +229,7 @@ android {
     }
 
     // Use new androidComponents API instead of deprecated applicationVariants
-    //noinspection WrongGradleMethod
+    // noinspection WrongGradleMethod
     androidComponents {
         onVariants { variant ->
             val variantNameCap = variant.name.replaceFirstChar {
@@ -321,7 +323,7 @@ dependencies {
     implementation("com.taobao.android:update-datasource:${gropify.dep.version.taobaoUpdate}")
     implementation("com.taobao.android:update-adapter:${gropify.dep.version.taobaoUpdate}")
 
-    implementation ("com.microsoft.clarity:clarity-compose:3.8.1")
+    implementation("com.microsoft.clarity:clarity-compose:3.8.1")
 
 }
 

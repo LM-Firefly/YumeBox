@@ -36,7 +36,8 @@ import java.util.UUID
  * MMKV-based storage manager for profile data
  */
 object ProfileStore {
-    private val mmkv by lazy { MMKV.mmkvWithID("profiles", MMKV.MULTI_PROCESS_MODE) }
+
+    private val mmkv by lazy { MMKV.mmkvWithID("profiles") }
     
     private val json = Json {
         ignoreUnknownKeys = true

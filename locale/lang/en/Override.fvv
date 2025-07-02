@@ -3,10 +3,125 @@ Override = {
     Title = "Override Settings"
     
     Section = {
+        Inbound = "Inbound"
         General = "General"
         AuthHosts = "Auth & Hosts"
         ExternalController = "External Controller"
+        Geo = "GEO"
         Dns = "DNS"
+        Sniffer = "Sniffer"
+        Rules = "Rules"
+        Tools = "Tools"
+    }
+
+    Nav = {
+        NodePageSwitch = "Config Groups"
+    }
+
+    Summary = {
+        Inbound = "Inbound ports & LAN"
+        General = "Mode, log & IPv6"
+        Api = "Controller & CORS"
+        Geo = "Geo data source"
+        Dns = "DNS & FakeIP"
+        Sniffer = "Sniffer & skip"
+        Rules = "Append & override rules"
+        Tools = "Import & export"
+        RouteObjects = "Route objects"
+    }
+
+    Preset = {
+        RouteRulesA = "Built-in Override A (Rules Focus)"
+        RouteRulesASummary = "Rules preset A"
+        RouteRulesB = "Built-in Override B (Groups Focus)"
+        RouteRulesBSummary = "Rules preset B"
+    }
+
+    Label = {
+        BindAddress = "Bind Address"
+        LanAllowedIps = "LAN Allowed IPs"
+        LanDisallowedIps = "LAN Disallowed IPs"
+        SkipAuthPrefixes = "Skip Auth Prefixes"
+        UnifiedDelay = "Unified Delay"
+        TcpConcurrent = "TCP Concurrent"
+        FindProcessMode = "Find Process Mode"
+        KeepAliveInterval = "Keep Alive Interval"
+        KeepAliveIdle = "Keep Alive Idle"
+        GeoDataMode = "GeoData Mode"
+        GeoIpUrl = "GeoIP URL"
+        MmdbUrl = "MMDB URL"
+        GeoSiteUrl = "GeoSite URL"
+        UseSystemHosts = "Use System Hosts"
+        RespectRules = "Respect Rules"
+        CacheAlgorithm = "Cache Algorithm"
+        FakeIpRange = "FakeIP Range"
+        FallbackGeosite = "Fallback Geosite"
+        ProxyServerNameserver = "Proxy Server Nameserver"
+        Enable = "Enable"
+        ForceDnsMapping = "Force DNS Mapping"
+        ParsePureIp = "Parse Pure IP"
+        OverrideDestination = "Override Destination"
+        HttpPorts = "HTTP Ports"
+        HttpOverride = "HTTP Override"
+        TlsPorts = "TLS Ports"
+        TlsOverride = "TLS Override"
+        QuicPorts = "QUIC Ports"
+        QuicOverride = "QUIC Override"
+        ForceDomain = "Force Domain"
+        SkipDomain = "Skip Domain"
+        SkipSrcAddress = "Skip Source Address"
+        SkipDstAddress = "Skip Destination Address"
+        PrependRules = "Append Rules"
+        RulesReplace = "Override Rules"
+        RouteObjects = "Route Objects (Rule Providers / Proxy Groups / Sub Rules)"
+    }
+
+    Tool = {
+        ExportClipboard = "Export Override JSON to Clipboard"
+        ExportClipboardSummary = "Share/backup current override"
+        ImportMerge = "Import from Clipboard (Merge)"
+        ImportMergeSummary = "Import JSON and merge into current override"
+        ImportReplace = "Import from Clipboard (Replace)"
+        ImportReplaceSummary = "Import JSON and replace current override"
+        Preview = "Preview Current Config"
+        PreviewSummary = "View JSON snapshot + basic rule validation"
+
+        ImportTypeTitle = "Import/Export Types"
+        ImportModeTitle = "Import Mode"
+        ImportModeAppend = "Append (Merge)"
+        ImportModeOverride = "Override (Replace)"
+        TypeRuleProviders = "Rule Providers"
+        TypeProxyGroups = "Proxy Groups"
+        TypeRules = "Rules (Append + Override)"
+        TypeSubRules = "Sub Rules"
+
+        ImportClipboardSimple = "Import from Clipboard"
+        ImportClipboardSimpleSummary = "Use current mode"
+        ImportFileSimple = "Import from File"
+        ImportFileSimpleSummary = "Choose JSON file"
+        ExportClipboardSimple = "Export to Clipboard"
+        ExportClipboardSimpleSummary = "Export current config"
+        ExportFileSimple = "Export to File"
+        ExportFileSimpleSummary = "Export as JSON"
+    }
+
+    Dialog = {
+        ImportTitle = "Import Override JSON"
+        ImportLabel = "Paste JSON"
+        PreviewTitle = "Override Preview"
+        RuleValidation = "Rule Validation"
+        JsonSnapshot = "JSON Snapshot"
+    }
+
+    Message = {
+        Copied = "Copied to clipboard"
+        ImportSuccess = "Import succeeded"
+        ReplaceSuccess = "Replace succeeded"
+        ImportFailed = "Import failed: %s"
+        ReplaceFailed = "Replace failed: %s"
+        ExportSuccess = "Export succeeded"
+        ExportFailed = "Export failed: %s"
+        NoWarnings = "No warnings"
     }
     
     General = {
