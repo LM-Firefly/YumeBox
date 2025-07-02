@@ -18,18 +18,10 @@
  *
  */
 
-package com.github.yumelira.yumebox.di
+package com.github.yumelira.yumebox.presentation.viewmodel
 
-import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
-import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
-import org.koin.core.module.dsl.viewModel
-import org.koin.dsl.module
-
-val featureProxyViewModelModule = module {
-    viewModel { ProxyViewModel(get(), get(), get()) }
-    viewModel { ProvidersViewModel(get(), get()) }
+enum class BuiltinRoutePreset {
+    None,
+    PresetA,
+    PresetB,
 }
-
-val featureProxyModules = listOf(
-    featureProxyViewModelModule,
-)

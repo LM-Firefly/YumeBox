@@ -52,7 +52,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         ServiceNotificationManager(this, ServiceNotificationManager.VPN_CONFIG)
     }
     private var notificationJob: Job? = null
-    private var periodicGcJob: Job? = null
 
     private val runtime = clashRuntime {
         val close = install(CloseModule(self))
@@ -137,8 +136,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     override fun onDestroy() {
         notificationJob?.cancel()
         notificationJob = null
-        periodicGcJob?.cancel()
-        periodicGcJob = null
 
         TunModule.requestStop()
 
@@ -148,6 +145,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         Log.i("TunService destroyed: ${reason ?: "successfully"}")
 
+        cancel() // 取消 TunService 自身的 CoroutineScope
         super.onDestroy()
     }
 
@@ -190,18 +188,28 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 }
             }
 
+            Log.i(
+                "AccessControl apply: mode=${store.accessControlMode}, packages=${store.accessControlPackages.size}"
+            )
+
             // Access Control
             when (store.accessControlMode) {
                 AccessControlMode.AcceptAll -> Unit
                 AccessControlMode.AcceptSelected -> {
                     (store.accessControlPackages + packageName).forEach {
                         runCatching { addAllowedApplication(it) }
+                            .onFailure { e ->
+                                Log.w("AccessControl allow failed for $it: ${e.message}")
+                            }
                     }
                 }
                 AccessControlMode.RejectAll -> Unit
                 AccessControlMode.RejectSelected -> {
                     (store.accessControlPackages - packageName).forEach {
                         runCatching { addDisallowedApplication(it) }
+                            .onFailure { e ->
+                                Log.w("AccessControl reject failed for $it: ${e.message}")
+                            }
                     }
                 }
             }

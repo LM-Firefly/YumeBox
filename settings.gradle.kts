@@ -110,6 +110,7 @@ include(
     ":app",
     ":feature:substore",
     ":feature:proxy",
+    ":feature:override",
     ":data:log",
     ":data:settings",
     ":data:proxy",

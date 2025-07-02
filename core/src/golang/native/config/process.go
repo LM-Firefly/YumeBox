@@ -19,6 +19,7 @@ import (
 var processors = []processor{
 	patchExternalController, // keep hook order; persist/session override still applies after this
 	patchOverride,
+	patchAdvancedRouting,
 	patchGeneral,
 	patchProfile,
 	patchDns,

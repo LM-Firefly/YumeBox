@@ -115,5 +115,17 @@ Component = {
             KeyEmpty = "Key cannot be empty"
             KeyExists = "Key already exists"
         }
+        Rule = {
+            Type = "Rule Type"
+            Target = "Target"
+            Content = "Rule Content"
+            Src = "Src IP"
+            NoResolve = "No Resolve"
+            TargetReject = "REJECT"
+            TargetDirect = "DIRECT"
+            TargetMatch = "MATCH"
+            ErrorTargetRequired = "Please select target"
+            ErrorContentRequired = "Rule content cannot be empty"
+        }
     }
 }

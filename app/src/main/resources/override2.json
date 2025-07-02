@@ -1,0 +1,146 @@
+{
+  "rule-providers": {
+    "private": {
+      "type": "http",
+      "behavior": "domain",
+      "format": "yaml",
+      "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/private.yaml",
+      "path": "./ruleset/private.yaml",
+      "interval": 86400
+    },
+    "cn_domain": {
+      "type": "http",
+      "behavior": "domain",
+      "format": "yaml",
+      "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.yaml",
+      "path": "./ruleset/cn_domain.yaml",
+      "interval": 86400
+    },
+    "geolocation-!cn": {
+      "type": "http",
+      "behavior": "domain",
+      "format": "yaml",
+      "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.yaml",
+      "path": "./ruleset/geolocation-!cn.yaml",
+      "interval": 86400
+    },
+    "cn_ip": {
+      "type": "http",
+      "behavior": "ipcidr",
+      "format": "yaml",
+      "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.yaml",
+      "path": "./ruleset/cn_ip.yaml",
+      "interval": 86400
+    },
+    "telegram_domain": {
+      "type": "http",
+      "behavior": "domain",
+      "format": "yaml",
+      "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/telegram.yaml",
+      "path": "./ruleset/telegram_domain.yaml",
+      "interval": 86400
+    },
+    "openai": {
+      "type": "http",
+      "behavior": "classical",
+      "format": "yaml",
+      "url": "https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/OpenAI/OpenAI.yaml",
+      "path": "./ruleset/openai.yaml",
+      "interval": 86400
+    }
+  },
+  "proxy-groups": [
+    {
+      "name": "GLOBAL",
+      "type": "select",
+      "icon": "https://testingcf.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png",
+      "proxies": [
+        "AUTO",
+        "PROXY",
+        "AIGC",
+        "DIRECT"
+      ]
+    },
+    {
+      "name": "PROXY",
+      "type": "select",
+      "icon": "https://testingcf.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
+      "include-all": true,
+      "exclude-filter": "(?i)GB|Traffic|Expire|Premium|频道|订阅|ISP|流量|到期|重置",
+      "proxies": [
+        "AUTO",
+        "HK AUTO",
+        "SG AUTO",
+        "JP AUTO",
+        "US AUTO"
+      ]
+    },
+    {
+      "name": "AUTO",
+      "type": "url-test",
+      "icon": "https://testingcf.jsdelivr.net/gh/Orz-3/mini@master/Color/Urltest.png",
+      "include-all": true,
+      "exclude-filter": "(?i)GB|Traffic|Expire|Premium|频道|订阅|ISP|流量|到期|重置",
+      "interval": 300,
+      "tolerance": 60
+    },
+    {
+      "name": "AIGC",
+      "type": "select",
+      "icon": "https://testingcf.jsdelivr.net/gh/Orz-3/mini@master/Color/OpenAI.png",
+      "proxies": [
+        "US AUTO",
+        "JP AUTO",
+        "SG AUTO",
+        "PROXY"
+      ]
+    },
+    {
+      "name": "HK AUTO",
+      "type": "url-test",
+      "icon": "https://testingcf.jsdelivr.net/gh/Orz-3/mini@master/Color/HK.png",
+      "include-all": true,
+      "filter": "(?i)香港|Hong Kong|HK|🇭🇰",
+      "interval": 300
+    },
+    {
+      "name": "SG AUTO",
+      "type": "url-test",
+      "icon": "https://testingcf.jsdelivr.net/gh/Orz-3/mini@master/Color/SG.png",
+      "include-all": true,
+      "filter": "(?i)新加坡|Singapore|🇸🇬",
+      "interval": 300
+    },
+    {
+      "name": "JP AUTO",
+      "type": "url-test",
+      "icon": "https://testingcf.jsdelivr.net/gh/Orz-3/mini@master/Color/JP.png",
+      "include-all": true,
+      "filter": "(?i)日本|Japan|🇯🇵",
+      "interval": 300
+    },
+    {
+      "name": "US AUTO",
+      "type": "url-test",
+      "icon": "https://testingcf.jsdelivr.net/gh/Orz-3/mini@master/Color/US.png",
+      "include-all": true,
+      "filter": "(?i)美国|USA|🇺🇸",
+      "interval": 300
+    }
+  ],
+  "rules": [
+    "RULE-SET,private,DIRECT",
+    "RULE-SET,openai,AIGC",
+    "RULE-SET,telegram_domain,PROXY",
+    "RULE-SET,geolocation-!cn,PROXY",
+    "RULE-SET,cn_domain,DIRECT",
+    "RULE-SET,cn_ip,DIRECT",
+    "MATCH,GLOBAL"
+  ],
+  "sub-rules": {
+    "ai-only": [
+      "RULE-SET,openai,AIGC",
+      "MATCH,PROXY"
+    ]
+  }
+}
