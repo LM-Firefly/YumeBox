@@ -21,9 +21,6 @@
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.data.repository.LogRecordGateway
-import com.github.yumelira.yumebox.di.featureOverrideModules
-import com.github.yumelira.yumebox.di.featureProxyModules
-import com.github.yumelira.yumebox.di.featureSubStoreModules
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.log.LogViewModel
 import com.github.yumelira.yumebox.screen.profiles.ProfilesViewModel
@@ -47,7 +44,7 @@ val appViewModelModule = module {
     viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
     viewModel { NetworkSettingsViewModel(androidApplication(), get(), get(), get()) }
     viewModel { AccessControlViewModel(androidApplication(), get(), get()) }
-    viewModel { TrafficStatisticsViewModel(androidApplication(), get()) }
+    viewModel { TrafficStatisticsViewModel(androidApplication()) }
     viewModel { LogViewModel(get()) }
 }
 

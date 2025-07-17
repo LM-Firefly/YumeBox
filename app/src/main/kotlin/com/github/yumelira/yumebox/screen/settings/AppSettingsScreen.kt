@@ -21,14 +21,7 @@
 package com.github.yumelira.yumebox.screen.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -45,17 +38,11 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.AppIconHelper
 import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
-import com.github.yumelira.yumebox.presentation.component.EnumSelector
-import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
-import com.github.yumelira.yumebox.presentation.component.SmallTitle
-import com.github.yumelira.yumebox.presentation.component.TextEditBottomSheet
-import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.github.yumelira.yumebox.presentation.component.WarningBottomSheet
 import com.github.yumelira.yumebox.presentation.theme.colorFromArgb
 import com.github.yumelira.yumebox.presentation.theme.colorToArgbLong
 import com.github.yumelira.yumebox.presentation.theme.isDefaultThemeSeedArgb
-import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -72,11 +59,9 @@ import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.SuperSwitch
-import top.yukonga.miuix.kmp.extra.WindowBottomSheet
+import top.yukonga.miuix.kmp.extra.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.text.toString
 
 @Composable
 @Destination<RootGraph>
@@ -305,114 +290,137 @@ fun AppSettingsScreen(
     )
 
     SuperDialog(
+        show = showPageScaleSheet.value,
+        modifier = Modifier,
         title = MLang.AppSettings.Interface.PageScaleTitle,
+        titleColor = DialogDefaults.titleColor(),
         summary = "80% - 120%",
-        show = showPageScaleSheet,
+        summaryColor = DialogDefaults.summaryColor(),
+        backgroundColor = DialogDefaults.backgroundColor(),
+        enableWindowDim = true,
         onDismissRequest = { showPageScaleSheet.value = false },
-    ) {
-        var scaleText by remember(showPageScaleSheet.value) {
-            mutableStateOf((pageScaleLocal * 100).toInt().toString())
-        }
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            value = scaleText,
-            maxLines = 1,
-            trailingIcon = {
-                Text(
-                    text = "%",
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    color = MiuixTheme.colorScheme.onSurfaceVariantActions,
-                )
-            },
-            onValueChange = { v ->
-                if (v.isEmpty() || v.all { it.isDigit() }) scaleText = v
-            },
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TextButton(
-                text = MLang.AppSettings.Button.Cancel,
-                onClick = { showPageScaleSheet.value = false },
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(
-                text = MLang.AppSettings.Button.Apply,
-                onClick = {
-                    val parsed = scaleText.toFloatOrNull()
-                    val clamped = (parsed?.coerceIn(80f, 120f) ?: (pageScaleLocal * 100)) / 100f
-                    pageScaleLocal = clamped
-                    viewModel.onPageScaleChange(clamped)
-                    showPageScaleSheet.value = false
+        onDismissFinished = null,
+        outsideMargin = DialogDefaults.outsideMargin,
+        insideMargin = DialogDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        renderInRootScaffold = true,
+        content = {
+            var scaleText by remember(showPageScaleSheet.value) {
+                mutableStateOf((pageScaleLocal * 100).toInt().toString())
+            }
+            TextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                value = scaleText,
+                maxLines = 1,
+                trailingIcon = {
+                    Text(
+                        text = "%",
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                    )
                 },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.textButtonColorsPrimary(),
+                onValueChange = { v ->
+                    if (v.isEmpty() || v.all { it.isDigit() }) scaleText = v
+                },
             )
-        }
-    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                TextButton(
+                    text = MLang.AppSettings.Button.Cancel,
+                    onClick = { showPageScaleSheet.value = false },
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    text = MLang.AppSettings.Button.Apply,
+                    onClick = {
+                        val parsed = scaleText.toFloatOrNull()
+                        val clamped = (parsed?.coerceIn(80f, 120f) ?: (pageScaleLocal * 100)) / 100f
+                        pageScaleLocal = clamped
+                        viewModel.onPageScaleChange(clamped)
+                        showPageScaleSheet.value = false
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                )
+            }
+        })
 
     WindowBottomSheet(
-        show = showThemeColorPicker,
+        show = showThemeColorPicker.value,
+        modifier = Modifier,
         title = MLang.AppSettings.Interface.ColorThemePickerTitle,
+        startAction = null,
+        endAction = null,
+        backgroundColor = BottomSheetDefaults.backgroundColor(),
+        enableWindowDim = true,
+        cornerRadius = BottomSheetDefaults.cornerRadius,
+        sheetMaxWidth = BottomSheetDefaults.maxWidth,
         onDismissRequest = { showThemeColorPicker.value = false },
+        onDismissFinished = null,
+        outsideMargin = BottomSheetDefaults.outsideMargin,
         insideMargin = DpSize(24.dp, 16.dp),
-    ) {
-        ColorPicker(
-            color = editingThemeSeedColor,
-            onColorChanged = {
-                editingThemeSeedColor = it
-                editingThemeSeedHex = toHexColor(colorToArgbLong(it))
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        TextField(
-            value = editingThemeSeedHex,
-            onValueChange = { raw ->
-                val normalized = normalizeHexInput(raw)
-                editingThemeSeedHex = normalized
-                parseHexColorOrNull(normalized)?.let {
+        defaultWindowInsetsPadding = true,
+        dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+        allowDismiss = true,
+        enableNestedScroll = true,
+        content = {
+            ColorPicker(
+                color = editingThemeSeedColor,
+                onColorChanged = {
                     editingThemeSeedColor = it
-                }
-            },
-            label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = {
-                    viewModel.resetThemeSeedColor()
-                    editingThemeSeedColor = Color.White
+                    editingThemeSeedHex = toHexColor(colorToArgbLong(it))
                 },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(MLang.AppSettings.Interface.ColorThemeResetDefault)
-            }
-            Button(
-                onClick = {
-                    val argb = colorToArgbLong(editingThemeSeedColor)
-                    if (isDefaultThemeSeedArgb(argb)) {
-                        viewModel.resetThemeSeedColor()
-                    } else {
-                        viewModel.onThemeSeedColorChange(argb)
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextField(
+                value = editingThemeSeedHex,
+                onValueChange = { raw ->
+                    val normalized = normalizeHexInput(raw)
+                    editingThemeSeedHex = normalized
+                    parseHexColorOrNull(normalized)?.let {
+                        editingThemeSeedColor = it
                     }
-                    showThemeColorPicker.value = false
                 },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColorsPrimary(),
+                label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(MLang.AppSettings.Button.Apply, color = MiuixTheme.colorScheme.background)
+                Button(
+                    onClick = {
+                        viewModel.resetThemeSeedColor()
+                        editingThemeSeedColor = Color.White
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(MLang.AppSettings.Interface.ColorThemeResetDefault)
+                }
+                Button(
+                    onClick = {
+                        val argb = colorToArgbLong(editingThemeSeedColor)
+                        if (isDefaultThemeSeedArgb(argb)) {
+                            viewModel.resetThemeSeedColor()
+                        } else {
+                            viewModel.onThemeSeedColorChange(argb)
+                        }
+                        showThemeColorPicker.value = false
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColorsPrimary(),
+                ) {
+                    Text(MLang.AppSettings.Button.Apply, color = MiuixTheme.colorScheme.background)
+                }
             }
-        }
-    }
+        })
 }
 
 private fun toHexColor(argb: Long): String {

@@ -258,7 +258,7 @@ private fun ProviderCard(
                     val popupItems = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
 
                     WindowListPopup  (
-                        show = showPopup,
+                        show = showPopup.value,
                         popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
                         alignment = PopupPositionProvider.Align.End,
                         onDismissRequest = { showPopup.value = false }

@@ -24,10 +24,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.extra.DialogDefaults
 import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -41,7 +45,7 @@ internal fun EditProfileNameDialog(
     var editName by remember { mutableStateOf(currentName) }
 
     WindowDialog(
-        title = MLang.ProfilesPage.EditDialog.Title, show = show, onDismissRequest = onDismiss
+        title = MLang.ProfilesPage.EditDialog.Title, show = show.value, onDismissRequest = onDismiss
     ) {
         Column(
             modifier = Modifier
@@ -81,18 +85,27 @@ internal fun DeleteConfirmDialog(
     profileName: String, onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     WindowDialog(
+        show = remember { mutableStateOf(true) }.value,
+        modifier = Modifier,
         title = MLang.ProfilesPage.DeleteDialog.Title,
+        titleColor = DialogDefaults.titleColor(),
         summary = MLang.ProfilesPage.DeleteDialog.Message.format(profileName),
-        show = remember { mutableStateOf(true) },
-        onDismissRequest = onDismiss
-    ) {
-        DialogButtonRow(
-            onCancel = onDismiss,
-            onConfirm = onConfirm,
-            cancelText = MLang.ProfilesPage.Button.Cancel,
-            confirmText = MLang.ProfilesPage.DeleteDialog.Confirm
-        )
-    }
+        summaryColor = DialogDefaults.summaryColor(),
+        backgroundColor = DialogDefaults.backgroundColor(),
+        enableWindowDim = true,
+        onDismissRequest = onDismiss,
+        onDismissFinished = null,
+        outsideMargin = DialogDefaults.outsideMargin,
+        insideMargin = DialogDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        content = {
+            DialogButtonRow(
+                onCancel = onDismiss,
+                onConfirm = onConfirm,
+                cancelText = MLang.ProfilesPage.Button.Cancel,
+                confirmText = MLang.ProfilesPage.DeleteDialog.Confirm
+            )
+        })
 }
 
 @Composable
@@ -104,37 +117,49 @@ internal fun ShareOptionsDialog(
     onShareLink: (Profile) -> Unit
 ) {
     WindowDialog(
-        title = MLang.ProfilesPage.ShareDialog.Title, show = show, onDismissRequest = onDismiss
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (profile.type == Profile.Type.Url) {
+        show = show.value,
+        modifier = Modifier,
+        title = MLang.ProfilesPage.ShareDialog.Title,
+        titleColor = DialogDefaults.titleColor(),
+        summary = null,
+        summaryColor = DialogDefaults.summaryColor(),
+        backgroundColor = DialogDefaults.backgroundColor(),
+        enableWindowDim = true,
+        onDismissRequest = onDismiss,
+        onDismissFinished = null,
+        outsideMargin = DialogDefaults.outsideMargin,
+        insideMargin = DialogDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        content = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (profile.type == Profile.Type.Url) {
+                    Button(
+                        onClick = { onShareLink(profile) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColorsPrimary()
+                    ) {
+                        Text(
+                            MLang.ProfilesPage.ShareDialog.ShareLink,
+                            color = MiuixTheme.colorScheme.surface
+                        )
+                    }
+                }
                 Button(
-                    onClick = { onShareLink(profile) },
+                    onClick = { onShareFile(profile) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColorsPrimary()
+                    colors = ButtonDefaults.buttonColors()
                 ) {
-                    Text(
-                        MLang.ProfilesPage.ShareDialog.ShareLink,
-                        color = MiuixTheme.colorScheme.surface
-                    )
+                    Text(MLang.ProfilesPage.ShareDialog.ShareFile)
+                }
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors()
+                ) {
+                    Text(MLang.ProfilesPage.Button.Cancel)
                 }
             }
-            Button(
-                onClick = { onShareFile(profile) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors()
-            ) {
-                Text(MLang.ProfilesPage.ShareDialog.ShareFile)
-            }
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors()
-            ) {
-                Text(MLang.ProfilesPage.Button.Cancel)
-            }
-        }
-    }
+        })
 }

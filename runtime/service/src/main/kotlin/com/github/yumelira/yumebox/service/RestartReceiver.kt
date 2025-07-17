@@ -34,15 +34,13 @@ class RestartReceiver : BroadcastReceiver() {
             Intent.ACTION_MY_PACKAGE_REPLACED,
                 -> {
                 val serviceIntent = Intent(context, AutoRestartService::class.java)
-                try {
+                runCatching {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         context.startForegroundService(serviceIntent)
                     } else {
                         context.startService(serviceIntent)
                     }
-                } catch (e: SecurityException) {
-                    Timber.e(e, "Start auto-restart service failed")
-                } catch (e: IllegalStateException) {
+                }.onFailure { e ->
                     Timber.e(e, "Start auto-restart service failed")
                 }
             }

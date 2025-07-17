@@ -54,7 +54,7 @@ internal fun PrivacyPolicySheet(show: MutableState<Boolean>) {
     }
 
     WindowBottomSheet(
-        show = show,
+        show = show.value,
         title = MLang.Onboarding.Sheet.PrivacyPolicyTitle,
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = { show.value = false },

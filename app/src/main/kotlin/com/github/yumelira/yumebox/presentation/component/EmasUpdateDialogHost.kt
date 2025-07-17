@@ -42,6 +42,7 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.extra.BottomSheetDefaults
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -99,57 +100,70 @@ private fun EmasUpdateSheet(
     }
 
     WindowBottomSheet(
+        show = show.value,
+        modifier = Modifier,
         title = event.title,
-        show = show,
+        startAction = null,
+        endAction = null,
+        backgroundColor = BottomSheetDefaults.backgroundColor(),
+        enableWindowDim = true,
+        cornerRadius = BottomSheetDefaults.cornerRadius,
+        sheetMaxWidth = BottomSheetDefaults.maxWidth,
+        onDismissRequest = dismissWithCancel,
+        onDismissFinished = null,
+        outsideMargin = BottomSheetDefaults.outsideMargin,
         insideMargin = DpSize(32.dp, 16.dp),
-        onDismissRequest = dismissWithCancel
-    ) {
-        AnimatedContent(
-            targetState = viewState,
-            transitionSpec = {
-                if (targetState == UpdateViewState.DOWNLOADING) {
-                    slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith
-                            slideOutHorizontally(targetOffsetX = { -it / 3 }) + fadeOut()
-                } else {
-                    slideInHorizontally(initialOffsetX = { -it / 3 }) + fadeIn() togetherWith
-                            slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-                }
-            },
-            label = "EmasUpdateSheetTransition"
-        ) { state ->
-            when (state) {
-                UpdateViewState.DETAIL -> {
-                    UpdateDetailContent(
-                        type = event.type,
-                        message = event.message,
-                        remoteVersion = event.remoteVersion,
-                        currentVersionName = currentVersionName,
-                        cancelText = event.cancelText,
-                        confirmText = event.confirmText,
-                        onCancel = dismissWithCancel,
-                        onConfirm = {
-                            latestEvent.value.onConfirm()
-                            if (event.type == EmasUpdateDialogType.UPDATE_AVAILABLE) {
-                                updateConfirmed = true
-                                viewState = UpdateViewState.DOWNLOADING
-                            } else {
+        defaultWindowInsetsPadding = true,
+        dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+        allowDismiss = true,
+        enableNestedScroll = true,
+        content = {
+            AnimatedContent(
+                targetState = viewState,
+                transitionSpec = {
+                    if (targetState == UpdateViewState.DOWNLOADING) {
+                        slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith
+                                slideOutHorizontally(targetOffsetX = { -it / 3 }) + fadeOut()
+                    } else {
+                        slideInHorizontally(initialOffsetX = { -it / 3 }) + fadeIn() togetherWith
+                                slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                    }
+                },
+                label = "EmasUpdateSheetTransition"
+            ) { state ->
+                when (state) {
+                    UpdateViewState.DETAIL -> {
+                        UpdateDetailContent(
+                            type = event.type,
+                            message = event.message,
+                            remoteVersion = event.remoteVersion,
+                            currentVersionName = currentVersionName,
+                            cancelText = event.cancelText,
+                            confirmText = event.confirmText,
+                            onCancel = dismissWithCancel,
+                            onConfirm = {
+                                latestEvent.value.onConfirm()
+                                if (event.type == EmasUpdateDialogType.UPDATE_AVAILABLE) {
+                                    updateConfirmed = true
+                                    viewState = UpdateViewState.DOWNLOADING
+                                } else {
+                                    dismissSheet(false)
+                                }
+                            }
+                        )
+                    }
+
+                    UpdateViewState.DOWNLOADING -> {
+                        DownloadingContent(
+                            progress = progress,
+                            onClose = {
                                 dismissSheet(false)
                             }
-                        }
-                    )
-                }
-
-                UpdateViewState.DOWNLOADING -> {
-                    DownloadingContent(
-                        progress = progress,
-                        onClose = {
-                            dismissSheet(false)
-                        }
-                    )
+                        )
+                    }
                 }
             }
-        }
-    }
+        })
 }
 
 @Composable

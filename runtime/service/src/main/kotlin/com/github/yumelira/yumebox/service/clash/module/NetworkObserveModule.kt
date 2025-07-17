@@ -60,12 +60,10 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
 
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            Log.i("Network available: $network")
             networkInfos[network] = NetworkInfo()
         }
 
         override fun onLosing(network: Network, maxMsToLive: Int) {
-            Log.i("Network losing: $network")
             networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
             notifyDnsChange()
 
@@ -73,7 +71,6 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
 
         override fun onLost(network: Network) {
-            Log.i("Network lost: $network")
             networkInfos.remove(network)
             notifyDnsChange()
 
@@ -81,33 +78,26 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         }
 
         override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            Log.i("Network props changed: $network")
             networkInfos[network]?.dnsList = linkProperties.dnsServers
             notifyDnsChange()
 
             networks.trySend(network)
         }
 
-        override fun onUnavailable() {
-            Log.i("Network unavailable")
-        }
+        override fun onUnavailable() {}
     }
 
     private fun register(): Boolean {
-        Log.i("Register network callback")
         return try {
             connectivity.registerNetworkCallback(request, callback)
-
             true
         } catch (e: Exception) {
             Log.w("Register network callback failed", e)
-
             false
         }
     }
 
     private fun unregister(): Boolean {
-        Log.i("Unregister network callback")
         try {
             connectivity.unregisterNetworkCallback(callback)
         } catch (e: Exception) {
@@ -141,7 +131,6 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             ?: emptyList()).map { x -> x.asSocketAddressText(53) }
         val prevDnsList = curDnsList
         if (dnsList.isNotEmpty() && prevDnsList != dnsList) {
-            Log.i("DNS changed")
             curDnsList = dnsList
             Clash.notifyDnsChanged(dnsList)
         }
@@ -166,8 +155,6 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
         } finally {
             withContext(NonCancellable) {
                 unregister()
-
-                Log.i("DNS cleared")
                 Clash.notifyDnsChanged(emptyList())
             }
         }

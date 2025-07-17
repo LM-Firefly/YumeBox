@@ -26,7 +26,6 @@ import com.taobao.update.IUpdateLog
 import com.taobao.update.adapter.UserAction
 import com.taobao.update.apk.ApkDownloadListener
 import com.taobao.update.apk.ApkUpdater
-import com.taobao.update.apk.UpdateResultListener
 import com.taobao.update.common.dialog.CustomUpdateInfo
 import com.taobao.update.common.dialog.UpdateNotifyListener
 import com.taobao.update.common.framework.UpdateRuntime
@@ -213,9 +212,9 @@ object EmasUpdateManager {
     }
 
     private fun bindResultListener(apkUpdater: ApkUpdater) {
-        apkUpdater.setUpdateResultListener(UpdateResultListener { mode: Int, errorCode: Int, errMsg: String? ->
+        apkUpdater.setUpdateResultListener { mode: Int, errorCode: Int, errMsg: String? ->
             Timber.i("EMAS update result mode=$mode errorCode=$errorCode errMsg=${errMsg.orEmpty()}")
-        })
+        }
     }
 
     private fun bindDownloadListener(apkUpdater: ApkUpdater) {

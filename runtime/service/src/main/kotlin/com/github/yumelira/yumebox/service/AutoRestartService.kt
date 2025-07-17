@@ -44,7 +44,7 @@ class AutoRestartService : Service() {
     companion object {
         private const val TAG = "AutoRestartService"
         private const val NOTIFICATION_ID = 1101
-    private const val CHANNEL_ID = "auto_restart_channel"
+        private const val CHANNEL_ID = "auto_restart_channel"
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -59,17 +59,12 @@ class AutoRestartService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
             val notification = createNotification()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    startForeground(
-                        NOTIFICATION_ID,
-                        notification,
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                    )
-                }
-            } else {
-                startForeground(NOTIFICATION_ID, notification)
+            val foregroundFlags = when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                else -> 0
             }
+            startForeground(NOTIFICATION_ID, notification, foregroundFlags)
         }
 
         serviceScope.launch {

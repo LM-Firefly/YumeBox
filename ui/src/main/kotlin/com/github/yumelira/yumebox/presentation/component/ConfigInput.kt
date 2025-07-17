@@ -152,7 +152,7 @@ private fun ConfigTextInputDialog(
 ) {
     if (!show.value) return
     WindowDialog(
-        show = show,
+        show = show.value,
         title = title,
         onDismissRequest = { show.value = false },
     ) {

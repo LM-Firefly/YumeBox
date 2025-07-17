@@ -45,7 +45,7 @@ private fun trafficString(scaled: Long): String {
     }
 }
 
-private fun scaleTraffic(value: Long): Long {
+fun decodeTrafficValue(value: Long): Long {
     val type = (value ushr 30) and 0x3
     val data = value and 0x3FFFFFFFL
 
@@ -54,9 +54,11 @@ private fun scaleTraffic(value: Long): Long {
         1L -> (data * 1024L) / 100L
         2L -> (data * 1024L * 1024L) / 100L
         3L -> (data * 1024L * 1024L * 1024L) / 100L
-        else -> throw IllegalArgumentException("invalid value type")
+        else -> 0L
     }
 }
+
+private fun scaleTraffic(value: Long): Long = decodeTrafficValue(value)
 
 fun Traffic.trafficUpload(): String {
     return trafficString(scaleTraffic(this ushr 32))

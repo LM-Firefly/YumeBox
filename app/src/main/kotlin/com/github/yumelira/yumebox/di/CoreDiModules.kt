@@ -65,7 +65,6 @@ val appDataRuntimeModule = module {
     single { FeatureSettingsRepository(get()) }
     single { ProxyDisplaySettingsRepository(get()) }
     single { ProfileLinksRepository(get()) }
-    single { TrafficStatisticsRepository(get()) }
     single { LogRepository(androidApplication(), get()) }
     single { NetworkInfoService() }
     single { ProxyChainResolver() }

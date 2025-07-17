@@ -44,7 +44,7 @@ internal fun NodeSortPopup(
 ) {
     val selectedSortIndex = NodeSortModes.indexOf(sortMode).coerceAtLeast(0)
     WindowListPopup(
-        show = show,
+        show = show.value,
         popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
         alignment = PopupPositionProvider.Align.Start,
         onDismissRequest = onDismiss,

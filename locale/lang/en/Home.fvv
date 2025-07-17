@@ -33,4 +33,9 @@ Home = {
         Failed = "Failed"
         NotFetched = "Not fetched"
     }
+
+    Status = {
+        Running = "Running"
+        TapToStart = "Tap to start"
+    }
 }

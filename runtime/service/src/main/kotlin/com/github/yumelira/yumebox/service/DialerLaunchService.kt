@@ -21,41 +21,32 @@
 package com.github.yumelira.yumebox.service
 
 import android.app.Service
-import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
+import com.github.yumelira.yumebox.service.common.constants.Components
 
 class DialerLaunchService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        try {
-            val mainActivityName = ComponentName(
-                this@DialerLaunchService,
-                "com.github.yumelira.yumebox.MainActivity",
-            )
-
+        runCatching {
             val launchIntent = Intent(Intent.ACTION_MAIN).apply {
-                setComponent(mainActivityName)
+                component = Components.MAIN_ACTIVITY
                 addFlags(
                     Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED,
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED,
                 )
             }
-
             startActivity(launchIntent)
-
-        } catch (_: Exception) {
-            try {
-                val fallbackIntent = packageManager.getLaunchIntentForPackage(packageName)
-                if (fallbackIntent != null) {
-                    fallbackIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(fallbackIntent)
+        }.onFailure {
+            runCatching {
+                packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(this)
                 }
-            } catch (_: Exception) {
             }
         }
 

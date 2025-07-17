@@ -26,7 +26,6 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TimeSlot
-import com.github.yumelira.yumebox.data.repository.TrafficStatisticsRepository
 import com.github.yumelira.yumebox.presentation.component.BarChartItem
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.*
@@ -35,7 +34,6 @@ import java.util.*
 
 class TrafficStatisticsViewModel(
     application: Application,
-    private val trafficStatisticsRepository: TrafficStatisticsRepository,
 ) : AndroidViewModel(application) {
 
     private val _selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
@@ -44,33 +42,25 @@ class TrafficStatisticsViewModel(
     private val _selectedBarIndex = MutableStateFlow(-1)
     val selectedBarIndex: StateFlow<Int> = _selectedBarIndex.asStateFlow()
 
-    private val dailySummaries: StateFlow<List<DailyTrafficSummary>> = trafficStatisticsRepository.dailySummaries
-        .map { trafficStatisticsRepository.getDailySummaries(7) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val todaySummary: StateFlow<DailyTrafficSummary> = MutableStateFlow(DailyTrafficSummary.EMPTY)
+        .asStateFlow()
 
-    val todaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsRepository.dailySummaries
-        .map { trafficStatisticsRepository.getTodaySummary() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
+    val yesterdaySummary: StateFlow<DailyTrafficSummary> = MutableStateFlow(DailyTrafficSummary.EMPTY)
+        .asStateFlow()
 
-    val yesterdaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsRepository.dailySummaries
-        .map { trafficStatisticsRepository.getYesterdaySummary() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
+    val weekSummary: StateFlow<Long> = MutableStateFlow(0L)
+        .asStateFlow()
 
-    val weekSummary: StateFlow<Long> = dailySummaries
-        .map { summaries -> summaries.sumOf { it.total } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
-
-    val trafficDifference: StateFlow<Long> = combine(todaySummary, yesterdaySummary) { today, yesterday ->
-        today.total - yesterday.total
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+    val trafficDifference: StateFlow<Long> = MutableStateFlow(0L)
+        .asStateFlow()
 
     val chartItems: StateFlow<List<BarChartItem>> = combine(
         _selectedTimeRange,
-        dailySummaries
-    ) { timeRange, summaries ->
+        todaySummary
+    ) { timeRange, _ ->
         when (timeRange) {
             StatisticsTimeRange.TODAY -> getTodayHourlyChartItems()
-            StatisticsTimeRange.WEEK -> getDailyChartItems(summaries)
+            StatisticsTimeRange.WEEK -> getDailyChartItems(emptyList())
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -84,15 +74,13 @@ class TrafficStatisticsViewModel(
     }
 
     private fun getTodayHourlyChartItems(): List<BarChartItem> {
-        val hourlyData = trafficStatisticsRepository.getTodayHourlyData()
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val currentSlot = TimeSlot.fromHour(currentHour)
 
         return TimeSlot.entries.map { slot ->
-            val slotData = hourlyData.getOrNull(slot.ordinal)
             BarChartItem(
                 label = slot.label,
-                value = slotData?.total ?: 0L,
+                value = 0L,
                 isHighlighted = slot == currentSlot
             )
         }

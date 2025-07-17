@@ -77,3 +77,5 @@ Thumbs.db
 
 # Sentry Config File
 sentry.properties
+/.pensieve/
+/CLAUDE.md

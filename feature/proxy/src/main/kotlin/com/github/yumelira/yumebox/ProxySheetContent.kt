@@ -20,25 +20,11 @@
 
 package com.github.yumelira.yumebox
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
@@ -52,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.util.WindowBlurEffect
 import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
@@ -109,7 +96,7 @@ fun ProxySheetContent(
             showSortPopup.value = false
             showSheet.value = false
             scope.launch {
-                kotlinx.coroutines.delay(POPUP_ANIMATION_DURATION_MS.toLong())
+                delay(POPUP_ANIMATION_DURATION_MS.toLong())
                 onDismiss()
             }
         }
@@ -118,7 +105,7 @@ fun ProxySheetContent(
     WindowBlurEffect(useBlur = true, blurRadius = blurRadius)
 
     WindowBottomSheet(
-        show = showSheet,
+        show = showSheet.value,
         title = selectedGroup?.name ?: MLang.Proxy.Title,
         startAction = {
             if (selectedGroup != null) {

@@ -23,25 +23,11 @@ package com.github.yumelira.yumebox.screen.about
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,11 +43,8 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.BottomSheetDefaults
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -202,47 +185,60 @@ private fun LicenseBottomSheet(
     val licenseContent = remember(library) { library.strippedLicenseContent.takeIf { it.isNotEmpty() } }
 
     WindowBottomSheet(
-        show = show,
+        show = show.value,
+        modifier = Modifier,
         title = library.name,
-        insideMargin = DpSize(32.dp, 16.dp),
+        startAction = null,
+        endAction = null,
+        backgroundColor = BottomSheetDefaults.backgroundColor(),
+        enableWindowDim = true,
+        cornerRadius = BottomSheetDefaults.cornerRadius,
+        sheetMaxWidth = BottomSheetDefaults.maxWidth,
         onDismissRequest = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            if (licenseContent != null) {
-                Column(
-                    modifier = Modifier
-                        .heightIn(max = 450.dp)
-                        .verticalScroll(scrollState),
-                ) {
+        onDismissFinished = null,
+        outsideMargin = BottomSheetDefaults.outsideMargin,
+        insideMargin = DpSize(32.dp, 16.dp),
+        defaultWindowInsetsPadding = true,
+        dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+        allowDismiss = true,
+        enableNestedScroll = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                if (licenseContent != null) {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 450.dp)
+                            .verticalScroll(scrollState),
+                    ) {
+                        Text(
+                            text = licenseContent,
+                            style = MiuixTheme.textStyles.body2,
+                            color = MiuixTheme.colorScheme.onSurface,
+                        )
+                    }
+                } else {
                     Text(
-                        text = licenseContent,
+                        text = MLang.OpenSourceLicenses.LicenseSheet.NoContent,
                         style = MiuixTheme.textStyles.body2,
-                        color = MiuixTheme.colorScheme.onSurface,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
                 }
-            } else {
-                Text(
-                    text = MLang.OpenSourceLicenses.LicenseSheet.NoContent,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                )
-            }
 
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColorsPrimary(),
-            ) {
-                Text(
-                    MLang.OpenSourceLicenses.LicenseSheet.Confirm,
-                    color = MiuixTheme.colorScheme.onPrimary,
-                )
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColorsPrimary(),
+                ) {
+                    Text(
+                        MLang.OpenSourceLicenses.LicenseSheet.Confirm,
+                        color = MiuixTheme.colorScheme.onPrimary,
+                    )
+                }
             }
-        }
-    }
+        })
 }

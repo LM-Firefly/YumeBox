@@ -118,7 +118,6 @@ class TrafficStatisticsCollector(
                 currentProfileId,
                 currentProfileName
             )
-            Timber.tag(TAG).v("Traffic recorded: up=$uploadDelta down=$downloadDelta profile=$currentProfileName")
         }
 
         lastTotalUpload = currentUpload

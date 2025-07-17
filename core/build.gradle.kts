@@ -19,6 +19,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
     implementation("androidx.annotation:annotation-jvm:${gropify.dep.version.annotationJvm}")
+    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
 
 val sixteenKbPageLinkerFlags = listOf("-Wl,-z,max-page-size=16384", "-Wl,-z,common-page-size=16384")

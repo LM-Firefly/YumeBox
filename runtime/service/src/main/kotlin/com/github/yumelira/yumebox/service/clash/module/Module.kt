@@ -74,8 +74,6 @@ abstract class Module<E>(val service: Service) {
         val moduleName = this.javaClass.simpleName
 
         try {
-            Log.d("$moduleName: initialize")
-
             run()
         } finally {
             withContext(NonCancellable) {
@@ -91,8 +89,6 @@ abstract class Module<E>(val service: Service) {
                         Log.w("$moduleName: unregisterReceiver ignored", e)
                     }
                 }
-
-                Log.d("$moduleName: destroyed")
             }
         }
     }

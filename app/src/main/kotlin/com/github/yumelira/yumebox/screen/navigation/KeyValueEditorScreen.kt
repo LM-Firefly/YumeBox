@@ -40,6 +40,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.DialogDefaults
 import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.extra.WindowDropdown
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -236,35 +237,44 @@ fun StringListEditorScreen(
 
     if (showResetDialog) {
         WindowDialog(
+            show = remember { mutableStateOf(true) }.value,
+            modifier = Modifier,
             title = MLang.Component.Editor.Dialog.ResetTitle,
+            titleColor = DialogDefaults.titleColor(),
             summary = MLang.Component.Editor.Dialog.ResetMessage,
-            show = remember { mutableStateOf(true) },
+            summaryColor = DialogDefaults.summaryColor(),
+            backgroundColor = DialogDefaults.backgroundColor(),
+            enableWindowDim = true,
             onDismissRequest = { showResetDialog = false },
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = { showResetDialog = false },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Cancel)
+            onDismissFinished = null,
+            outsideMargin = DialogDefaults.outsideMargin,
+            insideMargin = DialogDefaults.insideMargin,
+            defaultWindowInsetsPadding = true,
+            content = {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = { showResetDialog = false },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(MLang.Component.Button.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            showResetDialog = false
+                            EditorDataHolder.listEditorCallback?.invoke(null)
+                            EditorDataHolder.clearListEditor()
+                            navigator.popBackStack()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary(),
+                    ) {
+                        Text(
+                            MLang.Component.Button.Confirm,
+                            color = MiuixTheme.colorScheme.surface,
+                        )
+                    }
                 }
-                Button(
-                    onClick = {
-                        showResetDialog = false
-                        EditorDataHolder.listEditorCallback?.invoke(null)
-                        EditorDataHolder.clearListEditor()
-                        navigator.popBackStack()
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
-                    Text(
-                        MLang.Component.Button.Confirm,
-                        color = MiuixTheme.colorScheme.surface,
-                    )
-                }
-            }
-        }
+            })
     }
 }
 
@@ -340,133 +350,144 @@ private fun RuleAddDialog(
     val selectedTargetIndex = targetItems.indexOf(target).coerceAtLeast(0)
 
     WindowDialog(
+        show = remember { mutableStateOf(true) }.value,
+        modifier = Modifier,
         title = title,
-        show = remember { mutableStateOf(true) },
+        titleColor = DialogDefaults.titleColor(),
+        summary = null,
+        summaryColor = DialogDefaults.summaryColor(),
+        backgroundColor = DialogDefaults.backgroundColor(),
+        enableWindowDim = true,
         onDismissRequest = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            WindowDropdown(
-                title = MLang.Component.Editor.Rule.Type,
-                items = RULE_TYPE_PRESETS,
-                selectedIndex = selectedRuleTypeIndex,
-                onSelectedIndexChange = { idx ->
-                    if (idx in RULE_TYPE_PRESETS.indices) {
-                        ruleType = RULE_TYPE_PRESETS[idx]
-                        errorText = null
-                    }
-                },
-            )
-
-            WindowDropdown(
-                title = MLang.Component.Editor.Rule.Target,
-                items = targetItems,
-                selectedIndex = selectedTargetIndex,
-                onSelectedIndexChange = { idx ->
-                    if (idx in targetItems.indices) {
-                        target = targetItems[idx]
-                        errorText = null
-                    }
-                },
-            )
-
-            TextField(
-                value = payload,
-                onValueChange = {
-                    payload = it
-                    errorText = null
-                },
-                label = MLang.Component.Editor.Rule.Content,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            if (supportsRuleExtra(ruleType)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(MLang.Component.Editor.Rule.Src, style = MiuixTheme.textStyles.body2)
-                        Switch(
-                            checked = useSrc,
-                            onCheckedChange = { useSrc = it },
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(MLang.Component.Editor.Rule.NoResolve, style = MiuixTheme.textStyles.body2)
-                        Switch(
-                            checked = useNoResolve,
-                            onCheckedChange = { useNoResolve = it },
-                        )
-                    }
-                }
-            }
-
-            if (errorText != null) {
-                Text(
-                    text = errorText!!,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.error,
-                )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Cancel)
-                }
-                Button(
-                    onClick = {
-                        val type = ruleType.trim().uppercase()
-                        val value = payload.trim()
-                        val selectedTarget = target
-
-                        if (value.isBlank() && selectedTarget != "MATCH") {
-                            errorText = MLang.Component.Editor.Rule.ErrorContentRequired
-                            return@Button
+        onDismissFinished = null,
+        outsideMargin = DialogDefaults.outsideMargin,
+        insideMargin = DialogDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                WindowDropdown(
+                    title = MLang.Component.Editor.Rule.Type,
+                    items = RULE_TYPE_PRESETS,
+                    selectedIndex = selectedRuleTypeIndex,
+                    onSelectedIndexChange = { idx ->
+                        if (idx in RULE_TYPE_PRESETS.indices) {
+                            ruleType = RULE_TYPE_PRESETS[idx]
+                            errorText = null
                         }
-
-                        if (selectedTarget == "MATCH") {
-                            onConfirm("MATCH")
-                            return@Button
-                        }
-
-                        val parts = mutableListOf(type, value, selectedTarget)
-                        if (supportsRuleExtra(type)) {
-                            if (useSrc) parts += "src"
-                            if (useNoResolve) parts += "no-resolve"
-                        }
-
-                        onConfirm(parts.joinToString(","))
                     },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
+                )
+
+                WindowDropdown(
+                    title = MLang.Component.Editor.Rule.Target,
+                    items = targetItems,
+                    selectedIndex = selectedTargetIndex,
+                    onSelectedIndexChange = { idx ->
+                        if (idx in targetItems.indices) {
+                            target = targetItems[idx]
+                            errorText = null
+                        }
+                    },
+                )
+
+                TextField(
+                    value = payload,
+                    onValueChange = {
+                        payload = it
+                        errorText = null
+                    },
+                    label = MLang.Component.Editor.Rule.Content,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                if (supportsRuleExtra(ruleType)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(MLang.Component.Editor.Rule.Src, style = MiuixTheme.textStyles.body2)
+                            Switch(
+                                checked = useSrc,
+                                onCheckedChange = { useSrc = it },
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(MLang.Component.Editor.Rule.NoResolve, style = MiuixTheme.textStyles.body2)
+                            Switch(
+                                checked = useNoResolve,
+                                onCheckedChange = { useNoResolve = it },
+                            )
+                        }
+                    }
+                }
+
+                if (errorText != null) {
                     Text(
-                        MLang.Component.Button.Confirm,
-                        color = MiuixTheme.colorScheme.surface,
+                        text = errorText!!,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.error,
                     )
                 }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(MLang.Component.Button.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            val type = ruleType.trim().uppercase()
+                            val value = payload.trim()
+                            val selectedTarget = target
+
+                            if (value.isBlank() && selectedTarget != "MATCH") {
+                                errorText = MLang.Component.Editor.Rule.ErrorContentRequired
+                                return@Button
+                            }
+
+                            if (selectedTarget == "MATCH") {
+                                onConfirm("MATCH")
+                                return@Button
+                            }
+
+                            val parts = mutableListOf(type, value, selectedTarget)
+                            if (supportsRuleExtra(type)) {
+                                if (useSrc) parts += "src"
+                                if (useNoResolve) parts += "no-resolve"
+                            }
+
+                            onConfirm(parts.joinToString(","))
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary(),
+                    ) {
+                        Text(
+                            MLang.Component.Button.Confirm,
+                            color = MiuixTheme.colorScheme.surface,
+                        )
+                    }
+                }
             }
-        }
-    }
+        })
 }
 
+@SuppressLint("MutableCollectionMutableState")
 @Destination<RootGraph>
 @Composable
 fun KeyValueEditorScreen(
@@ -601,35 +622,44 @@ fun KeyValueEditorScreen(
 
     if (showResetDialog) {
         WindowDialog(
+            show = remember { mutableStateOf(true) }.value,
+            modifier = Modifier,
             title = MLang.Component.Editor.Dialog.ResetTitle,
+            titleColor = DialogDefaults.titleColor(),
             summary = MLang.Component.Editor.Dialog.ResetMessage,
-            show = remember { mutableStateOf(true) },
+            summaryColor = DialogDefaults.summaryColor(),
+            backgroundColor = DialogDefaults.backgroundColor(),
+            enableWindowDim = true,
             onDismissRequest = { showResetDialog = false },
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = { showResetDialog = false },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Cancel)
+            onDismissFinished = null,
+            outsideMargin = DialogDefaults.outsideMargin,
+            insideMargin = DialogDefaults.insideMargin,
+            defaultWindowInsetsPadding = true,
+            content = {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = { showResetDialog = false },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(MLang.Component.Button.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            showResetDialog = false
+                            EditorDataHolder.mapEditorCallback?.invoke(null)
+                            EditorDataHolder.clearMapEditor()
+                            navigator.popBackStack()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary(),
+                    ) {
+                        Text(
+                            MLang.Component.Button.Confirm,
+                            color = MiuixTheme.colorScheme.surface,
+                        )
+                    }
                 }
-                Button(
-                    onClick = {
-                        showResetDialog = false
-                        EditorDataHolder.mapEditorCallback?.invoke(null)
-                        EditorDataHolder.clearMapEditor()
-                        navigator.popBackStack()
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
-                    Text(
-                        MLang.Component.Button.Confirm,
-                        color = MiuixTheme.colorScheme.surface,
-                    )
-                }
-            }
-        }
+            })
     }
 }
 
@@ -744,47 +774,57 @@ private fun InputDialog(
     var value by remember { mutableStateOf(initialValue) }
 
     WindowDialog(
+        show = remember { mutableStateOf(true) }.value,
+        modifier = Modifier,
         title = title,
-        show = remember { mutableStateOf(true) },
+        titleColor = DialogDefaults.titleColor(),
+        summary = null,
+        summaryColor = DialogDefaults.summaryColor(),
+        backgroundColor = DialogDefaults.backgroundColor(),
+        enableWindowDim = true,
         onDismissRequest = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TextField(
-                value = value,
-                onValueChange = { value = it },
-                label = placeholder,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Cancel)
-                }
-                Button(
-                    onClick = {
-                        val trimmedValue = value.trim()
-                        if (trimmedValue.isNotBlank()) {
-                            onConfirm(trimmedValue)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
-                    Text(
-                        MLang.Component.Button.Confirm,
-                        color = MiuixTheme.colorScheme.surface,
-                    )
+        onDismissFinished = null,
+        outsideMargin = DialogDefaults.outsideMargin,
+        insideMargin = DialogDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                TextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = placeholder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(MLang.Component.Button.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            val trimmedValue = value.trim()
+                            if (trimmedValue.isNotBlank()) {
+                                onConfirm(trimmedValue)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary(),
+                    ) {
+                        Text(
+                            MLang.Component.Button.Confirm,
+                            color = MiuixTheme.colorScheme.surface,
+                        )
+                    }
                 }
             }
-        }
-    }
+        })
 }
 
 @Composable
@@ -804,68 +844,78 @@ private fun KeyValueInputDialog(
     var keyError by remember { mutableStateOf<String?>(null) }
 
     WindowDialog(
+        show = remember { mutableStateOf(true) }.value,
+        modifier = Modifier,
         title = title,
-        show = remember { mutableStateOf(true) },
+        titleColor = DialogDefaults.titleColor(),
+        summary = null,
+        summaryColor = DialogDefaults.summaryColor(),
+        backgroundColor = DialogDefaults.backgroundColor(),
+        enableWindowDim = true,
         onDismissRequest = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            TextField(
-                value = key,
-                onValueChange = {
-                    key = it
-                    keyError = null
-                },
-                label = keyPlaceholder,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (keyError != null) {
-                Text(
-                    text = keyError!!,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-            TextField(
-                value = value,
-                onValueChange = { value = it },
-                label = valuePlaceholder,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Cancel)
-                }
-                Button(
-                    onClick = {
-                        val trimmedKey = key.trim()
-                        val trimmedValue = value.trim()
-
-                        when {
-                            trimmedKey.isBlank() -> keyError = MLang.Component.Editor.Error.KeyEmpty
-                            trimmedKey != currentEditingKey && existingKeys.contains(trimmedKey) -> keyError =
-                                MLang.Component.Editor.Error.KeyExists
-
-                            else -> onConfirm(trimmedKey, trimmedValue)
-                        }
+        onDismissFinished = null,
+        outsideMargin = DialogDefaults.outsideMargin,
+        insideMargin = DialogDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                TextField(
+                    value = key,
+                    onValueChange = {
+                        key = it
+                        keyError = null
                     },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
+                    label = keyPlaceholder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (keyError != null) {
                     Text(
-                        MLang.Component.Button.Confirm,
-                        color = MiuixTheme.colorScheme.surface,
+                        text = keyError!!,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
+                TextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = valuePlaceholder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(MLang.Component.Button.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            val trimmedKey = key.trim()
+                            val trimmedValue = value.trim()
+
+                            when {
+                                trimmedKey.isBlank() -> keyError = MLang.Component.Editor.Error.KeyEmpty
+                                trimmedKey != currentEditingKey && existingKeys.contains(trimmedKey) -> keyError =
+                                    MLang.Component.Editor.Error.KeyExists
+
+                                else -> onConfirm(trimmedKey, trimmedValue)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary(),
+                    ) {
+                        Text(
+                            MLang.Component.Button.Confirm,
+                            color = MiuixTheme.colorScheme.surface,
+                        )
+                    }
+                }
             }
-        }
-    }
+        })
 }

@@ -48,8 +48,6 @@ data class Profile(
     val total: Long,
     val expire: Long,
     val updatedAt: Long,
-    val imported: Boolean,
-    val pending: Boolean,
 ) : Parcelable {
     enum class Type {
         File, Url, External

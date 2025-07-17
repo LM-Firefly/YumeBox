@@ -98,8 +98,6 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 StatusProvider.currentProfile = active.name
 
                 service.sendProfileLoaded(current)
-
-                Log.d("Profile loaded: ${active.name}")
             } catch (e: Exception) {
                 return enqueueEvent(LoadException(e.message ?: "Unknown"))
             }
