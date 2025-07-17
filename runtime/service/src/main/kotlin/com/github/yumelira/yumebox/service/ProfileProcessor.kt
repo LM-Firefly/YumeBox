@@ -25,15 +25,12 @@ import androidx.core.net.toUri
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import com.github.yumelira.yumebox.service.runtime.records.PendingDao
 import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import com.github.yumelira.yumebox.service.runtime.entity.Pending
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
-import com.github.yumelira.yumebox.service.runtime.util.pendingDir
 import com.github.yumelira.yumebox.service.runtime.util.processingDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
 import kotlinx.coroutines.Dispatchers
@@ -356,197 +353,6 @@ object ProfileProcessor {
         return snapshotName
     }
 
-    suspend fun apply(context: Context, uuid: UUID, callback: IFetchObserver? = null) {
-        withContext(Dispatchers.IO + NonCancellable) {
-            processLock.withLock {
-                val hadImportedBefore = profileLock.withLock { ImportedDao.exists(uuid) }
-                try {
-                    val snapshot = profileLock.withLock {
-                        val pending = PendingDao.queryByUUID(uuid)
-                            ?: throw IllegalArgumentException("profile $uuid not found")
-
-                        pending.enforceFieldValid()
-
-                        context.processingDir.deleteRecursively()
-                        context.processingDir.mkdirs()
-
-                        context.pendingDir.resolve(pending.uuid.toString())
-                            .copyRecursively(context.processingDir, overwrite = true)
-
-                        pending
-                    }
-
-                    val force = snapshot.type != Profile.Type.File
-                    var cb = callback
-
-                    // Report initial progress for file types to show the dialog
-                    if (snapshot.type == Profile.Type.File) {
-                        try {
-                            cb?.updateStatus(
-                                com.github.yumelira.yumebox.core.model.FetchStatus(
-                                    action = com.github.yumelira.yumebox.core.model.FetchStatus.Action.FetchConfiguration,
-                                    args = emptyList(),
-                                    progress = 0,
-                                    max = 100
-                                )
-                            )
-                        } catch (e: Exception) {
-                            cb = null
-                        }
-                    }
-
-                    // Fetch subscription info for URL profiles before downloading
-                    var subInfo: SubscriptionInfo? = null
-                    if (snapshot.type == Profile.Type.Url) {
-                        subInfo = fetchUrlSubscription(context, snapshot.uuid, snapshot.source) { progress ->
-                            try {
-                                cb?.updateStatus(
-                                    com.github.yumelira.yumebox.core.model.FetchStatus(
-                                        action = com.github.yumelira.yumebox.core.model.FetchStatus.Action.FetchConfiguration,
-                                        args = emptyList(),
-                                        progress = progress,
-                                        max = 100
-                                    )
-                                )
-                            } catch (e: Exception) {
-                                cb = null
-                            }
-                        }
-                    }
-
-                    // Validate and process the configuration
-                    val fetchUrl = if (snapshot.type == Profile.Type.File) "" else snapshot.source
-                    Clash.fetchAndValid(context.processingDir, fetchUrl, force) {
-                        try {
-                            cb?.updateStatus(it)
-                        } catch (e: Exception) {
-                            cb = null
-                            Log.w("Report fetch status: $e", e)
-                        }
-                    }.await()
-
-                    // Report completion for file types
-                    if (snapshot.type == Profile.Type.File) {
-                        try {
-                            cb?.updateStatus(
-                                com.github.yumelira.yumebox.core.model.FetchStatus(
-                                    action = com.github.yumelira.yumebox.core.model.FetchStatus.Action.Verifying,
-                                    args = emptyList(),
-                                    progress = 100,
-                                    max = 100
-                                )
-                            )
-                        } catch (e: Exception) {
-                            // ignore
-                        }
-                    }
-
-                    profileLock.withLock {
-                        if (PendingDao.queryByUUID(snapshot.uuid) == snapshot) {
-                            context.importedDir.resolve(snapshot.uuid.toString())
-                                .deleteRecursively()
-                            context.processingDir
-                                .copyRecursively(context.importedDir.resolve(snapshot.uuid.toString()))
-
-                            val old = ImportedDao.queryByUUID(snapshot.uuid)
-
-                            when (snapshot.type) {
-                                Profile.Type.Url -> {
-                                    // Use Content-Disposition filename when name is default
-                                    val finalName = resolveSubscriptionName(snapshot.name, snapshot.source, subInfo)
-
-                                    val new = Imported(
-                                        snapshot.uuid,
-                                        finalName,
-                                        snapshot.type,
-                                        snapshot.source,
-                                        (subInfo?.interval ?: 24).toLong() * 60 * 60 * 1000, // Convert hours to ms
-                                        subInfo?.upload ?: 0,
-                                        subInfo?.download ?: 0,
-                                        subInfo?.total ?: 0,
-                                        subInfo?.expire ?: 0,
-                                        old?.createdAt ?: System.currentTimeMillis()
-                                    )
-
-                                    if (old != null) {
-                                        ImportedDao.update(new)
-                                    } else {
-                                        ImportedDao.insert(new)
-                                    }
-
-                                    PendingDao.remove(snapshot.uuid)
-                                    context.pendingDir.resolve(snapshot.uuid.toString()).deleteRecursively()
-                                    context.sendProfileChanged(snapshot.uuid)
-                                }
-
-                                Profile.Type.File -> {
-                                    // Extract filename from URI for file profiles
-                                    val finalName = if (ProfileNameUtils.isAutoGeneratedProfileName(snapshot.name)) {
-                                        ProfileNameUtils.extractSourceBaseName(snapshot.source) ?: snapshot.name
-                                    } else snapshot.name
-
-                                    val new = Imported(
-                                        snapshot.uuid,
-                                        finalName,
-                                        snapshot.type,
-                                        snapshot.source,
-                                        snapshot.interval,
-                                        0, 0, 0, 0,
-                                        old?.createdAt ?: System.currentTimeMillis()
-                                    )
-
-                                    if (old != null) {
-                                        ImportedDao.update(new)
-                                    } else {
-                                        ImportedDao.insert(new)
-                                    }
-
-                                    PendingDao.remove(snapshot.uuid)
-                                    context.pendingDir.resolve(snapshot.uuid.toString()).deleteRecursively()
-                                    context.sendProfileChanged(snapshot.uuid)
-                                }
-
-                                Profile.Type.External -> {
-                                    // External profiles don't need subscription info
-                                    val new = Imported(
-                                        snapshot.uuid,
-                                        snapshot.name,
-                                        snapshot.type,
-                                        snapshot.source,
-                                        snapshot.interval,
-                                        0, 0, 0, 0,
-                                        old?.createdAt ?: System.currentTimeMillis()
-                                    )
-
-                                    if (old != null) {
-                                        ImportedDao.update(new)
-                                    } else {
-                                        ImportedDao.insert(new)
-                                    }
-
-                                    PendingDao.remove(snapshot.uuid)
-                                    context.pendingDir.resolve(snapshot.uuid.toString()).deleteRecursively()
-                                    context.sendProfileChanged(snapshot.uuid)
-                                }
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    if (!hadImportedBefore) {
-                        profileLock.withLock {
-                            PendingDao.remove(uuid)
-                            context.pendingDir.resolve(uuid.toString()).deleteRecursively()
-                        }
-                        context.sendProfileChanged(uuid)
-                    }
-                    throw e
-                } finally {
-                    context.processingDir.deleteRecursively()
-                }
-            }
-        }
-    }
-
     suspend fun update(context: Context, uuid: UUID, callback: IFetchObserver?) {
         withContext(Dispatchers.IO + NonCancellable) {
             processLock.withLock {
@@ -631,13 +437,9 @@ object ProfileProcessor {
         withContext(Dispatchers.IO + NonCancellable) {
             profileLock.withLock {
                 ImportedDao.remove(uuid)
-                PendingDao.remove(uuid)
                 SelectionDao.clear(uuid)
 
-                val pending = context.pendingDir.resolve(uuid.toString())
                 val imported = context.importedDir.resolve(uuid.toString())
-
-                pending.deleteRecursively()
                 imported.deleteRecursively()
 
                 context.sendProfileChanged(uuid)
@@ -645,26 +447,8 @@ object ProfileProcessor {
         }
     }
 
-    suspend fun release(context: Context, uuid: UUID): Boolean {
-        return withContext(Dispatchers.IO + NonCancellable) {
-            profileLock.withLock {
-                PendingDao.remove(uuid)
-
-                context.pendingDir.resolve(uuid.toString()).deleteRecursively()
-            }
-        }
-    }
-
     suspend fun active(context: Context, uuid: UUID) {
         withContext(Dispatchers.IO + NonCancellable) {
-            val shouldApply = profileLock.withLock {
-                !ImportedDao.exists(uuid) && PendingDao.exists(uuid)
-            }
-
-            if (shouldApply) {
-                apply(context, uuid, null)
-            }
-
             profileLock.withLock {
                 if (!ImportedDao.exists(uuid)) {
                     throw IllegalArgumentException("profile $uuid is not available")
@@ -673,24 +457,6 @@ object ProfileProcessor {
                 store.activeProfile = uuid
                 context.sendProfileChanged(uuid)
             }
-        }
-    }
-
-    private fun Pending.enforceFieldValid() {
-        val scheme = source.toUri().scheme?.lowercase(Locale.getDefault())
-
-        when {
-            name.isBlank() ->
-                throw IllegalArgumentException("Empty name")
-
-            source.isEmpty() && type != Profile.Type.File ->
-                throw IllegalArgumentException("Invalid url")
-
-            source.isNotEmpty() && scheme != "https" && scheme != "http" && scheme != "content" ->
-                throw IllegalArgumentException("Unsupported url $source")
-
-            interval != 0L && TimeUnit.MILLISECONDS.toMinutes(interval) < 15 ->
-                throw IllegalArgumentException("Invalid interval")
         }
     }
 }

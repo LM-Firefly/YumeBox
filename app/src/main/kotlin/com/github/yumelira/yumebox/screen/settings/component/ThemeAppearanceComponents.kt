@@ -21,13 +21,7 @@
 package com.github.yumelira.yumebox.screen.settings.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -42,12 +36,8 @@ import com.github.yumelira.yumebox.presentation.theme.colorFromArgb
 import com.github.yumelira.yumebox.presentation.theme.colorToArgbLong
 import com.github.yumelira.yumebox.presentation.theme.isDefaultThemeSeedArgb
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.ColorPicker
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.BottomSheetDefaults
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -135,65 +125,78 @@ internal fun ThemeColorPickerItem(
     )
 
     WindowBottomSheet(
-        show = showThemeColorPicker,
+        show = showThemeColorPicker.value,
+        modifier = Modifier,
         title = MLang.AppSettings.Interface.ColorThemePickerTitle,
+        startAction = null,
+        endAction = null,
+        backgroundColor = BottomSheetDefaults.backgroundColor(),
+        enableWindowDim = true,
+        cornerRadius = BottomSheetDefaults.cornerRadius,
+        sheetMaxWidth = BottomSheetDefaults.maxWidth,
         onDismissRequest = { showThemeColorPicker.value = false },
+        onDismissFinished = null,
+        outsideMargin = BottomSheetDefaults.outsideMargin,
         insideMargin = DpSize(24.dp, 16.dp),
-    ) {
-        ColorPicker(
-            color = editingThemeSeedColor.value,
-            onColorChanged = {
-                editingThemeSeedColor.value = it
-                editingThemeSeedHex.value = formatThemeSeedHex(colorToArgbLong(it))
-            },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        TextField(
-            value = editingThemeSeedHex.value,
-            onValueChange = { raw ->
-                val normalized = normalizeThemeHexInput(raw)
-                editingThemeSeedHex.value = normalized
-                parseThemeHexColorOrNull(normalized)?.let {
+        defaultWindowInsetsPadding = true,
+        dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+        allowDismiss = true,
+        enableNestedScroll = true,
+        content = {
+            ColorPicker(
+                color = editingThemeSeedColor.value,
+                onColorChanged = {
                     editingThemeSeedColor.value = it
-                }
-            },
-            label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Button(
-                onClick = {
-                    onResetThemeSeedColor()
-                    editingThemeSeedColor.value = Color.White
-                    editingThemeSeedHex.value = formatThemeSeedHex(DEFAULT_THEME_SEED_ARGB)
+                    editingThemeSeedHex.value = formatThemeSeedHex(colorToArgbLong(it))
                 },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(MLang.AppSettings.Interface.ColorThemeResetDefault)
-            }
-            Button(
-                onClick = {
-                    val argb = colorToArgbLong(editingThemeSeedColor.value)
-                    if (isDefaultThemeSeedArgb(argb)) {
-                        onResetThemeSeedColor()
-                    } else {
-                        onThemeSeedColorChange(argb)
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextField(
+                value = editingThemeSeedHex.value,
+                onValueChange = { raw ->
+                    val normalized = normalizeThemeHexInput(raw)
+                    editingThemeSeedHex.value = normalized
+                    parseThemeHexColorOrNull(normalized)?.let {
+                        editingThemeSeedColor.value = it
                     }
-                    showThemeColorPicker.value = false
                 },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColorsPrimary(),
+                label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(MLang.AppSettings.Button.Apply, color = MiuixTheme.colorScheme.background)
+                Button(
+                    onClick = {
+                        onResetThemeSeedColor()
+                        editingThemeSeedColor.value = Color.White
+                        editingThemeSeedHex.value = formatThemeSeedHex(DEFAULT_THEME_SEED_ARGB)
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(MLang.AppSettings.Interface.ColorThemeResetDefault)
+                }
+                Button(
+                    onClick = {
+                        val argb = colorToArgbLong(editingThemeSeedColor.value)
+                        if (isDefaultThemeSeedArgb(argb)) {
+                            onResetThemeSeedColor()
+                        } else {
+                            onThemeSeedColorChange(argb)
+                        }
+                        showThemeColorPicker.value = false
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColorsPrimary(),
+                ) {
+                    Text(MLang.AppSettings.Button.Apply, color = MiuixTheme.colorScheme.background)
+                }
             }
-        }
-    }
+        })
 }
 
 private fun formatThemeSeedHex(argb: Long): String {

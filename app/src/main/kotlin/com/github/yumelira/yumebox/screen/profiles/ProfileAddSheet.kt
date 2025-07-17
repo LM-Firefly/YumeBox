@@ -47,9 +47,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.*
+import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
@@ -60,6 +61,7 @@ import top.yukonga.miuix.kmp.extra.WindowSpinner
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
 import java.util.*
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 internal fun AddProfileSheet(
@@ -85,7 +87,7 @@ internal fun AddProfileSheet(
 
     val downloadProgress by profilesViewModel.downloadProgress.collectAsState()
     val uiState by profilesViewModel.uiState.collectAsState()
-    var displayedProgress by remember { mutableStateOf(0) }
+    var displayedProgress by remember { mutableIntStateOf(0) }
     var lastProgress by remember { mutableIntStateOf(0) }
     var hasShownCompleteAnimation by remember { mutableStateOf(false) }
 
@@ -110,11 +112,9 @@ internal fun AddProfileSheet(
             } else {
                 null
             }
-        } catch (e: SecurityException) {
-            e.printStackTrace()
+        } catch (_: SecurityException) {
             null
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: Exception) {
             null
         }
     }
@@ -200,8 +200,7 @@ internal fun AddProfileSheet(
                             context, MLang.ProfilesPage.Message.ClipboardRead, Toast.LENGTH_SHORT
                         ).show()
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                } catch (_: Exception) {
                 }
             }
         }
@@ -250,7 +249,7 @@ internal fun AddProfileSheet(
                         val stepProgress =
                             kotlin.math.min(displayedProgress + (i * 3), actualProgress)
                         displayedProgress = stepProgress
-                        delay(40)
+                        delay(40.milliseconds)
                     }
                 } else {
                     displayedProgress = actualProgress
@@ -264,7 +263,7 @@ internal fun AddProfileSheet(
             if (progress.percent == 100 && displayedProgress == 100 && !hasShownCompleteAnimation) {
                 hasShownCompleteAnimation = true
 
-                delay(100)
+                delay(100.milliseconds)
 
                 onDownloadComplete()
             }
@@ -359,7 +358,7 @@ internal fun AddProfileSheet(
     }
 
     WindowBottomSheet(
-        show = show,
+        show = show.value,
         title = if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle else MLang.ProfilesPage.Sheet.AddTitle,
         backgroundColor = MiuixTheme.colorScheme.surface,
         dragHandleColor = MiuixTheme.colorScheme.onSurfaceVariantActions,
@@ -640,7 +639,7 @@ internal fun AddProfileSheet(
                                                             url,
                                                             Profile.Type.Url,
                                                             0L,
-                                                            null  // URL类型不需要fileUri
+                                                            null  // URL 类型不需要 fileUri
                                                         )
                                                     }
                                                 } else {
@@ -657,7 +656,7 @@ internal fun AddProfileSheet(
                                                             filePath,
                                                             Profile.Type.File,
                                                             0L,
-                                                            android.net.Uri.parse(filePath)  // File类型需要传递fileUri
+                                                            filePath.toUri()  // File 类型需要传递 fileUri
                                                         )
                                                     }
                                                 }

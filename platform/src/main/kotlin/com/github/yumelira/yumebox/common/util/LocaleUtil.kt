@@ -24,7 +24,7 @@ import java.util.*
 
 object LocaleUtil {
 
-    private val CHINA_REGION_CODES = setOf("TW")
+    private val NORMALIZED_REGION_CODES = setOf("TW")
 
     fun isChineseLocale(): Boolean {
         val locale = Locale.getDefault()
@@ -36,7 +36,7 @@ object LocaleUtil {
         if (!isChineseLocale()) return countryCode
 
         val upperCode = countryCode.uppercase()
-        return if (upperCode in CHINA_REGION_CODES) "CN" else countryCode
+        return if (upperCode in NORMALIZED_REGION_CODES) "CN" else countryCode
     }
 
     fun normalizeFlagUrl(
@@ -45,7 +45,7 @@ object LocaleUtil {
     ): String {
         val normalizedCode = if (isChineseLocale()) {
             val upperCode = countryCode.uppercase()
-            if (upperCode in CHINA_REGION_CODES) "cn" else countryCode.lowercase()
+            if (upperCode in NORMALIZED_REGION_CODES) "cn" else countryCode.lowercase()
         } else {
             countryCode.lowercase()
         }

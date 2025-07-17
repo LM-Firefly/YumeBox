@@ -288,7 +288,7 @@ dependencies {
 
     // Utilities
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("org.tukaani:xz:1.11")
+    implementation("org.tukaani:xz:1.12")
 
     // ML Kit
     implementation("com.google.mlkit:barcode-scanning:${gropify.dep.version.mlkitBarcodeScanning}")

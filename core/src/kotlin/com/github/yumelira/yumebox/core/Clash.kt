@@ -29,6 +29,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import timber.log.Timber
 import java.io.File
 import java.net.InetSocketAddress
 
@@ -241,6 +242,7 @@ object Clash {
                 Bridge.nativeReadOverride(slot.ordinal),
             )
         } catch (e: Exception) {
+            Timber.w(e, "Failed to query override for slot: $slot")
             ConfigurationOverride()
         }
     }

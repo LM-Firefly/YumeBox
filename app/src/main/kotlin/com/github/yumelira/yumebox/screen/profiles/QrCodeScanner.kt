@@ -30,7 +30,7 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -43,6 +43,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import timber.log.Timber
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 
@@ -118,7 +119,7 @@ internal fun StableQrScanner(
                         )
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Timber.w(e, "Failed to bind camera lifecycle")
                 }
             }
 
@@ -127,8 +128,7 @@ internal fun StableQrScanner(
             try {
                 val context = previewView.context
                 ProcessCameraProvider.getInstance(context).get().unbindAll()
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
             }
         })
 }
@@ -183,8 +183,7 @@ internal suspend fun readQrFromImage(context: Context, uri: Uri): String? =
             }.addOnCompleteListener {
                 scanner.close()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: Exception) {
             continuation.resume(null)
         }
     }

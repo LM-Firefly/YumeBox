@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.domain.model
 
 import com.github.yumelira.yumebox.core.model.Traffic
+import com.github.yumelira.yumebox.core.util.decodeTrafficValue
 
 data class TrafficData(
     val upload: Long,
@@ -30,21 +31,9 @@ data class TrafficData(
         val ZERO = TrafficData(0, 0)
 
         fun from(traffic: Traffic): TrafficData {
-            val upload = decodeHalf(traffic ushr 32)
-            val download = decodeHalf(traffic and 0xFFFFFFFFL)
+            val upload = decodeTrafficValue(traffic ushr 32)
+            val download = decodeTrafficValue(traffic and 0xFFFFFFFFL)
             return TrafficData(upload, download)
-        }
-
-        private fun decodeHalf(encoded: Long): Long {
-            val type = (encoded ushr 30) and 0x3L
-            val data = encoded and 0x3FFFFFFFL
-            return when (type.toInt()) {
-                0 -> data
-                1 -> (data * 1024L) / 100L
-                2 -> (data * 1024L * 1024L) / 100L
-                3 -> (data * 1024L * 1024L * 1024L) / 100L
-                else -> 0L
-            }
         }
     }
 }

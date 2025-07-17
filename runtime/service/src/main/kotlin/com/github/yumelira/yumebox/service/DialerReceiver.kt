@@ -23,7 +23,6 @@ package com.github.yumelira.yumebox.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.ActivityNotFoundException
 import com.github.yumelira.yumebox.service.common.constants.Components
 import timber.log.Timber
 
@@ -51,15 +50,13 @@ class DialerReceiver : BroadcastReceiver() {
     }
 
     private fun startMainActivity(context: Context) {
-        try {
+        runCatching {
             val launchIntent = Intent(Intent.ACTION_MAIN).apply {
                 component = Components.MAIN_ACTIVITY
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
             context.startActivity(launchIntent)
-        } catch (e: ActivityNotFoundException) {
-            Timber.e(e, "Open main activity failed")
-        } catch (e: SecurityException) {
+        }.onFailure { e ->
             Timber.e(e, "Open main activity failed")
         }
     }

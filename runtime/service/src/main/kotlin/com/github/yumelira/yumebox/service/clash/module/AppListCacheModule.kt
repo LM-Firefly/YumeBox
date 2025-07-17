@@ -23,11 +23,10 @@ package com.github.yumelira.yumebox.service.clash.module
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageInfo
-import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.core.Clash
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 class AppListCacheModule(service: Service) : Module<Unit>(service) {
     private fun PackageInfo.uniqueUidName(): String =
@@ -51,8 +50,6 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
             }
 
         Clash.notifyInstalledAppsChanged(packages)
-
-        Log.d("Installed ${packages.size} packages cached")
     }
 
     override suspend fun run() {
@@ -67,7 +64,7 @@ class AppListCacheModule(service: Service) : Module<Unit>(service) {
 
             packageChanged.receive()
 
-            delay(TimeUnit.SECONDS.toMillis(10))
+            delay(10_000L.milliseconds)
         }
     }
 }

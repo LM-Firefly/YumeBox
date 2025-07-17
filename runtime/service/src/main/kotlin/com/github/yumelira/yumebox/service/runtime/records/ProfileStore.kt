@@ -23,7 +23,6 @@
 package com.github.yumelira.yumebox.service.runtime.records
 
 import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import com.github.yumelira.yumebox.service.runtime.entity.Pending
 import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
 import com.tencent.mmkv.MMKV
@@ -54,21 +53,6 @@ object ProfileStore {
         val jsonString = mmkv.decodeString("imported") ?: return emptyList()
         return try {
             json.decodeFromString(ListSerializer(Imported.serializer()), jsonString)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    // Pending operations
-    fun savePending(list: List<Pending>) {
-        val jsonString = json.encodeToString(ListSerializer(Pending.serializer()), list)
-        mmkv.encode("pending", jsonString)
-    }
-
-    fun loadPending(): List<Pending> {
-        val jsonString = mmkv.decodeString("pending") ?: return emptyList()
-        return try {
-            json.decodeFromString(ListSerializer(Pending.serializer()), jsonString)
         } catch (e: Exception) {
             emptyList()
         }

@@ -27,22 +27,17 @@ import android.content.Intent
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
-import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import com.github.yumelira.yumebox.service.runtime.records.PendingDao
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.tencent.mmkv.MMKV
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlin.time.Duration.Companion.milliseconds
 
 class ServiceNotificationManager(
     private val service: Service,
@@ -75,7 +70,7 @@ class ServiceNotificationManager(
         return scope.launch(Dispatchers.Default) {
             while (isActive) {
                 notificationManager.notify(config.notificationId, buildRunningNotification())
-                delay(1000L)
+                delay(1000L.milliseconds)
             }
         }
     }
@@ -130,7 +125,7 @@ class ServiceNotificationManager(
 
     private fun resolveProfileName(): String {
         val active = serviceStore.activeProfile ?: return MLang.Service.Notification.UnknownProfile
-        return (PendingDao.queryByUUID(active)?.name ?: ImportedDao.queryByUUID(active)?.name)
+        return ImportedDao.queryByUUID(active)?.name
             ?.takeIf { it.isNotBlank() }
             ?: MLang.Service.Notification.UnknownProfile
     }

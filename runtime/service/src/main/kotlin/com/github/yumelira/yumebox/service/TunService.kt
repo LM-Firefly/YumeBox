@@ -111,8 +111,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
         StatusProvider.serviceRunning = true
 
-        Log.i("TunService created in pid=${android.os.Process.myPid()}")
-
         CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
 
         notificationManager.createChannel()
@@ -187,10 +185,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                     addRoute(NET_ANY6, 0)
                 }
             }
-
-            Log.i(
-                "AccessControl apply: mode=${store.accessControlMode}, packages=${store.accessControlPackages.size}"
-            )
 
             // Access Control
             when (store.accessControlMode) {
