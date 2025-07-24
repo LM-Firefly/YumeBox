@@ -25,10 +25,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.github.yumelira.yumebox.common.util.DeviceUtil
-import com.github.yumelira.yumebox.substore.model.AutoCloseMode
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
+import com.github.yumelira.yumebox.substore.model.AutoCloseMode
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -64,7 +64,7 @@ fun FeatureContent(
     val selectedPanelType by viewModel.selectedPanelType.state.collectAsState()
     val panelOpenMode by viewModel.panelOpenMode.state.collectAsState()
 
-    val panelDisplayNames = listOf("Zashboard", "MetaCubeXD")
+    val panelDisplayNames = listOf("Zashboard", "MetaCubeXD", "Yacd")
 
     LaunchedEffect(Unit) {
         viewModel.initializeSubStoreStatus()
@@ -144,11 +144,12 @@ fun FeatureContent(
 
                 SmallTitle(MLang.Feature.Panel.Section)
                 Card {
+                    val safeSelectedPanelType = selectedPanelType.coerceIn(0, panelDisplayNames.lastIndex)
                     WindowDropdown(
                         title = MLang.Feature.Panel.SelectPanel,
-                        summary = currentPanelName,
+                        summary = panelDisplayNames.getOrElse(safeSelectedPanelType) { panelDisplayNames.first() },
                         items = panelDisplayNames,
-                        selectedIndex = selectedPanelType,
+                        selectedIndex = safeSelectedPanelType,
                         onSelectedIndexChange = { viewModel.setSelectedPanelType(it) },
                     )
 
@@ -221,6 +222,7 @@ private fun panelUrlFor(panelType: Int): String {
     return when (panelType) {
         0 -> "https://board.zash.run.place"
         1 -> "https://metacubex.github.io/metacubexd"
+        2 -> "https://yacd.haishan.me"
         else -> "https://board.zash.run.place"
     }
 }
