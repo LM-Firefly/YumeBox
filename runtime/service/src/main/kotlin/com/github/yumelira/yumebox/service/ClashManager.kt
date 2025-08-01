@@ -22,16 +22,16 @@ package com.github.yumelira.yumebox.service
 
 import android.content.Context
 import android.content.Intent
-import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.*
-import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
-import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.github.yumelira.yumebox.service.runtime.util.sendOverrideChanged
@@ -178,7 +178,12 @@ class ClashManager(private val context: Context) : IClashManager,
             return
         }
         if (fallbackNode.isNotEmpty() && node == fallbackNode) {
-            // Prevent startup/default fallback from overwriting remembered node.
+            // Provider update may have reset selector to default.
+            // Try to restore remembered node if it still exists in the proxy list.
+            val proxyNames = proxyGroup.proxies.mapNotNull { it.name?.trim()?.takeIf { it.isNotEmpty() } }
+            if (remembered in proxyNames) {
+                launch { Clash.patchSelector(group, remembered) }
+            }
             return
         }
 
