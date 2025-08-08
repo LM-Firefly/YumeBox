@@ -22,14 +22,14 @@ package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.DpSize
@@ -39,7 +39,6 @@ import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.*
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
-import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`List-chevrons-up-down`
@@ -59,7 +58,6 @@ import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
-import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -118,8 +116,10 @@ fun ProxyPager(
     }
     val displayGroup = selectedGroup ?: selectedGroupSnapshot
     val fabGroup = displayGroup
-    val fabVisible = selectedGroupName != null && fabGroup != null
     val isFabTesting = fabGroup?.name?.let(testingGroupNames::contains) == true
+
+    // FAB 滚动隐藏状态
+    var fabHidden by rememberSaveable { mutableStateOf(false) }
 
     // System back on node page → back to group list
     BackHandler(enabled = selectedGroupName != null) {
@@ -133,25 +133,29 @@ fun ProxyPager(
     Scaffold(
         floatingActionButton = {
             AnimatedVisibility(
-                visible = fabVisible,
-                enter = scaleIn(
-                    animationSpec = tween(durationMillis = 260, easing = AnimationSpecs.Legacy),
-                    initialScale = 0.72f,
-                ) + fadeIn(animationSpec = tween(durationMillis = 180)),
-                exit = scaleOut(
-                    animationSpec = tween(durationMillis = 140, easing = AnimationSpecs.Legacy),
-                    targetScale = 0.72f,
-                ) + fadeOut(animationSpec = tween(durationMillis = 100)),
+                visible = selectedGroupName != null && fabGroup != null && !fabHidden && !isFabTesting,
+                enter = slideInVertically(
+                    animationSpec = tween(durationMillis = AnimationSpecs.Proxy.FabDuration),
+                    initialOffsetY = { it },
+                ) + fadeIn(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.FabFadeDuration)),
+                exit = slideOutVertically(
+                    animationSpec = tween(durationMillis = AnimationSpecs.Proxy.FabDuration),
+                    targetOffsetY = { it },
+                ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.FabFadeDuration)),
                 label = "proxy_test_fab_visibility",
             ) {
                 FloatingActionButton(
-                    modifier = Modifier.padding(end = 20.dp, bottom = 70.dp),
+                    modifier = Modifier.padding(end = 20.dp, bottom = 85.dp),
                     onClick = {
                         val targetGroup = fabGroup ?: return@FloatingActionButton
-                        if (!isFabTesting) proxyViewModel.testDelay(targetGroup.name)
+                        proxyViewModel.testDelay(targetGroup.name)
                     },
                 ) {
-                    ProxyTestingRefreshIcon(isRotating = isFabTesting)
+                    Icon(
+                        imageVector = Yume.Speed,
+                        contentDescription = MLang.Proxy.Action.Test,
+                        tint = MiuixTheme.colorScheme.background,
+                    )
                 }
             }
         },
@@ -218,8 +222,9 @@ fun ProxyPager(
                         )
                     }
                 } else {
+                    val currentGroup = proxyGroups.find { it.name == targetGroupName } ?: displayGroup
                     NodeListPage(
-                        group = proxyGroupsByName[targetGroupName] ?: displayGroup,
+                        group = currentGroup,
                         displayMode = displayMode,
                         sortMode = sortMode,
                         testingGroupNames = testingGroupNames,
@@ -230,6 +235,7 @@ fun ProxyPager(
                             proxyViewModel.selectProxy(groupName, proxyName)
                         },
                         onTestDelay = { groupName -> proxyViewModel.testDelay(groupName) },
+                        onScrollDirectionChanged = { hidden -> fabHidden = hidden },
                     )
                 }
             }
@@ -249,34 +255,6 @@ fun ProxyPager(
                 onDismiss = { showSettingsBottomSheet.value = false },
             )
         }
-    }
-}
-
-@Composable
-private fun ProxyTestingRefreshIcon(isRotating: Boolean) {
-    val infiniteTransition = rememberInfiniteTransition(label = "proxy_test_fab_rotation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing),
-        ),
-        label = "proxy_test_fab_rotation_value",
-    )
-
-    if (isRotating) {
-        Icon(
-            imageVector = MiuixIcons.Refresh,
-            contentDescription = MLang.Proxy.Action.Test,
-            tint = MiuixTheme.colorScheme.background,
-            modifier = Modifier.rotate(rotation),
-        )
-    } else {
-        Icon(
-            imageVector = Yume.Speed,
-            contentDescription = MLang.Proxy.Action.Test,
-            tint = MiuixTheme.colorScheme.background,
-        )
     }
 }
 
@@ -346,6 +324,7 @@ private fun NodeListPage(
     scrollBehavior: ScrollBehavior,
     onSelectProxy: (groupName: String, proxyName: String) -> Unit,
     onTestDelay: (groupName: String) -> Unit,
+    onScrollDirectionChanged: (Boolean) -> Unit,
 ) {
     if (group == null) {
         CenteredText(
@@ -355,29 +334,92 @@ private fun NodeListPage(
         return
     }
     val spacing = LocalSpacing.current
+    val isTesting = testingGroupNames.contains(group.name)
 
     val listState = rememberSaveable(
         group.name, saver = LazyListState.Saver
     ) { LazyListState() }
     val listItemKeys = remember(group.proxies) { group.proxies.map { it.name } }
+
     KeepLazyListTopAnchorOnReorder(
         listState = listState,
         itemKeys = listItemKeys,
         enabled = sortMode == ProxySortMode.BY_LATENCY,
+        scrollToTopOnEnabled = true,
     )
 
-    ScreenLazyColumn(
-        scrollBehavior = scrollBehavior,
-        innerPadding = PaddingValues(top = outerInnerPadding.calculateTopPadding()),
-        topPadding = ProxyPageSpacing.ContentTop,
-        bottomPadding = mainInnerPadding.calculateBottomPadding() + spacing.md,
-        lazyListState = listState,
-        enableGlobalScroll = false,
+    LaunchedEffect(isTesting) {
+        if (isTesting && listState.firstVisibleItemIndex > 0) {
+            listState.scrollToItem(0)
+        }
+    }
+
+    var lastScrollIndex by remember { mutableStateOf(0) }
+    var lastScrollOffset by remember { mutableStateOf(0) }
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        val currentIndex = listState.firstVisibleItemIndex
+        val currentOffset = listState.firstVisibleItemScrollOffset
+        if (currentIndex != lastScrollIndex) {
+            onScrollDirectionChanged(currentIndex > lastScrollIndex)
+        } else if (currentOffset != lastScrollOffset) {
+            val delta = currentOffset - lastScrollOffset
+            if (kotlin.math.abs(delta) > 10) {
+                onScrollDirectionChanged(delta > 0)
+            }
+        }
+        lastScrollIndex = currentIndex
+        lastScrollOffset = currentOffset
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .scrollEndHaptic()
+            .overScrollVertical()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentPadding = PaddingValues(
+            start = ProxyPageSpacing.ContentHorizontal,
+            end = ProxyPageSpacing.ContentHorizontal,
+            top = outerInnerPadding.calculateTopPadding() + ProxyPageSpacing.ContentTop,
+            bottom = mainInnerPadding.calculateBottomPadding() + spacing.md,
+        ),
+        overscrollEffect = null,
     ) {
+        item(key = "__refresh_indicator__") {
+            AnimatedVisibility(
+                visible = isTesting,
+                enter = expandVertically(
+                    animationSpec = tween(durationMillis = AnimationSpecs.Proxy.RefreshIndicatorDuration),
+                    expandFrom = Alignment.Top,
+                ) + fadeIn(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.RefreshIndicatorFadeDuration)),
+                exit = shrinkVertically(
+                    animationSpec = tween(durationMillis = AnimationSpecs.Proxy.RefreshIndicatorDuration),
+                    shrinkTowards = Alignment.Top,
+                ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.RefreshIndicatorFadeDuration)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    InfiniteProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = MLang.Proxy.Testing.InProgress,
+                        style = MiuixTheme.textStyles.subtitle,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    )
+                }
+            }
+        }
+
         nodeGridItems(
             proxies = group.proxies,
             selectedProxyName = group.now,
-            displayMode = displayMode,
             onProxyClick = { proxyName ->
                 if (group.type == Proxy.Type.Selector) {
                     onSelectProxy(group.name, proxyName)
@@ -385,9 +427,9 @@ private fun NodeListPage(
                     onTestDelay(group.name)
                 }
             },
-            isDelayTesting = testingGroupNames.contains(group.name),
+            isDelayTesting = isTesting,
             onDelayTestClick = { onTestDelay(group.name) },
-            outerHorizontalPadding = ProxyPageSpacing.ContentHorizontal,
+            outerHorizontalPadding = 0.dp,
             itemVerticalPadding = ProxyPageSpacing.ItemVertical,
         )
     }

@@ -53,6 +53,7 @@ class ProxyViewModel(
 
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
+
     private val _groupOriginalOrder = MutableStateFlow<Map<String, List<String>>>(emptyMap())
 
     val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsRepository.proxyMode.state
@@ -90,13 +91,12 @@ class ProxyViewModel(
         ) { groups, mode, originalOrderCache ->
             groups.map { group ->
                 val originalOrder = originalOrderCache[group.name].orEmpty()
-                group.copy(
-                    proxies = sortProxies(
-                        proxies = group.proxies,
-                        sortMode = mode,
-                        originalOrder = originalOrder,
-                    )
+                val sortedProxies = sortProxies(
+                    proxies = group.proxies,
+                    sortMode = mode,
+                    originalOrder = originalOrder,
                 )
+                group.copy(proxies = sortedProxies)
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -175,11 +175,14 @@ class ProxyViewModel(
                 }
             }
 
+            // 立即移除 loading，让延迟结果可以显示
+            setLoading(false)
+
+            // 等待一段时间后再移除测试状态，让异步刷新有足够时间完成
             if (testingTargets.isNotEmpty()) {
                 delay(PROXY_TESTING_SORT_HOLD_MS)
                 _testingGroupNames.update { it - testingTargets }
             }
-            setLoading(false)
 
             result.exceptionOrNull()?.let { error ->
                 showError(MLang.Proxy.Testing.Failed.format(error.message))
@@ -234,6 +237,15 @@ class ProxyViewModel(
             proxies.sortedWith(
                 compareBy<Proxy>(
                     { proxy ->
+                        // 已测试延迟的节点 (delay > 0) 排在前面，未测试的排在后面
+                        when {
+                            proxy.delay > 0 -> 0  // 已测试，有有效延迟
+                            proxy.delay < 0 -> 2  // 超时/失败
+                            else -> 1  // 未测试 (delay == 0)
+                        }
+                    },
+                    { proxy ->
+                        // 在同一个优先级内，按延迟值排序
                         when {
                             proxy.delay > 0 -> proxy.delay
                             proxy.delay < 0 -> Int.MAX_VALUE - 1
@@ -341,7 +353,7 @@ class ProxyViewModel(
                     }
                 val delayMillis = when {
                     !proxyFacade.isRunning.value -> PROXY_REFRESH_PREVIEW_MS
-                    _testingGroupNames.value.isNotEmpty() -> PROXY_REFRESH_TESTING_MS
+                    _testingGroupNames.value.isNotEmpty() -> 100  // 测试期间更高频刷新，让延迟结果陆续显示
                     else -> PROXY_REFRESH_IDLE_MS
                 }
                 delay(delayMillis)

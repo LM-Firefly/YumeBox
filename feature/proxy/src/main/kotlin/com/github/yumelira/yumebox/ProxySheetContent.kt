@@ -150,27 +150,39 @@ fun ProxySheetContent(
             transitionSpec = {
                 if (targetState != null) {
                     (slideInHorizontally(
-                        animationSpec = tween(durationMillis = 260, easing = AnimationSpecs.Legacy),
+                        animationSpec = tween(
+                            durationMillis = AnimationSpecs.Proxy.SheetSlideInDuration,
+                            easing = AnimationSpecs.Legacy
+                        ),
                         initialOffsetX = { it },
-                    ) + fadeIn(animationSpec = tween(durationMillis = 220))) togetherWith
-                        (slideOutHorizontally(
-                            animationSpec = tween(durationMillis = 220, easing = AnimationSpecs.Legacy),
-                            targetOffsetX = { -it / 3 },
-                        ) + fadeOut(animationSpec = tween(durationMillis = 180)))
+                    ) + fadeIn(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeInDuration))) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(
+                                    durationMillis = AnimationSpecs.Proxy.SheetSlideOutDuration,
+                                    easing = AnimationSpecs.Legacy
+                                ),
+                                targetOffsetX = { -it / 3 },
+                            ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeOutDuration)))
                 } else {
                     (slideInHorizontally(
-                        animationSpec = tween(durationMillis = 220, easing = AnimationSpecs.Legacy),
+                        animationSpec = tween(
+                            durationMillis = AnimationSpecs.Proxy.SheetSlideOutDuration,
+                            easing = AnimationSpecs.Legacy
+                        ),
                         initialOffsetX = { -it / 3 },
-                    ) + fadeIn(animationSpec = tween(durationMillis = 200))) togetherWith
-                        (slideOutHorizontally(
-                            animationSpec = tween(durationMillis = 240, easing = AnimationSpecs.Legacy),
-                            targetOffsetX = { it },
-                        ) + fadeOut(animationSpec = tween(durationMillis = 180)))
+                    ) + fadeIn(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeInDuration - 20))) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(
+                                    durationMillis = AnimationSpecs.Proxy.SheetSlideInDuration - 20,
+                                    easing = AnimationSpecs.Legacy
+                                ),
+                                targetOffsetX = { it },
+                            ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeOutDuration)))
                 }
             },
             label = "notification_node_sheet_content",
         ) { targetGroupName ->
-            val group = targetGroupName?.let(groupsByName::get)
+            val group = targetGroupName?.let { name -> proxyGroups.find { it.name == name } }
             if (group == null) {
                 NodeGroupSheetContent(
                     groups = proxyGroups,
