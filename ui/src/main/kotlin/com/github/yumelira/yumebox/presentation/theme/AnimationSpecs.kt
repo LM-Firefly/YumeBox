@@ -20,14 +20,7 @@
 
 package com.github.yumelira.yumebox.presentation.theme
 
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 
 object AnimationSpecs {
 
@@ -69,4 +62,23 @@ object AnimationSpecs {
     const val STAGGER_DELAY_ITEM = 40
     const val STAGGER_DELAY_SECTION = 80
     const val STAGGER_DELAY_LAYER = 60
+
+    /**
+     * Proxy 页面动画规格
+     */
+    object Proxy {
+        // FAB 动画时长
+        const val FabDuration = 200
+        const val FabFadeDuration = 150
+
+        // Sheet 页面切换动画时长
+        const val SheetSlideInDuration = 260
+        const val SheetSlideOutDuration = 220
+        const val SheetFadeInDuration = 220
+        const val SheetFadeOutDuration = 180
+
+        // 刷新指示器动画时长
+        const val RefreshIndicatorDuration = 200
+        const val RefreshIndicatorFadeDuration = 150
+    }
 }

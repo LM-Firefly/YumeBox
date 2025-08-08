@@ -30,6 +30,7 @@ Proxy = {
         RequestSent = "测试请求已发送"
         Failed = "测试失败: %s"
         Tip = "下拉也可以测试节点 ᓚᘏᗢ"
+        InProgress = "正在测试节点"
     }
     
     Refresh = {

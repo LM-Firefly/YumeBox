@@ -41,7 +41,6 @@ import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 internal fun LazyListScope.nodeGridItems(
     proxies: List<Proxy>,
     selectedProxyName: String,
-    displayMode: ProxyDisplayMode,
     onProxyClick: ((String) -> Unit)? = null,
     isDelayTesting: Boolean = false,
     onDelayTestClick: (() -> Unit)? = null,
@@ -56,10 +55,12 @@ internal fun LazyListScope.nodeGridItems(
             isDelayTesting = isDelayTesting,
             onDelayTestClick = onDelayTestClick,
             showCountryFlag = true,
-            modifier = Modifier.padding(
-                horizontal = outerHorizontalPadding,
-                vertical = itemVerticalPadding,
-            ),
+            modifier = Modifier
+                .animateItem()
+                .padding(
+                    horizontal = outerHorizontalPadding,
+                    vertical = itemVerticalPadding,
+                ),
         )
     }
 }
@@ -91,7 +92,6 @@ internal fun NodeGrid(
         nodeGridItems(
             proxies = proxies,
             selectedProxyName = selectedProxyName,
-            displayMode = displayMode,
             onProxyClick = onProxyClick,
             isDelayTesting = isDelayTesting,
             onDelayTestClick = onDelayTestClick,

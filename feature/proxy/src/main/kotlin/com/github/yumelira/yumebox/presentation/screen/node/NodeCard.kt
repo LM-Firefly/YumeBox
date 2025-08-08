@@ -20,25 +20,12 @@
 
 package com.github.yumelira.yumebox.presentation.screen.node
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -80,8 +67,9 @@ internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
     delay == null -> null
     delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
     delay == 0 -> null
-    delay in 1..800 -> "${delay}ms" to Color(0xFF4CAF50)
-    delay in 801..5000 -> "${delay}ms" to Color(0xFFFFA726)
+    delay in 1..300 -> "${delay}ms" to Color(0xFF007906)   // 良好 - 翠绿
+    delay in 301..1000 -> "${delay}ms" to Color(0xFFFFB300)   // 一般 - 琥珀黄
+    delay in 1001..3000 -> "${delay}ms" to Color(0xFFE53935)   // 较差 - 朱红
     else -> null
 }
 
@@ -212,7 +200,7 @@ internal fun NodeCard(
                             if (m > 0f) NodeMultiplierChip(multiplier = m)
                         }
                     }
-                    if (!isDelayTesting && delayLabel != null) {
+                    if (delayLabel != null) {
                         val (delayText, delayColor) = delayLabel
                         Text(
                             text = delayText,
