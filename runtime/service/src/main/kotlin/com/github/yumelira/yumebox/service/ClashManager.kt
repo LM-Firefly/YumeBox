@@ -37,6 +37,9 @@ import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.github.yumelira.yumebox.service.runtime.util.sendOverrideChanged
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.concurrent.ConcurrentHashMap
 
 class ClashManager(private val context: Context) : IClashManager,
@@ -152,6 +155,12 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override suspend fun healthCheck(group: String) {
         return Clash.healthCheck(group).await()
+    }
+
+    override suspend fun healthCheckProxy(proxyName: String): Int {
+        val json = Clash.healthCheckProxy(proxyName).await()
+        val obj = kotlinx.serialization.json.Json.parseToJsonElement(json)
+        return obj.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
     }
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {

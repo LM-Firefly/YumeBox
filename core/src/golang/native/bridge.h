@@ -21,6 +21,8 @@ extern int (*query_socket_uid_func)(void *tun_interface, int protocol, const cha
 
 extern void (*complete_func)(void *completable, const char *exception);
 
+extern void (*complete_with_string_func)(void *completable, const char *result);
+
 extern void (*fetch_report_func)(void *fetch_callback, const char *status_json);
 
 extern void (*fetch_complete_func)(void *fetch_callback, const char *error);
@@ -37,6 +39,8 @@ extern void mark_socket(void *interface, int fd);
 extern int query_socket_uid(void *interface, int protocol, char *source, char *target);
 
 extern void complete(void *obj, char *error);
+
+extern void complete_with_string(void *obj, char *result);
 
 extern void fetch_complete(void *completable, char *exception);
 

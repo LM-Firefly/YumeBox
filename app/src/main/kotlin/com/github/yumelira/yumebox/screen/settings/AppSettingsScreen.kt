@@ -251,6 +251,12 @@ fun AppSettingsScreen(
                         checked = showTrafficNotification,
                         onCheckedChange = { viewModel.onShowTrafficNotificationChange(it) },
                     )
+                    SuperSwitch(
+                        title = MLang.AppSettings.ServiceSection.SingleNodeTestTitle,
+                        summary = MLang.AppSettings.ServiceSection.SingleNodeTestSummary,
+                        checked = viewModel.singleNodeTest.state.collectAsState().value,
+                        onCheckedChange = { viewModel.onSingleNodeTestChange(it) },
+                    )
                 }
                 SmallTitle(MLang.AppSettings.Section.Network)
                 Card {

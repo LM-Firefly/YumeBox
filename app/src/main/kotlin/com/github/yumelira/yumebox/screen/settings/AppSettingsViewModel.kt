@@ -45,6 +45,7 @@ class AppSettingsViewModel(
     val bottomBarAutoHide: Preference<Boolean> = repository.bottomBarAutoHide
     val topBarBlurEnabled: Preference<Boolean> = repository.topBarBlurEnabled
     val pageScale: Preference<Float> = repository.pageScale
+    val singleNodeTest: Preference<Boolean> = repository.singleNodeTest
 
     val customUserAgent: Preference<String> = repository.customUserAgent
 
@@ -61,6 +62,7 @@ class AppSettingsViewModel(
     fun onHideAppIconChange(hide: Boolean) = hideAppIcon.set(hide)
     fun onExcludeFromRecentsChange(exclude: Boolean) = excludeFromRecents.set(exclude)
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)
+    fun onSingleNodeTestChange(enabled: Boolean) = singleNodeTest.set(enabled)
 
     fun applyCustomUserAgent(userAgent: String) = repository.applyCustomUserAgent(userAgent)
 

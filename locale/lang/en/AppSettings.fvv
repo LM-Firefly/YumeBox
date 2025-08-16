@@ -67,6 +67,8 @@ AppSettings = {
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
+        SingleNodeTestTitle = "Single Node Test"
+        SingleNodeTestSummary = "Tap icon on node card to test individual node delay"
     }
 
     Network = {

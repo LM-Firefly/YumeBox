@@ -13,6 +13,8 @@ int (*query_socket_uid_func)(void *tun_interface, int protocol, const char *sour
 
 void (*complete_func)(void *completable, const char *exception);
 
+void (*complete_with_string_func)(void *completable, const char *result);
+
 void (*fetch_report_func)(void *fetch_callback, const char *status_json);
 
 void (*fetch_complete_func)(void *fetch_callback, const char *error);
@@ -46,6 +48,14 @@ void complete(void *obj, char *error) {
     complete_func(obj, error);
 
     free(error);
+}
+
+void complete_with_string(void *obj, char *result) {
+TRACE_METHOD();
+
+complete_with_string_func(obj, result);
+
+free(result);
 }
 
 void fetch_complete(void *fetch_callback, char *exception) {

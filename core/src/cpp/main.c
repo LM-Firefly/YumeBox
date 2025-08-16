@@ -233,6 +233,18 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeHealthCheckAll(JNIEnv 
     healthCheckAll();
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeHealthCheckProxy(JNIEnv *env, jobject thiz,
+jobject completable,
+jstring proxy_name) {
+TRACE_METHOD();
+
+jobject _completable = new_global(completable);
+scoped_string _proxy_name = get_string(proxy_name);
+
+healthCheckProxy(_completable, _proxy_name);
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativePatchSelector(JNIEnv *env, jobject thiz,
                                                                    jstring selector, jstring name) {
@@ -403,6 +415,17 @@ static void call_completable_complete_impl(void *completable, const char *except
     }
 }
 
+    static void call_completable_complete_with_string_impl(void *completable, const char *result) {
+    TRACE_METHOD();
+
+ATTACH_JNI();
+
+(*env)->CallBooleanMethod(env,
+(jobject) completable,
+(jmethodID) m_completable_complete,
+(jstring) new_string(result));
+}
+
 static void call_fetch_callback_report_impl(void *fetch_callback, const char *status_json) {
     TRACE_METHOD();
 
@@ -541,6 +564,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     mark_socket_func = &call_tun_interface_mark_socket_impl;
     query_socket_uid_func = &call_tun_interface_query_socket_uid_impl;
     complete_func = &call_completable_complete_impl;
+    complete_with_string_func = &call_completable_complete_with_string_impl;
     fetch_report_func = &call_fetch_callback_report_impl;
     fetch_complete_func = &call_fetch_callback_complete_impl;
     logcat_received_func = &call_logcat_interface_received_impl;

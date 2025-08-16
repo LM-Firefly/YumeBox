@@ -44,13 +44,13 @@ import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.BadgeDollarSign
+import com.github.yumelira.yumebox.presentation.icon.yume.CircleGauge
+import com.github.yumelira.yumebox.presentation.icon.yume.Cloud
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import com.github.yumelira.yumebox.presentation.util.extractNodeTags
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
@@ -74,24 +74,24 @@ internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
 }
 
 @Composable
-internal fun RotatingRefreshIcon(
+internal fun RotatingCircleGauge(
     isRotating: Boolean,
     modifier: Modifier = Modifier,
     tint: Color = MiuixTheme.colorScheme.primary,
     contentDescription: String? = MLang.Proxy.Action.Test,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "node_refresh_icon_rotation")
+    val infiniteTransition = rememberInfiniteTransition(label = "circle_gauge_rotation")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 1000, easing = LinearEasing),
         ),
-        label = "node_refresh_icon_rotation_value",
+        label = "circle_gauge_rotation_value",
     )
 
     Icon(
-        imageVector = MiuixIcons.Refresh,
+        imageVector = Yume.CircleGauge,
         contentDescription = contentDescription,
         tint = tint,
         modifier = if (isRotating) modifier.rotate(rotation) else modifier,
@@ -142,8 +142,10 @@ internal fun NodeCard(
     onClick: ((String) -> Unit)?,
     modifier: Modifier = Modifier,
     isDelayTesting: Boolean = false,
-    onDelayTestClick: (() -> Unit)? = null,
+    isThisProxyTesting: Boolean = false,
+    onSingleNodeTestClick: (() -> Unit)? = null,
     showCountryFlag: Boolean = true,
+    singleNodeTestEnabled: Boolean = true,
 ) {
     val onCardClick = remember(proxy.name, onClick) {
         onClick?.let { click -> { click(proxy.name) } }
@@ -200,24 +202,52 @@ internal fun NodeCard(
                             if (m > 0f) NodeMultiplierChip(multiplier = m)
                         }
                     }
-                    if (delayLabel != null) {
-                        val (delayText, delayColor) = delayLabel
-                        Text(
-                            text = delayText,
-                            style = MiuixTheme.textStyles.footnote1,
-                            color = delayColor,
-                            maxLines = 1,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .let { m ->
-                                    if (onDelayTestClick != null) m.clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onDelayTestClick,
-                                    ) else m
-                                },
-                        )
+                    when {
+                        delayLabel != null -> {
+                            val (delayText, delayColor) = delayLabel
+                            Text(
+                                text = delayText,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = delayColor,
+                                maxLines = 1,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .let { m ->
+                                        if (onSingleNodeTestClick != null && singleNodeTestEnabled) m.clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = onSingleNodeTestClick,
+                                        ) else m
+                                    },
+                            )
+                        }
+
+                        onSingleNodeTestClick != null && singleNodeTestEnabled -> {
+                            if (isThisProxyTesting) {
+                                RotatingCircleGauge(
+                                    isRotating = true,
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(16.dp),
+                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Yume.Cloud,
+                                    contentDescription = MLang.Proxy.Action.Test,
+                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(16.dp)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = onSingleNodeTestClick,
+                                        ),
+                                )
+                            }
+                        }
                     }
                 }
             }

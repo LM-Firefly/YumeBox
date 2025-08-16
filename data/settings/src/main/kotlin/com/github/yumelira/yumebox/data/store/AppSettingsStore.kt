@@ -40,6 +40,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val bottomBarAutoHide by boolFlow(true)
     val topBarBlurEnabled by boolFlow(true)
     val pageScale by floatFlow(1.0f)
+    val singleNodeTest by boolFlow(true)
 
     val customUserAgent by strFlow("")
 

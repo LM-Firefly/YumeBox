@@ -174,6 +174,12 @@ object Clash {
         }
     }
 
+    fun healthCheckProxy(proxyName: String): CompletableDeferred<String> {
+        return CompletableDeferred<String>().apply {
+            Bridge.nativeHealthCheckProxy(this, proxyName)
+        }
+    }
+
     fun healthCheckAll() {
         Bridge.nativeHealthCheckAll()
     }
