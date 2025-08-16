@@ -23,13 +23,7 @@ package com.github.yumelira.yumebox.presentation.screen.node
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,13 +43,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.state.IntColorDrawableStateImage
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
-import androidx.compose.ui.unit.sp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -240,35 +234,22 @@ internal fun NodeGroupCard(
                         )
                     }
 
-                    // Right: testing wave / delay / chevron
+                    // Right: delay / chevron
                     Box(
                         modifier = Modifier.padding(start = 8.dp),
                         contentAlignment = Alignment.CenterEnd,
                     ) {
                         when {
                             delayLabel != null -> {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    val (delayText, delayColor) = delayLabel
-                                    Text(
-                                        text = delayText,
-                                        style = MiuixTheme.textStyles.footnote1,
-                                        color = delayColor,
-                                    )
-                                    if (isDelayTesting) {
-                                        RotatingRefreshIcon(
-                                            isRotating = true,
-                                            modifier = Modifier.size(12.dp),
-                                            tint = MiuixTheme.colorScheme.primary,
-                                            contentDescription = null,
-                                        )
-                                    }
-                                }
+                                val (delayText, delayColor) = delayLabel
+                                Text(
+                                    text = delayText,
+                                    style = MiuixTheme.textStyles.footnote1,
+                                    color = delayColor,
+                                )
                             }
                             isDelayTesting -> {
-                                RotatingRefreshIcon(
+                                RotatingCircleGauge(
                                     isRotating = true,
                                     modifier = Modifier.size(14.dp),
                                     tint = MiuixTheme.colorScheme.primary,

@@ -79,6 +79,19 @@ func healthCheckAll() {
 	tunnel.HealthCheckAll()
 }
 
+//export healthCheckProxy
+func healthCheckProxy(completable unsafe.Pointer, proxyName C.c_string) {
+	go func(name string) {
+		delay := tunnel.HealthCheckProxy(name)
+
+		response := &struct {
+			Delay int `json:"delay"`
+		}{delay}
+
+		C.complete_with_string(completable, marshalJson(response))
+	}(C.GoString(proxyName))
+}
+
 //export patchSelector
 func patchSelector(selector, name C.c_string) C.int {
 	s := C.GoString(selector)

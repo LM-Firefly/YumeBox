@@ -43,9 +43,11 @@ internal fun LazyListScope.nodeGridItems(
     selectedProxyName: String,
     onProxyClick: ((String) -> Unit)? = null,
     isDelayTesting: Boolean = false,
-    onDelayTestClick: (() -> Unit)? = null,
+    testingProxyNames: Set<String> = emptySet(),
+    onSingleNodeTestClick: ((String) -> Unit)? = null,
     outerHorizontalPadding: Dp = 0.dp,
     itemVerticalPadding: Dp = 0.dp,
+    singleNodeTestEnabled: Boolean = true,
 ) {
     items(items = proxies, key = { it.name }, contentType = { "NodeCard1" }) { proxy ->
         NodeCard(
@@ -53,8 +55,10 @@ internal fun LazyListScope.nodeGridItems(
             isSelected = proxy.name == selectedProxyName,
             onClick = onProxyClick,
             isDelayTesting = isDelayTesting,
-            onDelayTestClick = onDelayTestClick,
+            isThisProxyTesting = proxy.name in testingProxyNames,
+            onSingleNodeTestClick = onSingleNodeTestClick?.let { { it(proxy.name) } },
             showCountryFlag = true,
+            singleNodeTestEnabled = singleNodeTestEnabled,
             modifier = Modifier
                 .animateItem()
                 .padding(
@@ -72,10 +76,12 @@ internal fun NodeGrid(
     displayMode: ProxyDisplayMode,
     onProxyClick: ((String) -> Unit)? = null,
     isDelayTesting: Boolean = false,
-    onDelayTestClick: (() -> Unit)? = null,
+    testingProxyNames: Set<String> = emptySet(),
+    onSingleNodeTestClick: ((String) -> Unit)? = null,
     listStateKey: String? = null,
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
+    singleNodeTestEnabled: Boolean = true,
 ) {
     val listState = rememberSaveable(listStateKey, saver = LazyListState.Saver) {
         LazyListState()
@@ -94,7 +100,9 @@ internal fun NodeGrid(
             selectedProxyName = selectedProxyName,
             onProxyClick = onProxyClick,
             isDelayTesting = isDelayTesting,
-            onDelayTestClick = onDelayTestClick,
+            testingProxyNames = testingProxyNames,
+            onSingleNodeTestClick = onSingleNodeTestClick,
+            singleNodeTestEnabled = singleNodeTestEnabled,
         )
     }
 }

@@ -380,6 +380,19 @@ class ProxyFacade(private val context: Context) {
     }
 
     /**
+     * Perform health check on a single proxy
+     * @param proxyName Proxy name
+     * @return Delay in milliseconds, or -1 if failed/timeout
+     */
+    suspend fun healthCheckProxy(proxyName: String): Int {
+        Timber.d("Health check proxy: $proxyName")
+        val delay = ServiceClient.clash().healthCheckProxy(proxyName)
+        // Refresh the proxy group to get updated delay
+        refreshProxyGroups()
+        return delay
+    }
+
+    /**
      * Query current tunnel state
      * @return TunnelState
      */

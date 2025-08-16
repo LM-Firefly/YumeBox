@@ -184,8 +184,11 @@ fun NodeSheetContent(
     displayMode: ProxyDisplayMode,
     onSelectProxy: (String) -> Unit,
     isDelayTesting: Boolean,
+    testingProxyNames: Set<String>,
     onTestDelay: () -> Unit,
+    onTestProxyDelay: (String) -> Unit,
     sheetHeightFraction: Float,
+    singleNodeTestEnabled: Boolean = true,
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
 
@@ -240,31 +243,9 @@ fun NodeSheetContent(
                 }
             },
             isDelayTesting = isDelayTesting,
-            onDelayTestClick = onTestDelay,
+            testingProxyNames = testingProxyNames,
+            onSingleNodeTestClick = onTestProxyDelay,
+            singleNodeTestEnabled = singleNodeTestEnabled,
         )
     }
-}
-
-@Composable
-internal fun NodeList(
-    group: ProxyGroupInfo,
-    displayMode: ProxyDisplayMode,
-    onProxyClick: (String) -> Unit,
-    isDelayTesting: Boolean,
-    onTestDelay: () -> Unit,
-    listStateKeyPrefix: String,
-    contentPadding: PaddingValues,
-    modifier: Modifier = Modifier,
-) {
-    NodeGrid(
-        proxies = group.proxies,
-        selectedProxyName = group.now,
-        displayMode = displayMode,
-        onProxyClick = onProxyClick,
-        isDelayTesting = isDelayTesting,
-        onDelayTestClick = onTestDelay,
-        listStateKey = "$listStateKeyPrefix:${group.name}",
-        contentPadding = contentPadding,
-        modifier = modifier,
-    )
 }
