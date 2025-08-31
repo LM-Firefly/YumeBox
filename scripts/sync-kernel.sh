@@ -3,8 +3,8 @@ set -eu
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 KERNEL_PROPERTIES="$PROJECT_ROOT/kernel.properties"
-GOLANG_ROOT="$PROJECT_ROOT/core/src/foss/golang"
-GOLANG_MAIN="$PROJECT_ROOT/core/src/golang"
+GOLANG_ROOT="$PROJECT_ROOT/lib/mihomo"
+GOLANG_MAIN="$PROJECT_ROOT/lib/native/go"
 MIHOMO_DIR="$GOLANG_ROOT/mihomo"
 
 usage() {

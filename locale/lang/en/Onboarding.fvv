@@ -1,18 +1,20 @@
 <Onboarding>
 Onboarding = {
     Navigation = {
+        Back = "Back"
         Next = "Next"
-        Start = "Get Started"
+        Start = "Start Setup"
+        Enter = "Enter App"
     }
 
     Welcome = {
-        Title = "Welcome to YumeBox"
-        Subtitle = "Open-source, free and secure beautiful proxy tool"
+        Title = "YumeBox"
+        Subtitle = "Confirm notifications, permissions, and theme to get started"
     }
 
     Permission = {
-        Title = "Grant Permissions"
-        Subtitle = "For a better experience, please grant the following permissions"
+        Title = "Confirm Runtime Access"
+        Subtitle = "Permissions affect notifications and per-app proxy features"
 
         Common = {
             Granted = "Granted"
@@ -31,30 +33,45 @@ Onboarding = {
     }
 
     Privacy = {
-        Title = "Privacy & Terms"
-        Subtitle = "We value your privacy. Please read carefully"
+        Title = "Confirm Privacy Terms"
+        Subtitle = "Review and accept the terms to continue"
+        RichTextLead = "You need to accept the privacy terms before using YumeBox."
+        RichTextPrefix = "Before continuing, please review and accept "
+        RichTextConnector = " and "
+        RichTextSuffix = "."
+        TermsLink = "Terms of Use"
+        PolicyLink = "Privacy Policy"
         Policy = {
             Title = "Privacy Policy"
             Summary = "Tap to view"
         }
         Accept = {
             Title = "I have read and agree to the privacy policy"
+            Summary = "Once confirmed, you can continue and review the policy again later in settings"
         }
         Error = {
             NotAccepted = "Please read and accept the terms first"
         }
     }
 
+    Personalize = {
+        Title = "Tune the Interface"
+        Subtitle = "Theme mode and accent color can be changed anytime in settings"
+    }
+
+    Finish = {
+        Title = "Ready to Go"
+        Subtitle = "Setup complete, entering the main app"
+    }
+
     Project = {
-        Title = "About Project"
-        Subtitle = "Open-source. Thanks for your support"
         Github = {
             Title = "GitHub Repo"
             Summary = "github.com/YumeLira/YumeBox"
         }
         Community = {
             Title = "Community"
-            Summary = "Join our community chat"
+            Summary = "Jump into the channel or chat"
         }
     }
 
@@ -64,4 +81,3 @@ Onboarding = {
         LoadFailed = "Failed to load policy content"
     }
 }
-

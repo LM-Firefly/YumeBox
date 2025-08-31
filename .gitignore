@@ -79,3 +79,5 @@ Thumbs.db
 sentry.properties
 /.pensieve/
 /CLAUDE.md
+/docs/override-merge-plan/
+/docs/config/

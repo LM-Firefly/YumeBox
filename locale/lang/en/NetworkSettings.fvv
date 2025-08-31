@@ -3,16 +3,18 @@ NetworkSettings = {
     Title = "Network Settings"
     
     Section = {
-        VpnService = "VPN Service"
-        VpnOptions = "VPN Service Options"
-        ProxyOptions = "Proxy Options"
+        VpnService = "Proxy Mode"
+        VpnOptions = "Service Options"
+        ProxyOptions = "Access Control"
+        RootTunAdvanced = "RootTun Advanced"
     }
     
     VpnService = {
         RouteTrafficTitle = "Route System Traffic"
-        RouteTrafficSummary = "Select traffic routing method for all traffic"
+        RouteTrafficSummary = "Select which proxy mode should take over system traffic"
         VpnMode = "VPN Mode"
-        SystemProxy = "System Proxy"
+        RootTunMode = "Root TUN"
+        SystemProxy = "HTTP System Proxy"
     }
     
     VpnOptions = {
@@ -24,8 +26,9 @@ NetworkSettings = {
         AllowBypassSummary = "Allow apps to bypass VPN"
         EnableIpv6Title = "Enable IPv6"
         EnableIpv6Summary = "Allow IPv6 traffic through VPN"
-        SystemProxyTitle = "System Proxy"
-        SystemProxySummary = "Set HTTP proxy for non-VPN apps"
+        SystemProxyTitle = "VPN Built-in System Proxy"
+        SystemProxySummary = "Only in VPN mode, set an HTTP proxy for apps outside the TUN path"
+        HttpModeSummary = "System proxy mode does not require extra parameters"
     }
     
     ProxyOptions = {
@@ -37,10 +40,36 @@ NetworkSettings = {
         ManageAccessControlTitle = "Manage Access Control"
         ManageAccessControlSummary = "Configure access control rules for apps and domains"
     }
+
+    RootTun = {
+        IfNameTitle = "Interface Name"
+        IfNameSummary = "Virtual interface name created by RootTun"
+        MtuTitle = "MTU"
+        MtuSummary = "Maximum transmission unit used by RootTun"
+        AutoRouteTitle = "Auto Route"
+        AutoRouteSummary = "Automatically add required routes"
+        StrictRouteTitle = "Strict Route"
+        StrictRouteSummary = "Only matched traffic is routed into RootTun"
+        AutoRedirectTitle = "Auto Redirect"
+        AutoRedirectSummary = "Automatically enable required redirect rules"
+        IncludeAndroidUserTitle = "Android Users"
+        IncludeAndroidUserSummary = "Comma-separated Android user ids, such as 0,10"
+        RouteExcludeAddressTitle = "Route Exclude Address"
+        RouteExcludeAddressSummary = "CIDRs excluded from RootTun, separated by commas or new lines"
+        DnsModeTitle = "DNS Mode"
+        DnsModeSummary = "Choose between RedirHost and FakeIP"
+        DnsModeRedirHost = "RedirHost"
+        DnsModeFakeIp = "FakeIP"
+        FakeIpRangeTitle = "FakeIP IPv4 Range"
+        FakeIpRangeSummary = "Only effective when DNS mode is FakeIP"
+        FakeIpRange6Title = "FakeIP IPv6 Range"
+        FakeIpRange6Summary = "Only effective when DNS mode is FakeIP"
+    }
     
     RestartService = {
         Title = "Restart Service to Apply"
         Summary = "Service is running, restart required to apply new configuration"
+        Action = "Restart Now"
     }
     
     Error = {

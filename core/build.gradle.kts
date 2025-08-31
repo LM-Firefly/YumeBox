@@ -1,17 +1,74 @@
-@file:Suppress("UnstableApiUsage")
-
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.ByteArrayOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
 
 plugins {
     id("com.android.library")
     kotlin("plugin.serialization")
-    id("yumebox.base.android")
-    id("yumebox.golang.config")
-    id("yumebox.golang.tasks")
+}
+
+
+android {
+    namespace = gropify.project.namespace.core
+    compileSdk = gropify.android.compileSdk
+
+    val ndkVersionValue = gropify.android.ndkVersion
+    if (ndkVersionValue.isNotBlank()) {
+        ndkVersion = ndkVersionValue
+    }
+
+    defaultConfig {
+        minSdk = gropify.android.minSdk
+        consumerProguardFiles("consumer-rules.pro")
+    }
+
+    compileOptions {
+        val javaVer = gropify.android.jvm
+        sourceCompatibility = JavaVersion.toVersion(javaVer)
+        targetCompatibility = JavaVersion.toVersion(javaVer)
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.kotlin_module",
+                "DebugProbesKt.bin",
+            )
+        }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src")
+            res.srcDirs("res")
+            assets.srcDirs("assets")
+            aidl.srcDirs("aidl")
+            resources.srcDirs("resources")
+            if (project.file("AndroidManifest.xml").isFile) {
+                manifest.srcFile("AndroidManifest.xml")
+            }
+        }
+    }
 }
 
 dependencies {
@@ -21,192 +78,3 @@ dependencies {
     implementation("androidx.annotation:annotation-jvm:${gropify.dep.version.annotationJvm}")
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
-
-val sixteenKbPageLinkerFlags = listOf("-Wl,-z,max-page-size=16384", "-Wl,-z,common-page-size=16384")
-val cmakePageLinkerArgument = "-DYUMEBOX_LINKER_FLAGS:STRING=${sixteenKbPageLinkerFlags.joinToString(" ")}"
-val golangSourceDir = file("src/golang/native")
-val golangOutputDir = layout.buildDirectory.dir("golang")
-
-val pruneStaleGolangOutputs = tasks.register("pruneStaleGolangOutputs") {
-    group = "golang"
-    description = "Remove stale golang outputs"
-    val outputRoot = golangOutputDir.get().asFile
-    val golangAbiFolders = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-
-    inputs.dir(outputRoot)
-        .skipWhenEmpty()
-
-    doLast {
-        if (!outputRoot.exists()) return@doLast
-        outputRoot.listFiles()
-            ?.filter { it.isDirectory && it.name !in golangAbiFolders }
-            ?.forEach { stale ->
-                stale.deleteRecursively()
-                logger.info("Removed stale Golang output directory: ${stale.absolutePath}")
-            }
-    }
-}
-
-abstract class GitCommandValueSource : ValueSource<String, GitCommandValueSource.Parameters> {
-    interface Parameters : ValueSourceParameters {
-        val workingDir: DirectoryProperty
-        val args: ListProperty<String>
-    }
-    
-    @get:Inject
-    abstract val execOperations: ExecOperations
-    
-    override fun obtain(): String {
-        val output = ByteArrayOutputStream()
-        val result = execOperations.exec {
-            workingDir = parameters.workingDir.get().asFile
-            commandLine(listOf("git") + parameters.args.get())
-            standardOutput = output
-            errorOutput = ByteArrayOutputStream()
-            isIgnoreExitValue = true
-        }
-        return if (result.exitValue == 0) output.toString().trim() else "unknown"
-    }
-}
-
-val mihomoDir = layout.projectDirectory.dir("src/foss/golang/mihomo")
-
-val gitCommitProvider: Provider<String> = providers.of(GitCommandValueSource::class) {
-    parameters {
-        workingDir.set(mihomoDir)
-        args.set(listOf("rev-parse", "--short", "HEAD"))
-    }
-}
-
-val gitBranchProvider: Provider<String> = providers.of(GitCommandValueSource::class) {
-    parameters {
-        workingDir.set(mihomoDir)
-        args.set(listOf("branch", "--show-current"))
-    }
-}
-
-val kernelProps = Properties()
-val kernelFile = rootProject.file("kernel.properties")
-if (kernelFile.exists()) {
-    kernelFile.inputStream().use { kernelProps.load(it) }
-}
-val mihomoSuffix = kernelProps.getProperty("external.mihomo.suffix", "")!!
-val includeTimestamp = kernelProps.getProperty("external.mihomo.includeTimestamp", "false").toBoolean()
-val buildTimestampProvider: Provider<String> = providers.provider {
-    if (includeTimestamp) SimpleDateFormat("yyMMdd").format(Date()) else ""
-}
-
-abstract class MihomoGitInfoTask : DefaultTask() {
-    @get:Input
-    abstract val gitCommit: Property<String>
-    
-    @get:Input
-    abstract val gitBranch: Property<String>
-    
-    @get:Input
-    abstract val gitSuffix: Property<String>
-    
-    @get:Input
-    abstract val buildTimestamp: Property<String>
-    
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
-    
-    @TaskAction
-    fun execute() {
-        val versionInfo = mapOf(
-            "GIT_COMMIT_HASH" to gitCommit.get(),
-            "GIT_BRANCH" to gitBranch.get(),
-            "GIT_SUFFIX" to gitSuffix.get(),
-            "BUILD_TIMESTAMP" to buildTimestamp.get()
-        )
-        
-        outputFile.get().asFile.apply {
-            parentFile.mkdirs()
-            writeText(versionInfo.entries.joinToString("\n") { "${it.key}=${it.value}" })
-        }
-        
-        logger.lifecycle("Mihomo Git Info - Commit: ${gitCommit.get()}, Branch: ${gitBranch.get()}, Suffix: '${gitSuffix.get()}', Timestamp: '${buildTimestamp.get()}'")
-    }
-}
-
-val getMihomoGitInfoTask = tasks.register<MihomoGitInfoTask>("getMihomoGitInfo") {
-    group = "build"
-    description = "Save mihomo git information for version building"
-    
-    gitCommit.set(gitCommitProvider)
-    gitBranch.set(gitBranchProvider)
-    gitSuffix.set(mihomoSuffix)
-    buildTimestamp.set(buildTimestampProvider)
-    outputFile.set(layout.buildDirectory.file("git-info/mihomo-git-info.txt"))
-}
-
-android {
-    namespace = gropify.project.namespace.core
-
-    defaultConfig {
-        consumerProguardFiles("consumer-rules.pro")
-        externalNativeBuild {
-            cmake {
-                arguments(
-                    "-DGO_SOURCE:STRING=${golangSourceDir.absolutePath}",
-                    "-DGO_OUTPUT:STRING=${golangOutputDir.get().asFile.absolutePath}",
-                    cmakePageLinkerArgument,
-                    "-DGIT_COMMIT_HASH:STRING=${gitCommitProvider.get()}",
-                    "-DGIT_BRANCH:STRING=${gitBranchProvider.get()}",
-                    "-DGIT_SUFFIX:STRING=${mihomoSuffix}",
-                    "-DBUILD_TIMESTAMP:STRING=${buildTimestampProvider.get()}",
-                )
-            }
-        }
-    }
-
-    sourceSets {
-        named("main") {
-            kotlin.srcDirs("src/kotlin")
-            jniLibs.srcDirs("src/jniLibs")
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path = file("src/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
-}
-
-val moduleJvmTarget = gropify.project.jvm.toString()
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(moduleJvmTarget))
-}
-
-val abiTaskSuffixes = listOf("arm64v8a", "armeabiv7a", "x86", "x86_64")
-
-tasks.configureEach {
-    if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
-        abiTaskSuffixes.forEach { abi ->
-            dependsOn("buildGolang$abi")
-            dependsOn("copy${abi}ClashLib")
-        }
-    }
-}
-
-tasks.configureEach {
-    if (name.startsWith("buildCMake")) {
-        val abi = when {
-            name.contains("arm64-v8a") -> "arm64v8a"
-            name.contains("armeabi-v7a") -> "armeabiv7a"
-            name.contains("x86_64") -> "x86_64"
-            name.contains("x86") -> "x86"
-            else -> null
-        }
-        abi?.let {
-            dependsOn("buildGolang$it")
-            dependsOn("copy${it}ClashLib")
-            dependsOn(getMihomoGitInfoTask)
-        }
-    }
-}
-
-

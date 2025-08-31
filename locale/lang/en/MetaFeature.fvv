@@ -62,7 +62,7 @@ MetaFeature = {
         ImportModelTitle = "Import Model file"
         ImportModelSummary = "Import Custom Model Database"
         OnlineUpdateTitle = "Update GeoX"
-        OnlineUpdateSummary = "Download GeoIP, GeoSite, Country.mmdb, ASN.mmdb"
+        OnlineUpdateSummary = "Download Database"
     }
 
     Download = {

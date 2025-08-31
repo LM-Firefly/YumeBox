@@ -1,0 +1,326 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
+
+
+package com.github.yumelira.yumebox.presentation.screen
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
+import com.github.yumelira.yumebox.presentation.icon.yume.Delete
+import com.github.yumelira.yumebox.presentation.icon.yume.Undo
+import com.github.yumelira.yumebox.presentation.util.OverrideListEditorMode
+import com.github.yumelira.yumebox.presentation.util.OverrideListModeValues
+import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+@Composable
+fun OverrideStringListEditorScreen(
+    navigator: DestinationsNavigator,
+) {
+    val scrollBehavior = MiuixScrollBehavior()
+    val listState = rememberLazyListState()
+    val title = OverrideStructuredEditorStore.stringListEditorTitle.ifBlank { "列表" }
+    val placeholder = OverrideStructuredEditorStore.stringListEditorPlaceholder
+    val availableModes = OverrideStructuredEditorStore.stringListEditorAvailableModes
+    var showItemDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    var editingIndex by remember { mutableIntStateOf(-1) }
+    var currentDraftValue by remember { mutableStateOf("") }
+    val addFabController = rememberOverrideFabController()
+    val selectedMode = OverrideStructuredEditorStore.stringListEditorSelectedMode
+    val editorValues = remember(OverrideStructuredEditorStore.stringListEditorValues) {
+        OverrideListModeValues(
+            replaceValue = OverrideStructuredEditorStore.stringListEditorValues.replaceValue?.toList(),
+            startValue = OverrideStructuredEditorStore.stringListEditorValues.startValue?.toList(),
+            endValue = OverrideStructuredEditorStore.stringListEditorValues.endValue?.toList(),
+        )
+    }
+
+    val currentItems = editorValues.valueFor(selectedMode).orEmpty()
+    val selectedModeIndex = availableModes.indexOf(selectedMode).coerceAtLeast(0)
+    val showAddFab = !showItemDialog && !showResetDialog
+
+    fun currentStringListValues(): OverrideListModeValues<List<String>> {
+        val latestValues = OverrideStructuredEditorStore.stringListEditorValues
+        return OverrideListModeValues(
+            replaceValue = latestValues.replaceValue?.toList(),
+            startValue = latestValues.startValue?.toList(),
+            endValue = latestValues.endValue?.toList(),
+        )
+    }
+
+    fun applyStringListValues(values: OverrideListModeValues<List<String>>) {
+        OverrideStructuredEditorStore.applyStringListValues(
+            OverrideListModeValues(
+                replaceValue = values.replaceValue?.toList(),
+                startValue = values.startValue?.toList(),
+                endValue = values.endValue?.toList(),
+            ),
+        )
+    }
+
+    Scaffold(
+        floatingActionButton = {
+            OverrideAnimatedFab(
+                controller = addFabController,
+                visible = showAddFab,
+                imageVector = Yume.`Badge-plus`,
+                contentDescription = "新增条目",
+                onClick = {
+                    editingIndex = -1
+                    currentDraftValue = ""
+                    showItemDialog = true
+                },
+            )
+        },
+        topBar = {
+            TopBar(
+                title = title,
+                scrollBehavior = scrollBehavior,
+                actions = {
+                    IconButton(
+                        onClick = { showResetDialog = true },
+                        modifier = Modifier.padding(end = 24.dp),
+                    ) {
+                        Icon(
+                            imageVector = Yume.Undo,
+                            contentDescription = "清空当前模式",
+                        )
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        ScreenLazyColumn(
+            scrollBehavior = scrollBehavior,
+            innerPadding = innerPadding,
+            topPadding = 20.dp,
+            lazyListState = listState,
+            onScrollDirectionChanged = addFabController::onScrollDirectionChanged,
+        ) {
+            item {
+                Card {
+                    WindowDropdown(
+                        title = "修饰符模式",
+                        items = availableModes.map(OverrideListEditorMode::label),
+                        selectedIndex = selectedModeIndex,
+                        onSelectedIndexChange = { index ->
+                            val newMode = availableModes.getOrElse(index) { selectedMode }
+                            OverrideStructuredEditorStore.updateStringListEditorSession(selectedMode = newMode)
+                        },
+                    )
+                }
+            }
+
+            if (currentItems.isNotEmpty()) {
+                itemsIndexed(currentItems) { index, itemValue ->
+                    StringListEntryCard(
+                        index = index + 1,
+                        value = itemValue,
+                        onEdit = {
+                            editingIndex = index
+                            currentDraftValue = itemValue
+                            showItemDialog = true
+                        },
+                        onDelete = {
+                            val mode = OverrideStructuredEditorStore.stringListEditorSelectedMode
+                            val latestValues = currentStringListValues()
+                            val updatedValues = latestValues.update(
+                                mode,
+                                latestValues.valueFor(mode).orEmpty().toMutableList().also { items ->
+                                    items.removeAt(index)
+                                },
+                            )
+                            applyStringListValues(updatedValues)
+                        },
+                    )
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(OverrideSectionBottomSpacing))
+            }
+        }
+
+        StringListEntryDialog(
+            show = showItemDialog,
+            title = if (editingIndex >= 0) "编辑条目" else "新增条目",
+            placeholder = placeholder,
+            initialValue = currentDraftValue,
+            onConfirm = { updatedValue ->
+                val normalizedValue = updatedValue.trim()
+                if (normalizedValue.isBlank()) {
+                    return@StringListEntryDialog
+                }
+                val updatedItems = currentItems.toMutableList().also { items ->
+                    if (editingIndex in items.indices) {
+                        items[editingIndex] = normalizedValue
+                    } else {
+                        items.add(normalizedValue)
+                    }
+                }
+                val mode = OverrideStructuredEditorStore.stringListEditorSelectedMode
+                val updatedValues = currentStringListValues().update(mode, updatedItems)
+                applyStringListValues(updatedValues)
+                editingIndex = -1
+                currentDraftValue = ""
+                showItemDialog = false
+            },
+            onDismiss = {
+                editingIndex = -1
+                currentDraftValue = ""
+                showItemDialog = false
+            },
+        )
+
+        AppDialog(
+            show = showResetDialog,
+            title = "清空当前模式",
+            summary = "清空后将移除当前修饰符模式里的全部条目。",
+            onDismissRequest = { showResetDialog = false },
+        ) {
+            DialogButtonRow(
+                onCancel = { showResetDialog = false },
+                onConfirm = {
+                    showResetDialog = false
+                    val mode = OverrideStructuredEditorStore.stringListEditorSelectedMode
+                    applyStringListValues(currentStringListValues().update(mode, emptyList()))
+                },
+                cancelText = "取消",
+                confirmText = "清空",
+            )
+        }
+    }
+}
+
+@Composable
+private fun StringListEntryCard(
+    index: Int,
+    value: String,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.padding(top = 12.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onEdit)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "$index.",
+                style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.width(40.dp),
+            )
+            Text(
+                text = value,
+                style = MiuixTheme.textStyles.body1,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp),
+            )
+            OverrideCardActionIconButton(
+                imageVector = Yume.Delete,
+                contentDescription = "删除条目",
+                onClick = onDelete,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StringListEntryDialog(
+    show: Boolean,
+    title: String,
+    placeholder: String,
+    initialValue: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (!show) {
+        return
+    }
+
+    var draftValue by remember(show, initialValue) { mutableStateOf(initialValue) }
+
+    AppDialog(
+        show = show,
+        title = title,
+        onDismissRequest = onDismiss,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            TextField(
+                value = draftValue,
+                onValueChange = { draftValue = it },
+                label = placeholder,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("取消")
+                }
+                Button(
+                    onClick = { onConfirm(draftValue) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColorsPrimary(),
+                ) {
+                    Text(
+                        "确认",
+                    color = MiuixTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+        }
+    }
+}

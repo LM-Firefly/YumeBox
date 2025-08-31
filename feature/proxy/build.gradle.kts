@@ -1,13 +1,85 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
 
 plugins {
     id("com.android.library")
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
-    id("yumebox.base.android")
 }
 
 android {
     namespace = "com.github.yumelira.yumebox.feature.proxy"
+    compileSdk = gropify.android.compileSdk
+
+    val ndkVersionValue = gropify.android.ndkVersion
+    if (ndkVersionValue.isNotBlank()) {
+        ndkVersion = ndkVersionValue
+    }
+
+    defaultConfig {
+        minSdk = gropify.android.minSdk
+    }
+
+    compileOptions {
+        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
+        sourceCompatibility = JavaVersion.toVersion(javaVer)
+        targetCompatibility = JavaVersion.toVersion(javaVer)
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.kotlin_module",
+                "DebugProbesKt.bin",
+            )
+        }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src")
+            res.srcDirs("res")
+            assets.srcDirs("assets")
+            aidl.srcDirs("aidl")
+            resources.srcDirs("resources")
+            if (project.file("AndroidManifest.xml").isFile) {
+                manifest.srcFile("AndroidManifest.xml")
+            }
+        }
+        getByName("test") {
+            java.setSrcDirs(emptyList<String>())
+            resources.setSrcDirs(emptyList<String>())
+            assets.setSrcDirs(emptyList<String>())
+        }
+        getByName("androidTest") {
+            java.setSrcDirs(emptyList<String>())
+            res.setSrcDirs(emptyList<String>())
+            assets.setSrcDirs(emptyList<String>())
+            aidl.setSrcDirs(emptyList<String>())
+            resources.setSrcDirs(emptyList<String>())
+        }
+    }
 
     buildFeatures {
         compose = true
@@ -17,6 +89,7 @@ android {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":platform"))
     implementation(project(":locale"))
     implementation(project(":ui"))
     implementation(project(":data:proxy"))
@@ -30,7 +103,6 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.activity:activity-compose:${gropify.dep.version.activityCompose}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${gropify.dep.version.lifecycle}")
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
     implementation("io.insert-koin:koin-android:${gropify.dep.version.koin}")
@@ -43,5 +115,3 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
 }
-
-

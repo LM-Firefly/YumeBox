@@ -1,0 +1,73 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
+
+
+package com.github.yumelira.yumebox.feature.editor.theme
+
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
+import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
+import io.github.rosemoe.sora.widget.CodeEditor
+
+object EditorThemeManager {
+
+    @Composable
+    fun rememberEditorTheme(): EditorThemeState {
+        val isDark = isSystemInDarkTheme()
+
+        return remember(isDark) {
+            EditorThemeState(
+                isDark = isDark,
+                themeName = if (isDark) "ayu-dark" else "quietlight"
+            )
+        }
+    }
+
+    fun applyTheme(editor: CodeEditor) {
+        try {
+            val themeRegistry = ThemeRegistry.getInstance()
+            editor.colorScheme = TextMateColorScheme.create(themeRegistry)
+        } catch (e: Exception) {
+
+            editor.colorScheme = EditorColorSynchronizer.createColorScheme(false)
+        }
+    }
+
+    fun updateTheme(editor: CodeEditor, isDark: Boolean) {
+        val themeName = if (isDark) "ayu-dark" else "quietlight"
+
+        try {
+            ThemeRegistry.getInstance().setTheme(themeName)
+
+            editor.colorScheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
+        } catch (e: Exception) {
+
+            editor.colorScheme = EditorColorSynchronizer.createColorScheme(isDark)
+        }
+    }
+}
+
+data class EditorThemeState(
+    val isDark: Boolean,
+    val themeName: String
+)

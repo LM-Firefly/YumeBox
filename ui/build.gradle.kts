@@ -14,20 +14,72 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2026.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
-
 
 plugins {
     id("com.android.library")
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
-    id("yumebox.base.android")
 }
 
 android {
     namespace = "com.github.yumelira.yumebox.core.ui"
+    compileSdk = gropify.android.compileSdk
+
+    val ndkVersionValue = gropify.android.ndkVersion
+    if (ndkVersionValue.isNotBlank()) {
+        ndkVersion = ndkVersionValue
+    }
+
+    defaultConfig {
+        minSdk = gropify.android.minSdk
+    }
+
+    compileOptions {
+        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
+        sourceCompatibility = JavaVersion.toVersion(javaVer)
+        targetCompatibility = JavaVersion.toVersion(javaVer)
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.kotlin_module",
+                "DebugProbesKt.bin",
+            )
+        }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src")
+            res.srcDirs("res")
+            assets.srcDirs("assets")
+            aidl.srcDirs("aidl")
+            resources.srcDirs("resources")
+            if (project.file("AndroidManifest.xml").isFile) {
+                manifest.srcFile("AndroidManifest.xml")
+            }
+        }
+        getByName("test") {
+            java.setSrcDirs(emptyList<String>())
+            resources.setSrcDirs(emptyList<String>())
+            assets.setSrcDirs(emptyList<String>())
+        }
+        getByName("androidTest") {
+            java.setSrcDirs(emptyList<String>())
+            res.setSrcDirs(emptyList<String>())
+            assets.setSrcDirs(emptyList<String>())
+            aidl.setSrcDirs(emptyList<String>())
+            resources.setSrcDirs(emptyList<String>())
+        }
+    }
 
     buildFeatures {
         compose = true
@@ -51,9 +103,8 @@ dependencies {
     implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
     implementation("io.coil-kt.coil3:coil-compose:${gropify.dep.version.coil3}")
     implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
+    implementation("io.github.fletchmckee.liquid:liquid:${gropify.dep.version.liquid}")
     implementation("io.github.kyant0:shapes:1.2.0")
     implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
 }
-
-
