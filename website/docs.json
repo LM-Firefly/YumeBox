@@ -1,0 +1,116 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "An open-source Android client based on the mihomo kernel",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "favicon": "/logo/logo.webp",
+  "banner": {
+    "content": "0.5.0 版本现已上线！查看[更新日志](/update/history)了解详情",
+    "dismissible": true
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "cn",
+        "groups": [
+          {
+            "group": "文档",
+            "icon": "book-open",
+            "pages": [
+              "/index",
+              "/update/history"
+            ]
+          },
+          {
+            "group": "覆写",
+            "icon": "sliders-horizontal",
+            "pages": [
+              "/override/index",
+              "/override/fields"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "logo": {
+    "light": "/logo/logo.webp",
+    "dark": "/logo/logo.webp"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "https://github.com/YumeLira/YumeBox/issues"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Github",
+      "href": "https://github.com/YumeLira/YumeBox"
+    }
+  },
+  "contextual": {
+    "options": [
+     "copy",
+     "view",
+     "chatgpt",
+     "claude",
+     "perplexity",
+     "mcp",
+     "cursor",
+     "vscode"
+   ]
+  },
+  "seo": {
+    "metatags": {
+      "robots": "index, follow",
+      "charset": "UTF-8",
+      "viewport": "width=device-width, initial-scale=1.0",
+      "googlebot": "index, follow",
+      "generator": "YumeBox",
+      "theme-color": "#f56c6c",
+      "format-detection": "telephone=no",
+      "referrer": "origin",
+      "rating": "general",
+      "revisit-after": "7 days",
+      "language": "en-US",
+      "copyright": "YumeLira",
+      "distribution": "global",
+      "HandheldFriendly": "True",
+      "MobileOptimized": "320",
+      "apple-mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-status-bar-style": "black",
+      "apple-mobile-web-app-title": "YumeBox",
+      "application-name": "YumeBox",
+      "msapplication-TileColor": "#f56c6c",
+      "og:type": "website",
+      "og:image": "https://repository-images.githubusercontent.com/1031102671/5fb1c2b1-94a3-468b-845c-5bc04ae537d4",
+      "og:site_name": "YumeBox",
+      "og:locale": "en_US"
+    }
+  },
+  "metadata": {
+    "timestamp": true
+  },
+  "footer": {
+    "socials": {
+      "telegram": "https://t.me/OOM_Group",
+      "github": "https://github.com/YumeYuka"
+    }
+  },
+  "errors": {
+    "404": {
+      "redirect": true,
+      "title": "Page not found",
+      "description": "The page you requested does not exist."
+    }
+  }
+}

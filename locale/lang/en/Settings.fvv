@@ -21,6 +21,7 @@ Settings = {
     More = {
         TrafficStatistics = "Traffic Statistics"
         OnboardingWizard = "Onboarding Wizard"
+        OnboardingWizardSummary = "Replay the redesigned onboarding flow"
         Lab = "Lab"
         LabSummary = "SubStore · Experiments"
         Logs = "Logs"

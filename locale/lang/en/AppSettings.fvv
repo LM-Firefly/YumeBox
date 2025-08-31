@@ -39,6 +39,8 @@ AppSettings = {
 
         TopBarBlurTitle = "Blur Top Bar"
         TopBarBlurSummary = "Apply a dynamic blur background to the top bar while scrolling"
+        BottomBarLiquidGlassTitle = "Liquid Glass Bottom Bar"
+        BottomBarLiquidGlassSummary = "Enable sampled liquid glass refraction for the bottom navigation bar"
 
         AutoHideNavbarTitle = "Auto-hide Navbar"
         AutoHideNavbarSummary = "Hide navbar on scroll down and show on scroll up"

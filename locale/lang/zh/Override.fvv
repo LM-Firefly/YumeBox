@@ -71,7 +71,6 @@ Override = {
         SkipDomain = "跳过嗅探域名"
         SkipSrcAddress = "跳过源地址"
         SkipDstAddress = "跳过目标地址"
-        PrependRules = "追加规则"
         RulesReplace = "覆盖规则"
         RouteObjects = "路由对象（Rule Providers / Proxy Groups / Sub Rules）"
     }

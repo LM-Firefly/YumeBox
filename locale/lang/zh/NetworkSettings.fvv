@@ -3,16 +3,18 @@ NetworkSettings = {
     Title = "网络设置"
     
     Section = {
-        VpnService = "VPN 服务"
-        VpnOptions = "VPN 服务选项"
-        ProxyOptions = "代理选项"
+        VpnService = "代理模式"
+        VpnOptions = "服务配置"
+        ProxyOptions = "访问控制"
+        RootTunAdvanced = "RootTun 高级配置"
     }
     
     VpnService = {
         RouteTrafficTitle = "路由系统流量"
-        RouteTrafficSummary = "选择流量路由方式所有的流量"
+        RouteTrafficSummary = "选择当前用于接管系统流量的代理模式"
         VpnMode = "VPN 模式"
-        SystemProxy = "系统代理"
+        RootTunMode = "Root TUN"
+        SystemProxy = "HTTP 系统代理"
     }
     
     VpnOptions = {
@@ -24,8 +26,9 @@ NetworkSettings = {
         AllowBypassSummary = "允许应用绕过 VPN"
         EnableIpv6Title = "运行 IPv6"
         EnableIpv6Summary = "允许通过 VPN 路由 IPv6 流量"
-        SystemProxyTitle = "系统代理"
-        SystemProxySummary = "为非 VPN 应用设置 HTTP 代理"
+        SystemProxyTitle = "VPN 系统代理"
+        SystemProxySummary = "仅在 VPN 模式下，为未走 TUN 的应用设置 HTTP 代理"
+        HttpModeSummary = "系统代理模式不需要额外参数"
     }
     
     ProxyOptions = {
@@ -37,10 +40,36 @@ NetworkSettings = {
         ManageAccessControlTitle = "管理访问控制列表"
         ManageAccessControlSummary = "为应用和域名配置访问控制规则"
     }
+
+    RootTun = {
+        IfNameTitle = "接口名称"
+        IfNameSummary = "RootTun 创建的虚拟网卡名"
+        MtuTitle = "MTU"
+        MtuSummary = "RootTun 链路的最大传输单元"
+        AutoRouteTitle = "自动路由"
+        AutoRouteSummary = "自动添加转发所需路由"
+        StrictRouteTitle = "严格路由"
+        StrictRouteSummary = "仅允许命中的流量走 RootTun"
+        AutoRedirectTitle = "自动重定向"
+        AutoRedirectSummary = "自动启用 RootTun 所需的重定向规则"
+        IncludeAndroidUserTitle = "Android 用户"
+        IncludeAndroidUserSummary = "逗号分隔的 Android user id，例如 0,10"
+        RouteExcludeAddressTitle = "排除路由地址"
+        RouteExcludeAddressSummary = "逗号或换行分隔，不走 RootTun 的 CIDR"
+        DnsModeTitle = "DNS 模式"
+        DnsModeSummary = "选择 RedirHost 或 FakeIP"
+        DnsModeRedirHost = "RedirHost"
+        DnsModeFakeIp = "FakeIP"
+        FakeIpRangeTitle = "FakeIP IPv4 地址段"
+        FakeIpRangeSummary = "仅在 FakeIP 模式下生效"
+        FakeIpRange6Title = "FakeIP IPv6 地址段"
+        FakeIpRange6Summary = "仅在 FakeIP 模式下生效"
+    }
     
     RestartService = {
         Title = "重启服务以应用设置"
         Summary = "当前服务正在运行，需要重启以应用新的配置"
+        Action = "立即重启"
     }
     
     Error = {

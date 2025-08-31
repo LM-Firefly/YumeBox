@@ -21,6 +21,7 @@ Settings = {
     More = {
         TrafficStatistics = "流量统计"
         OnboardingWizard = "初始化向导"
+        OnboardingWizardSummary = "重新体验新的引导页"
         Lab = "实验室"
         LabSummary = "SubStore · 实验功能"
         Logs = "日志"

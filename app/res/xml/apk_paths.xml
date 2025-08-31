@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-cache-path name="external_apk_update" path="apkupdate/" />
+    <cache-path name="apk_update" path="apkupdate/" />
+    <root-path name="root_apk_update" path="storage/" />
+</paths>

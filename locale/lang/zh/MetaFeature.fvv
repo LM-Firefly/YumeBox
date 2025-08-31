@@ -62,7 +62,7 @@ MetaFeature = {
         ImportModelTitle = "导入 Model 文件"
         ImportModelSummary = "导入自定义 Model 数据库"
         OnlineUpdateTitle = "更新 GeoX"
-        OnlineUpdateSummary = "下载 GeoIP、GeoSite、Country.mmdb、ASN.mmdb"
+        OnlineUpdateSummary = "下载数据库文件"
     }
 
     Download = {

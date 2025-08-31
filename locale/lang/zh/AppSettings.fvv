@@ -39,6 +39,8 @@ AppSettings = {
 
         TopBarBlurTitle = "顶部栏背景模糊"
         TopBarBlurSummary = "滚动内容时，为顶部栏应用动态模糊背景"
+        BottomBarLiquidGlassTitle = "底栏液体玻璃"
+        BottomBarLiquidGlassSummary = "为底部导航栏启用液体玻璃采样与折射效果"
 
         AutoHideNavbarTitle = "滑动隐藏底栏"
         AutoHideNavbarSummary = "向下滑动时自动隐藏底栏，向上滑动时显示"

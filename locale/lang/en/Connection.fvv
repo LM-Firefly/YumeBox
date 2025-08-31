@@ -1,0 +1,28 @@
+<Connection Page>
+Connection = {
+    Title = "Connections"
+    Summary = "View active connections"
+
+    Stats = {
+        Connections = "Connections"
+        Memory = "Memory"
+    }
+
+    Search = "Search"
+    SearchHint = "Search host, process..."
+    Clear = "Clear"
+    CloseAll = "Close All"
+
+    SortBy = "Sort by:"
+    Sort = {
+        Time = "Time"
+        Upload = "Upload"
+        Download = "Download"
+        Host = "Host"
+    }
+
+    Loading = "Loading..."
+    Empty = "No active connections"
+    NoResults = "No matching connections"
+    TryDifferent = "Try a different search term"
+}

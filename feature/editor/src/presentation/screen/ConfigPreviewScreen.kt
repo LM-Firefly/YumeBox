@@ -1,0 +1,146 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
+
+
+package com.github.yumelira.yumebox.feature.editor.screen
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.common.util.toast
+import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
+import com.github.yumelira.yumebox.feature.editor.editor.CodeEditorState
+import com.github.yumelira.yumebox.feature.editor.format.CodeFormatter
+import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
+import com.github.yumelira.yumebox.feature.editor.language.TextMateInitializer
+import com.github.yumelira.yumebox.feature.editor.theme.EditorThemeManager
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.ArrowLeft
+import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
+import com.github.yumelira.yumebox.presentation.icon.yume.ListCollapse
+import com.github.yumelira.yumebox.presentation.icon.yume.Save
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import top.yukonga.miuix.kmp.basic.*
+
+@Composable
+fun ConfigPreviewScreen(
+    navigator: DestinationsNavigator,
+    title: String = "配置预览",
+    initialContent: String = "",
+    language: LanguageScope = LanguageScope.Yaml,
+    onSave: ((String) -> Unit)? = null,
+) {
+    val context = LocalContext.current
+    var isSaving by remember { mutableStateOf(false) }
+
+    val formattedContent = remember(initialContent, language) {
+        if (language == LanguageScope.Json) {
+            CodeFormatter.format(initialContent, language) ?: initialContent
+        } else {
+            initialContent
+        }
+    }
+
+    val editorState = remember(formattedContent) {
+        CodeEditorState(
+            initialContent = formattedContent,
+            language = language,
+            readOnly = false
+        )
+    }
+
+    val editorThemeState = EditorThemeManager.rememberEditorTheme()
+    val scrollBehavior = MiuixScrollBehavior()
+
+    LaunchedEffect(Unit) {
+        TextMateInitializer.initialize(context)
+    }
+
+    LaunchedEffect(editorThemeState.isDark) {
+        editorState.editor?.let {
+            TextMateInitializer.setTheme(editorThemeState.isDark)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            SmallTopAppBar(
+                title = title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        IconButton(
+                            modifier = Modifier.padding(start = 24.dp),
+                            onClick = { editorState.undo() },
+                            enabled = editorState.canUndo()
+                        ) { Icon(Yume.ArrowLeft, null) }
+                        IconButton(
+                            onClick = { editorState.redo() },
+                            enabled = editorState.canRedo()
+                        ) { Icon(Yume.ArrowRight, null) }
+                    }
+                },
+                actions = {
+                    IconButton(
+                        modifier = Modifier.padding(end = 16.dp),
+                        onClick = { editorState.format() }
+                    ) {
+                        Icon(Yume.ListCollapse, contentDescription = "格式化")
+                    }
+                    IconButton(
+                        modifier = Modifier.padding(end = 24.dp),
+                        onClick = {
+                            if (isSaving || onSave == null) return@IconButton
+                            isSaving = true
+                            runCatching {
+                                onSave(editorState.content)
+                            }.onSuccess {
+                                editorState.resetModified()
+                                context.toast("保存成功")
+                                navigator.navigateUp()
+                            }.onFailure {
+                                context.toast(it.message ?: "保存失败")
+                            }
+                            isSaving = false
+                        },
+                        enabled = onSave != null && editorState.isModified && !isSaving
+                    ) {
+                        Icon(Yume.Save, contentDescription = "保存")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            CodeEditor(
+                state = editorState,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}

@@ -1,0 +1,28 @@
+<Connection Page>
+Connection = {
+    Title = "连接"
+    Summary = "查看当前活动连接"
+
+    Stats = {
+        Connections = "连接数"
+        Memory = "内存"
+    }
+
+    Search = "搜索"
+    SearchHint = "搜索主机、进程..."
+    Clear = "清除"
+    CloseAll = "关闭全部"
+
+    SortBy = "排序:"
+    Sort = {
+        Time = "时间"
+        Upload = "上传"
+        Download = "下载"
+        Host = "主机"
+    }
+
+    Loading = "加载中..."
+    Empty = "暂无活动连接"
+    NoResults = "没有匹配的连接"
+    TryDifferent = "尝试不同的搜索词"
+}

@@ -71,7 +71,6 @@ Override = {
         SkipDomain = "Skip Domain"
         SkipSrcAddress = "Skip Source Address"
         SkipDstAddress = "Skip Destination Address"
-        PrependRules = "Append Rules"
         RulesReplace = "Override Rules"
         RouteObjects = "Route Objects (Rule Providers / Proxy Groups / Sub Rules)"
     }

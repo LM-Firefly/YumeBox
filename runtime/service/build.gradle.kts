@@ -14,24 +14,62 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2026.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
-
-import core.mmkvDependencyNotation
 
 plugins {
     id("com.android.library")
     kotlin("plugin.serialization")
-    id("yumebox.base.android")
 }
-
-val mmkvDependency = project.mmkvDependencyNotation()
 
 android {
     namespace = "com.github.yumelira.yumebox.runtime.service"
+    compileSdk = gropify.android.compileSdk
+
+    val ndkVersionValue = gropify.android.ndkVersion
+    if (ndkVersionValue.isNotBlank()) {
+        ndkVersion = ndkVersionValue
+    }
+
+    defaultConfig {
+        minSdk = gropify.android.minSdk
+    }
+
+    compileOptions {
+        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
+        sourceCompatibility = JavaVersion.toVersion(javaVer)
+        targetCompatibility = JavaVersion.toVersion(javaVer)
+    }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.kotlin_module",
+                "DebugProbesKt.bin",
+            )
+        }
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src")
+            res.srcDirs("res")
+            assets.srcDirs("assets")
+            aidl.srcDirs("aidl")
+            resources.srcDirs("resources")
+            if (project.file("AndroidManifest.xml").isFile) {
+                manifest.srcFile("AndroidManifest.xml")
+            }
+        }
+    }
 
     buildFeatures {
+        aidl = true
         buildConfig = false
     }
 }
@@ -47,9 +85,15 @@ dependencies {
     implementation("androidx.core:core-ktx:${gropify.dep.version.coreKtx}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
-    implementation(mmkvDependency)
+
+    val mmkv64 = gropify.dep.version.mmkv64
+    val mmkv32 = gropify.dep.version.mmkv32
+    val injectedAbi = findProperty("android.injected.build.abi") as? String
+    val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
+    implementation("com.tencent:mmkv:$mmkvVersion")
+
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
     implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
+    implementation("com.github.topjohnwu.libsu:core:6.0.0")
+    implementation("com.github.topjohnwu.libsu:service:6.0.0")
 }
-
-
