@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+      - 'website/**'
       - '.gitignore'
   schedule:
     - cron: '0 18 * * *'
@@ -72,14 +73,37 @@ jobs:
           distribution: temurin
           java-version: '25'
 
+      - name: Setup Kotlin
+        uses: fwilhe2/setup-kotlin@main
 
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version: "1.26"
           cache: true
           cache-dependency-path: |
             **/go.sum
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: armv7-linux-androideabi, aarch64-linux-android, i686-linux-android, x86_64-linux-android
+
+      - name: Cache Rust
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            lib/native/rust/target/
+          key: ${{ runner.os }}-rust-${{ hashFiles('lib/native/rust/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
@@ -101,6 +125,11 @@ jobs:
       - name: Install NDK
         if: steps.cache-ndk.outputs.cache-hit != 'true'
         run: sdkmanager "ndk;29.0.14206865"
+
+      - name: Configure local.properties
+        run: |
+          echo "sdk.dir=${ANDROID_SDK_ROOT}" > local.properties
+          echo "ndk.dir=${ANDROID_SDK_ROOT}/ndk/29.0.14206865" >> local.properties
 
       - name: Update CA certificates
         run: |
@@ -140,6 +169,13 @@ jobs:
             echo "Using real aliyun-emas-services.json from secrets"
             echo "${ALIYUN_SERVICES_JSON_CURRENT}" | base64 --decode > app/aliyun-emas-services.json
           fi
+
+      - name: Build Native Libraries
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
+        run: kotlin scripts/native-build.main.kts --all
 
       - name: Build Release APKs
         run: |
