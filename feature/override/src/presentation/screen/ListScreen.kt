@@ -85,8 +85,6 @@ fun OverrideListScreen(
     val showEditOptionsDialog = remember { mutableStateOf<OverrideConfig?>(null) }
     val deleteTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
     val exportTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
-    var newConfigName by remember { mutableStateOf("") }
-    var newConfigDescription by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val createFabController = rememberOverrideFabController()
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
@@ -139,8 +137,6 @@ fun OverrideListScreen(
                     "已导入 $importedCount 个配置"
                 }
                 context.toast(importMessage)
-                newConfigName = ""
-                newConfigDescription = ""
                 showCreateDialog.value = false
             } else {
                 context.toast("导入失败: ${importResult.exceptionOrNull()?.message}")
@@ -296,23 +292,15 @@ fun OverrideListScreen(
         }
         CreateConfigDialog(
             show = showCreateDialog,
-            name = newConfigName,
-            description = newConfigDescription,
-            onNameChange = { updatedName -> newConfigName = updatedName },
-            onDescriptionChange = { updatedDescription -> newConfigDescription = updatedDescription },
             onImportClick = { importConfigLauncher.launch("*/*") },
-            onConfirm = {
+            onConfirm = { name, description ->
                 viewModel.createConfig(
-                    name = newConfigName,
-                    description = newConfigDescription.takeIf(String::isNotBlank),
+                    name = name,
+                    description = description.takeIf(String::isNotBlank),
                 )
-                newConfigName = ""
-                newConfigDescription = ""
                 showCreateDialog.value = false
             },
             onDismiss = {
-                newConfigName = ""
-                newConfigDescription = ""
                 showCreateDialog.value = false
             },
         )
@@ -505,15 +493,13 @@ private fun OverrideConfigStateIndicator(inUse: Boolean) {
 @Composable
 private fun CreateConfigDialog(
     show: MutableState<Boolean>,
-    name: String,
-    description: String,
-    onNameChange: (String) -> Unit,
-    onDescriptionChange: (String) -> Unit,
     onImportClick: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (name: String, description: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
+    var name by remember(show.value) { mutableStateOf("") }
+    var description by remember(show.value) { mutableStateOf("") }
     val canConfirm = name.isNotBlank()
 
     AppActionBottomSheet(
@@ -529,7 +515,7 @@ private fun CreateConfigDialog(
                 onClick = {
                     if (canConfirm) {
                         keyboardController?.hide()
-                        onConfirm()
+                        onConfirm(name, description)
                     }
                 },
             )
@@ -542,13 +528,13 @@ private fun CreateConfigDialog(
         ) {
             TextField(
                 value = name,
-                onValueChange = onNameChange,
+                onValueChange = { name = it },
                 label = "配置名称"
             )
 
             TextField(
                 value = description,
-                onValueChange = onDescriptionChange,
+                onValueChange = { description = it },
                 label = "配置描述"
             )
 

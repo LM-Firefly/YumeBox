@@ -117,7 +117,6 @@ fun FullscreenEditorScreen(
                             if (editorState.validate()) {
                                 onSave(editorState.content)
                                 editorState.resetModified()
-                                context.toast("保存成功")
                                 navigator.navigateUp()
                             } else {
                                 context.toast("语法错误，请检查内容")
