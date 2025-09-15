@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import com.github.yumelira.yumebox.presentation.icon.Yume
@@ -35,6 +36,12 @@ internal class OnboardingTermsActivity : OnboardingBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBackwardTo(OnboardingPermissionsActivity::class.java)
+            }
+        })
 
         setOnboardingContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
@@ -67,9 +74,5 @@ internal class OnboardingTermsActivity : OnboardingBaseActivity() {
 
             PrivacyPolicySheet(show = showPrivacySheet)
         }
-    }
-
-    override fun onBackPressed() {
-        navigateBackwardTo(OnboardingPermissionsActivity::class.java)
     }
 }

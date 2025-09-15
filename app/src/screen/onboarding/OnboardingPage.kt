@@ -32,7 +32,6 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,9 +43,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -515,22 +517,35 @@ internal fun TermsContent(
             fontWeight = FontWeight.SemiBold,
         )
     }
-    val annotatedText = remember(linkStyle) {
+    val linkStyles = remember(linkStyle) { TextLinkStyles(style = linkStyle) }
+    val annotatedText = remember(linkStyles, onPrivacySheetRequest) {
         buildAnnotatedString {
             append(MLang.Onboarding.Privacy.RichTextLead)
             append(" ")
             append(MLang.Onboarding.Privacy.RichTextPrefix)
-            pushStringAnnotation(LinkTermsTag, LinkTermsTag)
-            withStyle(linkStyle) {
-                append(MLang.Onboarding.Privacy.TermsLink)
+            withLink(
+                LinkAnnotation.Clickable(
+                    tag = LinkTermsTag,
+                    styles = linkStyles,
+                    linkInteractionListener = { onPrivacySheetRequest() }
+                )
+            ) {
+                withStyle(linkStyle) {
+                    append(MLang.Onboarding.Privacy.TermsLink)
+                }
             }
-            pop()
             append(MLang.Onboarding.Privacy.RichTextConnector)
-            pushStringAnnotation(LinkPolicyTag, LinkPolicyTag)
-            withStyle(linkStyle) {
-                append(MLang.Onboarding.Privacy.PolicyLink)
+            withLink(
+                LinkAnnotation.Clickable(
+                    tag = LinkPolicyTag,
+                    styles = linkStyles,
+                    linkInteractionListener = { onPrivacySheetRequest() }
+                )
+            ) {
+                withStyle(linkStyle) {
+                    append(MLang.Onboarding.Privacy.PolicyLink)
+                }
             }
-            pop()
             append(MLang.Onboarding.Privacy.RichTextSuffix)
         }
     }
@@ -540,20 +555,12 @@ internal fun TermsContent(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            ClickableText(
+            Text(
                 text = annotatedText,
                 style = MiuixTheme.textStyles.body2.copy(
                     color = MiuixTheme.colorScheme.onSurface,
                     lineHeight = 24.sp,
                 ),
-                onClick = { offset ->
-                    val hasLink = annotatedText
-                        .getStringAnnotations(start = offset, end = offset)
-                        .any { it.tag == LinkTermsTag || it.tag == LinkPolicyTag }
-                    if (hasLink) {
-                        onPrivacySheetRequest()
-                    }
-                },
             )
 
             Row(

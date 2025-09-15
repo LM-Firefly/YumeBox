@@ -87,10 +87,19 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
         target: Class<out ComponentActivity>,
     ) {
         startActivity(buildOnboardingIntent(target))
-        overridePendingTransition(
-            R.anim.onboarding_slide_in_right,
-            R.anim.onboarding_slide_out_left,
-        )
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            overrideActivityTransition(
+                OVERRIDE_TRANSITION_OPEN,
+                R.anim.onboarding_slide_in_right,
+                R.anim.onboarding_slide_out_left,
+            )
+        } else {
+            overridePendingTransition(
+                R.anim.onboarding_slide_in_right,
+                R.anim.onboarding_slide_out_left,
+            )
+        }
         finish()
     }
 
@@ -98,10 +107,19 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
         target: Class<out ComponentActivity>,
     ) {
         startActivity(buildOnboardingIntent(target))
-        overridePendingTransition(
-            R.anim.onboarding_slide_in_left,
-            R.anim.onboarding_slide_out_right,
-        )
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            overrideActivityTransition(
+                OVERRIDE_TRANSITION_OPEN,
+                R.anim.onboarding_slide_in_left,
+                R.anim.onboarding_slide_out_right,
+            )
+        } else {
+            overridePendingTransition(
+                R.anim.onboarding_slide_in_left,
+                R.anim.onboarding_slide_out_right,
+            )
+        }
         finish()
     }
 

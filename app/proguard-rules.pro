@@ -1,4 +1,13 @@
 # ========================================
+# R8 Configuration: Shrink Only (No Obfuscation)
+# ========================================
+# Disable code obfuscation while keeping shrinking and resource shrinking
+-dontobfuscate
+# Keep optimization and shrinking enabled
+-optimizationpasses 5
+-allowaccessmodification
+
+# ========================================
 # Native / Android Core
 # ========================================
 -keepclasseswithmembernames class * {

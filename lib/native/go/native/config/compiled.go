@@ -8,6 +8,7 @@ import (
 	"cfa/native/app"
 
 	"github.com/metacubex/mihomo/config"
+	"github.com/metacubex/mihomo/hub"
 	"github.com/metacubex/mihomo/log"
 	"gopkg.in/yaml.v3"
 )
@@ -31,7 +32,7 @@ func LoadCompiled(path string) error {
 		return err
 	}
 
-	applyConfigWithoutAutoDownloadUI(cfg)
+	hub.ApplyConfig(cfg)
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
 	runtime.GC()
 	return nil

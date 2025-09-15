@@ -121,7 +121,6 @@ fun ConfigPreviewScreen(
                                 onSave(editorState.content)
                             }.onSuccess {
                                 editorState.resetModified()
-                                context.toast("保存成功")
                                 navigator.navigateUp()
                             }.onFailure {
                                 context.toast(it.message ?: "保存失败")

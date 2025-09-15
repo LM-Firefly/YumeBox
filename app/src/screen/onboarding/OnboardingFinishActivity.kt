@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import org.koin.android.ext.android.inject
@@ -33,6 +34,12 @@ internal class OnboardingFinishActivity : OnboardingBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBackwardTo(OnboardingPersonalizeActivity::class.java)
+            }
+        })
 
         setOnboardingContent {
             FinishHeroShell(
@@ -51,9 +58,5 @@ internal class OnboardingFinishActivity : OnboardingBaseActivity() {
                 },
             )
         }
-    }
-
-    override fun onBackPressed() {
-        navigateBackwardTo(OnboardingPersonalizeActivity::class.java)
     }
 }

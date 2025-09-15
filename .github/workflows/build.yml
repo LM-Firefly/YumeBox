@@ -103,7 +103,12 @@ jobs:
             ${{ runner.os }}-rust-
 
       - name: Install cargo-ndk
-        run: cargo install cargo-ndk
+        run: |
+          if ! command -v cargo-ndk &> /dev/null; then
+            cargo install cargo-ndk
+          else
+            echo "cargo-ndk already installed"
+          fi
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
