@@ -2,46 +2,45 @@
 
 **English** | [简体中文](README_ZH_HANS.md)
 
-<img src="logo.webp" style="width: 96px;" alt="logo">
+<img src="logo.webp" width="96" alt="YumeBox logo">
 
-## YumeBox
+# YumeBox
 
 [![Latest release](https://img.shields.io/github/v/release/YumeLira/YumeBox?label=Release&logo=github)](https://github.com/YumeLira/YumeBox/releases/latest)
 [![GitHub License](https://img.shields.io/github/license/YumeLira/YumeBox?logo=gnu)](/LICENSE)
 ![Downloads](https://img.shields.io/github/downloads/YumeLira/YumeBox/total)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/d4e3ab7c51254da9959598e34f639e0d)](https://app.codacy.com/gh/YumeLira/YumeBox/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
-**An open-source Android client based on the [mihomo](https://github.com/MetaCubeX/mihomo) kernel**
+An Android client built around [mihomo](https://github.com/MetaCubeX/mihomo).  
+Clean, direct, usable.
+
+<p>
+  <a href="https://yumebox.oom-wg.dev/guide/install"><strong>Install</strong></a>
+  ·
+  <a href="https://yumebox.oom-wg.dev/update/history"><strong>Changelog</strong></a>
+  ·
+  <a href="https://t.me/OOM_Group"><strong>Telegram</strong></a>
+</p>
 
 </div>
 
+## About
 
-## Features
+YumeBox is the Android surface for mihomo: profiles, rules, dashboard access, and the parts you actually touch.
 
-- Mihomo kernel
-- Sub-Store Optional Support
-- Web dashboard
-- For more, please explore on your own...
+## Links
 
-## Compatibility
+| Item | Link |
+| --- | --- |
+| Docs | [yumebox.oom-wg.dev](https://yumebox.oom-wg.dev/guide/install) |
+| Release history | [history](https://yumebox.oom-wg.dev/update/history) |
+| Privacy policy | [PRIVACY_POLICY.md](/PRIVACY_POLICY.md) |
+| Discussion | [@OOM_WG](https://t.me/OOM_Group) |
 
-- Android 7.0 and above
-- Supports `armeabi-v7a`, `arm64-v8a`, `x86`, and `x86_64` architectures
+## Translation
 
-## Usage
-
-- **[Install](https://yumebox.oom-wg.dev/guide/install)**
-- **[History](https://yumebox.oom-wg.dev/update/history)**
-
-## Discussion
-
-- Telegram group: [@OOM_WG](https://t.me/OOM_Group)
-
-## Contributing Translations
-
-To translate YumeBox into your language or improve existing translations, please fork this project
-and create or update translation files in the `locale/lang` directory.
-
+Language sources live in `locale/lang`.  
+If you want to add or fix a translation, start there.
 
 ## Note
 
@@ -56,4 +55,3 @@ and create or update translation files in the `locale/lang` directory.
 - [SubCase](https://github.com/sion-codin/SubCase)
 - [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
 - [Zashboard](https://github.com/Zephyruso/zashboard)
-
