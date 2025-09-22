@@ -11,47 +11,33 @@
 **一个基于 [mihomo](https://github.com/MetaCubeX/mihomo) 内核的开源 Android 客户端**
 
 </div>
+## 使用
+
+YumeBox 目前仅支持 **Android 8.0（API 26）及以上系统**。
+
+请前往 Release 页面下载对应架构的安装包：[Release](https://github.com/YumeLira/YumeBox/releases?utm_source=chatgpt.com)更多内容请访问官网：[YumeBox](https://yumebox.oom-wg.dev/?utm_source=chatgpt.com)
+覆写配置语法参考：[override 文档](https://yumebox.oom-wg.dev/override?utm_source=chatgpt.com)如果这个项目对你有帮助，请点下 Star ，这是持续更新的动力
+
+<img src="![Yume_4.webp](Yume_4.webp)" alt="夢璃ちゃん" width="200" align="right" style="margin-left: 15px;">
+
+### 反馈与建议
+
+如果遇到 Bug，请在 Issues 页面提交：
+[Issues](https://github.com/YumeLira/YumeBox/issues?utm_source=chatgpt.com)
+
+有想法或改进建议也可以在这里提出
+更多讨论与反馈可加入群组：[@OOM_WG](https://t.me/OOM_Group?utm_source=chatgpt.com)
+
+### 参与贡献
+
+如果您希望将 YumeBox 变的更好，请参阅 [CONTRIBUTING](CONTRIBUTING.md),如果希望将 YumeBox 翻译为更多语言，或改进现有翻译，请
+Fork 本项目，并在 `locale/lang` 目录下创建或更新对应的翻译文件。
+
+### 特别
+
+**~~作者对这个项目中的代码一无所知。代码处于可用或不可用状态，没有第三种情况。~~**
+
+And the [third-party](ThirdParty.md) libraries used in this project.
 
 
-## 特性
-
-- Mihomo 内核
-- Sub-Store 可选支持
-- Web 面板
-- 更多请自行探索...
-
-## 适配性
-
-- Android 7.0 及以上
-- 支持 `armeabi-v7a`、`arm64-v8a`、`x86`、`x86_64` 架构
-
-## 使用方法
-
-- **[安装](https://yumebox.oom-wg.dev/cn/guide/install)**
-- **[历史版本](https://yumebox.oom-wg.dev//cn/update/history)**
-
-
-
-## 讨论
-
-- Telegram 群组：[@OOM_WG](https://t.me/OOM_Group)
-
-## 参与翻译
-
-如果您希望将 YumeBox 翻译为更多语言，或改进现有翻译，请 Fork 本项目，并在 `locale/lang` 目录下创建或更新对应的翻译文件。
-
-
-## 特别
-
-> [!IMPORTANT]
-> 作者对这个项目中的代码一无所知。代码处于可用或不可用状态，没有第三种情况。
-
-## 鸣谢
-
-- [Mihomo](https://github.com/MetaCubeX/mihomo)
-- [ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid)
-- [Sub-Store](https://github.com/sub-store-org)
-- [SubCase](https://github.com/sion-codin/SubCase)
-- [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
-- [Zashboard](https://github.com/Zephyruso/zashboard)
 
