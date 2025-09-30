@@ -11,14 +11,13 @@
 **一个基于 [mihomo](https://github.com/MetaCubeX/mihomo) 内核的开源 Android 客户端**
 
 </div>
+
 ## 使用
 
 YumeBox 目前仅支持 **Android 8.0（API 26）及以上系统**。
 
 请前往 Release 页面下载对应架构的安装包：[Release](https://github.com/YumeLira/YumeBox/releases?utm_source=chatgpt.com)更多内容请访问官网：[YumeBox](https://yumebox.oom-wg.dev/?utm_source=chatgpt.com)
 覆写配置语法参考：[override 文档](https://yumebox.oom-wg.dev/override?utm_source=chatgpt.com)如果这个项目对你有帮助，请点下 Star ，这是持续更新的动力
-
-<img src="![Yume_4.webp](Yume_4.webp)" alt="夢璃ちゃん" width="200" align="right" style="margin-left: 15px;">
 
 ### 反馈与建议
 
@@ -37,7 +36,7 @@ Fork 本项目，并在 `locale/lang` 目录下创建或更新对应的翻译文
 
 **~~作者对这个项目中的代码一无所知。代码处于可用或不可用状态，没有第三种情况。~~**
 
-And the [third-party](ThirdParty.md) libraries used in this project.
+以及该项目中使用的 [第三方](ThirdParty.md) 库。
 
 
 
