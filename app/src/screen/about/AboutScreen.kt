@@ -107,7 +107,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                 Card {
                     BasicComponent(
                         title = "YumeBox",
-                        summary = An open-source Android client based Mihomo,
+                        summary = "An open-source Android client based Mihomo",
                     )
                 }
 
