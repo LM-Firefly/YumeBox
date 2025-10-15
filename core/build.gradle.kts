@@ -59,7 +59,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src")
+            kotlin.srcDirs("src")
             res.srcDirs("res")
             assets.srcDirs("assets")
             aidl.srcDirs("aidl")
@@ -78,3 +78,6 @@ dependencies {
     implementation("androidx.annotation:annotation-jvm:${gropify.dep.version.annotationJvm}")
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
+
+
+

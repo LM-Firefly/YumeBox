@@ -29,6 +29,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.remote.ILogObserver
 import kotlinx.coroutines.*
@@ -220,7 +221,7 @@ class LogRecordService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("正在记录日志")
             .setContentText(currentLogFileName ?: "日志记录中...")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_logo_service)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)

@@ -36,6 +36,7 @@ import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
@@ -151,7 +152,7 @@ class AutoRestartService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(MLang.Home.Title)
             .setContentText(MLang.Service.AutoRestart.Checking)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_logo_service)
             .setOngoing(true)
             .build()
     }

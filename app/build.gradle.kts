@@ -56,7 +56,6 @@ val emasConfig = runCatching {
 
 val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
 
-
 android {
     namespace = gropify.project.namespace.base
     compileSdk = gropify.android.compileSdk
@@ -84,16 +83,23 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src")
+            kotlin.srcDirs("src")
             res.srcDirs("res")
-            assets.srcDirs("assets")
+            assets.directories.apply {
+                clear()
+                addAll(
+                    listOf(
+                        "assets",
+                        geoFilesAssetsDir.get().asFile.invariantSeparatorsPath,
+                    )
+                )
+            }
             aidl.srcDirs("aidl")
             resources.srcDirs("resources")
             jniLibs.srcDirs("../jniLibs")
             if (project.file("AndroidManifest.xml").isFile) {
                 manifest.srcFile("AndroidManifest.xml")
             }
-            assets.srcDir(geoFilesAssetsDir)
         }
     }
 
@@ -269,3 +275,7 @@ sentry {
     projectName.set("android")
     includeSourceContext.set(true)
 }
+
+
+
+
