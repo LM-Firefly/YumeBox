@@ -51,7 +51,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src")
+            kotlin.srcDirs("src")
             assets.srcDirs("assets")
         }
     }
@@ -91,3 +91,6 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
 }
+
+
+

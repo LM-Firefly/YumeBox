@@ -37,7 +37,7 @@ android {
     }
 
     compileOptions {
-        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
+        val javaVer = gropify.android.jvm
         sourceCompatibility = JavaVersion.toVersion(javaVer)
         targetCompatibility = JavaVersion.toVersion(javaVer)
     }
@@ -57,7 +57,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src")
+            kotlin.srcDirs("src")
             res.srcDirs("res")
             assets.srcDirs("assets")
             aidl.srcDirs("aidl")
@@ -97,3 +97,5 @@ dependencies {
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
     implementation("com.github.topjohnwu.libsu:service:6.0.0")
 }
+
+

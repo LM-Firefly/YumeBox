@@ -57,7 +57,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src")
+            kotlin.srcDirs("src")
             res.srcDirs("res")
             assets.srcDirs("assets")
             aidl.srcDirs("aidl")
@@ -83,3 +83,5 @@ dependencies {
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     implementation("com.tencent:mmkv:$mmkvVersion")
 }
+
+
