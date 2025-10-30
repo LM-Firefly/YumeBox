@@ -26,6 +26,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.ClashService
 import com.github.yumelira.yumebox.service.TunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
@@ -50,6 +51,16 @@ object RuntimeServiceLauncher {
         store.clear()
         store.append("${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: request start source=$source mode=${mode.name}")
 
+
+        if (mode == ProxyMode.Tun && StatusProvider.isTunStarting()) {
+            store.append("LOCAL_TUN launcher: skipped, already starting")
+            return
+        }
+
+        if (mode == ProxyMode.Tun) {
+            StatusProvider.markTunStarting()
+        }
+
         val intent = Intent(
             appContext,
             when (mode) {
@@ -66,6 +77,9 @@ object RuntimeServiceLauncher {
                 appContext.startService(intent)
             }
         }.onFailure { error ->
+            if (mode == ProxyMode.Tun) {
+                StatusProvider.clearTunStarting()
+            }
             store.append("${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: failed=${error.message}")
             throw error
         }
