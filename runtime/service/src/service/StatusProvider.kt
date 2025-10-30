@@ -30,6 +30,7 @@ import android.os.Bundle
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.service.common.util.Global
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
+import com.tencent.mmkv.MMKV
 
 class StatusProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -81,6 +82,9 @@ class StatusProvider : ContentProvider() {
         runCatching {
             val app = context?.applicationContext as? android.app.Application ?: return@runCatching
             initializeServiceGlobal(app)
+            // MMKV 必须在使用前初始化，ContentProvider 在 Application.onCreate 之前执行
+            MMKV.initialize(app)
+            clearTunStarting()
         }
         return true
     }
@@ -93,6 +97,8 @@ class StatusProvider : ContentProvider() {
             "service_autostart.lock",
             "service_running_mode.txt",
         )
+        private const val SERVICE_CACHE_ID = "service_cache"
+        private const val KEY_TUN_STARTING = "local_tun_starting"
 
         @Volatile
         var serviceRunning: Boolean = false
@@ -105,11 +111,17 @@ class StatusProvider : ContentProvider() {
         var currentProfile: String? = null
 
         fun markRuntimeStarted(mode: ProxyMode) {
+            if (mode == ProxyMode.Tun) {
+                clearTunStarting()
+            }
             runningMode = mode
             serviceRunning = true
         }
 
         fun markRuntimeStopped(mode: ProxyMode) {
+            if (mode == ProxyMode.Tun) {
+                clearTunStarting()
+            }
             if (runningMode == mode) {
                 runningMode = null
                 serviceRunning = false
@@ -120,11 +132,27 @@ class StatusProvider : ContentProvider() {
             return serviceRunning && runningMode == mode
         }
 
+        fun markTunStarting() {
+            serviceCache().encode(KEY_TUN_STARTING, true)
+        }
+
+        fun clearTunStarting() {
+            serviceCache().removeValueForKey(KEY_TUN_STARTING)
+        }
+
+        fun isTunStarting(): Boolean {
+            return serviceCache().decodeBool(KEY_TUN_STARTING, false)
+        }
+
         fun clearLegacyStateFiles() {
             val filesDir = Global.application.filesDir
             legacyRuntimeFiles.forEach { name ->
                 runCatching { filesDir.resolve(name).delete() }
             }
+        }
+
+        private fun serviceCache(): MMKV {
+            return MMKV.mmkvWithID(SERVICE_CACHE_ID, MMKV.MULTI_PROCESS_MODE)
         }
     }
 }
