@@ -40,7 +40,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.github.yumelira.yumebox.presentation.theme.AppTheme.spacing
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -50,7 +49,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 fun NavigationBackIcon(
     navigator: DestinationsNavigator,
     modifier: Modifier = Modifier,
-    contentDescription: String = MLang.Component.Navigation.Back,
+    contentDescription: String = "Back",
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()

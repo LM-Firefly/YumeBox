@@ -40,7 +40,6 @@ import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
-import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import timber.log.Timber
 
@@ -136,10 +135,10 @@ class AutoRestartService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                MLang.Service.AutoRestart.ChannelName,
+                "Auto Restart Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = MLang.Service.AutoRestart.ChannelDescription
+                description = "Used to restart proxy service automatically"
                 setShowBadge(false)
             }
 
@@ -150,8 +149,8 @@ class AutoRestartService : Service() {
 
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(MLang.Home.Title)
-            .setContentText(MLang.Service.AutoRestart.Checking)
+            .setContentTitle("YumeBox")
+            .setContentText("Checking auto-start...")
             .setSmallIcon(R.drawable.ic_logo_service)
             .setOngoing(true)
             .build()

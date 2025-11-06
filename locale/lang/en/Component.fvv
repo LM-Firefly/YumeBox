@@ -1,7 +1,6 @@
 <Components>
 Component = {
     ProfileCard = {
-        Unsaved = " (unsaved)"
         Export = "Export"
         Edit = "Edit"
         Update = "Update"
@@ -20,36 +19,39 @@ Component = {
         HoursAgo = "%d hours ago"
         DaysAgo = "%d days ago"
     }
-    
+
     WebView = {
         InvalidUrl = "Invalid URL"
-        LoadFailed = "Unable to load page: index.html does not exist"
     }
-    
+
     Selector = {
         NotModify = "Don't Modify"
         Enable = "Enable"
         Disable = "Disable"
+        Replace = "Replace"
+        Prepend = "Prepend"
+        Append = "Append"
+        Merge = "Merge"
     }
-    
+
     Navigation = {
         Back = "Back"
         Refresh = "Refresh"
     }
-    
+
     Message = {
         Confirm = "Confirm"
         Hint = "Hint"
         Error = "Error"
         Success = "Success"
     }
-    
+
     Button = {
         Cancel = "Cancel"
         Confirm = "Confirm"
         Clear = "Clear"
     }
-    
+
     Loading = {
         Starting = "Starting..."
     }
@@ -66,34 +68,32 @@ Component = {
             CurrentVersion = "Current Version"
             RemoteVersion = "Target Version"
             Updating = "Updating"
-            Waiting = "Waiting for download..."
             Preparing = "Preparing download..."
-            Downloading = "Downloading update package..."
+            DownloadingWithProgress = "Downloading update package %d%%"
             Verifying = "Verifying update package..."
             Finished = "Download complete, waiting for install confirmation"
-            Error = "Download failed, please try again later"
-            DownloadingWithProgress = "Downloading update package %d%%"
-            DownloadErrorWithCode = "Download failed (%d): %s"
-            VerifyFailed = "Package verification failed, please retry"
+            Downloading = "Downloading update package..."
             DownloadReady = "Download complete, ready to install"
+            VerifyFailed = "Package verification failed, please retry"
+            DownloadErrorWithCode = "Download failed (%d): %s"
+            Error = "Download failed, please try again later"
             Close = "Got it"
+            Waiting = "Waiting for download..."
         }
     }
-    
+
     ConfigInput = {
         PortLabel = "Port (leave empty to not modify)"
         CountItems = "%d items"
-        KeyPlaceholder = "Key"
-        ValuePlaceholder = "Value"
     }
-    
+
     BottomBar = {
         Home = "Home"
         Proxy = "Proxy"
         Config = "Config"
         Setting = "Settings"
     }
-    
+
     Editor = {
         CountItems = "Total %d items"
         Action = {

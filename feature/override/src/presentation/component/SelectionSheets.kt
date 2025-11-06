@@ -31,6 +31,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -77,7 +78,7 @@ fun OverrideSingleValueSelectionSheet(
         },
         endAction = {
             AppBottomSheetConfirmAction(
-                contentDescription = "确定",
+                contentDescription = MLang.Override.Editor.Confirm,
                 onClick = { onConfirm(selectedValue.trim()) },
             )
         },
@@ -91,7 +92,7 @@ fun OverrideSingleValueSelectionSheet(
         ) {
             if (allowCustomValue) {
                 SelectionAddCustomCard(
-                    title = "添加自定义",
+                    title = MLang.Override.Editor.AddCustom,
                     onClick = { showCustomInputDialog = true },
                 )
             }
@@ -124,7 +125,7 @@ fun OverrideSingleValueSelectionSheet(
 
     OverrideSelectionInputDialog(
         show = allowCustomValue && showCustomInputDialog,
-        title = "添加自定义",
+        title = MLang.Override.Editor.AddCustom,
         label = customInputLabel,
         onConfirm = { inputValue ->
             selectedValue = inputValue.trim()
@@ -174,7 +175,7 @@ fun OverrideMultiValueSelectionSheet(
         },
         endAction = {
             AppBottomSheetConfirmAction(
-                contentDescription = "确定",
+                contentDescription = MLang.Override.Editor.Confirm,
                 onClick = { onConfirm(selectedValues.toList()) },
             )
         },
@@ -187,7 +188,7 @@ fun OverrideMultiValueSelectionSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SelectionAddCustomCard(
-                title = "添加自定义",
+                title = MLang.Override.Editor.AddCustom,
                 onClick = { showCustomInputDialog = true },
             )
             if (customValues.isNotEmpty()) {
@@ -217,7 +218,7 @@ fun OverrideMultiValueSelectionSheet(
 
     OverrideSelectionInputDialog(
         show = showCustomInputDialog,
-        title = "添加自定义",
+        title = MLang.Override.Editor.AddCustom,
         label = customInputLabel,
         onConfirm = { inputValue ->
             val normalizedValue = inputValue.trim()
@@ -325,13 +326,13 @@ private fun OverrideSelectionInputDialog(
                 onConfirm = {
                     val normalizedValue = inputValue.trim()
                     if (normalizedValue.isBlank()) {
-                        errorText = "内容不能为空"
+                        errorText = MLang.Override.Editor.ContentEmpty
                         return@DialogButtonRow
                     }
                     onConfirm(normalizedValue)
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }

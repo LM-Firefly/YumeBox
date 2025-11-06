@@ -38,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.util.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -65,7 +66,7 @@ fun OverrideSubRuleMapEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = OverrideStructuredEditorStore.subRuleGroupEditorTitle.ifBlank { "子规则" }
+    val title = OverrideStructuredEditorStore.subRuleGroupEditorTitle.ifBlank { MLang.Override.Structured.SubRules.Title }
     val availableModes = OverrideStructuredEditorStore.subRuleGroupEditorAvailableModes
     var showResetDialog by remember { mutableStateOf(false) }
     val addFabController = rememberOverrideFabController()
@@ -101,9 +102,9 @@ fun OverrideSubRuleMapEditorScreen(
                 controller = addFabController,
                 visible = showAddFab,
                 imageVector = Yume.`Badge-plus`,
-                contentDescription = "新增子规则组",
+                contentDescription = MLang.Override.Editor.NewSubRuleGroup,
                 onClick = {
-                    onOpenDraftEditor("新增子规则组", null) { createdDraft ->
+                    onOpenDraftEditor(MLang.Override.Editor.NewSubRuleGroup, null) { createdDraft ->
                         val mode = OverrideStructuredEditorStore.subRuleGroupEditorSelectedMode
                         val latestValues = OverrideStructuredEditorStore.subRuleGroupEditorDraftValues
                         val updatedValues = latestValues.update(
@@ -130,7 +131,7 @@ fun OverrideSubRuleMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Cancel,
-                                contentDescription = "取消删除",
+                                contentDescription = MLang.Override.Editor.CancelDelete,
                             )
                         }
                         IconButton(
@@ -151,7 +152,7 @@ fun OverrideSubRuleMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "删除已选子规则组",
+                                contentDescription = MLang.Override.Editor.DeleteSelected,
                             )
                         }
                     } else {
@@ -161,7 +162,7 @@ fun OverrideSubRuleMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Undo,
-                                contentDescription = "清空当前模式",
+                                contentDescription = MLang.Override.Editor.ClearMode,
                             )
                         }
                         IconButton(
@@ -173,7 +174,7 @@ fun OverrideSubRuleMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "进入删除模式",
+                                contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             )
                         }
                     }
@@ -192,7 +193,7 @@ fun OverrideSubRuleMapEditorScreen(
             item(key = "modifier-card") {
                 Card {
                     WindowDropdown(
-                        title = "修饰符模式",
+                        title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
@@ -220,7 +221,7 @@ fun OverrideSubRuleMapEditorScreen(
                         key = draft.uiId,
                     ) { isDragging ->
                         SubRuleGroupCard(
-                            title = draft.name.ifBlank { "未命名子规则组" },
+                            title = draft.name.ifBlank { MLang.Override.Editor.UnnamedSubRuleGroup },
                             isDragging = isDragging,
                             isDeleteMode = isDeleteMode,
                             isSelected = draft.uiId in selectedUiIds,
@@ -230,7 +231,7 @@ fun OverrideSubRuleMapEditorScreen(
                                 } else {
                                     val draftUiId = draft.uiId
                                     val editMode = selectedMode
-                                    onOpenDraftEditor("编辑子规则组", draft) { updatedDraft ->
+                                    onOpenDraftEditor(MLang.Override.Editor.EditSubRuleGroup, draft) { updatedDraft ->
                                         val latestValues = OverrideStructuredEditorStore.subRuleGroupEditorDraftValues
                                         val updatedValues = latestValues.update(
                                             editMode,
@@ -265,8 +266,8 @@ fun OverrideSubRuleMapEditorScreen(
 
     AppDialog(
             show = showResetDialog,
-            title = "清空子规则",
-            summary = "清空后将移除当前模式里的所有子规则组。",
+            title = MLang.Override.Editor.ClearSubRules,
+            summary = MLang.Override.Editor.ClearDialog.Summary.format(MLang.Override.Structured.SubRules.ItemLabel),
             onDismissRequest = { showResetDialog = false },
         ) {
             DialogButtonRow(
@@ -278,8 +279,8 @@ fun OverrideSubRuleMapEditorScreen(
                     val mode = OverrideStructuredEditorStore.subRuleGroupEditorSelectedMode
                     applySubRuleValues(OverrideStructuredEditorStore.subRuleGroupEditorDraftValues.update(mode, emptyList()))
                 },
-                cancelText = "取消",
-                confirmText = "清空",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Clear,
             )
         }
     }
@@ -310,7 +311,7 @@ private fun ReorderableCollectionItemScope.SubRuleGroupCard(
             ) {
                 Icon(
                     imageVector = Yume.List,
-                    contentDescription = "拖拽排序",
+                    contentDescription = MLang.Override.Editor.DragToSort,
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 Column(
@@ -333,7 +334,7 @@ private fun ReorderableCollectionItemScope.SubRuleGroupCard(
                     } else {
                         Icon(
                             imageVector = Yume.chevron,
-                            contentDescription = "编辑",
+                            contentDescription = MLang.Override.Editor.Edit,
                             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }

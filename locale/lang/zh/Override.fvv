@@ -1,164 +1,424 @@
 <Override Page>
 Override = {
-    Title = "覆写设置"
-    
-    Section = {
-        Inbound = "入站"
-        General = "通用"
-        AuthHosts = "认证与Hosts"
-        ExternalController = "外部控制器"
-        Geo = "GEO"
-        Dns = "DNS"
-        Sniffer = "嗅探"
-        Rules = "路由规则"
-        Tools = "工具"
+    Title = "覆写配置"
+
+    Action = {
+        Create = "创建配置"
+        New = "新建配置"
+        Import = "导入 JSON"
+        ImportFile = "导入配置文件"
     }
 
-    Nav = {
-        NodePageSwitch = "配置分组"
+    Empty = {
+        Title = "暂无覆写配置"
+        Hint = "点击下方按钮创建新配置，或导入 JSON"
     }
 
-    Summary = {
-        Inbound = "入站端口与局域网"
-        General = "模式、日志与 IPv6"
-        Api = "控制器与 CORS"
-        Geo = "Geo 数据源"
-        Dns = "DNS 与 FakeIP"
-        Sniffer = "嗅探与跳过项"
-        Rules = "追加与覆盖规则"
-        Tools = "导入与导出"
-        RouteObjects = "路由对象维护"
+    Status = {
+        InUse = "使用中"
+        NotInUse = "未使用"
     }
 
-    Preset = {
-        RouteRulesA = "内置覆写 A"
-        RouteRulesASummary = "规则集 A"
-        RouteRulesB = "内置覆写 B"
-        RouteRulesBSummary = "规则集 B"
+    Card = {
+        Copy = "复制配置"
+        Export = "导出配置"
+        Edit = "编辑配置"
+        Delete = "删除配置"
+        EditButton = "编辑"
+        DeleteButton = "删除"
+        NoDescription = "未填写描述"
     }
 
-    Label = {
-        BindAddress = "绑定地址"
-        LanAllowedIps = "LAN 允许网段"
-        LanDisallowedIps = "LAN 禁止网段"
-        SkipAuthPrefixes = "跳过认证前缀"
-        UnifiedDelay = "统一延迟"
-        TcpConcurrent = "TCP 并发"
-        FindProcessMode = "进程匹配模式"
-        KeepAliveInterval = "Keep Alive 间隔"
-        KeepAliveIdle = "Keep Alive 空闲阈值"
-        GeoDataMode = "GeoData 模式"
-        GeoIpUrl = "GeoIP 地址"
-        MmdbUrl = "MMDB 地址"
-        GeoSiteUrl = "GeoSite 地址"
-        UseSystemHosts = "使用系统 Hosts"
-        RespectRules = "遵循路由规则"
-        CacheAlgorithm = "缓存算法"
-        FakeIpRange = "FakeIP 地址段"
-        FallbackGeosite = "Fallback Geosite"
-        ProxyServerNameserver = "代理服务器 DNS"
-        Enable = "启用"
-        ForceDnsMapping = "强制 DNS 映射"
-        ParsePureIp = "解析纯 IP"
-        OverrideDestination = "覆写目标地址"
-        HttpPorts = "HTTP 端口"
-        HttpOverride = "HTTP 覆写"
-        TlsPorts = "TLS 端口"
-        TlsOverride = "TLS 覆写"
-        QuicPorts = "QUIC 端口"
-        QuicOverride = "QUIC 覆写"
-        ForceDomain = "强制嗅探域名"
-        SkipDomain = "跳过嗅探域名"
-        SkipSrcAddress = "跳过源地址"
-        SkipDstAddress = "跳过目标地址"
-        RulesReplace = "覆盖规则"
-        RouteObjects = "路由对象（Rule Providers / Proxy Groups / Sub Rules）"
+    Import = {
+        ReadError = "无法读取导入文件"
+        Success = "已从 %s 导入 %d 个配置"
+        SuccessDefault = "已导入 %d 个配置"
+        Failed = "导入失败: %s"
+        FileError = "读取文件失败: %s"
     }
 
-    Tool = {
-        ExportClipboard = "导出 Override JSON 到剪贴板"
-        ExportClipboardSummary = "分享/备份当前覆写"
-        ImportMerge = "从剪贴板导入（Merge）"
-        ImportMergeSummary = "导入 JSON 并合并到当前覆写"
-        ImportReplace = "从剪贴板导入（Replace）"
-        ImportReplaceSummary = "导入 JSON 并替换当前覆写"
-        Preview = "预览当前配置"
-        PreviewSummary = "查看 JSON 快照 + 基础规则校验"
-
-        ImportTypeTitle = "导入/导出类型"
-        ImportModeTitle = "导入模式"
-        ImportModeAppend = "追加（Merge）"
-        ImportModeOverride = "覆盖（Replace）"
-        TypeRuleProviders = "Rule Providers"
-        TypeProxyGroups = "Proxy Groups"
-        TypeRules = "路由规则（追加 + 覆盖）"
-        TypeSubRules = "Sub Rules"
-
-        ImportClipboardSimple = "从剪贴板导入"
-        ImportClipboardSimpleSummary = "使用当前模式"
-        ImportFileSimple = "从文件导入"
-        ImportFileSimpleSummary = "选择 JSON 文件"
-        ExportClipboardSimple = "导出到剪贴板"
-        ExportClipboardSimpleSummary = "导出当前配置"
-        ExportFileSimple = "导出到文件"
-        ExportFileSimpleSummary = "导出 JSON 文件"
+    Export = {
+        Failed = "导出失败：%s"
+        Success = "已导出配置：%s"
     }
 
     Dialog = {
-        ImportTitle = "导入 Override JSON"
-        ImportLabel = "粘贴 JSON"
-        PreviewTitle = "Override 预览"
-        RuleValidation = "规则校验"
-        JsonSnapshot = "JSON 快照"
+        Create = {
+            Title = "添加配置"
+            Name = "配置名称"
+            Description = "配置描述"
+            ImportHint = "选择 JSON 文件导入覆写配置"
+        }
+        Delete = {
+            Title = "删除配置"
+            InUseMessage = "配置 %s 正在被订阅使用，删除后将解除绑定关系。确定要删除吗？此操作不可恢复。"
+            Message = "确定要删除配置 %s 吗？此操作不可恢复。"
+        }
+        EditOptions = {
+            Title = "编辑配置"
+            CodeEditor = "代码编辑器"
+            VisualEditor = "可视化编辑"
+        }
+        Button = {
+            Cancel = "取消"
+            Delete = "删除"
+        }
     }
 
-    Message = {
-        Copied = "已复制到剪贴板"
-        ImportSuccess = "导入成功"
-        ReplaceSuccess = "替换成功"
-        ImportFailed = "导入失败: %s"
-        ReplaceFailed = "替换失败: %s"
-        ExportSuccess = "导出成功"
-        ExportFailed = "导出失败: %s"
-        NoWarnings = "无警告"
+    Edit = {
+        TitleNew = "新建配置"
+        TitleEdit = "编辑配置"
+        EmptyName = {
+            Title = "名称为空"
+            Summary = "当前名称为空，无法实时保存。确定放弃这次未保存的修改吗？"
+        }
+        Button = {
+            Cancel = "取消"
+            Discard = "放弃"
+        }
+        PresetApplied = "已更新预设分流模板"
     }
-    
-    General = {
-        HttpPort = "HTTP 端口"
-        SocksPort = "SOCKS 端口"
-        MixedPort = "Mixed 端口"
-        RedirectPort = "Redirect 端口"
-        TproxyPort = "TProxy 端口"
-        AllowLan = "允许局域网"
-        Ipv6 = "IPv6"
-        ProxyMode = "代理模式"
-        ProxyModeNotModify = "不修改"
-        ProxyModeDirect = "直连"
-        ProxyModeGlobal = "全局"
-        ProxyModeRule = "规则"
-        LogLevel = "日志等级"
+
+    Section = {
+        General = {
+            Title = "全局配置"
+            Summary = "运行模式、控制器、持久化与 GEO"
+        }
+        Dns = {
+            Title = "DNS"
+            Summary = "基础开关、Fake-IP、上游与策略"
+        }
+        Sniffer = {
+            Title = "域名嗅探"
+            Summary = "策略开关、协议端口、跳过规则"
+        }
+        Inbound = {
+            Title = "入站"
+            Summary = "端口、鉴权、局域网访问"
+        }
+        Tun = {
+            Title = "Tun"
+            Summary = "入站 Tun、路由与应用范围"
+        }
+        Rules = {
+            Title = "路由规则"
+            Summary = "规则链与匹配顺序"
+        }
+        Proxies = {
+            Title = "出站代理"
+            Summary = "代理节点与协议对象"
+        }
+        ProxyProviders = {
+            Title = "代理集合"
+            Summary = "Proxy Providers 合并与覆盖"
+        }
+        ProxyGroups = {
+            Title = "代理组"
+            Summary = "Proxy Groups 前置、覆盖、后置"
+        }
+        RuleProviders = {
+            Title = "规则集合"
+            Summary = "Rule Providers 合并与覆盖"
+        }
+        SubRules = {
+            Title = "子规则"
+            Summary = "Sub Rules 分组与合并"
+        }
     }
-    
-    AuthHosts = {
-        Authentication = "认证信息"
-        AuthenticationHint = "格式: user:password"
-        HostsMapping = "Hosts 映射"
-        HostsKeyHint = "域名"
-        HostsValueHint = "IP地址"
+
+    Modifier = {
+        Replace = "覆盖"
+        Start = "前置追加"
+        End = "后置追加"
+        Merge = "合并"
+        Force = "强制覆盖"
+        NotModified = "未修改"
+        ItemsCount = "%d 项"
+        NoChanges = "暂无改动"
     }
-    
-    ExternalController = {
-        Address = "控制器地址"
-        AddressHint = "例如: 127.0.0.1:9090"
-        Tls = "TLS 控制器地址"
-        TlsHint = "例如: 127.0.0.1:9443"
-        ApiSecret = "API 密钥"
-        ApiSecretHint = "留空表示不修改"
-        CorsAllowOrigins = "CORS 允许来源"
-        CorsAllowOriginsHint = "例如: http://localhost:9090"
-        CorsAllowPrivate = "允许私有网络"
+
+    Structured = {
+        Proxies = {
+            Title = "代理节点"
+            ItemLabel = "代理节点"
+            EmptyHint = "暂无代理节点"
+        }
+        ProxyGroups = {
+            Title = "策略组"
+            ItemLabel = "策略组"
+            EmptyHint = "暂无策略组"
+        }
+        RuleProviders = {
+            Title = "规则提供者"
+            ItemLabel = "Provider"
+        }
+        ProxyProviders = {
+            Title = "代理提供者"
+            ItemLabel = "Provider"
+        }
+        SubRules = {
+            Title = "子规则"
+            ItemLabel = "子规则组"
+        }
     }
-    
+
+    Editor = {
+        Mode = {
+            Title = "修饰符模式"
+        }
+        ClearDialog = {
+            Title = "清空%s"
+            Summary = "清空后将移除当前模式里的所有%s。"
+        }
+        New = "新增"
+        NewRule = "新增规则"
+        EditRule = "编辑规则"
+        NewSubRuleGroup = "新增子规则组"
+        UnnamedSubRuleGroup = "未命名子规则组"
+        EditSubRuleGroup = "编辑子规则组"
+        ClearSubRules = "清空子规则"
+        Unnamed = "未命名%s"
+        UnnamedRule = "未命名规则"
+        Edit = "编辑"
+        DragToSort = "拖拽排序"
+        CancelDelete = "取消删除"
+        DeleteSelected = "删除已选条目"
+        DeleteSelectedRules = "删除已选规则"
+        ClearMode = "清空当前模式"
+        EnterDeleteMode = "进入删除模式"
+        EmptyString = "空字符串"
+        ArrayItems = "数组 %d 项"
+        ObjectFields = "对象 %d 个字段"
+        Clear = "清空"
+        Rules = "规则"
+        AddCustom = "添加自定义"
+        ContentEmpty = "内容不能为空"
+        Confirm = "确定"
+        OneItemPerLine = "每行一个条目"
+        AddItem = "新增一项"
+        DeleteLastItem = "删除最后一项"
+        Copy = "复制"
+        Delete = "删除"
+        MoveUp = "上移"
+        MoveDown = "下移"
+        AddObject = "新增对象"
+        SubRuleName = "子规则名称"
+        NoRules = "暂无规则"
+        RulesConfiguredInline = "已配置 %d 条规则"
+        AddSubRuleGroup = "新增子规则组"
+        EditSubRule = "编辑子规则"
+        KeyName = "键名"
+        List = "列表"
+        AddItem = "新增条目"
+        EditItem = "编辑条目"
+        ClearCurrentMode = "清空当前模式"
+        NewProxyNode = "新增代理节点"
+        NewProxyGroup = "新增策略组"
+        EditProxyNode = "编辑代理节点"
+        EditProxyGroup = "编辑策略组"
+        UnnamedProxyNode = "未命名代理节点"
+        UnnamedProxyGroup = "未命名策略组"
+        EnterDeleteMode = "进入删除模式"
+        ProxyNode = "代理节点"
+        ProxyGroup = "策略组"
+        RuleEdit = "规则编辑"
+        SubRuleTarget = "子规则目标"
+        ProxyGroupTarget = "策略组目标"
+        RuleTypeEmpty = "规则类型不能为空"
+        PayloadEmpty = "匹配内容不能为空"
+        TargetEmpty = "目标不能为空"
+        MatchResult = "匹配结果"
+        SelectMatchResult = "选择匹配结果"
+        CustomMatchResult = "自定义匹配结果"
+        SelectSubRuleTarget = "选择子规则目标"
+        SelectProxyGroupTarget = "选择策略组目标"
+        CustomSubRuleTarget = "自定义子规则目标"
+        CustomProxyGroupTarget = "自定义策略组目标"
+        SelectRuleProvider = "选择规则提供者"
+        RuleBody = "规则主体"
+        RuleType = "类型"
+        Payload = "匹配内容"
+        AdditionalParams = "附加参数"
+        BasicConnection = "基础连接"
+        NetworkAndRoute = "网络与路由"
+        PortEmptyHint = "留空表示不覆写端口"
+        TypeEmpty = "类型不能为空"
+        MemberSource = "成员来源"
+        HealthCheckAndFilter = "健康检查与过滤"
+        SelectProxyGroupMember = "选择策略组成员"
+        CustomMember = "自定义成员"
+        SaveProxyNode = "保存代理节点"
+        SaveProxyGroup = "保存策略组"
+        SaveRule = "保存规则"
+        RuleProviderInputHint = "输入框是自定义内容；留空时使用下面选中的规则提供者"
+        LogicalRuleHint = "逻辑规则可直接填写完整 payload"
+        OtherExtraParams = "其他附加参数，多个值用逗号分隔"
+        ExtraParamsHint = "例如 src,no-resolve 之外的额外参数\n逻辑规则请直接填写完整 payload，例如 ((DOMAIN,google.com),(NETWORK,udp))。"
+    }
+
+    Draft = {
+        Object = "对象"
+        SubRuleGroup = "子规则组"
+        Name = "名称"
+        NameRequired = "名称不能为空"
+        Save = "保存"
+        BasicInfo = "基础信息"
+        BasicIdentity = "基础身份"
+        CoreSource = "核心来源"
+        NetworkAuth = "网络与认证"
+        RuleList = "规则列表"
+        NoRules = "未配置规则"
+        RulesConfigured = "已配置 %d 条规则"
+        EditSubRules = "编辑子规则"
+        ExtraFields = "额外字段"
+        AddExtraField = "新增额外字段"
+        EditExtraField = "编辑额外字段"
+        AddHealthCheckField = "新增 health-check 额外字段"
+        EditHealthCheckField = "编辑 health-check 额外字段"
+        AddOverrideField = "新增 override 额外字段"
+        EditOverrideField = "编辑 override 额外字段"
+        HealthCheckSwitch = "Health Check 开关"
+        HealthCheckFields = "Health Check 额外字段"
+        OverrideSwitch = "Override 开关"
+        OverrideFields = "Override 额外字段"
+        BooleanOptions = "布尔选项"
+        HeaderHint = "每行一个 header，格式：Key: value1 | value2"
+        ConfigName = "配置名称"
+        ConfigDescription = "配置说明"
+        PresetTemplate = "预设分流模板"
+        OfficialMrs = "官方 MRS 常用分流"
+        OfficialMrsSummary = "顶部模板编辑器，支持地区自动组和每个分流项单独开关；应用时会重建当前覆写里的规则三块。"
+        ConfigSections = "配置分区"
+        Apply = "应用"
+        RegionalAutoGroup = "地区自动组"
+        BasicRouting = "基础分流"
+        ServiceRouting = "服务分流"
+        ClickToAddExtraField = "点击添加额外字段"
+        DeleteExtraField = "删除额外字段"
+        ValueType = "值类型"
+        StringValue = "字符串值"
+        IntValue = "整数值"
+        DoubleValue = "浮点数值"
+        JsonFragment = "单个 JSON 片段"
+        KeyNameEmpty = "键名不能为空"
+        ValueTypeMismatch = "当前值与所选类型不匹配"
+    }
+
+    Form = {
+        RuleChain = "规则链"
+        RuleChainNotSet = "未设置规则链"
+        SubRules = "子规则"
+        SubRulesHint = "结构化规则组"
+        SubRulesAdvanced = "复杂子规则结构统一收在高级 JSON 中"
+        RuleProviders = "规则提供者"
+        RuleProvidersHint = "结构化 Provider"
+        RuleProvidersAdvanced = "需要复杂 Provider 字段时再进入高级 JSON"
+        ProxyNodes = "代理节点"
+        ProxyNodesHint = "结构化代理条目"
+        ProxyProviders = "代理提供者"
+        ProxyProvidersHint = "结构化 Provider"
+        ProxyProvidersAdvanced = "需要协议细节、校验或额外字段时再进入高级 JSON"
+        ProxyGroups = "策略组"
+        ProxyGroupsHint = "结构化策略组"
+        StructuredEdit = "%s · 结构化编辑"
+        AdvancedJson = "%s · 高级 JSON"
+        OpenAdvancedEdit = "打开高级编辑"
+        OpenAdvancedEditSummary = "直接编辑原始对象，用于补充结构化表单未覆盖的字段"
+        ItemsConfigured = "已配置 %d 项"
+
+        ProxyPorts = "代理端口"
+        RunAndLog = "运行与日志"
+        ProcessMode = "进程匹配模式"
+        NotModify = "不修改"
+        UnifiedDelay = "统一延迟"
+        TcpConcurrent = "TCP 并发"
+        GeodataMode = "Geodata 模式"
+        RunAndLogExtra = "运行与日志补充"
+        Seconds = "秒"
+        ConnectionNetwork = "连接与网络"
+        OutboundInterface = "出站接口"
+        RoutingMark = "路由标记"
+        GeositeMatcher = "Geosite 匹配器"
+        GlobalClientFingerprint = "全局客户端指纹"
+        LanAccess = "局域网访问"
+        AllowedIPs = "允许 IP 段"
+        DisallowedIPs = "禁止 IP 段"
+        LanAddress = "局域网地址"
+        BindAddress = "绑定地址"
+        UserAuth = "用户验证"
+        SkipAuthIPs = "跳过鉴权网段"
+        ExternalControl = "外部控制"
+        ExternalController = "外部控制器"
+        ExternalControllerHttps = "HTTPS 控制器"
+        ExternalDoH = "外部 DoH 服务"
+        ApiSecret = "API 访问密钥"
+        ControllerCors = "控制器 CORS"
+        AllowPrivateNetwork = "允许私有网络"
+        ConfigPersistence = "配置持久化"
+        SaveGroupSelection = "保存策略组选择"
+        SaveFakeIpMapping = "保存 Fake-IP 映射"
+        GeoResources = "GEO 资源开关"
+        AutoUpdateGeo = "自动更新 GEO"
+        GeoUpdateInterval = "GEO 更新间隔"
+        Hours = "小时"
+        GeoipUrl = "GeoIP 地址"
+        GeositeUrl = "GeoSite 地址"
+        MmdbUrl = "MMDB 地址"
+
+        TunBasicSwitch = "基础开关"
+        Stack = "协议栈"
+        AutoRoute = "自动路由"
+        AutoRedirect = "自动重定向"
+        AutoDetectInterface = "自动识别网卡"
+        StrictRoute = "严格路由"
+        EndpointIndependentNat = "独立于端点 NAT"
+        NetworkPerfSwitch = "网络性能开关"
+        EnableGso = "启用 GSO"
+        DisableIcmpForward = "禁用 ICMP 转发"
+        NetworkPerfParams = "网络性能参数"
+
+        DnsBasicSwitch = "基础开关"
+        DnsFakeIpRange = "FakeIP 地址段"
+        DnsUpstream = "上游服务器"
+        DnsPolicyMode = "策略模式"
+
+        SnifferSwitch = "开关"
+        SnifferPorts = "端口"
+        SnifferOverride = "覆写目标"
+        SnifferSkipDomain = "跳过域名"
+        SnifferForceDomain = "强制域名"
+        SnifferParsePureIp = "解析纯 IP"
+
+        TunRouteAndApps = "路由与应用"
+        DnsHijack = "DNS 劫持"
+        RouteAddress = "路由网段"
+        RouteExcludeAddress = "排除路由网段"
+        IncludePackage = "包含应用"
+        ExcludePackage = "排除应用"
+        CacheLimit = "缓存上限"
+        DnsUpstreamServers = "上游服务器"
+        NameserverPolicySection = "策略映射"
+        FilterList = "过滤列表"
+        BasicPolicy = "基础策略"
+        SkipAndForce = "跳过与强制"
+        SkipSrcAddress = "跳过来源地址"
+        SkipDstAddress = "跳过目标地址"
+    }
+
+    Rule = {
+        EmptyWarning = "规则 #%d 为空"
+        InvalidFormatWarning = "规则 #%d 格式可能不正确: %s"
+        MissingTargetWarning = "规则 #%d 缺少策略组目标: %s"
+    }
+
+    Save = {
+        PresetNotModifiable = "系统预设不可修改"
+        ApplyFailed = "覆写已保存，但重新应用到当前配置失败"
+        Failed = "保存覆写配置失败"
+        ImportEmpty = "导入内容不能为空"
+        ImportDefaultName = "导入的覆写配置"
+    }
+
     Dns = {
         Policy = "DNS 策略"
         PolicyNotModify = "不修改"
@@ -166,7 +426,7 @@ Override = {
         PolicyUseBuiltin = "使用内置"
         PreferH3 = "优先 HTTP/3"
         Listen = "监听地址"
-        ListenHint = "例如: 0.0.0.0:53"
+        ListenHint = "例如：0.0.0.0:53"
         Ipv6 = "DNS IPv6"
         UseHosts = "使用 hosts"
         AppendSystem = "追加系统 DNS"
@@ -176,30 +436,56 @@ Override = {
         EnhancedFakeip = "FakeIP"
         EnhancedMapping = "Mapping"
         Servers = "DNS 服务器"
-        ServersHint = "例如: 8.8.8.8, tls://dns.google"
+        ServersHint = "例如：8.8.8.8, tls://dns.google"
         Fallback = "备用 DNS"
-        FallbackHint = "例如: 1.1.1.1"
+        FallbackHint = "例如：1.1.1.1"
         Default = "默认 DNS"
         DefaultHint = "用于解析 DNS 服务器域名"
         FakeipFilter = "FakeIP 过滤"
-        FakeipFilterHint = "例如: +.lan, localhost"
+        FakeipFilterHint = "例如：+.lan, localhost"
         FakeipFilterMode = "FakeIP 过滤模式"
         FakeipBlacklist = "黑名单"
         FakeipWhitelist = "白名单"
         FallbackGeoip = "GeoIP 回退"
         FallbackGeoipCode = "GeoIP 代码"
-        FallbackGeoipCodeHint = "例如: CN"
+        FallbackGeoipCodeHint = "例如：CN"
         FallbackDomain = "域名回退"
-        FallbackDomainHint = "例如: +.google.com"
+        FallbackDomainHint = "例如：+.google.com"
         FallbackIpcidr = "IP CIDR 回退"
-        FallbackIpcidrHint = "例如: 240.0.0.0/4"
+        FallbackIpcidrHint = "例如：240.0.0.0/4"
         NameserverPolicy = "DNS 策略"
         NameserverPolicyKey = "域名匹配规则"
-        NameserverPolicyValue = "DNS服务器"
+        NameserverPolicyValue = "DNS 服务器"
     }
-    
-    ResetDialog = {
-        Title = "重置覆写设置"
-        Message = "所有的覆写设置将会被擦除，确定要继续吗？"
+
+    General = {
+        HttpPort = "HTTP 端口"
+        SocksPort = "SOCKS 端口"
+        MixedPort = "Mixed 端口"
+        RedirectPort = "Redirect 端口"
+        TproxyPort = "TProxy 端口"
+        AllowLan = "允许局域网"
+        Ipv6 = "IPv6"
+        ProxyMode = "代理模式"
+        LogLevel = "日志等级"
+    }
+
+    Label = {
+        CacheAlgorithm = "缓存算法"
+        Enable = "启用"
+        FakeIpRange = "FakeIP 地址段"
+        ForceDnsMapping = "强制 DNS 映射"
+        ForceDomain = "强制嗅探域名"
+        HttpOverride = "HTTP 覆写"
+        KeepAliveIdle = "Keep Alive 空闲阈值"
+        KeepAliveInterval = "Keep Alive 间隔"
+        OverrideDestination = "覆写目标地址"
+        ParsePureIp = "解析纯 IP"
+        QuicOverride = "QUIC 覆写"
+        RespectRules = "遵循路由规则"
+        RulesReplace = "覆盖规则"
+        SkipDomain = "跳过嗅探域名"
+        TlsOverride = "TLS 覆写"
+        UseSystemHosts = "使用系统 Hosts"
     }
 }

@@ -111,9 +111,9 @@ fun ListMergeStrategySelector(
 ) {
     val items = listOf(
         MLang.Component.Selector.NotModify,
-        "替换",
-        "前置",
-        "后置",
+        MLang.Component.Selector.Replace,
+        MLang.Component.Selector.Prepend,
+        MLang.Component.Selector.Append,
     )
     val values = listOf(
         ListMergeStrategy.None,
@@ -141,8 +141,8 @@ fun MapMergeStrategySelector(
 ) {
     val items = listOf(
         MLang.Component.Selector.NotModify,
-        "替换",
-        "合并",
+        MLang.Component.Selector.Replace,
+        MLang.Component.Selector.Merge,
     )
     val values = listOf(
         MapMergeStrategy.None,

@@ -231,9 +231,9 @@ fun StringListWithModifiersInput(
 ) {
     val summary = remember(replaceValue, startValue, endValue) {
         buildList {
-            replaceValue?.takeIf { it.isNotEmpty() }?.let { add("替换 ${it.size}") }
-            startValue?.takeIf { it.isNotEmpty() }?.let { add("前置 ${it.size}") }
-            endValue?.takeIf { it.isNotEmpty() }?.let { add("后置 ${it.size}") }
+            replaceValue?.takeIf { it.isNotEmpty() }?.let { add("Replace ${it.size}") }
+            startValue?.takeIf { it.isNotEmpty() }?.let { add("Prepend ${it.size}") }
+            endValue?.takeIf { it.isNotEmpty() }?.let { add("Append ${it.size}") }
         }.joinToString(" · ").ifEmpty { MLang.Component.Selector.NotModify }
     }
 
@@ -270,8 +270,8 @@ fun StringMapWithModifiersInput(
 
     val summary = remember(replaceValue, mergeValue) {
         buildList {
-            replaceValue?.takeIf { it.isNotEmpty() }?.let { add("替换 ${it.size}") }
-            mergeValue?.takeIf { it.isNotEmpty() }?.let { add("合并 ${it.size}") }
+            replaceValue?.takeIf { it.isNotEmpty() }?.let { add("Replace ${it.size}") }
+            mergeValue?.takeIf { it.isNotEmpty() }?.let { add("Merge ${it.size}") }
         }.joinToString(" · ").ifEmpty { MLang.Component.Selector.NotModify }
     }
 
@@ -304,13 +304,13 @@ fun StringMapWithModifiersInput(
                 ) {
                     ModifierModeCard(
                         modifier = Modifier.weight(1f),
-                        title = "覆盖",
+                        title = "Replace",
                         summary = buildMapModeSummary(replaceValue),
-                        helperText = "整体替换整个字典",
+                        helperText = "Replace entire dictionary",
                         onEdit = {
                             onEditMap(
                                 MapMergeStrategy.Replace,
-                                "$title (替换)",
+                                "$title (Replace)",
                                 keyPlaceholder,
                                 valuePlaceholder,
                                 replaceValue,
@@ -325,13 +325,13 @@ fun StringMapWithModifiersInput(
                     )
                     ModifierModeCard(
                         modifier = Modifier.weight(1f),
-                        title = "合并",
+                        title = "Merge",
                         summary = buildMapModeSummary(mergeValue),
-                        helperText = "同名键会覆盖旧值",
+                        helperText = "Overwrites values for matching keys",
                         onEdit = {
                             onEditMap(
                                 MapMergeStrategy.Merge,
-                                "$title (合并)",
+                                "$title (Merge)",
                                 keyPlaceholder,
                                 valuePlaceholder,
                                 mergeValue,
@@ -345,9 +345,9 @@ fun StringMapWithModifiersInput(
                         },
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "合并模式只改指定键，未声明的键会保持原样。",
+                    text = "Merge mode only modifies specified keys; unmodified keys remain unchanged.",
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
@@ -392,14 +392,14 @@ private fun ModifierModeCard(
                 modifier = Modifier.weight(1f),
                 onClick = onEdit,
             ) {
-                Text("编辑")
+                Text("Edit")
             }
             if (onClear != null) {
                 Button(
                     modifier = Modifier.weight(1f),
                     onClick = onClear,
                 ) {
-                    Text("清空")
+                    Text("Clear")
                 }
             }
         }
@@ -408,14 +408,14 @@ private fun ModifierModeCard(
 
 private fun buildListModeSummary(value: List<String>?): String {
     return when {
-        value.isNullOrEmpty() -> "未设置"
-        else -> "共 ${value.size} 项 · ${value.first()}"
+        value.isNullOrEmpty() -> "Not set"
+        else -> "Total ${value.size} items · ${value.first()}"
     }
 }
 
 private fun buildMapModeSummary(value: Map<String, String>?): String {
     return when {
-        value.isNullOrEmpty() -> "未设置"
-        else -> "共 ${value.size} 项 · ${value.entries.first().key}"
+        value.isNullOrEmpty() -> "Not set"
+        else -> "Total ${value.size} items · ${value.entries.first().key}"
     }
 }

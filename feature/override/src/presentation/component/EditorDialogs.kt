@@ -34,6 +34,7 @@ import com.github.yumelira.yumebox.presentation.util.decodeObjectFields
 import com.github.yumelira.yumebox.presentation.util.encodeObjectFields
 import com.github.yumelira.yumebox.presentation.util.jsonElementToEditorValue
 import com.github.yumelira.yumebox.presentation.util.toOrderedJsonElementMap
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.JsonElement
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -60,7 +61,7 @@ fun StringListEditorDialog(
             modifier = Modifier.padding(20.dp),
         ) {
             Text(
-                text = "每行一个条目",
+                text = MLang.Override.Editor.OneItemPerLine,
                 style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.outline,
             )
@@ -82,8 +83,8 @@ fun StringListEditorDialog(
                     onValueChange(lines.ifEmpty { null })
                     show.value = false
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }
@@ -166,7 +167,7 @@ fun StringMapEditorDialog(
                     modifier = Modifier.weight(1f),
                     onClick = { entries.add("" to "") },
                 ) {
-                    Text("新增一项")
+                    Text(MLang.Override.Editor.AddItem)
                 }
                 Button(
                     modifier = Modifier.weight(1f),
@@ -178,7 +179,7 @@ fun StringMapEditorDialog(
                         }
                     },
                 ) {
-                    Text("删除最后一项")
+                    Text(MLang.Override.Editor.DeleteLastItem)
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -191,8 +192,8 @@ fun StringMapEditorDialog(
                     onValueChange(map.ifEmpty { null })
                     show.value = false
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }
@@ -258,7 +259,7 @@ fun JsonObjectListEditorDialog(
                                     showItemEditor.value = true
                                 },
                             ) {
-                                Text("编辑")
+                                Text(MLang.Override.Editor.Edit)
                             }
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -266,7 +267,7 @@ fun JsonObjectListEditorDialog(
                                     drafts.add(index + 1, toOrderedJsonElementMap(fields))
                                 },
                             ) {
-                                Text("复制")
+                                Text(MLang.Override.Editor.Copy)
                             }
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -274,7 +275,7 @@ fun JsonObjectListEditorDialog(
                                     drafts.removeAt(index)
                                 },
                             ) {
-                                Text("删除")
+                                Text(MLang.Override.Card.Delete)
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -288,7 +289,7 @@ fun JsonObjectListEditorDialog(
                                     moveItem(drafts, index, index - 1)
                                 },
                             ) {
-                                Text("上移")
+                                Text(MLang.Override.Editor.MoveUp)
                             }
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -297,7 +298,7 @@ fun JsonObjectListEditorDialog(
                                     moveItem(drafts, index, index + 1)
                                 },
                             ) {
-                                Text("下移")
+                                Text(MLang.Override.Editor.MoveDown)
                             }
                         }
                     }
@@ -314,7 +315,7 @@ fun JsonObjectListEditorDialog(
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
                 Text(
-                    text = "新增对象",
+                    text = MLang.Override.Editor.AddObject,
                         color = MiuixTheme.colorScheme.onPrimary,
                 )
             }
@@ -325,8 +326,8 @@ fun JsonObjectListEditorDialog(
                     onValueChange(drafts.toList().ifEmpty { null })
                     show.value = false
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }
@@ -404,13 +405,13 @@ fun JsonObjectMapEditorDialog(
                                     showItemEditor.value = true
                                 },
                             ) {
-                                Text("编辑")
+                                Text(MLang.Override.Editor.Edit)
                             }
                             Button(
                                 modifier = Modifier.weight(1f),
                                 onClick = { drafts.removeAt(index) },
                             ) {
-                                Text("删除")
+                                Text(MLang.Override.Card.Delete)
                             }
                         }
                     }
@@ -441,8 +442,8 @@ fun JsonObjectMapEditorDialog(
                     onValueChange(mappedValue.ifEmpty { null })
                     show.value = false
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }
@@ -504,12 +505,12 @@ fun SubRulesEditorDialog(
                         TextField(
                             value = draft.first,
                             onValueChange = { updatedKey -> drafts[index] = updatedKey to draft.second },
-                            label = "子规则名称",
+                            label = MLang.Override.Editor.SubRuleName,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (draft.second.isEmpty()) "暂无规则" else "已配置 ${draft.second.size} 条规则",
+                            text = if (draft.second.isEmpty()) MLang.Override.Draft.NoRules else MLang.Override.Editor.RulesConfiguredInline.format(draft.second.size),
                             fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
@@ -524,7 +525,7 @@ fun SubRulesEditorDialog(
                                     showRulesEditor.value = true
                                 },
                             ) {
-                                Text("编辑规则")
+                                Text(MLang.Override.Editor.EditRule)
                             }
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -536,7 +537,7 @@ fun SubRulesEditorDialog(
                                     }
                                 },
                             ) {
-                                Text("删除")
+                                Text(MLang.Override.Card.Delete)
                             }
                         }
                     }
@@ -549,7 +550,7 @@ fun SubRulesEditorDialog(
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
                 Text(
-                    text = "新增子规则组",
+                    text = MLang.Override.Editor.AddSubRuleGroup,
                         color = MiuixTheme.colorScheme.onPrimary,
                 )
             }
@@ -563,15 +564,15 @@ fun SubRulesEditorDialog(
                     onValueChange(mappedValue.ifEmpty { null })
                     show.value = false
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }
 
     StringListEditorDialog(
         show = showRulesEditor,
-        title = drafts.getOrNull(editingIndex)?.first?.ifBlank { "编辑子规则" } ?: "编辑子规则",
+        title = drafts.getOrNull(editingIndex)?.first?.ifBlank { MLang.Override.Editor.EditSubRule } ?: MLang.Override.Editor.EditSubRule,
         placeholder = "DOMAIN-SUFFIX,example.com,DIRECT",
         value = drafts.getOrNull(editingIndex)?.second,
         onValueChange = { updatedRules ->
@@ -607,7 +608,7 @@ private fun JsonObjectFieldsDialog(
                 TextField(
                     value = keyText,
                     onValueChange = { keyText = it },
-                    label = "键名",
+                    label = MLang.Override.Editor.KeyName,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -638,8 +639,8 @@ private fun JsonObjectFieldsDialog(
                     )
                     show.value = false
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }

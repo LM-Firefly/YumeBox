@@ -120,7 +120,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
                         ) {
                             Icon(
                                 imageVector = Yume.Share,
-                                contentDescription = MLang.Log.Action.Save,
+                                contentDescription = "Save",
                             )
                         }
                     }
@@ -167,7 +167,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
                 ) {
                     Icon(
                         imageVector = if (isRecording) Yume.PowerOff else Yume.Play,
-                        contentDescription = if (isRecording) MLang.Log.Action.StopRecording else MLang.Log.Action.StartRecording,
+                        contentDescription = if (isRecording) "Stop recording" else "Start recording",
                         tint = MiuixTheme.colorScheme.onPrimary,
                     )
                 }

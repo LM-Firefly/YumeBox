@@ -142,7 +142,6 @@ private fun OnboardingActivityTheme(
 ) {
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val colorTheme by appSettingsViewModel.colorTheme.state.collectAsState()
     val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
     val pageScale by appSettingsViewModel.pageScale.state.collectAsState()
 
@@ -155,7 +154,6 @@ private fun OnboardingActivityTheme(
         CompositionLocalProvider(LocalDensity provides scaledDensity) {
             YumeTheme(
                 themeMode = themeMode,
-                colorTheme = colorTheme,
                 themeSeedColorArgb = themeSeedColorArgb,
             ) {
                 Scaffold { _ ->

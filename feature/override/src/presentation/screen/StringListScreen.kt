@@ -40,6 +40,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideListEditorMode
 import com.github.yumelira.yumebox.presentation.util.OverrideListModeValues
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -58,7 +59,7 @@ fun OverrideStringListEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = OverrideStructuredEditorStore.stringListEditorTitle.ifBlank { "列表" }
+    val title = OverrideStructuredEditorStore.stringListEditorTitle.ifBlank { MLang.Override.Editor.List }
     val placeholder = OverrideStructuredEditorStore.stringListEditorPlaceholder
     val availableModes = OverrideStructuredEditorStore.stringListEditorAvailableModes
     var showItemDialog by remember { mutableStateOf(false) }
@@ -104,7 +105,7 @@ fun OverrideStringListEditorScreen(
                 controller = addFabController,
                 visible = showAddFab,
                 imageVector = Yume.`Badge-plus`,
-                contentDescription = "新增条目",
+                contentDescription = MLang.Override.Editor.AddItem,
                 onClick = {
                     editingIndex = -1
                     currentDraftValue = ""
@@ -123,7 +124,7 @@ fun OverrideStringListEditorScreen(
                     ) {
                         Icon(
                             imageVector = Yume.Undo,
-                            contentDescription = "清空当前模式",
+                            contentDescription = MLang.Override.Editor.ClearCurrentMode,
                         )
                     }
                 },
@@ -140,7 +141,7 @@ fun OverrideStringListEditorScreen(
             item {
                 Card {
                     WindowDropdown(
-                        title = "修饰符模式",
+                        title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
@@ -183,7 +184,7 @@ fun OverrideStringListEditorScreen(
 
         StringListEntryDialog(
             show = showItemDialog,
-            title = if (editingIndex >= 0) "编辑条目" else "新增条目",
+            title = if (editingIndex >= 0) MLang.Override.Editor.EditItem else MLang.Override.Editor.AddItem,
             placeholder = placeholder,
             initialValue = currentDraftValue,
             onConfirm = { updatedValue ->
@@ -214,7 +215,7 @@ fun OverrideStringListEditorScreen(
 
         AppDialog(
             show = showResetDialog,
-            title = "清空当前模式",
+            title = MLang.Override.Editor.ClearCurrentMode,
             summary = "清空后将移除当前修饰符模式里的全部条目。",
             onDismissRequest = { showResetDialog = false },
         ) {
@@ -225,8 +226,8 @@ fun OverrideStringListEditorScreen(
                     val mode = OverrideStructuredEditorStore.stringListEditorSelectedMode
                     applyStringListValues(currentStringListValues().update(mode, emptyList()))
                 },
-                cancelText = "取消",
-                confirmText = "清空",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Clear,
             )
         }
     }
@@ -264,7 +265,7 @@ private fun StringListEntryCard(
             )
             OverrideCardActionIconButton(
                 imageVector = Yume.Delete,
-                contentDescription = "删除条目",
+                contentDescription = MLang.Override.Card.Delete,
                 onClick = onDelete,
             )
         }
@@ -308,7 +309,7 @@ private fun StringListEntryDialog(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("取消")
+                    Text(MLang.Override.Dialog.Button.Cancel)
                 }
                 Button(
                     onClick = { onConfirm(draftValue) },
@@ -316,7 +317,7 @@ private fun StringListEntryDialog(
                     colors = ButtonDefaults.buttonColorsPrimary(),
                 ) {
                     Text(
-                        "确认",
+                        MLang.Override.Editor.Confirm,
                     color = MiuixTheme.colorScheme.onPrimary,
                     )
                 }

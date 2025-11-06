@@ -1,47 +1,17 @@
 <Service>
 Service = {
     Notification = {
-        ChannelDescription = "Display Clash service running status"
-        ActionDisconnect = "Disconnect"
-        ConnectedWithProfile = "Connected: %s"
-        Connected = "Connected"
         Running = "Running"
         TrafficFormat = "Total: %s"
         UnknownProfile = "Unknown profile"
     }
-    
-    Status = {
-        Connecting = "Connecting..."
-        Establishing = "Establishing connection"
-        StartingProxy = "Starting proxy"
-        StartFailed = "Start failed"
-        ProfileNotFound = "Profile not found"
-        ConfigLoadFailed = "Config load failed"
-        VpnEstablishFailed = "Unable to establish VPN connection"
-        HttpProxyStartFailed = "Unable to start HTTP proxy"
-        TunStartFailed = "Failed to start TUN"
-        UnknownError = "Unknown error"
-    }
-    
+
     Tile = {
-        Connected = "Connected"
-        Disconnected = "Disconnected"
-        Connecting = "Connecting..."
-        Disconnecting = "Disconnecting..."
+        ClickToOpen = "Click to open app"
         ClickToStartProxy = "Start proxy"
         ClickToStopProxy = "Stop proxy"
-        Unconfigured = "Unconfigured"
-        ClickToOpen = "Click to open app"
-        ModeVpn = "VPN Mode"
-        ModeHttp = "HTTP Mode"
-    }
-    
-    LogRecord = {
-        ChannelName = "Log Recording"
-        ChannelDescription = "Log recording service notification"
-        Recording = "Recording logs"
-        RecordingFile = "Recording logs..."
-        ActionStop = "Stop"
+        Connecting = "Connecting..."
+        Disconnecting = "Disconnecting..."
     }
 
     AutoRestart = {

@@ -136,7 +136,7 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                         ) {
                             Icon(
                                 imageVector = Yume.`Circle-fading-arrow-up`,
-                                contentDescription = MLang.Providers.Action.UpdateAll
+                                contentDescription = "Update all"
                             )
                         }
                     }
@@ -251,7 +251,7 @@ private fun ProviderCard(
                                 modifier = Modifier.size(20.dp),
                                 imageVector = MiuixIcons.Edit,
                                 tint = updateTint,
-                                contentDescription = MLang.Providers.Action.Operation,
+                                contentDescription = "Operation",
                             )
                             Text(
                                 modifier = Modifier.padding(end = 3.dp),

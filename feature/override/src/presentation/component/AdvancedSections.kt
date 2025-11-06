@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.*
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.presentation.util.*
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.JsonElement
 import top.yukonga.miuix.kmp.extra.SuperArrow
 
@@ -73,7 +74,7 @@ fun RulesEditor(
     onEditRuleList: OpenRuleListEditor,
 ) {
     Column {
-        SmallTitle("规则链")
+        SmallTitle(MLang.Override.Form.RuleChain)
         OverrideSelectorCard {
             StructuredEditorEntry(
                 title = "Rules",
@@ -81,7 +82,7 @@ fun RulesEditor(
                     replaceCount = config.rules?.size ?: 0,
                     startCount = config.rulesStart?.size ?: 0,
                     endCount = config.rulesEnd?.size ?: 0,
-                    emptyHint = "未设置规则链",
+                    emptyHint = MLang.Override.Form.RuleChainNotSet,
                 ),
                 onClick = {
                     val values = OverrideListModeValues(
@@ -129,22 +130,22 @@ fun SubRulesEditorSection(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle("子规则")
+        SmallTitle(MLang.Override.Form.SubRules)
         StructuredInputContent(
-            title = "子规则",
+            title = MLang.Override.Form.SubRules,
             summary = buildMergeModifierSummary(
                 replaceCount = config.subRules?.size ?: 0,
                 mergeCount = config.subRulesMerge?.size ?: 0,
-                emptyHint = "结构化规则组",
+                emptyHint = MLang.Override.Form.SubRulesHint,
             ),
-            advancedSummary = "复杂子规则结构统一收在高级 JSON 中",
+            advancedSummary = MLang.Override.Form.SubRulesAdvanced,
             onStructuredClick = {
                 val values = OverrideListModeValues(
                     replaceValue = config.subRules,
                     mergeValue = config.subRulesMerge,
                 )
                     onEditSubRules(
-                        "子规则",
+                        MLang.Override.Form.SubRules,
                         values,
                         listOf(
                             OverrideListEditorMode.Replace,
@@ -169,7 +170,7 @@ fun SubRulesEditorSection(
             },
             onAdvancedClick = {
                 onEditJson(
-                    "子规则",
+                    MLang.Override.Form.SubRules,
                     "{\n  \"sub-rule\": [\"DOMAIN,example.com,DIRECT\"]\n}",
                     encodeSubRules(config.subRules),
                 ) {
@@ -188,15 +189,15 @@ fun RuleProvidersEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle("规则提供者")
+        SmallTitle(MLang.Override.Form.RuleProviders)
         StructuredInputContent(
-            title = "规则提供者",
+            title = MLang.Override.Form.RuleProviders,
             summary = buildMergeModifierSummary(
                 replaceCount = config.ruleProviders?.size ?: 0,
                 mergeCount = config.ruleProvidersMerge?.size ?: 0,
-                emptyHint = "结构化 Provider",
+                emptyHint = MLang.Override.Form.RuleProvidersHint,
             ),
-            advancedSummary = "需要复杂 Provider 字段时再进入高级 JSON",
+            advancedSummary = MLang.Override.Form.RuleProvidersAdvanced,
             onStructuredClick = {
                 val values = OverrideListModeValues(
                     replaceValue = config.ruleProviders,
@@ -204,7 +205,7 @@ fun RuleProvidersEditor(
                 )
                 onEditObjectMap(
                     OverrideStructuredMapType.RuleProviders,
-                    "规则提供者",
+                    MLang.Override.Form.RuleProviders,
                     values,
                     listOf(
                         OverrideListEditorMode.Replace,
@@ -228,7 +229,7 @@ fun RuleProvidersEditor(
             },
             onAdvancedClick = {
                 onEditJson(
-                    "规则提供者",
+                    MLang.Override.Form.RuleProviders,
                     "{\n  \"google\": {\n    \"type\": \"http\"\n  }\n}",
                     encodeObjectMap(config.ruleProviders),
                 ) {
@@ -247,15 +248,15 @@ fun ProxiesEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle("代理节点")
+        SmallTitle(MLang.Override.Form.ProxyNodes)
         OverrideSelectorCard {
             StructuredEditorEntry(
-                title = "代理节点",
+                title = MLang.Override.Form.ProxyNodes,
                 summary = buildModifierSummary(
                     replaceCount = config.proxies?.size ?: 0,
                     startCount = config.proxiesStart?.size ?: 0,
                     endCount = config.proxiesEnd?.size ?: 0,
-                    emptyHint = "结构化代理条目",
+                    emptyHint = MLang.Override.Form.ProxyNodesHint,
                 ),
                 onClick = {
                     val values = OverrideListModeValues(
@@ -265,7 +266,7 @@ fun ProxiesEditor(
                     )
                     onEditObjectList(
                         OverrideStructuredObjectType.Proxies,
-                        "代理节点",
+                        MLang.Override.Form.ProxyNodes,
                         values,
                         listOf(
                             OverrideListEditorMode.Replace,
@@ -305,15 +306,15 @@ fun ProxyProvidersEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle("代理提供者")
+        SmallTitle(MLang.Override.Form.ProxyProviders)
         StructuredInputContent(
-            title = "代理提供者",
+            title = MLang.Override.Form.ProxyProviders,
             summary = buildMergeModifierSummary(
                 replaceCount = config.proxyProviders?.size ?: 0,
                 mergeCount = config.proxyProvidersMerge?.size ?: 0,
-                emptyHint = "结构化 Provider",
+                emptyHint = MLang.Override.Form.ProxyProvidersHint,
             ),
-            advancedSummary = "需要协议细节、校验或额外字段时再进入高级 JSON",
+            advancedSummary = MLang.Override.Form.ProxyProvidersAdvanced,
             onStructuredClick = {
                 val values = OverrideListModeValues(
                     replaceValue = config.proxyProviders,
@@ -321,7 +322,7 @@ fun ProxyProvidersEditor(
                 )
                 onEditObjectMap(
                     OverrideStructuredMapType.ProxyProviders,
-                    "代理提供者",
+                    MLang.Override.Form.ProxyProviders,
                     values,
                     listOf(
                         OverrideListEditorMode.Replace,
@@ -345,7 +346,7 @@ fun ProxyProvidersEditor(
             },
             onAdvancedClick = {
                 onEditJson(
-                    "代理提供者",
+                    MLang.Override.Form.ProxyProviders,
                     "{\n  \"provider\": {\n    \"type\": \"http\"\n  }\n}",
                     encodeObjectMap(config.proxyProviders),
                 ) {
@@ -364,15 +365,15 @@ fun ProxyGroupsEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle("策略组")
+        SmallTitle(MLang.Override.Form.ProxyGroups)
         OverrideSelectorCard {
             StructuredEditorEntry(
-                title = "策略组",
+                title = MLang.Override.Form.ProxyGroups,
                 summary = buildModifierSummary(
                     replaceCount = config.proxyGroups?.size ?: 0,
                     startCount = config.proxyGroupsStart?.size ?: 0,
                     endCount = config.proxyGroupsEnd?.size ?: 0,
-                    emptyHint = "结构化策略组",
+                    emptyHint = MLang.Override.Form.ProxyGroupsHint,
                 ),
                 onClick = {
                     val values = OverrideListModeValues(
@@ -382,7 +383,7 @@ fun ProxyGroupsEditor(
                     )
                     onEditObjectList(
                         OverrideStructuredObjectType.ProxyGroups,
-                        "策略组",
+                        MLang.Override.Form.ProxyGroups,
                         values,
                         listOf(
                             OverrideListEditorMode.Replace,
@@ -426,20 +427,20 @@ private fun StructuredInputContent(
     Column {
         OverrideSelectorCard {
             SuperArrow(
-                title = "$title · 结构化编辑",
+                title = MLang.Override.Form.StructuredEdit.format(title),
                 summary = summary,
                 onClick = onStructuredClick,
             )
         }
         OverrideAdvancedCard(
-            title = "$title · 高级 JSON",
+            title = MLang.Override.Form.AdvancedJson.format(title),
             summary = advancedSummary,
             expanded = advancedExpanded,
             onExpandedChange = { advancedExpanded = it },
         ) {
             SuperArrow(
-                title = "打开高级编辑",
-                summary = "直接编辑原始对象，用于补充结构化表单未覆盖的字段",
+                title = MLang.Override.Form.OpenAdvancedEdit,
+                summary = MLang.Override.Form.OpenAdvancedEditSummary,
                 onClick = onAdvancedClick,
             )
         }
@@ -464,7 +465,7 @@ private fun buildStructuredSummary(
     emptyHint: String,
 ): String {
     return if (count > 0) {
-        "已配置 $count 项"
+        MLang.Override.Form.ItemsConfigured.format(count)
     } else {
         emptyHint
     }
@@ -478,13 +479,13 @@ private fun buildModifierSummary(
 ): String {
     return buildList {
         if (replaceCount > 0) {
-            add("覆盖 $replaceCount")
+            add(MLang.Override.Modifier.ItemsCount.format(replaceCount))
         }
         if (startCount > 0) {
-            add("前置 $startCount")
+            add(MLang.Override.Modifier.Start)
         }
         if (endCount > 0) {
-            add("后置 $endCount")
+            add(MLang.Override.Modifier.End)
         }
     }.joinToString(" · ").ifEmpty { emptyHint }
 }
@@ -496,10 +497,10 @@ private fun buildMergeModifierSummary(
 ): String {
     return buildList {
         if (replaceCount > 0) {
-            add("覆盖 $replaceCount")
+            add(MLang.Override.Modifier.ItemsCount.format(replaceCount))
         }
         if (mergeCount > 0) {
-            add("合并 $mergeCount")
+            add(MLang.Override.Modifier.Merge)
         }
     }.joinToString(" · ").ifEmpty { emptyHint }
 }

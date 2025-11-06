@@ -1,7 +1,7 @@
 <Proxy Page>
 Proxy = {
     Title = "Nodes"
-    
+
     Mode = {
         Direct = "Direct"
         Global = "Global"
@@ -10,78 +10,41 @@ Proxy = {
         Switched = "Switched to: %s mode"
         SwitchFailed = "Mode switch failed: %s"
     }
-    
+
     Action = {
-        TestToast = "Testing..."
-        ExternalResources = "External Resources"
         Panel = "Panel"
         Test = "Test"
-        Settings = "Settings"
     }
-    
+
     Empty = {
         NoNodes = "No nodes"
         Hint = "Please load a profile in Config page"
     }
-    
+
     Testing = {
         Group = "Testing node group: %s"
         All = "Testing all node groups..."
         RequestSent = "Test request sent"
         Failed = "Test failed: %s"
-        Tip = "You can also test the node by dragging."
         InProgress = "Testing the node"
     }
-    
-    Refresh = {
-        Success = "Proxy groups refreshed"
-        Failed = "Refresh failed: %s"
-        Refreshing = "Refreshing..."
-    }
-    
-    PullToRefresh = {
-        PullToTest = "Pull to test delay"
-        ReleaseToTest = "Release to test delay"
-        DelaySuccess = "Delay test successful"
-        PullToTestAllGroups = "Pull to test all node groups"
-        ReleaseToTestAllGroups = "Release to test all node groups"
-        TestingAllGroups = "Testing all node groups..."
-        PullToTestCurrentGroup = "Pull to test current node group"
-        ReleaseToTestCurrentGroup = "Release to test current node group"
-        TestingCurrentGroup = "Testing current node group..."
-    }
-    
+
     Selection = {
         Switched = "Switched to: %s"
         Failed = "Switch failed"
         Error = "Switch failed: %s"
     }
-    
-    Settings = {
-        Title = "Display Settings"
-        ProxyMode = "Proxy Mode"
-        SortMode = "Sort Mode"
-        DisplayMode = "Display Mode"
-        SheetHeight = "Node sheet height %d%%"
-    }
-    
+
     SortMode = {
         Default = "Default"
         ByName = "By Name"
         ByLatency = "By Latency"
     }
-    
+
     DisplayMode = {
         SingleDetailed = "Single Detailed"
         SingleSimple = "Single Simple"
         DoubleDetailed = "Double Detailed"
         DoubleSimple = "Double Simple"
-    }
-
-    Error = {
-        NotStarted = "Not started"
-        SyncFailed = "Sync failed"
-        GroupNotFound = "Proxy group not found"
-        NotSelector = "Not a selector type"
     }
 }

@@ -1,16 +1,16 @@
 <Access Control Page>
 AccessControl = {
     Title = "访问控制"
-    
+
     Search = {
         Placeholder = "搜索应用..."
     }
-    
+
     AppList = {
         Title = "应用列表 (%d 已选择)"
         Loading = "loading..."
     }
-    
+
     Settings = {
         Title = "访问控制设置"
         ShowSystemApps = "显示系统应用"
@@ -33,14 +33,14 @@ AccessControl = {
         OverseasApps = "非中国应用"
         RegionSelectResult = "已按「%s」快捷选择，共 %d 个"
     }
-    
+
     SortMode = {
         PackageName = "包名"
         Label = "应用名称"
         InstallTime = "安装时间"
         UpdateTime = "更新时间"
     }
-    
+
     Button = {
         Cancel = "取消"
         Confirm = "确定"

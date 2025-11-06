@@ -603,7 +603,6 @@ internal fun PersonalizeContent(
         ThemeColorPickerItem(
             themeSeedColorArgb = themeSeedColorArgb,
             onThemeSeedColorChange = {},
-            onResetThemeSeedColor = {},
             showBottomSheetInPlace = false,
             onOpenPickerRequest = { onShowThemeColorPickerChange(true) },
         )
@@ -765,7 +764,7 @@ private fun HeroStartButton(
         )
         Icon(
             imageVector = Yume.ArrowRight,
-            contentDescription = MLang.Onboarding.Navigation.Start,
+            contentDescription = "Start",
             tint = MiuixTheme.colorScheme.onPrimary,
             modifier = Modifier.size(22.dp),
         )

@@ -22,6 +22,7 @@
 
 package com.github.yumelira.yumebox.presentation.util
 
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.*
 
 val OverrideEditorJson = Json {
@@ -258,11 +259,11 @@ fun summarizeExtraFieldValue(element: JsonElement): String {
     return when (element) {
         JsonNull -> "Null"
         is JsonPrimitive -> when {
-            element.isString -> element.content.ifBlank { "空字符串" }
+            element.isString -> element.content.ifBlank { MLang.Override.Editor.EmptyString }
             else -> element.content
         }
 
-        is JsonArray -> "数组 ${element.size} 项"
-        is JsonObject -> "对象 ${element.size} 个字段"
+        is JsonArray -> MLang.Override.Editor.ArrayItems.format(element.size)
+        is JsonObject -> MLang.Override.Editor.ObjectFields.format(element.size)
     }
 }

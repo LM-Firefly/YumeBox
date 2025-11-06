@@ -22,51 +22,60 @@
 
 package com.github.yumelira.yumebox.presentation.util
 
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.*
 import java.util.*
 
-enum class OverrideStructuredObjectType(
-    val title: String,
-    val itemLabel: String,
-    val emptyHint: String,
-) {
-    Proxies(
-        title = "代理节点",
-        itemLabel = "代理节点",
-        emptyHint = "暂无代理节点",
-    ),
-    ProxyGroups(
-        title = "策略组",
-        itemLabel = "策略组",
-        emptyHint = "暂无策略组",
-    ),
+enum class OverrideStructuredObjectType {
+    Proxies {
+        override val title: String get() = MLang.Override.Structured.Proxies.Title
+        override val itemLabel: String get() = MLang.Override.Structured.Proxies.ItemLabel
+        override val emptyHint: String get() = MLang.Override.Structured.Proxies.EmptyHint
+    },
+    ProxyGroups {
+        override val title: String get() = MLang.Override.Structured.ProxyGroups.Title
+        override val itemLabel: String get() = MLang.Override.Structured.ProxyGroups.ItemLabel
+        override val emptyHint: String get() = MLang.Override.Structured.ProxyGroups.EmptyHint
+    };
+
+    abstract val title: String
+    abstract val itemLabel: String
+    abstract val emptyHint: String
 }
 
-enum class OverrideStructuredMapType(
-    val title: String,
-    val itemLabel: String,
-) {
-    RuleProviders(
-        title = "规则提供者",
-        itemLabel = "Provider",
-    ),
-    ProxyProviders(
-        title = "代理提供者",
-        itemLabel = "Provider",
-    ),
-    SubRules(
-        title = "子规则",
-        itemLabel = "子规则组",
-    ),
+enum class OverrideStructuredMapType {
+    RuleProviders {
+        override val title: String get() = MLang.Override.Structured.RuleProviders.Title
+        override val itemLabel: String get() = MLang.Override.Structured.RuleProviders.ItemLabel
+    },
+    ProxyProviders {
+        override val title: String get() = MLang.Override.Structured.ProxyProviders.Title
+        override val itemLabel: String get() = MLang.Override.Structured.ProxyProviders.ItemLabel
+    },
+    SubRules {
+        override val title: String get() = MLang.Override.Structured.SubRules.Title
+        override val itemLabel: String get() = MLang.Override.Structured.SubRules.ItemLabel
+    };
+
+    abstract val title: String
+    abstract val itemLabel: String
 }
 
-enum class OverrideListEditorMode(
-    val label: String,
-) {
-    Replace("覆盖"),
-    Merge("合并"),
-    Start("前置追加"),
-    End("后置追加"),
+enum class OverrideListEditorMode {
+    Replace {
+        override val label: String get() = MLang.Override.Modifier.Replace
+    },
+    Merge {
+        override val label: String get() = MLang.Override.Modifier.Merge
+    },
+    Start {
+        override val label: String get() = MLang.Override.Modifier.Start
+    },
+    End {
+        override val label: String get() = MLang.Override.Modifier.End
+    };
+
+    abstract val label: String
 }
 
 data class OverrideListModeValues<T>(

@@ -35,6 +35,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideProxyGroupDraft
 import com.github.yumelira.yumebox.presentation.util.OverrideProxyGroupTypePresets
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperArrow
@@ -46,7 +47,7 @@ fun OverrideProxyGroupDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = remember { OverrideStructuredEditorStore.proxyGroupDraftEditorTitle.ifBlank { "策略组" } }
+    val title = remember { OverrideStructuredEditorStore.proxyGroupDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyGroup } }
     val initialValue = remember { OverrideStructuredEditorStore.proxyGroupDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -93,13 +94,13 @@ fun OverrideProxyGroupDraftEditorScreen(
         listOfNotNull(
             referenceCatalog.proxyNames.takeIf { it.isNotEmpty() }?.let { values ->
                 OverrideSelectionGroup(
-                    title = "代理节点",
+                    title = MLang.Override.Editor.ProxyNode,
                     items = values,
                 )
             },
             availableProxyGroupNames.takeIf { it.isNotEmpty() }?.let { values ->
                 OverrideSelectionGroup(
-                    title = "策略组",
+                    title = MLang.Override.Editor.ProxyGroup,
                     items = values,
                 )
             },
@@ -118,14 +119,14 @@ fun OverrideProxyGroupDraftEditorScreen(
                 controller = saveFabController,
                 visible = true,
                 imageVector = Yume.Save,
-                contentDescription = "保存策略组",
+                contentDescription = MLang.Override.Editor.SaveProxyGroup,
                 onClick = {
                     if (name.trim().isBlank()) {
-                        errorText = "名称不能为空"
+                        errorText = MLang.Override.Draft.NameRequired
                         return@OverrideAnimatedFab
                     }
                     if (type.trim().isBlank()) {
-                        errorText = "类型不能为空"
+                        errorText = MLang.Override.Editor.TypeEmpty
                         return@OverrideAnimatedFab
                     }
                     OverrideStructuredEditorStore.submitProxyGroupDraft(
@@ -177,10 +178,10 @@ fun OverrideProxyGroupDraftEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
                 ) {
-                    OverrideSection("基础信息") {
+                    OverrideSection(MLang.Override.Draft.BasicInfo) {
                         OverrideSelectorCard {
                             WindowDropdown(
-                                title = "类型",
+                                title = MLang.Override.Editor.RuleType,
                                 items = OverrideProxyGroupTypePresets,
                                 selectedIndex = selectedPresetIndex,
                                 onSelectedIndexChange = { index ->
@@ -198,8 +199,8 @@ fun OverrideProxyGroupDraftEditorScreen(
                                     name = it
                                     errorText = null
                                 },
-                                label = "名称",
-                                errorText = errorText?.takeIf { it.contains("名称") },
+                                label = MLang.Override.Draft.Name,
+                                errorText = errorText?.takeIf { it.contains(MLang.Override.Draft.Name) },
                             )
                             OverrideFormField(
                                 value = url,
@@ -223,7 +224,7 @@ fun OverrideProxyGroupDraftEditorScreen(
                             )
                         }
                     }
-                    OverrideSection("成员来源") {
+                    OverrideSection(MLang.Override.Editor.MemberSource) {
                         OverrideSelectorCard {
                             SuperArrow(
                                 title = "proxies",
@@ -245,7 +246,7 @@ fun OverrideProxyGroupDraftEditorScreen(
                             )
                         }
                     }
-                    OverridePlainFormSection("健康检查与过滤") {
+                    OverridePlainFormSection(MLang.Override.Editor.HealthCheckAndFilter) {
                         OverrideFormField(
                             value = interfaceName,
                             onValueChange = { interfaceName = it },
@@ -282,7 +283,7 @@ fun OverrideProxyGroupDraftEditorScreen(
                             label = "icon",
                         )
                     }
-                    OverrideCardSection("选项") {
+                    OverrideCardSection(MLang.Override.Structured.Proxies.Title) {
                         NullableBooleanSelector(title = "lazy", value = lazy, onValueChange = { lazy = it })
                         NullableBooleanSelector(title = "disable-udp", value = disableUdp, onValueChange = { disableUdp = it })
                         NullableBooleanSelector(title = "include-all", value = includeAll, onValueChange = { includeAll = it })
@@ -290,9 +291,9 @@ fun OverrideProxyGroupDraftEditorScreen(
                         NullableBooleanSelector(title = "include-all-providers", value = includeAllProviders, onValueChange = { includeAllProviders = it })
                         NullableBooleanSelector(title = "hidden", value = hidden, onValueChange = { hidden = it })
                     }
-                    OverrideSection("额外字段") {
+                    OverrideSection(MLang.Override.Draft.ExtraFields) {
                         OverrideExtraFieldsCard(
-                            title = "额外字段",
+                            title = MLang.Override.Draft.ExtraFields,
                             fields = extraFields,
                             onAddClick = {
                                 editingExtraKey = null
@@ -313,7 +314,7 @@ fun OverrideProxyGroupDraftEditorScreen(
         }
         OverrideExtraFieldDialog(
             show = showExtraFieldDialog,
-            title = if (editingExtraKey == null) "新增额外字段" else "编辑额外字段",
+            title = if (editingExtraKey == null) MLang.Override.Draft.AddExtraField else MLang.Override.Draft.EditExtraField,
             initialValue = editingExtraKey?.let(extraFields::toExtraFieldDraft),
             onConfirm = { draft: OverrideExtraFieldDraft ->
                 extraFields = extraFields.updateExtraField(editingExtraKey, draft)
@@ -327,10 +328,10 @@ fun OverrideProxyGroupDraftEditorScreen(
         )
         OverrideMultiValueSelectionSheet(
             show = showProxySelector,
-            title = "选择策略组成员",
+            title = MLang.Override.Editor.SelectProxyGroupMember,
             values = proxies,
             groups = proxySelectionGroups,
-            customInputLabel = "自定义成员",
+            customInputLabel = MLang.Override.Editor.CustomMember,
             onDismiss = { showProxySelector = false },
             onConfirm = { selectedValues ->
                 proxies = selectedValues

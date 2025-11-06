@@ -3,15 +3,13 @@ Connection = {
     Title = "连接"
     Summary = "查看当前活动连接"
 
-    Stats = {
-        Connections = "连接数"
-        Memory = "内存"
+    Tab = {
+        Active = "活动中"
+        Closed = "已关闭"
     }
 
     Search = "搜索"
     SearchHint = "搜索主机、进程..."
-    Clear = "清除"
-    CloseAll = "关闭全部"
 
     SortBy = "排序:"
     Sort = {
@@ -24,5 +22,4 @@ Connection = {
     Loading = "加载中..."
     Empty = "暂无活动连接"
     NoResults = "没有匹配的连接"
-    TryDifferent = "尝试不同的搜索词"
 }

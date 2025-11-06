@@ -34,6 +34,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideRuleTypePresets
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
 import com.github.yumelira.yumebox.presentation.util.supportsRuleExtra
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperArrow
@@ -47,7 +48,7 @@ fun OverrideRuleDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = remember { OverrideStructuredEditorStore.ruleDraftEditorTitle.ifBlank { "规则编辑" } }
+    val title = remember { OverrideStructuredEditorStore.ruleDraftEditorTitle.ifBlank { MLang.Override.Editor.RuleEdit } }
     val initialValue = remember { OverrideStructuredEditorStore.ruleDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -98,10 +99,10 @@ fun OverrideRuleDraftEditorScreen(
     val selectedRuleProviderValue = normalizedPayloadInput
         .takeIf { candidate -> candidate.isNotBlank() && candidate in ruleProviderCandidates }
         ?: selectedRuleProvider.trim()
-    val targetLabel = if (isSubRuleTarget) "子规则目标" else "策略组目标"
-    val typeErrorText = errorText?.takeIf { it.contains("类型") }
-    val payloadErrorText = errorText?.takeIf { it.contains("匹配内容") }
-    val targetErrorText = errorText?.takeIf { it.contains("目标") || it.contains("结果") }
+    val targetLabel = if (isSubRuleTarget) MLang.Override.Editor.SubRuleTarget else MLang.Override.Editor.ProxyGroupTarget
+    val typeErrorText = errorText?.takeIf { it.contains(MLang.Override.Editor.RuleType) }
+    val payloadErrorText = errorText?.takeIf { it.contains(MLang.Override.Editor.Payload) }
+    val targetErrorText = errorText?.takeIf { it.contains(MLang.Override.Draft.Name) || it.contains(MLang.Override.Editor.MatchResult) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -115,7 +116,7 @@ fun OverrideRuleDraftEditorScreen(
                 controller = saveFabController,
                 visible = true,
                 imageVector = Yume.Save,
-                contentDescription = "保存规则",
+                contentDescription = MLang.Override.Editor.SaveRule,
                 onClick = {
                     val normalizedType = ruleType.trim().uppercase()
                     val normalizedPayload = payload.trim()
@@ -134,15 +135,15 @@ fun OverrideRuleDraftEditorScreen(
                         .toMutableList()
 
                     if (normalizedType.isBlank()) {
-                        errorText = "规则类型不能为空"
+                        errorText = MLang.Override.Editor.RuleTypeEmpty
                         return@OverrideAnimatedFab
                     }
                     if (!normalizedType.equals("MATCH", ignoreCase = true) && resolvedPayload.isBlank()) {
-                        errorText = "匹配内容不能为空"
+                        errorText = MLang.Override.Editor.PayloadEmpty
                         return@OverrideAnimatedFab
                     }
                     if (normalizedTarget.isBlank()) {
-                        errorText = "目标不能为空"
+                        errorText = MLang.Override.Editor.TargetEmpty
                         return@OverrideAnimatedFab
                     }
                     if (canUseExtraSwitches) {
@@ -183,10 +184,10 @@ fun OverrideRuleDraftEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
                 ) {
-                    OverrideSection("规则主体") {
+                    OverrideSection(MLang.Override.Editor.RuleBody) {
                         OverrideSelectorCard {
                             WindowDropdown(
-                                title = "类型",
+                                title = MLang.Override.Editor.RuleType,
                                 items = OverrideRuleTypePresets,
                                 selectedIndex = selectedPresetIndex,
                                 onSelectedIndexChange = { index ->
@@ -200,7 +201,7 @@ fun OverrideRuleDraftEditorScreen(
                         if (isRuleSetType) {
                             OverrideSelectorCard {
                                 SuperArrow(
-                                    title = "规则提供者",
+                                    title = MLang.Override.Form.RuleProviders,
                                     onClick = {
                                         showRuleProviderSelector = true
                                         errorText = null
@@ -217,11 +218,11 @@ fun OverrideRuleDraftEditorScreen(
                                         payload = it
                                         errorText = null
                                     },
-                                    label = "匹配内容",
+                                    label = MLang.Override.Editor.Payload,
                                     supportText = if (isRuleSetType) {
-                                        "输入框是自定义内容；留空时使用下面选中的规则提供者"
+                                        MLang.Override.Editor.RuleProviderInputHint
                                     } else {
-                                        "逻辑规则可直接填写完整 payload"
+                                        MLang.Override.Editor.LogicalRuleHint
                                     },
                                     errorText = payloadErrorText,
                                 )
@@ -229,7 +230,7 @@ fun OverrideRuleDraftEditorScreen(
                         }
                         OverrideSelectorCard {
                             SuperArrow(
-                                title = if (ruleType.equals("MATCH", ignoreCase = true)) "匹配结果" else targetLabel,
+                                title = if (ruleType.equals("MATCH", ignoreCase = true)) MLang.Override.Editor.MatchResult else targetLabel,
                                 onClick = {
                                     showTargetSelector = true
                                     errorText = null
@@ -245,7 +246,7 @@ fun OverrideRuleDraftEditorScreen(
                         }
                     }
                     if (canUseExtraSwitches) {
-                        OverrideCardSection("选项") {
+                        OverrideCardSection(MLang.Override.Structured.Proxies.Title) {
                             RuleExtraSwitchRow(
                                 title = "src",
                                 checked = useSrc,
@@ -258,15 +259,15 @@ fun OverrideRuleDraftEditorScreen(
                             )
                         }
                     }
-                    OverridePlainFormSection("附加参数") {
+                    OverridePlainFormSection(MLang.Override.Editor.AdditionalParams) {
                         OverrideFormField(
                             value = extraText,
                             onValueChange = {
                                 extraText = it
                                 errorText = null
                             },
-                            label = "其他附加参数，多个值用逗号分隔",
-                            supportText = "例如 src,no-resolve 之外的额外参数\n逻辑规则请直接填写完整 payload，例如 ((DOMAIN,google.com),(NETWORK,udp))。",
+                            label = MLang.Override.Editor.OtherExtraParams,
+                            supportText = MLang.Override.Editor.ExtraParamsHint,
                         )
                     }
                     Spacer(modifier = Modifier.height(OverrideSectionBottomSpacing))
@@ -275,15 +276,15 @@ fun OverrideRuleDraftEditorScreen(
         }
         OverrideSingleValueSelectionSheet(
             show = showTargetSelector,
-            title = if (ruleType.equals("MATCH", ignoreCase = true)) "选择匹配结果" else "选择${targetLabel}",
+            title = if (ruleType.equals("MATCH", ignoreCase = true)) MLang.Override.Editor.SelectMatchResult else MLang.Override.Editor.SelectSubRuleTarget,
             value = target,
             groups = listOf(
                 OverrideSelectionGroup(
-                    title = if (isSubRuleTarget) "子规则组" else "策略组",
+                    title = if (isSubRuleTarget) MLang.Override.Structured.SubRules.Title else MLang.Override.Editor.ProxyGroup,
                     items = targetCandidates,
                 ),
             ),
-            customInputLabel = if (ruleType.equals("MATCH", ignoreCase = true)) "自定义匹配结果" else "自定义${targetLabel}",
+            customInputLabel = if (ruleType.equals("MATCH", ignoreCase = true)) MLang.Override.Editor.CustomMatchResult else MLang.Override.Editor.CustomSubRuleTarget,
             onDismiss = { showTargetSelector = false },
             onConfirm = { selectedValue ->
                 target = selectedValue
@@ -293,11 +294,11 @@ fun OverrideRuleDraftEditorScreen(
         )
         OverrideSingleValueSelectionSheet(
             show = showRuleProviderSelector,
-            title = "选择规则提供者",
+            title = MLang.Override.Editor.SelectRuleProvider,
             value = selectedRuleProviderValue,
             groups = listOf(
                 OverrideSelectionGroup(
-                    title = "规则提供者",
+                    title = MLang.Override.Form.RuleProviders,
                     items = ruleProviderCandidates,
                 ),
             ),

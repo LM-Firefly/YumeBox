@@ -108,7 +108,7 @@ fun FullscreenEditorScreen(
                     ) {
                         Icon(
                             imageVector = Yume.Atom,
-                            contentDescription = "格式化"
+                            contentDescription = "Format"
                         )
                     }
 
@@ -126,7 +126,7 @@ fun FullscreenEditorScreen(
                     ) {
                         Icon(
                             imageVector = Yume.Save,
-                            contentDescription = "保存"
+                            contentDescription = "Save"
                         )
                     }
                 }

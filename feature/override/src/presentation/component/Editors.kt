@@ -157,7 +157,7 @@ fun InboundEditor(
     Column(
         verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
     ) {
-        OverrideFormSection("代理端口") {
+        OverrideFormSection(MLang.Override.Form.ProxyPorts) {
             OverridePortInputContent(
                 title = MLang.Override.General.HttpPort,
                 value = config.httpPort,
@@ -196,7 +196,7 @@ fun GeneralEditor(
     Column(
         verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
     ) {
-        OverrideCardSection("运行与日志") {
+        OverrideCardSection(MLang.Override.Form.RunAndLog) {
             NullableEnumSelector(
                 title = MLang.Override.General.ProxyMode,
                 value = config.mode,
@@ -241,9 +241,9 @@ fun GeneralEditor(
                 onValueChange = { onConfigChange(config.copy(logLevel = it)) },
             )
             NullableEnumSelector(
-                title = "进程匹配模式",
+                title = MLang.Override.Form.ProcessMode,
                 value = config.findProcessMode,
-                items = listOf("不修改", "Always", "Strict", "Off"),
+                items = listOf(MLang.Override.Form.NotModify, "Always", "Strict", "Off"),
                 values = listOf(
                     null,
                     ConfigurationOverride.FindProcessMode.Always,
@@ -253,72 +253,72 @@ fun GeneralEditor(
                 onValueChange = { onConfigChange(config.copy(findProcessMode = it)) },
             )
             NullableBooleanSelector(
-                title = "统一延迟",
+                title = MLang.Override.Form.UnifiedDelay,
                 value = config.unifiedDelay,
                 onValueChange = { onConfigChange(config.copy(unifiedDelay = it)) },
             )
             NullableBooleanSelector(
-                title = "TCP 并发",
+                title = MLang.Override.Form.TcpConcurrent,
                 value = config.tcpConcurrent,
                 onValueChange = { onConfigChange(config.copy(tcpConcurrent = it)) },
             )
             NullableBooleanSelector(
-                title = "Geodata 模式",
+                title = MLang.Override.Form.GeodataMode,
                 value = config.geodataMode,
                 onValueChange = { onConfigChange(config.copy(geodataMode = it)) },
             )
         }
 
-        OverrideFormSection("运行与日志补充") {
+        OverrideFormSection(MLang.Override.Form.RunAndLogExtra) {
             OverrideIntInputContent(
                 title = MLang.Override.Label.KeepAliveInterval,
                 value = config.keepAliveInterval,
-                placeholder = "秒",
+                placeholder = MLang.Override.Form.Seconds,
                 onValueChange = { onConfigChange(config.copy(keepAliveInterval = it)) },
             )
             OverrideIntInputContent(
                 title = MLang.Override.Label.KeepAliveIdle,
                 value = config.keepAliveIdle,
-                placeholder = "秒",
+                placeholder = MLang.Override.Form.Seconds,
                 onValueChange = { onConfigChange(config.copy(keepAliveIdle = it)) },
             )
         }
 
-        OverrideFormSection("连接与网络") {
+        OverrideFormSection(MLang.Override.Form.ConnectionNetwork) {
             OverrideTextInputContent(
-                title = "出站接口",
+                title = MLang.Override.Form.OutboundInterface,
                 value = config.interfaceName,
                 placeholder = "en0 / wlan0",
                 onValueChange = { onConfigChange(config.copy(interfaceName = it)) },
             )
             OverrideIntInputContent(
-                title = "路由标记",
+                title = MLang.Override.Form.RoutingMark,
                 value = config.routingMark,
                 placeholder = "6666",
                 onValueChange = { onConfigChange(config.copy(routingMark = it)) },
             )
             OverrideTextInputContent(
-                title = "Geosite 匹配器",
+                title = MLang.Override.Form.GeositeMatcher,
                 value = config.geositeMatcher,
                 placeholder = "standard / succinct",
                 onValueChange = { onConfigChange(config.copy(geositeMatcher = it)) },
             )
             OverrideTextInputContent(
-                title = "全局客户端指纹",
+                title = MLang.Override.Form.GlobalClientFingerprint,
                 value = config.globalClientFingerprint,
                 placeholder = "chrome / safari",
                 onValueChange = { onConfigChange(config.copy(globalClientFingerprint = it)) },
             )
         }
 
-        OverrideCardSection("局域网访问") {
+        OverrideCardSection(MLang.Override.Form.LanAccess) {
             NullableBooleanSelector(
                 title = MLang.Override.General.AllowLan,
                 value = config.allowLan,
                 onValueChange = { onConfigChange(config.copy(allowLan = it)) },
             )
             StringListWithModifiersInput(
-                title = "允许 IP 段",
+                title = MLang.Override.Form.AllowedIPs,
                 replaceValue = config.lanAllowedIps,
                 startValue = config.lanAllowedIpsStart,
                 endValue = config.lanAllowedIpsEnd,
@@ -329,7 +329,7 @@ fun GeneralEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "禁止 IP 段",
+                title = MLang.Override.Form.DisallowedIPs,
                 replaceValue = config.lanDisallowedIps,
                 startValue = config.lanDisallowedIpsStart,
                 endValue = config.lanDisallowedIpsEnd,
@@ -341,18 +341,18 @@ fun GeneralEditor(
             )
         }
 
-        OverrideFormSection("局域网地址") {
+        OverrideFormSection(MLang.Override.Form.LanAddress) {
             OverrideTextInputContent(
-                title = "绑定地址",
+                title = MLang.Override.Form.BindAddress,
                 value = config.bindAddress,
                 placeholder = "* / 192.168.1.1 / [::1]",
                 onValueChange = { onConfigChange(config.copy(bindAddress = it)) },
             )
         }
 
-        OverrideCardSection("用户验证") {
+        OverrideCardSection(MLang.Override.Form.UserAuth) {
             StringListWithModifiersInput(
-                title = "用户验证",
+                title = MLang.Override.Form.UserAuth,
                 replaceValue = config.authentication,
                 startValue = config.authenticationStart,
                 endValue = config.authenticationEnd,
@@ -363,7 +363,7 @@ fun GeneralEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "跳过鉴权网段",
+                title = MLang.Override.Form.SkipAuthIPs,
                 replaceValue = config.skipAuthPrefixes,
                 startValue = config.skipAuthPrefixesStart,
                 endValue = config.skipAuthPrefixesEnd,
@@ -375,34 +375,34 @@ fun GeneralEditor(
             )
         }
 
-        OverrideFormSection("外部控制") {
+        OverrideFormSection(MLang.Override.Form.ExternalControl) {
             OverrideTextInputContent(
-                title = "外部控制器",
+                title = MLang.Override.Form.ExternalController,
                 value = config.externalController,
                 placeholder = "127.0.0.1:9090",
                 onValueChange = { onConfigChange(config.copy(externalController = it)) },
             )
             OverrideTextInputContent(
-                title = "HTTPS 控制器",
+                title = MLang.Override.Form.ExternalControllerHttps,
                 value = config.externalControllerTLS,
                 placeholder = "127.0.0.1:9443",
                 onValueChange = { onConfigChange(config.copy(externalControllerTLS = it)) },
             )
             OverrideTextInputContent(
-                title = "外部 DoH 服务",
+                title = MLang.Override.Form.ExternalDoH,
                 value = config.externalDohServer,
                 placeholder = "/dns-query",
                 onValueChange = { onConfigChange(config.copy(externalDohServer = it)) },
             )
             OverrideTextInputContent(
-                title = "Secret",
+                title = MLang.Override.Form.ApiSecret,
                 value = config.secret,
-                placeholder = "API 访问密钥",
+                placeholder = MLang.Override.Form.ApiSecret,
                 onValueChange = { onConfigChange(config.copy(secret = it)) },
             )
         }
 
-        OverrideCardSection("控制器 CORS") {
+        OverrideCardSection(MLang.Override.Form.ControllerCors) {
             StringListWithModifiersInput(
                 title = "CORS Allow Origins",
                 replaceValue = config.externalControllerCors.allowOrigins,
@@ -439,7 +439,7 @@ fun GeneralEditor(
                 onEditListGroup = onEditStringList,
             )
             NullableBooleanSelector(
-                title = "允许私有网络",
+                title = MLang.Override.Form.AllowPrivateNetwork,
                 value = config.externalControllerCors.allowPrivateNetwork,
                 onValueChange = {
                     onConfigChange(
@@ -453,16 +453,16 @@ fun GeneralEditor(
             )
         }
 
-        OverrideCardSection("配置持久化") {
+        OverrideCardSection(MLang.Override.Form.ConfigPersistence) {
             NullableBooleanSelector(
-                title = "保存策略组选择",
+                title = MLang.Override.Form.SaveGroupSelection,
                 value = config.profile.storeSelected,
                 onValueChange = {
                     onConfigChange(config.copy(profile = config.profile.copy(storeSelected = it)))
                 },
             )
             NullableBooleanSelector(
-                title = "保存 Fake-IP 映射",
+                title = MLang.Override.Form.SaveFakeIpMapping,
                 value = config.profile.storeFakeIp,
                 onValueChange = {
                     onConfigChange(config.copy(profile = config.profile.copy(storeFakeIp = it)))
@@ -470,23 +470,23 @@ fun GeneralEditor(
             )
         }
 
-        OverrideCardSection("GEO 资源开关") {
+        OverrideCardSection(MLang.Override.Form.GeoResources) {
             NullableBooleanSelector(
-                title = "自动更新 GEO",
+                title = MLang.Override.Form.AutoUpdateGeo,
                 value = config.geoAutoUpdate,
                 onValueChange = { onConfigChange(config.copy(geoAutoUpdate = it)) },
             )
         }
 
-        OverrideFormSection("GEO 资源地址") {
+        OverrideFormSection(MLang.Override.Form.GeoResources) {
             OverrideIntInputContent(
-                title = "GEO 更新间隔",
+                title = MLang.Override.Form.GeoUpdateInterval,
                 value = config.geoUpdateInterval,
-                placeholder = "小时",
+                placeholder = MLang.Override.Form.Hours,
                 onValueChange = { onConfigChange(config.copy(geoUpdateInterval = it)) },
             )
             OverrideTextInputContent(
-                title = "GeoIP 地址",
+                title = MLang.Override.Form.GeoipUrl,
                 value = config.geoxurl.geoip,
                 placeholder = "https://...",
                 onValueChange = {
@@ -494,7 +494,7 @@ fun GeneralEditor(
                 },
             )
             OverrideTextInputContent(
-                title = "GeoSite 地址",
+                title = MLang.Override.Form.GeositeUrl,
                 value = config.geoxurl.geosite,
                 placeholder = "https://...",
                 onValueChange = {
@@ -502,7 +502,7 @@ fun GeneralEditor(
                 },
             )
             OverrideTextInputContent(
-                title = "MMDB 地址",
+                title = MLang.Override.Form.MmdbUrl,
                 value = config.geoxurl.mmdb,
                 placeholder = "https://...",
                 onValueChange = {
@@ -522,49 +522,49 @@ fun TunEditor(
     Column(
         verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
     ) {
-        OverrideCardSection("基础开关") {
+        OverrideCardSection(MLang.Override.Form.TunBasicSwitch) {
             NullableBooleanSelector(
                 title = MLang.Override.Label.Enable,
                 value = config.tun.enable,
                 onValueChange = { onConfigChange(config.copy(tun = config.tun.copy(enable = it))) },
             )
             NullableEnumSelector(
-                title = "协议栈",
+                title = MLang.Override.Form.Stack,
                 value = config.tun.stack,
-                items = listOf("不修改", "system", "gvisor", "mixed"),
+                items = listOf(MLang.Override.Form.NotModify, "system", "gvisor", "mixed"),
                 values = listOf(null, "system", "gvisor", "mixed"),
                 onValueChange = { onConfigChange(config.copy(tun = config.tun.copy(stack = it))) },
             )
             NullableBooleanSelector(
-                title = "自动路由",
+                title = MLang.Override.Form.AutoRoute,
                 value = config.tun.autoRoute,
                 onValueChange = {
                     onConfigChange(config.copy(tun = config.tun.copy(autoRoute = it)))
                 },
             )
             NullableBooleanSelector(
-                title = "自动重定向",
+                title = MLang.Override.Form.AutoRedirect,
                 value = config.tun.autoRedirect,
                 onValueChange = {
                     onConfigChange(config.copy(tun = config.tun.copy(autoRedirect = it)))
                 },
             )
             NullableBooleanSelector(
-                title = "自动识别网卡",
+                title = MLang.Override.Form.AutoDetectInterface,
                 value = config.tun.autoDetectInterface,
                 onValueChange = {
                     onConfigChange(config.copy(tun = config.tun.copy(autoDetectInterface = it)))
                 },
             )
             NullableBooleanSelector(
-                title = "严格路由",
+                title = MLang.Override.Form.StrictRoute,
                 value = config.tun.strictRoute,
                 onValueChange = {
                     onConfigChange(config.copy(tun = config.tun.copy(strictRoute = it)))
                 },
             )
             NullableBooleanSelector(
-                title = "独立于端点 NAT",
+                title = MLang.Override.Form.EndpointIndependentNat,
                 value = config.tun.endpointIndependentNat,
                 onValueChange = {
                     onConfigChange(
@@ -574,14 +574,14 @@ fun TunEditor(
             )
         }
 
-        OverrideCardSection("网络性能开关") {
+        OverrideCardSection(MLang.Override.Form.NetworkPerfSwitch) {
             NullableBooleanSelector(
-                title = "启用 GSO",
+                title = MLang.Override.Form.EnableGso,
                 value = config.tun.gso,
                 onValueChange = { onConfigChange(config.copy(tun = config.tun.copy(gso = it))) },
             )
             NullableBooleanSelector(
-                title = "禁用 ICMP 转发",
+                title = MLang.Override.Form.DisableIcmpForward,
                 value = config.tun.disableIcmpForwarding,
                 onValueChange = {
                     onConfigChange(config.copy(tun = config.tun.copy(disableIcmpForwarding = it)))
@@ -589,7 +589,7 @@ fun TunEditor(
             )
         }
 
-        OverrideFormSection("网络性能参数") {
+        OverrideFormSection(MLang.Override.Form.NetworkPerfParams) {
             OverrideIntInputContent(
                 title = "MTU",
                 value = config.tun.mtu,
@@ -606,7 +606,7 @@ fun TunEditor(
             )
         }
 
-        OverrideCardSection("路由与应用") {
+        OverrideCardSection(MLang.Override.Form.TunRouteAndApps) {
             StringListWithModifiersInput(
                 title = "DNS 劫持",
                 replaceValue = config.tun.dnsHijack,
@@ -625,7 +625,7 @@ fun TunEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "路由网段",
+                title = MLang.Override.Form.RouteAddress,
                 replaceValue = config.tun.routeAddress,
                 startValue = config.tun.routeAddressStart,
                 endValue = config.tun.routeAddressEnd,
@@ -642,7 +642,7 @@ fun TunEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "排除路由网段",
+                title = MLang.Override.Form.RouteExcludeAddress,
                 replaceValue = config.tun.routeExcludeAddress,
                 startValue = config.tun.routeExcludeAddressStart,
                 endValue = config.tun.routeExcludeAddressEnd,
@@ -661,7 +661,7 @@ fun TunEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "包含应用",
+                title = MLang.Override.Form.IncludePackage,
                 replaceValue = config.tun.includePackage,
                 startValue = config.tun.includePackageStart,
                 endValue = config.tun.includePackageEnd,
@@ -678,7 +678,7 @@ fun TunEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "排除应用",
+                title = MLang.Override.Form.ExcludePackage,
                 replaceValue = config.tun.excludePackage,
                 startValue = config.tun.excludePackageStart,
                 endValue = config.tun.excludePackageEnd,
@@ -708,7 +708,7 @@ fun DnsEditor(
     Column(
         verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
     ) {
-        OverrideCardSection("基础开关") {
+        OverrideCardSection(MLang.Override.Form.DnsBasicSwitch) {
             NullableEnumSelector(
                 title = MLang.Override.Dns.Policy,
                 value = config.dns.enable,
@@ -816,7 +816,7 @@ fun DnsEditor(
                 },
             )
             OverrideIntInputContent(
-                title = "缓存上限",
+                title = MLang.Override.Form.CacheLimit,
                 value = config.dns.cacheMaxSize,
                 placeholder = "4096",
                 onValueChange = {
@@ -874,7 +874,7 @@ fun DnsEditor(
             )
         }
 
-        OverrideCardSection("上游服务器") {
+        OverrideCardSection(MLang.Override.Form.DnsUpstream) {
             StringListWithModifiersInput(
                 title = MLang.Override.Dns.Servers,
                 replaceValue = config.dns.nameServer,
@@ -966,7 +966,7 @@ fun DnsEditor(
             )
         }
 
-        OverrideCardSection("策略映射") {
+        OverrideCardSection(MLang.Override.Form.NameserverPolicySection) {
             StringMapWithModifiersInput(
                 title = MLang.Override.Dns.NameserverPolicy,
                 replaceValue = config.dns.nameserverPolicy,
@@ -1017,7 +1017,7 @@ fun DnsEditor(
             )
         }
 
-        OverrideCardSection("过滤列表") {
+        OverrideCardSection(MLang.Override.Form.FilterList) {
             StringListWithModifiersInput(
                 title = MLang.Override.Dns.FakeipFilter,
                 replaceValue = config.dns.fakeIpFilter,
@@ -1189,7 +1189,7 @@ fun SnifferEditor(
     Column(
         verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
     ) {
-        OverrideCardSection("基础策略") {
+        OverrideCardSection(MLang.Override.Form.BasicPolicy) {
             NullableBooleanSelector(
                 title = MLang.Override.Label.Enable,
                 value = config.sniffer.enable,
@@ -1401,7 +1401,7 @@ fun SnifferEditor(
                 },
             )
         }
-        OverrideCardSection("跳过与强制") {
+        OverrideCardSection(MLang.Override.Form.SkipAndForce) {
             StringListWithModifiersInput(
                 title = MLang.Override.Label.ForceDomain,
                 replaceValue = config.sniffer.forceDomain,
@@ -1437,7 +1437,7 @@ fun SnifferEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "跳过来源地址",
+                title = MLang.Override.Form.SkipSrcAddress,
                 replaceValue = config.sniffer.skipSrcAddress,
                 startValue = config.sniffer.skipSrcAddressStart,
                 endValue = config.sniffer.skipSrcAddressEnd,
@@ -1458,7 +1458,7 @@ fun SnifferEditor(
                 onEditListGroup = onEditStringList,
             )
             StringListWithModifiersInput(
-                title = "跳过目标地址",
+                title = MLang.Override.Form.SkipDstAddress,
                 replaceValue = config.sniffer.skipDstAddress,
                 startValue = config.sniffer.skipDstAddressStart,
                 endValue = config.sniffer.skipDstAddressEnd,

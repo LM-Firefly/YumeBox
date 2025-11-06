@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.data.util.OverridePresetItem
 import com.github.yumelira.yumebox.data.util.OverridePresetRegion
 import com.github.yumelira.yumebox.data.util.OverridePresetTemplateSelection
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.extra.SuperSwitch
@@ -61,7 +62,7 @@ fun OverridePresetTemplateSheet(
     AppActionBottomSheet(
         show = show,
         modifier = Modifier,
-        title = "预设分流模板",
+        title = MLang.Override.Draft.PresetTemplate,
         enableNestedScroll = false,
         dragHandleColor = Color.Transparent,
         startAction = {
@@ -69,7 +70,7 @@ fun OverridePresetTemplateSheet(
         },
         endAction = {
             AppBottomSheetConfirmAction(
-                contentDescription = "应用",
+                contentDescription = MLang.Override.Draft.Apply,
                 onClick = {
                     onConfirm(
                         OverridePresetTemplateSelection(
@@ -109,7 +110,7 @@ fun OverridePresetTemplateSheet(
 
             presetSwitchCard(
                 key = "preset-regions",
-                title = "地区自动组",
+                title = MLang.Override.Draft.RegionalAutoGroup,
                 items = OverridePresetRegion.entries.toList(),
                 isChecked = { region -> region in selectedRegions },
                 onCheckedChange = { region, checked ->
@@ -126,7 +127,7 @@ fun OverridePresetTemplateSheet(
 
             presetSwitchCard(
                 key = "preset-base-items",
-                title = "基础分流",
+                title = MLang.Override.Draft.BasicRouting,
                 items = OverridePresetItem.entries.filterNot(OverridePresetItem::isService),
                 isChecked = { item -> item in enabledItems },
                 onCheckedChange = { item, checked ->
@@ -137,7 +138,7 @@ fun OverridePresetTemplateSheet(
 
             presetSwitchCard(
                 key = "preset-service-items",
-                title = "服务分流",
+                title = MLang.Override.Draft.ServiceRouting,
                 items = OverridePresetItem.entries.filter(OverridePresetItem::isService),
                 isChecked = { item -> item in enabledItems },
                 onCheckedChange = { item, checked ->

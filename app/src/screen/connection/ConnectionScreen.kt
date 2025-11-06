@@ -89,7 +89,7 @@ fun ConnectionScreen(
     var selectedConnection by remember { mutableStateOf<ConnectionInfo?>(null) }
     var showDetailSheet by remember { mutableStateOf(false) }
 
-    val tabs = listOf("活动中", "已关闭")
+    val tabs = listOf(MLang.Connection.Tab.Active, MLang.Connection.Tab.Closed)
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     LaunchedEffect(selectedTabIndex) {
@@ -115,7 +115,7 @@ fun ConnectionScreen(
                             onClick = { showSortPopup = true }) {
                             Icon(
                                 imageVector = MiuixIcons.Sort,
-                                contentDescription = MLang.Connection.SortBy,
+                                contentDescription = "Sort",
                                 tint = MiuixTheme.colorScheme.onSurface,
                             )
                         }
@@ -146,7 +146,7 @@ fun ConnectionScreen(
                         onClick = { showSearchBar = !showSearchBar }) {
                         Icon(
                             imageVector = MiuixIcons.Search,
-                            contentDescription = MLang.Connection.Search,
+                            contentDescription = "Search",
                             tint = MiuixTheme.colorScheme.onSurface,
                         )
                     }

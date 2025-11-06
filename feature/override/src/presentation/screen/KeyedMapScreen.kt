@@ -38,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.util.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -103,11 +104,11 @@ fun OverrideKeyedObjectMapEditorScreen(
                 controller = addFabController,
                 visible = showAddFab,
                 imageVector = Yume.`Badge-plus`,
-                contentDescription = "新增${editorType.itemLabel}",
+                contentDescription = MLang.Override.Editor.New + editorType.itemLabel,
                 onClick = {
                     onOpenDraftEditor(
                         editorType,
-                        "新增${editorType.itemLabel}",
+                        MLang.Override.Editor.New + editorType.itemLabel,
                         null,
                     ) { createdDraft ->
                         val mode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
@@ -136,7 +137,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Cancel,
-                                contentDescription = "取消删除",
+                                contentDescription = MLang.Override.Editor.CancelDelete,
                             )
                         }
                         IconButton(
@@ -157,7 +158,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "删除已选条目",
+                                contentDescription = MLang.Override.Editor.DeleteSelected,
                             )
                         }
                     } else {
@@ -167,7 +168,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Undo,
-                                contentDescription = "清空当前模式",
+                                contentDescription = MLang.Override.Editor.ClearMode,
                             )
                         }
                         IconButton(
@@ -179,7 +180,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "进入删除模式",
+                                contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             )
                         }
                     }
@@ -198,7 +199,7 @@ fun OverrideKeyedObjectMapEditorScreen(
             item(key = "modifier-card") {
                 Card {
                     WindowDropdown(
-                        title = "修饰符模式",
+                        title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
@@ -226,7 +227,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                         key = draft.uiId,
                     ) { isDragging ->
                         KeyedObjectCard(
-                            title = draft.key.ifBlank { "未命名${editorType.itemLabel}" },
+                            title = draft.key.ifBlank { MLang.Override.Editor.Unnamed.format(editorType.itemLabel) },
                             isDragging = isDragging,
                             isDeleteMode = isDeleteMode,
                             isSelected = draft.uiId in selectedUiIds,
@@ -238,7 +239,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                                     val editMode = selectedMode
                                     onOpenDraftEditor(
                                         editorType,
-                                        "编辑${editorType.itemLabel}",
+                                        MLang.Override.Editor.Edit + editorType.itemLabel,
                                         draft,
                                     ) { updatedDraft ->
                                         val latestValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
@@ -275,8 +276,8 @@ fun OverrideKeyedObjectMapEditorScreen(
 
     AppDialog(
             show = showResetDialog,
-            title = "清空${editorType.title}",
-            summary = "清空后将移除当前模式里的所有${editorType.itemLabel}。",
+            title = MLang.Override.Editor.ClearDialog.Title.format(editorType.title),
+            summary = MLang.Override.Editor.ClearDialog.Summary.format(editorType.itemLabel),
             onDismissRequest = { showResetDialog = false },
         ) {
             DialogButtonRow(
@@ -288,8 +289,8 @@ fun OverrideKeyedObjectMapEditorScreen(
                     val mode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
                     applyKeyedValues(OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues.update(mode, emptyList()))
                 },
-                cancelText = "取消",
-                confirmText = "清空",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Clear,
             )
         }
     }
@@ -320,7 +321,7 @@ private fun ReorderableCollectionItemScope.KeyedObjectCard(
             ) {
                 Icon(
                     imageVector = Yume.List,
-                    contentDescription = "拖拽排序",
+                    contentDescription = MLang.Override.Editor.DragToSort,
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 Column(
@@ -343,7 +344,7 @@ private fun ReorderableCollectionItemScope.KeyedObjectCard(
                     } else {
                         Icon(
                             imageVector = Yume.chevron,
-                            contentDescription = "编辑",
+                            contentDescription = MLang.Override.Editor.Edit,
                             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }

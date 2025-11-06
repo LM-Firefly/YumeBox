@@ -1,15 +1,14 @@
 <App Settings Page>
 AppSettings = {
     Title = "App Settings"
-    
+
     Section = {
         Behavior = "Behavior"
         Interface = "Interface"
         Service = "Service"
-        Language = "Language"
         Network = "Network"
     }
-    
+
     Behavior = {
         AutoStartTitle = "Auto Start"
         AutoStartSummary = "Automatically start proxy service on app launch and boot"
@@ -18,24 +17,19 @@ AppSettings = {
         OneChinaTitle = "One-China Policy"
         OneChinaSummary = "Automatically display TW region flags and codes as China"
     }
-    
+
     Interface = {
         ThemeModeTitle = "Theme Mode"
         ThemeModeSummary = "Select the app's theme style"
         ThemeModeSystem = "Follow System"
         ThemeModeLight = "Light"
         ThemeModeDark = "Dark"
-        
+
         ColorThemeTitle = "Theme Palette"
         ColorThemeSummary = "Pick a seed color and auto-derive monochrome theme colors"
         ColorThemePickerTitle = "Pick Theme Color"
         ColorThemeCodeLabel = "Theme Color Code (#RRGGBB)"
-        ColorThemeDefaultSummary = "Default monochrome theme"
         ColorThemeCustomSummary = "Current theme color: %s"
-        ColorThemeResetDefault = "Restore"
-        
-        FloatingNavbarTitle = "Floating Navbar"
-        FloatingNavbarSummary = "Use floating style bottom navigation bar"
 
         TopBarBlurTitle = "Blur Top Bar"
         TopBarBlurSummary = "Apply a dynamic blur background to the top bar while scrolling"
@@ -47,25 +41,13 @@ AppSettings = {
 
         PageScaleTitle = "Page Scale"
         PageScaleSummary = "Adjust the overall UI scaling ratio of the app"
-        
-        ShowDividerTitle = "Show Dividers"
-        ShowDividerSummary = "Show dividers between list items"
-        
+
         HideIconTitle = "Hide App Icon"
         HideIconSummary = "After hiding, you can open via dialer *#*#0721#*#*"
         HideFromRecentsTitle = "Hide Recents Card"
         HideFromRecentsSummary = "Do not show this app in the recent tasks list (recents card)"
-
-        IconWithSelectedLabelTitle = "Navigation bar shows text only when selected"
-        IconWithSelectedLabelSummary = "Always show icons, text only when selected"
-        
-        LanguageTitle = "Language"
-        LanguageSummary = "Select app display language"
-        LanguageSystem = "Follow System"
-        LanguageZh = "简体中文"
-        LanguageEn = "English"
     }
-    
+
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
@@ -77,21 +59,19 @@ AppSettings = {
         CustomUserAgentTitle = "Custom User-Agent"
         CustomUserAgentSummaryDefault = "Not set, using default"
     }
-    
+
     WarningDialog = {
         Title = "Warning"
         HideIconMsg1 = "Please make sure you can access this app's settings before hiding!"
         HideIconMsg2 = "For HyperOS, please enable Auto-start and Background Pop-up permissions to receive dialer codes!"
     }
-    
+
     EditDialog = {
-        AuthorTitle = "Edit Author"
         UserAgentTitle = "Edit User-Agent"
     }
 
     Button = {
         Cancel = "Cancel"
-        Restore = "Restore"
         Apply = "Apply"
     }
 }

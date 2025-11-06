@@ -79,7 +79,7 @@ internal fun RotatingCircleGauge(
     isRotating: Boolean,
     modifier: Modifier = Modifier,
     tint: Color = MiuixTheme.colorScheme.primary,
-    contentDescription: String? = MLang.Proxy.Action.Test,
+    contentDescription: String? = "Test",
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "circle_gauge_rotation")
     val rotation by infiniteTransition.animateFloat(
@@ -234,7 +234,7 @@ internal fun NodeCard(
                             } else {
                                 Icon(
                                     imageVector = Yume.Cloud,
-                                    contentDescription = MLang.Proxy.Action.Test,
+                                    contentDescription = "Test",
                                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                                     modifier = Modifier
                                         .padding(start = 8.dp)

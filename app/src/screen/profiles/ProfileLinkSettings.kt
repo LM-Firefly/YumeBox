@@ -140,7 +140,7 @@ internal fun LinkSettingsDialog(
                                         onClick = { onDeleteLink(link.id) }) {
                                         Icon(
                                             imageVector = MiuixIcons.Delete,
-                                            contentDescription = MLang.Component.ProfileCard.Delete,
+                                            contentDescription = "Delete",
                                             tint = MiuixTheme.colorScheme.error
                                         )
                                     }

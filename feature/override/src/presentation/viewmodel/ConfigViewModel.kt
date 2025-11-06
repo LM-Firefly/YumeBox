@@ -45,6 +45,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import timber.log.Timber
+import dev.oom_wg.purejoy.mlang.MLang
 
 data class OverrideEditSession(
     val routeConfigId: String,
@@ -259,7 +260,7 @@ class OverrideConfigViewModel(
                 if (updateSaveState) {
                     _saveState.value = OverrideSaveState.Idle
                 }
-                _events.tryEmit(OverrideSaveEvent.Failed("系统预设不可修改"))
+                _events.tryEmit(OverrideSaveEvent.Failed(MLang.Override.Save.PresetNotModifiable))
                 return
             }
             configRepo.save(config)
@@ -275,14 +276,14 @@ class OverrideConfigViewModel(
                 if (runtimeSynced) {
                     _events.emit(OverrideSaveEvent.Saved(config.id))
                 } else {
-                    _events.emit(OverrideSaveEvent.Failed("覆写已保存，但重新应用到当前配置失败"))
+                    _events.emit(OverrideSaveEvent.Failed(MLang.Override.Save.ApplyFailed))
                 }
             }
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to update config")
             _events.emit(
                 OverrideSaveEvent.Failed(
-                    e.message ?: "保存覆写配置失败",
+                    e.message ?: MLang.Override.Save.Failed,
                 ),
             )
         } finally {
@@ -683,7 +684,7 @@ internal fun parseImportedOverrideConfigs(
     nowProvider: () -> Long = System::currentTimeMillis,
 ): List<OverrideConfig> {
     val normalizedJsonString = jsonString.trim()
-    require(normalizedJsonString.isNotEmpty()) { "导入内容不能为空" }
+    require(normalizedJsonString.isNotEmpty()) { MLang.Override.Save.ImportEmpty }
 
     val rootElement = json.parseToJsonElement(normalizedJsonString)
     val importedElements = when (rootElement) {
@@ -750,7 +751,7 @@ internal fun buildImportedConfigName(
     index: Int,
     hasMultipleEntries: Boolean,
 ): String {
-    val baseName = normalizeImportedConfigSourceName(sourceName) ?: "导入的覆写配置"
+    val baseName = normalizeImportedConfigSourceName(sourceName) ?: MLang.Override.Save.ImportDefaultName
     return if (hasMultipleEntries) {
         "$baseName ${index + 1}"
     } else {

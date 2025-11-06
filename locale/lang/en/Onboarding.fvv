@@ -7,11 +7,6 @@ Onboarding = {
         Enter = "Enter App"
     }
 
-    Welcome = {
-        Title = "YumeBox"
-        Subtitle = "Confirm notifications, permissions, and theme to get started"
-    }
-
     Permission = {
         Title = "Confirm Runtime Access"
         Subtitle = "Permissions affect notifications and per-app proxy features"
@@ -41,16 +36,11 @@ Onboarding = {
         RichTextSuffix = "."
         TermsLink = "Terms of Use"
         PolicyLink = "Privacy Policy"
-        Policy = {
+        Privacy = {
             Title = "Privacy Policy"
-            Summary = "Tap to view"
         }
         Accept = {
             Title = "I have read and agree to the privacy policy"
-            Summary = "Once confirmed, you can continue and review the policy again later in settings"
-        }
-        Error = {
-            NotAccepted = "Please read and accept the terms first"
         }
     }
 
@@ -77,7 +67,6 @@ Onboarding = {
 
     Sheet = {
         PrivacyPolicyTitle = "Privacy Policy"
-        Close = "Close"
         LoadFailed = "Failed to load policy content"
     }
 }

@@ -36,6 +36,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideSaveEvent
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveState
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -129,7 +130,7 @@ fun OverrideEditScreen(
     Scaffold(
         topBar = {
             TopBar(
-                title = if (isNewConfig) "新建配置" else "编辑配置",
+                title = if (isNewConfig) MLang.Override.Edit.TitleNew else MLang.Override.Edit.TitleEdit,
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -228,8 +229,8 @@ fun OverrideEditScreen(
         }
     AppDialog(
             show = showDiscardDialog.value,
-            title = "名称为空",
-            summary = "当前名称为空，无法实时保存。确定放弃这次未保存的修改吗？",
+            title = MLang.Override.Edit.EmptyName.Title,
+            summary = MLang.Override.Edit.EmptyName.Summary,
             onDismissRequest = { showDiscardDialog.value = false },
         ) {
             DialogButtonRow(
@@ -239,8 +240,8 @@ fun OverrideEditScreen(
                     viewModel.clearEditSession()
                     navigator.navigateUp()
                 },
-                cancelText = "取消",
-                confirmText = "放弃",
+                cancelText = MLang.Override.Edit.Button.Cancel,
+                confirmText = MLang.Override.Edit.Button.Discard,
             )
         }
 
@@ -268,7 +269,7 @@ fun OverrideEditScreen(
             onConfirm = { selection ->
                 viewModel.applyPresetTemplate(selection)
                 showPresetTemplateSheet.value = false
-                context.toast("已更新预设分流模板")
+                context.toast(MLang.Override.Edit.PresetApplied)
             },
         )
     }

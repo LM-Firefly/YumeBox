@@ -1,164 +1,424 @@
 <Override Page>
 Override = {
-    Title = "Override Settings"
-    
-    Section = {
-        Inbound = "Inbound"
-        General = "General"
-        AuthHosts = "Auth & Hosts"
-        ExternalController = "External Controller"
-        Geo = "GEO"
-        Dns = "DNS"
-        Sniffer = "Sniffer"
-        Rules = "Rules"
-        Tools = "Tools"
+    Title = "Override Configs"
+
+    Action = {
+        Create = "Create Config"
+        New = "New Config"
+        Import = "Import JSON"
+        ImportFile = "Import Config File"
     }
 
-    Nav = {
-        NodePageSwitch = "Config Groups"
+    Empty = {
+        Title = "No override configs"
+        Hint = "Click the button below to create a new config, or import JSON"
     }
 
-    Summary = {
-        Inbound = "Inbound ports & LAN"
-        General = "Mode, log & IPv6"
-        Api = "Controller & CORS"
-        Geo = "Geo data source"
-        Dns = "DNS & FakeIP"
-        Sniffer = "Sniffer & skip"
-        Rules = "Append & override rules"
-        Tools = "Import & export"
-        RouteObjects = "Route objects"
+    Status = {
+        InUse = "In Use"
+        NotInUse = "Not in Use"
     }
 
-    Preset = {
-        RouteRulesA = "Built-in Override A (Rules Focus)"
-        RouteRulesASummary = "Rules preset A"
-        RouteRulesB = "Built-in Override B (Groups Focus)"
-        RouteRulesBSummary = "Rules preset B"
+    Card = {
+        Copy = "Copy Config"
+        Export = "Export Config"
+        Edit = "Edit Config"
+        Delete = "Delete Config"
+        EditButton = "Edit"
+        DeleteButton = "Delete"
+        NoDescription = "No description"
     }
 
-    Label = {
-        BindAddress = "Bind Address"
-        LanAllowedIps = "LAN Allowed IPs"
-        LanDisallowedIps = "LAN Disallowed IPs"
-        SkipAuthPrefixes = "Skip Auth Prefixes"
-        UnifiedDelay = "Unified Delay"
-        TcpConcurrent = "TCP Concurrent"
-        FindProcessMode = "Find Process Mode"
-        KeepAliveInterval = "Keep Alive Interval"
-        KeepAliveIdle = "Keep Alive Idle"
-        GeoDataMode = "GeoData Mode"
-        GeoIpUrl = "GeoIP URL"
-        MmdbUrl = "MMDB URL"
-        GeoSiteUrl = "GeoSite URL"
-        UseSystemHosts = "Use System Hosts"
-        RespectRules = "Respect Rules"
-        CacheAlgorithm = "Cache Algorithm"
-        FakeIpRange = "FakeIP Range"
-        FallbackGeosite = "Fallback Geosite"
-        ProxyServerNameserver = "Proxy Server Nameserver"
-        Enable = "Enable"
-        ForceDnsMapping = "Force DNS Mapping"
-        ParsePureIp = "Parse Pure IP"
-        OverrideDestination = "Override Destination"
-        HttpPorts = "HTTP Ports"
-        HttpOverride = "HTTP Override"
-        TlsPorts = "TLS Ports"
-        TlsOverride = "TLS Override"
-        QuicPorts = "QUIC Ports"
-        QuicOverride = "QUIC Override"
-        ForceDomain = "Force Domain"
-        SkipDomain = "Skip Domain"
-        SkipSrcAddress = "Skip Source Address"
-        SkipDstAddress = "Skip Destination Address"
-        RulesReplace = "Override Rules"
-        RouteObjects = "Route Objects (Rule Providers / Proxy Groups / Sub Rules)"
+    Import = {
+        ReadError = "Cannot read import file"
+        Success = "Imported %d configs from %s"
+        SuccessDefault = "Imported %d configs"
+        Failed = "Import failed: %s"
+        FileError = "Failed to read file: %s"
     }
 
-    Tool = {
-        ExportClipboard = "Export Override JSON to Clipboard"
-        ExportClipboardSummary = "Share/backup current override"
-        ImportMerge = "Import from Clipboard (Merge)"
-        ImportMergeSummary = "Import JSON and merge into current override"
-        ImportReplace = "Import from Clipboard (Replace)"
-        ImportReplaceSummary = "Import JSON and replace current override"
-        Preview = "Preview Current Config"
-        PreviewSummary = "View JSON snapshot + basic rule validation"
-
-        ImportTypeTitle = "Import/Export Types"
-        ImportModeTitle = "Import Mode"
-        ImportModeAppend = "Append (Merge)"
-        ImportModeOverride = "Override (Replace)"
-        TypeRuleProviders = "Rule Providers"
-        TypeProxyGroups = "Proxy Groups"
-        TypeRules = "Rules (Append + Override)"
-        TypeSubRules = "Sub Rules"
-
-        ImportClipboardSimple = "Import from Clipboard"
-        ImportClipboardSimpleSummary = "Use current mode"
-        ImportFileSimple = "Import from File"
-        ImportFileSimpleSummary = "Choose JSON file"
-        ExportClipboardSimple = "Export to Clipboard"
-        ExportClipboardSimpleSummary = "Export current config"
-        ExportFileSimple = "Export to File"
-        ExportFileSimpleSummary = "Export as JSON"
+    Export = {
+        Failed = "Export failed: %s"
+        Success = "Exported config: %s"
     }
 
     Dialog = {
-        ImportTitle = "Import Override JSON"
-        ImportLabel = "Paste JSON"
-        PreviewTitle = "Override Preview"
-        RuleValidation = "Rule Validation"
-        JsonSnapshot = "JSON Snapshot"
+        Create = {
+            Title = "Add Config"
+            Name = "Config Name"
+            Description = "Config Description"
+            ImportHint = "Select a JSON file to import override config"
+        }
+        Delete = {
+            Title = "Delete Config"
+            InUseMessage = "Config %s is being used by subscriptions. Deleting will unbind the relationship. Are you sure? This action cannot be undone."
+            Message = "Are you sure you want to delete config %s? This action cannot be undone."
+        }
+        EditOptions = {
+            Title = "Edit Config"
+            CodeEditor = "Code Editor"
+            VisualEditor = "Visual Editor"
+        }
+        Button = {
+            Cancel = "Cancel"
+            Delete = "Delete"
+        }
     }
 
-    Message = {
-        Copied = "Copied to clipboard"
-        ImportSuccess = "Import succeeded"
-        ReplaceSuccess = "Replace succeeded"
-        ImportFailed = "Import failed: %s"
-        ReplaceFailed = "Replace failed: %s"
-        ExportSuccess = "Export succeeded"
-        ExportFailed = "Export failed: %s"
-        NoWarnings = "No warnings"
+    Edit = {
+        TitleNew = "New Config"
+        TitleEdit = "Edit Config"
+        EmptyName = {
+            Title = "Empty Name"
+            Summary = "Current name is empty, cannot save in real-time. Are you sure to discard these unsaved changes?"
+        }
+        Button = {
+            Cancel = "Cancel"
+            Discard = "Discard"
+        }
+        PresetApplied = "Preset routing template updated"
     }
-    
-    General = {
-        HttpPort = "HTTP Port"
-        SocksPort = "SOCKS Port"
-        MixedPort = "Mixed Port"
-        RedirectPort = "Redirect Port"
-        TproxyPort = "TProxy Port"
-        AllowLan = "Allow LAN"
-        Ipv6 = "IPv6"
-        ProxyMode = "Proxy Mode"
-        ProxyModeNotModify = "Don't Modify"
-        ProxyModeDirect = "Direct"
-        ProxyModeGlobal = "Global"
-        ProxyModeRule = "Rule"
-        LogLevel = "Log Level"
+
+    Section = {
+        General = {
+            Title = "General"
+            Summary = "Run mode, controller, persistence & GEO"
+        }
+        Dns = {
+            Title = "DNS"
+            Summary = "Basic switches, Fake-IP, upstream & policy"
+        }
+        Sniffer = {
+            Title = "Domain Sniffer"
+            Summary = "Policy switches, protocol ports, skip rules"
+        }
+        Inbound = {
+            Title = "Inbound"
+            Summary = "Ports, authentication, LAN access"
+        }
+        Tun = {
+            Title = "Tun"
+            Summary = "Tun inbound, routing & app scope"
+        }
+        Rules = {
+            Title = "Routing Rules"
+            Summary = "Rule chain & matching order"
+        }
+        Proxies = {
+            Title = "Outbound Proxies"
+            Summary = "Proxy nodes & protocol objects"
+        }
+        ProxyProviders = {
+            Title = "Proxy Providers"
+            Summary = "Proxy Providers merge & override"
+        }
+        ProxyGroups = {
+            Title = "Proxy Groups"
+            Summary = "Proxy Groups prepend, override, append"
+        }
+        RuleProviders = {
+            Title = "Rule Providers"
+            Summary = "Rule Providers merge & override"
+        }
+        SubRules = {
+            Title = "Sub Rules"
+            Summary = "Sub Rules grouping & merging"
+        }
     }
-    
-    AuthHosts = {
-        Authentication = "Authentication"
-        AuthenticationHint = "Format: user:password"
-        HostsMapping = "Hosts Mapping"
-        HostsKeyHint = "Domain"
-        HostsValueHint = "IP Address"
+
+    Modifier = {
+        Replace = "Replace"
+        Start = "Prepend"
+        End = "Append"
+        Merge = "Merge"
+        Force = "Force Replace"
+        NotModified = "Not Modified"
+        ItemsCount = "%d items"
+        NoChanges = "No changes"
     }
-    
-    ExternalController = {
-        Address = "Controller Address"
-        AddressHint = "e.g.: 127.0.0.1:9090"
-        Tls = "TLS Controller Address"
-        TlsHint = "e.g.: 127.0.0.1:9443"
+
+    Structured = {
+        Proxies = {
+            Title = "Proxy Nodes"
+            ItemLabel = "Proxy Node"
+            EmptyHint = "No proxy nodes"
+        }
+        ProxyGroups = {
+            Title = "Proxy Groups"
+            ItemLabel = "Proxy Group"
+            EmptyHint = "No proxy groups"
+        }
+        RuleProviders = {
+            Title = "Rule Providers"
+            ItemLabel = "Provider"
+        }
+        ProxyProviders = {
+            Title = "Proxy Providers"
+            ItemLabel = "Provider"
+        }
+        SubRules = {
+            Title = "Sub Rules"
+            ItemLabel = "Sub Rule Group"
+        }
+    }
+
+    Editor = {
+        Mode = {
+            Title = "Modifier Mode"
+        }
+        ClearDialog = {
+            Title = "Clear %s"
+            Summary = "Clearing will remove all %s in current mode."
+        }
+        New = "Add"
+        NewRule = "Add New Rule"
+        EditRule = "Edit Rule"
+        NewSubRuleGroup = "Add New Sub Rule Group"
+        UnnamedSubRuleGroup = "Unnamed Sub Rule Group"
+        EditSubRuleGroup = "Edit Sub Rule Group"
+        ClearSubRules = "Clear Sub Rules"
+        Unnamed = "Unnamed %s"
+        UnnamedRule = "Unnamed Rule"
+        Edit = "Edit"
+        DragToSort = "Drag to Sort"
+        CancelDelete = "Cancel Delete"
+        DeleteSelected = "Delete Selected"
+        DeleteSelectedRules = "Delete Selected Rules"
+        ClearMode = "Clear Current Mode"
+        EnterDeleteMode = "Enter Delete Mode"
+        EmptyString = "Empty String"
+        ArrayItems = "Array %d items"
+        ObjectFields = "Object %d fields"
+        Clear = "Clear"
+        Rules = "Rules"
+        AddCustom = "Add Custom"
+        ContentEmpty = "Content cannot be empty"
+        Confirm = "Confirm"
+        OneItemPerLine = "One item per line"
+        AddItem = "Add Item"
+        DeleteLastItem = "Delete Last Item"
+        Copy = "Copy"
+        Delete = "Delete"
+        MoveUp = "Move Up"
+        MoveDown = "Move Down"
+        AddObject = "Add Object"
+        SubRuleName = "Sub Rule Name"
+        NoRules = "No rules"
+        RulesConfiguredInline = "%d rules configured"
+        AddSubRuleGroup = "Add Sub Rule Group"
+        EditSubRule = "Edit Sub Rule"
+        KeyName = "Key Name"
+        List = "List"
+        AddItem = "Add Item"
+        EditItem = "Edit Item"
+        ClearCurrentMode = "Clear Current Mode"
+        NewProxyNode = "Add Proxy Node"
+        NewProxyGroup = "Add Proxy Group"
+        EditProxyNode = "Edit Proxy Node"
+        EditProxyGroup = "Edit Proxy Group"
+        UnnamedProxyNode = "Unnamed Proxy Node"
+        UnnamedProxyGroup = "Unnamed Proxy Group"
+        EnterDeleteMode = "Enter Delete Mode"
+        ProxyNode = "Proxy Node"
+        ProxyGroup = "Proxy Group"
+        RuleEdit = "Rule Edit"
+        SubRuleTarget = "Sub Rule Target"
+        ProxyGroupTarget = "Proxy Group Target"
+        RuleTypeEmpty = "Rule type cannot be empty"
+        PayloadEmpty = "Payload cannot be empty"
+        TargetEmpty = "Target cannot be empty"
+        MatchResult = "Match Result"
+        SelectMatchResult = "Select Match Result"
+        CustomMatchResult = "Custom Match Result"
+        SelectSubRuleTarget = "Select Sub Rule Target"
+        SelectProxyGroupTarget = "Select Proxy Group Target"
+        CustomSubRuleTarget = "Custom Sub Rule Target"
+        CustomProxyGroupTarget = "Custom Proxy Group Target"
+        SelectRuleProvider = "Select Rule Provider"
+        RuleBody = "Rule Body"
+        RuleType = "Type"
+        Payload = "Payload"
+        AdditionalParams = "Additional Params"
+        BasicConnection = "Basic Connection"
+        NetworkAndRoute = "Network & Route"
+        PortEmptyHint = "Leave empty to not override port"
+        TypeEmpty = "Type cannot be empty"
+        MemberSource = "Member Source"
+        HealthCheckAndFilter = "Health Check & Filter"
+        SelectProxyGroupMember = "Select Proxy Group Member"
+        CustomMember = "Custom Member"
+        SaveProxyNode = "Save Proxy Node"
+        SaveProxyGroup = "Save Proxy Group"
+        SaveRule = "Save Rule"
+        RuleProviderInputHint = "Custom content in input field; uses selected rule provider when empty"
+        LogicalRuleHint = "Logical rules can have full payload directly"
+        OtherExtraParams = "Other extra params, comma-separated"
+        ExtraParamsHint = "Extra params beyond src,no-resolve\nFor logical rules, enter full payload directly, e.g. ((DOMAIN,google.com),(NETWORK,udp))."
+    }
+
+    Draft = {
+        Object = "Object"
+        SubRuleGroup = "Sub Rule Group"
+        Name = "Name"
+        NameRequired = "Name cannot be empty"
+        Save = "Save"
+        BasicInfo = "Basic Info"
+        BasicIdentity = "Basic Identity"
+        CoreSource = "Core Source"
+        NetworkAuth = "Network & Auth"
+        RuleList = "Rule List"
+        NoRules = "No rules configured"
+        RulesConfigured = "%d rules configured"
+        EditSubRules = "Edit Sub Rules"
+        ExtraFields = "Extra Fields"
+        AddExtraField = "Add Extra Field"
+        EditExtraField = "Edit Extra Field"
+        AddHealthCheckField = "Add health-check extra field"
+        EditHealthCheckField = "Edit health-check extra field"
+        AddOverrideField = "Add override extra field"
+        EditOverrideField = "Edit override extra field"
+        HealthCheckSwitch = "Health Check Switch"
+        HealthCheckFields = "Health Check Extra Fields"
+        OverrideSwitch = "Override Switch"
+        OverrideFields = "Override Extra Fields"
+        BooleanOptions = "Boolean Options"
+        HeaderHint = "One header per line, format: Key: value1 | value2"
+        ConfigName = "Config Name"
+        ConfigDescription = "Config Description"
+        PresetTemplate = "Preset Routing Template"
+        OfficialMrs = "Official MRS Common Routing"
+        OfficialMrsSummary = "Top template editor with regional auto-groups and individual switches; applies by rebuilding rule sections in current override."
+        ConfigSections = "Config Sections"
+        Apply = "Apply"
+        RegionalAutoGroup = "Regional Auto Group"
+        BasicRouting = "Basic Routing"
+        ServiceRouting = "Service Routing"
+        ClickToAddExtraField = "Click to add extra field"
+        DeleteExtraField = "Delete extra field"
+        ValueType = "Value Type"
+        StringValue = "String value"
+        IntValue = "Integer value"
+        DoubleValue = "Double value"
+        JsonFragment = "Single JSON fragment"
+        KeyNameEmpty = "Key name cannot be empty"
+        ValueTypeMismatch = "Current value does not match selected type"
+    }
+
+    Form = {
+        RuleChain = "Rule Chain"
+        RuleChainNotSet = "Rule chain not set"
+        SubRules = "Sub Rules"
+        SubRulesHint = "Structured rule groups"
+        SubRulesAdvanced = "Complex sub rule structures are collected in Advanced JSON"
+        RuleProviders = "Rule Providers"
+        RuleProvidersHint = "Structured Providers"
+        RuleProvidersAdvanced = "Enter Advanced JSON when complex Provider fields are needed"
+        ProxyNodes = "Proxy Nodes"
+        ProxyNodesHint = "Structured proxy entries"
+        ProxyProviders = "Proxy Providers"
+        ProxyProvidersHint = "Structured Providers"
+        ProxyProvidersAdvanced = "Enter Advanced JSON when protocol details, validation or extra fields are needed"
+        ProxyGroups = "Proxy Groups"
+        ProxyGroupsHint = "Structured proxy groups"
+        StructuredEdit = "%s · Structured Edit"
+        AdvancedJson = "%s · Advanced JSON"
+        OpenAdvancedEdit = "Open Advanced Edit"
+        OpenAdvancedEditSummary = "Edit raw object directly, for fields not covered by structured form"
+        ItemsConfigured = "%d items configured"
+
+        ProxyPorts = "Proxy Ports"
+        RunAndLog = "Run & Log"
+        ProcessMode = "Process Match Mode"
+        NotModify = "Don't Modify"
+        UnifiedDelay = "Unified Delay"
+        TcpConcurrent = "TCP Concurrent"
+        GeodataMode = "Geodata Mode"
+        RunAndLogExtra = "Run & Log Extra"
+        Seconds = "seconds"
+        ConnectionNetwork = "Connection & Network"
+        OutboundInterface = "Outbound Interface"
+        RoutingMark = "Routing Mark"
+        GeositeMatcher = "Geosite Matcher"
+        GlobalClientFingerprint = "Global Client Fingerprint"
+        LanAccess = "LAN Access"
+        AllowedIPs = "Allowed IPs"
+        DisallowedIPs = "Disallowed IPs"
+        LanAddress = "LAN Address"
+        BindAddress = "Bind Address"
+        UserAuth = "User Auth"
+        SkipAuthIPs = "Skip Auth IPs"
+        ExternalControl = "External Control"
+        ExternalController = "External Controller"
+        ExternalControllerHttps = "HTTPS Controller"
+        ExternalDoH = "External DoH Service"
         ApiSecret = "API Secret"
-        ApiSecretHint = "Leave empty to not modify"
-        CorsAllowOrigins = "CORS Allow Origins"
-        CorsAllowOriginsHint = "e.g.: http://localhost:9090"
-        CorsAllowPrivate = "Allow Private Network"
+        ControllerCors = "Controller CORS"
+        AllowPrivateNetwork = "Allow Private Network"
+        ConfigPersistence = "Config Persistence"
+        SaveGroupSelection = "Save Group Selection"
+        SaveFakeIpMapping = "Save Fake-IP Mapping"
+        GeoResources = "GEO Resources"
+        AutoUpdateGeo = "Auto Update GEO"
+        GeoUpdateInterval = "GEO Update Interval"
+        Hours = "hours"
+        GeoipUrl = "GeoIP URL"
+        GeositeUrl = "GeoSite URL"
+        MmdbUrl = "MMDB URL"
+
+        TunBasicSwitch = "Basic Switch"
+        Stack = "Stack"
+        AutoRoute = "Auto Route"
+        AutoRedirect = "Auto Redirect"
+        AutoDetectInterface = "Auto Detect Interface"
+        StrictRoute = "Strict Route"
+        EndpointIndependentNat = "Endpoint Independent NAT"
+        NetworkPerfSwitch = "Network Perf Switch"
+        EnableGso = "Enable GSO"
+        DisableIcmpForward = "Disable ICMP Forward"
+        NetworkPerfParams = "Network Perf Params"
+
+        DnsBasicSwitch = "Basic Switch"
+        DnsFakeIpRange = "FakeIP Range"
+        DnsUpstream = "Upstream Servers"
+        DnsPolicyMode = "Policy Mode"
+
+        SnifferSwitch = "Switch"
+        SnifferPorts = "Ports"
+        SnifferOverride = "Override Destination"
+        SnifferSkipDomain = "Skip Domain"
+        SnifferForceDomain = "Force Domain"
+        SnifferParsePureIp = "Parse Pure IP"
+
+        TunRouteAndApps = "Route & Apps"
+        DnsHijack = "DNS Hijack"
+        RouteAddress = "Route Address"
+        RouteExcludeAddress = "Route Exclude Address"
+        IncludePackage = "Include Package"
+        ExcludePackage = "Exclude Package"
+        CacheLimit = "Cache Limit"
+        DnsUpstreamServers = "Upstream Servers"
+        NameserverPolicySection = "Nameserver Policy"
+        FilterList = "Filter List"
+        BasicPolicy = "Basic Policy"
+        SkipAndForce = "Skip & Force"
+        SkipSrcAddress = "Skip Src Address"
+        SkipDstAddress = "Skip Dst Address"
     }
-    
+
+    Rule = {
+        EmptyWarning = "Rule #%d is empty"
+        InvalidFormatWarning = "Rule #%d format may be incorrect: %s"
+        MissingTargetWarning = "Rule #%d missing policy group target: %s"
+    }
+
+    Save = {
+        PresetNotModifiable = "System preset cannot be modified"
+        ApplyFailed = "Override saved, but failed to reapply to current config"
+        Failed = "Failed to save override config"
+        ImportEmpty = "Import content cannot be empty"
+        ImportDefaultName = "Imported Override Config"
+    }
+
     Dns = {
         Policy = "DNS Policy"
         PolicyNotModify = "Don't Modify"
@@ -197,9 +457,35 @@ Override = {
         NameserverPolicyKey = "Domain match rule"
         NameserverPolicyValue = "DNS server"
     }
-    
-    ResetDialog = {
-        Title = "Reset Override Settings"
-        Message = "All override settings will be erased. Are you sure you want to continue?"
+
+    General = {
+        HttpPort = "HTTP Port"
+        SocksPort = "SOCKS Port"
+        MixedPort = "Mixed Port"
+        RedirectPort = "Redirect Port"
+        TproxyPort = "TProxy Port"
+        AllowLan = "Allow LAN"
+        Ipv6 = "IPv6"
+        ProxyMode = "Proxy Mode"
+        LogLevel = "Log Level"
+    }
+
+    Label = {
+        CacheAlgorithm = "Cache Algorithm"
+        Enable = "Enable"
+        FakeIpRange = "FakeIP Range"
+        ForceDnsMapping = "Force DNS Mapping"
+        ForceDomain = "Force Domain"
+        HttpOverride = "HTTP Override"
+        KeepAliveIdle = "Keep Alive Idle"
+        KeepAliveInterval = "Keep Alive Interval"
+        OverrideDestination = "Override Destination"
+        ParsePureIp = "Parse Pure IP"
+        QuicOverride = "QUIC Override"
+        RespectRules = "Respect Rules"
+        RulesReplace = "Override Rules"
+        SkipDomain = "Skip Domain"
+        TlsOverride = "TLS Override"
+        UseSystemHosts = "Use System Hosts"
     }
 }

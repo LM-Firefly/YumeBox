@@ -31,6 +31,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
 import com.github.yumelira.yumebox.presentation.util.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperArrow
@@ -49,7 +50,7 @@ fun OverrideSubRuleDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = OverrideStructuredEditorStore.subRuleDraftEditorTitle.ifBlank { "子规则组" }
+    val title = OverrideStructuredEditorStore.subRuleDraftEditorTitle.ifBlank { MLang.Override.Draft.SubRuleGroup }
     val storeDraft = OverrideStructuredEditorStore.subRuleDraftEditorValue
     val saveFabController = rememberOverrideFabController()
     val draftUiId = remember { storeDraft?.uiId ?: OverrideSubRuleGroupDraft().uiId }
@@ -93,10 +94,10 @@ fun OverrideSubRuleDraftEditorScreen(
                 controller = saveFabController,
                 visible = true,
                 imageVector = Yume.Save,
-                contentDescription = "保存子规则组",
+                contentDescription = MLang.Override.Draft.Save + MLang.Override.Draft.SubRuleGroup,
                 onClick = {
                     if (name.trim().isBlank()) {
-                        errorText = "名称不能为空"
+                        errorText = MLang.Override.Draft.NameRequired
                         return@OverrideAnimatedFab
                     }
                     OverrideStructuredEditorStore.submitSubRuleDraft(
@@ -129,7 +130,7 @@ fun OverrideSubRuleDraftEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
                 ) {
-                    OverridePlainFormSection("基础信息") {
+                    OverridePlainFormSection(MLang.Override.Draft.BasicInfo) {
                         OverrideFormField(
                             value = name,
                             onValueChange = {
@@ -137,22 +138,22 @@ fun OverrideSubRuleDraftEditorScreen(
                                 errorText = null
                                 syncDraftSession(updatedName = it)
                             },
-                            label = "名称",
+                            label = MLang.Override.Draft.Name,
                             errorText = errorText,
                         )
                     }
-                    OverrideCardSection("规则列表") {
+                    OverrideCardSection(MLang.Override.Draft.RuleList) {
                         SuperArrow(
-                            title = "规则列表",
+                            title = MLang.Override.Draft.RuleList,
                             summary = if (rules.isEmpty()) {
-                                "未配置规则"
+                                MLang.Override.Draft.NoRules
                             } else {
-                                "已配置 ${rules.size} 条规则"
+                                MLang.Override.Draft.RulesConfigured.format(rules.size)
                             },
                             onClick = {
                                 syncDraftSession()
                                 onOpenRuleListEditor(
-                                    "编辑子规则",
+                                    MLang.Override.Draft.EditSubRules,
                                     OverrideListModeValues(replaceValue = rules),
                                     listOf(OverrideListEditorMode.Replace),
                                     OverrideListEditorMode.Replace,
