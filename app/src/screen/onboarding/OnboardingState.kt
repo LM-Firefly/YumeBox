@@ -54,7 +54,6 @@ internal data class ThemeCustomizationState(
     val onThemeModeChange: (ThemeMode) -> Unit,
     val themeSeedColorArgb: Long,
     val onThemeSeedColorChange: (Long) -> Unit,
-    val onResetThemeSeedColor: () -> Unit,
 )
 
 @Composable
@@ -149,7 +148,6 @@ internal fun rememberThemeCustomizationState(
         onThemeModeChange = appSettingsViewModel::onThemeModeChange,
         themeSeedColorArgb = themeSeedColorArgb,
         onThemeSeedColorChange = appSettingsViewModel::onThemeSeedColorChange,
-        onResetThemeSeedColor = appSettingsViewModel::resetThemeSeedColor,
     )
 }
 

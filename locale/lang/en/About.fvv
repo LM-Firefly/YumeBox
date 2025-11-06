@@ -1,32 +1,24 @@
 <About Page>
 About = {
     Title = "About"
-    
+
     App = {
-        Description = "an ordinary box, as ordinary as it can possibly be "
+        Description = "an ordinary box, as ordinary as it can possibly be"
         VersionLoading = "Loading..."
         VersionFailed = "Failed to load"
     }
-    
+
     Section = {
-        Developer = "Developer"
         ProjectLinks = "Project Links"
         More = "More"
         License = "License"
     }
-    
-    Developer = {
-        Name = "YumeYuka"
-        Nick = "三角初华"
-        ContributorTitle = "Contributors"
-    }
-    
+
     Link = {
-        Sponsor = "Sponsor"
         TelegramGroup = "Telegram Group"
         TelegramChannel = "Telegram Channel"
     }
-    
+
     License = {
         CheckUpdate = "Check for Updates"
         CheckUpdateSummary = "Manually trigger one cloud update check"

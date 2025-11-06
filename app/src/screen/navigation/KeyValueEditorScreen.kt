@@ -143,7 +143,7 @@ fun StringListEditorScreen(
                     ) {
                         Icon(
                             imageVector = MiuixIcons.Reset,
-                            contentDescription = MLang.Component.Editor.Action.Reset,
+                            contentDescription = "Reset",
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
@@ -152,7 +152,7 @@ fun StringListEditorScreen(
                     ) {
                         Icon(
                             imageVector = Yume.`Badge-plus`,
-                            contentDescription = MLang.Component.Editor.Action.Add,
+                            contentDescription = "Add",
                         )
                     }
                 },
@@ -527,7 +527,7 @@ fun KeyValueEditorScreen(
                     ) {
                         Icon(
                             imageVector = MiuixIcons.Reset,
-                            contentDescription = MLang.Component.Editor.Action.Reset,
+                            contentDescription = "Reset",
                         )
                     }
                     Spacer(modifier = Modifier.width(4.dp))
@@ -536,7 +536,7 @@ fun KeyValueEditorScreen(
                     ) {
                         Icon(
                             imageVector = MiuixIcons.AddCircle,
-                            contentDescription = MLang.Component.Editor.Action.Add,
+                            contentDescription = "Add",
                         )
                     }
                 },
@@ -708,7 +708,7 @@ private fun ListItem(
             ) {
                 Icon(
                     imageVector = MiuixIcons.Delete,
-                    contentDescription = MLang.Component.Editor.Action.Delete,
+                    contentDescription = "Delete",
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
@@ -756,7 +756,7 @@ private fun KeyValueItem(
             ) {
                 Icon(
                     imageVector = MiuixIcons.Delete,
-                    contentDescription = MLang.Component.Editor.Action.Delete,
+                    contentDescription = "Delete",
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }

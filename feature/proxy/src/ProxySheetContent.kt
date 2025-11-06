@@ -119,7 +119,7 @@ fun ProxySheetContent(
                 AppBottomSheetIconAction(
                     action = AppBottomSheetAction(
                         icon = MiuixIcons.Back,
-                        contentDescription = MLang.Component.Navigation.Back,
+                        contentDescription = "Back",
                         onClick = { selectedGroupName = null },
                     ),
                 )
@@ -128,7 +128,7 @@ fun ProxySheetContent(
                     AppBottomSheetIconAction(
                         action = AppBottomSheetAction(
                             icon = Yume.`List-chevrons-up-down`,
-                            contentDescription = MLang.Proxy.Settings.SortMode,
+                            contentDescription = "Sort mode",
                             onClick = { showSortPopup.value = true },
                         ),
                     )
@@ -146,7 +146,7 @@ fun ProxySheetContent(
             AppBottomSheetIconAction(
                 action = AppBottomSheetAction(
                     icon = Yume.Speed,
-                    contentDescription = MLang.Proxy.Action.Test,
+                    contentDescription = "Test",
                     onClick = {
                         val group = selectedGroup
                         if (group == null) {

@@ -143,7 +143,6 @@ fun AppSettingsScreen(
                         ThemeColorPickerItem(
                             themeSeedColorArgb = themeSeedColorArgb,
                             onThemeSeedColorChange = { viewModel.onThemeSeedColorChange(it) },
-                            onResetThemeSeedColor = { viewModel.resetThemeSeedColor() },
                         )
                         SuperSwitch(
                             title = MLang.AppSettings.Interface.AutoHideNavbarTitle,

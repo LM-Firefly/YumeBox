@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.presentation.util.*
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.BasicComponent
 
 fun LazyListScope.OverrideEditContent(
@@ -51,18 +52,18 @@ fun LazyListScope.OverrideEditContent(
 ) {
     item(key = "override-basic-info-section") {
         OverrideCardSection(
-            title = "基本信息",
+            title = MLang.Override.Draft.BasicInfo,
         ) {
             StringInputContent(
-                title = "配置名称",
+                title = MLang.Override.Draft.ConfigName,
                 value = name,
-                placeholder = "配置名称",
+                placeholder = MLang.Override.Draft.ConfigName,
                 onValueChange = { onNameChange(it.orEmpty()) },
             )
             StringInputContent(
-                title = "配置说明",
+                title = MLang.Override.Draft.ConfigDescription,
                 value = description,
-                placeholder = "配置说明",
+                placeholder = MLang.Override.Draft.ConfigDescription,
                 onValueChange = { onDescriptionChange(it.orEmpty()) },
             )
         }
@@ -70,18 +71,18 @@ fun LazyListScope.OverrideEditContent(
 
     item(key = "override-preset-template-section") {
         OverrideCardSection(
-            title = "预设分流模板",
+            title = MLang.Override.Draft.PresetTemplate,
         ) {
             BasicComponent(
-                title = "官方 MRS 常用分流",
-                summary = "顶部模板编辑器，支持地区自动组和每个分流项单独开关；应用时会重建当前覆写里的规则三块。",
+                title = MLang.Override.Draft.OfficialMrs,
+                summary = MLang.Override.Draft.OfficialMrsSummary,
                 onClick = onOpenPresetTemplate,
             )
         }
     }
 
     item(key = "override-section-list") {
-        OverrideSection(title = "配置分区") {
+        OverrideSection(title = MLang.Override.Draft.ConfigSections) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
@@ -250,7 +251,7 @@ private fun openDirectSectionEditor(
             )
             onEditObjectList(
                 OverrideStructuredObjectType.Proxies,
-                "代理节点",
+                MLang.Override.Form.ProxyNodes,
                 values,
                 availableModes,
                 resolveInitialEditorMode(availableModes, values),
@@ -280,7 +281,7 @@ private fun openDirectSectionEditor(
             )
             onEditObjectList(
                 OverrideStructuredObjectType.ProxyGroups,
-                "策略组",
+                MLang.Override.Form.ProxyGroups,
                 values,
                 availableModes,
                 resolveInitialEditorMode(availableModes, values),
@@ -307,7 +308,7 @@ private fun openDirectSectionEditor(
             )
             onEditObjectMap(
                 OverrideStructuredMapType.ProxyProviders,
-                "代理提供者",
+                MLang.Override.Form.ProxyProviders,
                 values,
                 availableModes,
                 resolveInitialEditorMode(availableModes, values),
@@ -332,7 +333,7 @@ private fun openDirectSectionEditor(
             )
             onEditObjectMap(
                 OverrideStructuredMapType.RuleProviders,
-                "规则提供者",
+                MLang.Override.Form.RuleProviders,
                 values,
                 availableModes,
                 resolveInitialEditorMode(availableModes, values),
@@ -357,7 +358,7 @@ private fun openDirectSectionEditor(
                 OverrideListEditorMode.Merge,
             )
             onEditSubRules(
-                "子规则",
+                MLang.Override.Form.SubRules,
                 values,
                 availableModes,
                 resolveInitialEditorMode(availableModes, values),

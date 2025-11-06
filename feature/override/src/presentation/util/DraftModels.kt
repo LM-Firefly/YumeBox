@@ -22,64 +22,76 @@
 
 package com.github.yumelira.yumebox.presentation.util
 
-enum class OverrideEditorSection(
-    val title: String,
-    val summary: String,
-) {
-    General(
-        title = "全局配置",
-        summary = "运行模式、控制器、持久化与 GEO",
-    ),
-    Dns(
-        title = "DNS",
-        summary = "基础开关、Fake-IP、上游与策略",
-    ),
-    Sniffer(
-        title = "域名嗅探",
-        summary = "策略开关、协议端口、跳过规则",
-    ),
-    Inbound(
-        title = "入站",
-        summary = "端口、鉴权、局域网访问",
-    ),
-    Tun(
-        title = "Tun",
-        summary = "入站 Tun、路由与应用范围",
-    ),
-    Rules(
-        title = "路由规则",
-        summary = "规则链与匹配顺序",
-    ),
-    Proxies(
-        title = "出站代理",
-        summary = "代理节点与协议对象",
-    ),
-    ProxyProviders(
-        title = "代理集合",
-        summary = "Proxy Providers 合并与覆盖",
-    ),
-    ProxyGroups(
-        title = "代理组",
-        summary = "Proxy Groups 前置、覆盖、后置",
-    ),
-    RuleProviders(
-        title = "规则集合",
-        summary = "Rule Providers 合并与覆盖",
-    ),
-    SubRules(
-        title = "子规则",
-        summary = "Sub Rules 分组与合并",
-    ),
+import dev.oom_wg.purejoy.mlang.MLang
+
+enum class OverrideEditorSection {
+    General {
+        override val title: String get() = MLang.Override.Section.General.Title
+        override val summary: String get() = MLang.Override.Section.General.Summary
+    },
+    Dns {
+        override val title: String get() = MLang.Override.Section.Dns.Title
+        override val summary: String get() = MLang.Override.Section.Dns.Summary
+    },
+    Sniffer {
+        override val title: String get() = MLang.Override.Section.Sniffer.Title
+        override val summary: String get() = MLang.Override.Section.Sniffer.Summary
+    },
+    Inbound {
+        override val title: String get() = MLang.Override.Section.Inbound.Title
+        override val summary: String get() = MLang.Override.Section.Inbound.Summary
+    },
+    Tun {
+        override val title: String get() = MLang.Override.Section.Tun.Title
+        override val summary: String get() = MLang.Override.Section.Tun.Summary
+    },
+    Rules {
+        override val title: String get() = MLang.Override.Section.Rules.Title
+        override val summary: String get() = MLang.Override.Section.Rules.Summary
+    },
+    Proxies {
+        override val title: String get() = MLang.Override.Section.Proxies.Title
+        override val summary: String get() = MLang.Override.Section.Proxies.Summary
+    },
+    ProxyProviders {
+        override val title: String get() = MLang.Override.Section.ProxyProviders.Title
+        override val summary: String get() = MLang.Override.Section.ProxyProviders.Summary
+    },
+    ProxyGroups {
+        override val title: String get() = MLang.Override.Section.ProxyGroups.Title
+        override val summary: String get() = MLang.Override.Section.ProxyGroups.Summary
+    },
+    RuleProviders {
+        override val title: String get() = MLang.Override.Section.RuleProviders.Title
+        override val summary: String get() = MLang.Override.Section.RuleProviders.Summary
+    },
+    SubRules {
+        override val title: String get() = MLang.Override.Section.SubRules.Title
+        override val summary: String get() = MLang.Override.Section.SubRules.Summary
+    };
+
+    abstract val title: String
+    abstract val summary: String
 }
 
-enum class OverrideModifierVisualMode(
-    val label: String,
-) {
-    Replace("覆盖"),
-    Start("前置追加"),
-    End("后置追加"),
-    Merge("合并"),
-    Force("强制覆盖"),
+enum class OverrideModifierVisualMode {
+    Replace {
+        override val label: String get() = MLang.Override.Modifier.Replace
+    },
+    Start {
+        override val label: String get() = MLang.Override.Modifier.Start
+    },
+    End {
+        override val label: String get() = MLang.Override.Modifier.End
+    },
+    Merge {
+        override val label: String get() = MLang.Override.Modifier.Merge
+    },
+    Force {
+        override val label: String get() = MLang.Override.Modifier.Force
+    };
+
+    abstract val label: String
 }
 
 sealed interface OverrideSaveState {
@@ -104,11 +116,11 @@ data class OverrideSectionSummary(
     val summaryText: String
         get() {
             if (modifiedCount == 0) {
-                return "未修改"
+                return MLang.Override.Modifier.NotModified
             }
             val modeSummary = visualModes.joinToString(" / ") { it.label }
             return buildString {
-                append("${modifiedCount} 项")
+                append(MLang.Override.Modifier.ItemsCount.format(modifiedCount))
                 if (modeSummary.isNotEmpty()) {
                     append(" · ")
                     append(modeSummary)
@@ -129,11 +141,11 @@ data class OverrideEditorOverview(
 ) {
     val modifierSummary: String
         get() = buildList {
-            if (replaceCount > 0) add("覆盖 $replaceCount")
-            if (appendCount > 0) add("追加 $appendCount")
-            if (mergeCount > 0) add("合并 $mergeCount")
-            if (forceCount > 0) add("强制 $forceCount")
-        }.joinToString(" · ").ifEmpty { "未修改" }
+            if (replaceCount > 0) add("${MLang.Override.Modifier.Replace} $replaceCount")
+            if (appendCount > 0) add("${MLang.Override.Modifier.Start} $appendCount")
+            if (mergeCount > 0) add("${MLang.Override.Modifier.Merge} $mergeCount")
+            if (forceCount > 0) add("${MLang.Override.Modifier.Force} $forceCount")
+        }.joinToString(" · ").ifEmpty { MLang.Override.Modifier.NotModified }
 
     val sectionSummary: String
         get() = sectionSummaries
@@ -141,5 +153,5 @@ data class OverrideEditorOverview(
             .keys
             .take(3)
             .joinToString(" · ") { it.title }
-            .ifEmpty { "暂无改动" }
+            .ifEmpty { MLang.Override.Modifier.NoChanges }
 }

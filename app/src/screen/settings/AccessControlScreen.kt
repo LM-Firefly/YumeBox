@@ -118,7 +118,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                             modifier = Modifier.padding(end = 24.dp),
                             onClick = { showSettingsSheet.value = true }
                         ) {
-                            Icon(Yume.`Settings-2`, contentDescription = MLang.AccessControl.Settings.Title)
+                            Icon(Yume.`Settings-2`, contentDescription = "Settings")
                         }
                     }
                 )

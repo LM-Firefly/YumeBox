@@ -145,7 +145,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     ) {
                         Icon(
                             Yume.`Circle-fading-arrow-up`,
-                            contentDescription = MLang.ProfilesPage.Action.UpdateAll
+                            contentDescription = "Update all"
                         )
                     }
 
@@ -157,7 +157,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     ) {
                         Icon(
                             Yume.`Badge-plus`,
-                            contentDescription = MLang.ProfilesPage.Action.AddProfile
+                            contentDescription = "Add profile"
                         )
                     }
                 })
@@ -338,7 +338,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 ?: File(File(context.filesDir, "clash"), "profiles/${profile.uuid}/config.yaml").takeIf { it.exists() }
 
             if (file == null) {
-                context.toast("配置文件不存在")
+                context.toast("Profile file does not exist")
             } else {
                 runCatching {
                     val uri = FileProvider.getUriForFile(
@@ -357,7 +357,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         })
                 }.onFailure {
-                    context.toast(it.message ?: "share failed")
+                    context.toast(it.message ?: "Share failed")
                 }
             }
             showShareDialog.value = false
@@ -394,12 +394,12 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     ?: File(File(com.github.yumelira.yumebox.App.instance.filesDir, "clash"), "profiles/${profile.uuid}/config.yaml").takeIf { it.exists() }
 
                 if (configFile == null) {
-                    com.github.yumelira.yumebox.App.instance.toast("配置文件不存在")
+                    com.github.yumelira.yumebox.App.instance.toast("Profile file does not exist")
                     return@ProfileEditOptionsDialog
                 }
 
                 val configContent = runCatching { configFile.readText() }.getOrElse {
-                    com.github.yumelira.yumebox.App.instance.toast(it.message ?: "读取配置失败")
+                    com.github.yumelira.yumebox.App.instance.toast(it.message ?: "Failed to read profile")
                     return@ProfileEditOptionsDialog
                 }
                 OverrideStructuredEditorStore.setupConfigPreview(
@@ -410,7 +410,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         runCatching {
                             configFile.writeText(updatedContent)
                         }.onFailure {
-                            throw IllegalStateException(it.message ?: "保存配置失败", it)
+                            throw IllegalStateException(it.message ?: MLang.ProfilesPage.SettingsDialog.SaveFailed, it)
                         }
                     },
                 )
@@ -450,7 +450,7 @@ private fun ProfileEditOptionsDialog(
 ) {
     AppDialog(
         show = show,
-        title = "编辑配置",
+        title = MLang.ProfilesPage.SettingsDialog.EditProfile,
         onDismissRequest = onDismiss,
         onDismissFinished = onDismissFinished,
     ) {
@@ -461,7 +461,7 @@ private fun ProfileEditOptionsDialog(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onOpenConfig,
             ) {
-                Text("打开配置")
+                Text(MLang.ProfilesPage.SettingsDialog.OpenConfig)
             }
 
             Button(
@@ -470,7 +470,7 @@ private fun ProfileEditOptionsDialog(
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
                 Text(
-                    text = "编辑设置",
+                    text = MLang.ProfilesPage.SettingsDialog.EditSettings,
                     color = MiuixTheme.colorScheme.onPrimary,
                 )
             }

@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -38,7 +37,7 @@ fun RotatingRefreshButton(
     isRotating: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    contentDescription: String = MLang.Component.Navigation.Refresh,
+    contentDescription: String = "Refresh",
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "refresh_rotation")
     val rotation by infiniteTransition.animateFloat(

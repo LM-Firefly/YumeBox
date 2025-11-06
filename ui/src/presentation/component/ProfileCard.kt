@@ -196,7 +196,7 @@ fun ProfileCard(
                             .alpha(if (isConfigSaved) 1f else 0.4f),
                         imageVector = Yume.Share,
                         tint = actionIconTint.copy(alpha = if (isConfigSaved) 1f else 0.4f),
-                        contentDescription = MLang.Component.ProfileCard.Export
+                        contentDescription = "Export"
                     )
                 }
 
@@ -210,7 +210,7 @@ fun ProfileCard(
                         modifier = Modifier.size(20.dp),
                         imageVector = Yume.Edit,
                         tint = actionIconTint,
-                        contentDescription = MLang.Component.ProfileCard.Edit
+                        contentDescription = "Edit"
                     )
                 }
             }
@@ -235,7 +235,7 @@ fun ProfileCard(
                             modifier = Modifier.size(20.dp),
                             imageVector = Yume.`Circle-fading-arrow-up`,
                             tint = updateTint,
-                            contentDescription = MLang.Component.ProfileCard.Update,
+                            contentDescription = "Update",
                         )
                         Text(
                             modifier = Modifier.padding(end = 3.dp),
@@ -263,7 +263,7 @@ fun ProfileCard(
                         modifier = Modifier.size(20.dp),
                         imageVector = Yume.Delete,
                         tint = actionIconTint,
-                        contentDescription = MLang.Component.ProfileCard.Delete
+                        contentDescription = "Delete"
                     )
                     Text(
                         modifier = Modifier.padding(start = 4.dp, end = 3.dp),

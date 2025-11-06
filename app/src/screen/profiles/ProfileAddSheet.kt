@@ -361,7 +361,7 @@ internal fun AddProfileSheet(
         startAction = {
             if (!isDownloading) {
                 AppBottomSheetCloseAction(
-                    contentDescription = MLang.ProfilesPage.Button.Cancel,
+                    contentDescription = "Cancel",
                     onClick = dismissSheet,
                 )
             }
@@ -369,7 +369,7 @@ internal fun AddProfileSheet(
         endAction = {
             if (!isDownloading && selectedTypeIndex != 2) {
                 AppBottomSheetConfirmAction(
-                    contentDescription = MLang.ProfilesPage.Button.Confirm,
+                    contentDescription = "Confirm",
                     onClick = { submitProfile() },
                 )
             }
@@ -424,7 +424,7 @@ internal fun AddProfileSheet(
                                 if (complete) {
                                     Icon(
                                         imageVector = Yume.`Package-check`,
-                                        contentDescription = MLang.ProfilesPage.Misc.Complete,
+                                        contentDescription = "Complete",
                                         tint = MiuixTheme.colorScheme.onPrimary,
                                         modifier = Modifier
                                             .fillMaxSize()

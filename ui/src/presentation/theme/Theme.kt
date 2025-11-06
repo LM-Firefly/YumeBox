@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
-import com.github.yumelira.yumebox.data.model.AppColorTheme
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -36,7 +35,6 @@ internal val LocalPlatformSystemUiEffect = compositionLocalOf<@Composable () -> 
 @Composable
 fun YumeTheme(
     themeMode: ThemeMode? = null,
-    colorTheme: AppColorTheme = AppColorTheme.ClassicMonochrome,
     themeSeedColorArgb: Long = DEFAULT_THEME_SEED_ARGB,
     spacing: Spacing = Spacing(),
     radii: Radii = Radii(),
@@ -49,12 +47,8 @@ fun YumeTheme(
         ThemeMode.Light -> false
         ThemeMode.Dark -> true
     }
-    val colors = remember(colorTheme, isDark, themeSeedColorArgb) {
-        if (isDefaultThemeSeedArgb(themeSeedColorArgb)) {
-            colorSchemeForTheme(colorTheme, isDark)
-        } else {
-            colorSchemeFromSeed(colorFromArgb(themeSeedColorArgb), isDark)
-        }
+    val colors = remember(isDark, themeSeedColorArgb) {
+        colorSchemeFromSeed(colorFromArgb(themeSeedColorArgb), isDark)
     }
 
     CompositionLocalProvider(

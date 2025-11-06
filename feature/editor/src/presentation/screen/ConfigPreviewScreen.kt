@@ -110,7 +110,7 @@ fun ConfigPreviewScreen(
                         modifier = Modifier.padding(end = 16.dp),
                         onClick = { editorState.format() }
                     ) {
-                        Icon(Yume.ListCollapse, contentDescription = "格式化")
+                        Icon(Yume.ListCollapse, contentDescription = "Format")
                     }
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp),
@@ -129,7 +129,7 @@ fun ConfigPreviewScreen(
                         },
                         enabled = onSave != null && editorState.isModified && !isSaving
                     ) {
-                        Icon(Yume.Save, contentDescription = "保存")
+                        Icon(Yume.Save, contentDescription = "Save")
                     }
                 }
             )

@@ -1,32 +1,24 @@
 <About Page>
 About = {
     Title = "关于"
-    
+
     App = {
-        Description = "an ordinary box, as ordinary as it can possibly be "
+        Description = "一个普通的盒子，尽可能普通"
         VersionLoading = "Loading..."
         VersionFailed = "Failed to load"
     }
-    
+
     Section = {
-        Developer = "开发者"
         ProjectLinks = "项目链接"
         More = "更多"
         License = "许可证"
     }
-    
-    Developer = {
-        Name = "梦璃酱"
-        Nick = "三角初华"
-        ContributorTitle = "贡献者"
-    }
-    
+
     Link = {
-        Sponsor = "赞助作者"
         TelegramGroup = "Telegram 群组"
         TelegramChannel = "Telegram 频道"
     }
-    
+
     License = {
         CheckUpdate = "检查更新"
         CheckUpdateSummary = "手动触发一次云发布更新检查"

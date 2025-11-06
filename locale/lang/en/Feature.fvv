@@ -1,7 +1,7 @@
 <Feature Page>
 Feature = {
     Title = "Feature Management"
-    
+
     ServiceStatus = {
         Section = "Service Status"
         Running = "Service running: %s"
@@ -19,20 +19,13 @@ Feature = {
         AutoClosed = "Sub-Store auto closed"
         AutoCloseModeDisabled = "Disabled"
     }
-    
+
     Panel = {
         Section = "Panel Selection"
         SelectPanel = "Select Panel"
-        Installed = "Installed"
-        NotInstalled = "Not Installed"
         Unknown = "Unknown Panel"
-        Download = "Download Panel"
-        Redownload = "Re-download Panel"
-        Downloading = "Downloading..."
-        WillOverwrite = "(Installed, will overwrite)"
-        NotInstalledHint = "(Not installed)"
     }
-    
+
     SubStore = {
         SectionHint = "Sub-Store resource download, both extension and static resources are required. After installing extension for the first time, please restart the app"
         ExtensionInstalled = "Extension Installed"
@@ -46,19 +39,10 @@ Feature = {
         InstallExtension = "Please install extension first"
         DownloadSubStoreFirst = "Please download Sub-Store resources first"
         JavetNotReady = "Javet library not ready, please ensure extension is properly installed"
-        FeatureNotAvailable = "This feature is not available"
         FrontendDownloadSuccess = "Sub-Store frontend downloaded"
         FrontendDownloadFailed = "Sub-Store frontend download failed"
         BackendDownloadSuccess = "Sub-Store backend downloaded"
         BackendDownloadFailed = "Sub-Store backend download failed"
-        ToolDownloadSuccess = "%s downloaded"
-        ToolDownloadFailed = "%s download failed"
         DownloadError = "Download error: %s"
-        InvalidPanelType = "Invalid panel type"
-        PanelInstallSuccess = "%s installed successfully"
-        PanelInstallFailed = "%s installation failed"
-        PanelInstallError = "Installation error: %s"
-        Zashboard = "Zashboard"
-        OfficialPanel = "Sub-Store Official Panel"
     }
 }

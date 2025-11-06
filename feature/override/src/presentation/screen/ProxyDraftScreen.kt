@@ -34,6 +34,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideProxyDraft
 import com.github.yumelira.yumebox.presentation.util.OverrideProxyTypePresets
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.WindowDropdown
@@ -44,7 +45,7 @@ fun OverrideProxyDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = remember { OverrideStructuredEditorStore.proxyDraftEditorTitle.ifBlank { "代理节点" } }
+    val title = remember { OverrideStructuredEditorStore.proxyDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyNode } }
     val initialValue = remember { OverrideStructuredEditorStore.proxyDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -79,14 +80,14 @@ fun OverrideProxyDraftEditorScreen(
                 controller = saveFabController,
                 visible = true,
                 imageVector = Yume.Save,
-                contentDescription = "保存代理节点",
+                contentDescription = MLang.Override.Editor.SaveProxyNode,
                 onClick = {
                     if (name.trim().isBlank()) {
-                        errorText = "名称不能为空"
+                        errorText = MLang.Override.Draft.NameRequired
                         return@OverrideAnimatedFab
                     }
                     if (type.trim().isBlank()) {
-                        errorText = "类型不能为空"
+                        errorText = MLang.Override.Editor.TypeEmpty
                         return@OverrideAnimatedFab
                     }
                     OverrideStructuredEditorStore.submitProxyDraft(
@@ -128,10 +129,10 @@ fun OverrideProxyDraftEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
                 ) {
-                    OverrideSection("基础连接") {
+                    OverrideSection(MLang.Override.Editor.BasicConnection) {
                         OverrideSelectorCard {
                             WindowDropdown(
-                                title = "类型",
+                                title = MLang.Override.Editor.RuleType,
                                 items = OverrideProxyTypePresets,
                                 selectedIndex = selectedPresetIndex,
                                 onSelectedIndexChange = { index ->
@@ -149,8 +150,8 @@ fun OverrideProxyDraftEditorScreen(
                                     name = it
                                     errorText = null
                                 },
-                                label = "名称",
-                                errorText = errorText?.takeIf { it.contains("名称") },
+                                label = MLang.Override.Draft.Name,
+                                errorText = errorText?.takeIf { it.contains(MLang.Override.Draft.Name) },
                             )
                             OverrideFormField(
                                 value = server,
@@ -161,11 +162,11 @@ fun OverrideProxyDraftEditorScreen(
                                 value = portText,
                                 onValueChange = { portText = it.filter(Char::isDigit) },
                                 label = "port",
-                                supportText = "留空表示不覆写端口",
+                                supportText = MLang.Override.Editor.PortEmptyHint,
                             )
                         }
                     }
-                    OverridePlainFormSection("网络与路由") {
+                    OverridePlainFormSection(MLang.Override.Editor.NetworkAndRoute) {
                         OverrideFormField(
                             value = ipVersion,
                             onValueChange = { ipVersion = it },
@@ -187,7 +188,7 @@ fun OverrideProxyDraftEditorScreen(
                             label = "dialer-proxy",
                         )
                     }
-                    OverrideCardSection("选项") {
+                    OverrideCardSection(MLang.Override.Structured.Proxies.Title) {
                         NullableBooleanSelector(
                             title = "udp",
                             value = udp,
@@ -204,9 +205,9 @@ fun OverrideProxyDraftEditorScreen(
                             onValueChange = { mptcp = it },
                         )
                     }
-                    OverrideSection("额外字段") {
+                    OverrideSection(MLang.Override.Draft.ExtraFields) {
                         OverrideExtraFieldsCard(
-                            title = "额外字段",
+                            title = MLang.Override.Draft.ExtraFields,
                             fields = extraFields,
                             onAddClick = {
                                 editingExtraKey = null
@@ -227,7 +228,7 @@ fun OverrideProxyDraftEditorScreen(
         }
         OverrideExtraFieldDialog(
             show = showExtraFieldDialog,
-            title = if (editingExtraKey == null) "新增额外字段" else "编辑额外字段",
+            title = if (editingExtraKey == null) MLang.Override.Draft.AddExtraField else MLang.Override.Draft.EditExtraField,
             initialValue = editingExtraKey?.let(extraFields::toExtraFieldDraft),
             onConfirm = { draft: OverrideExtraFieldDraft ->
                 extraFields = extraFields.updateExtraField(editingExtraKey, draft)

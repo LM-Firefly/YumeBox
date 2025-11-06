@@ -38,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.util.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -136,7 +137,7 @@ fun OverrideObjectListEditorScreen(
                 onClick = {
                     when (editorType) {
                         OverrideStructuredObjectType.Proxies -> {
-                            onOpenProxyDraftEditor("新增代理节点", null) { createdDraft ->
+                            onOpenProxyDraftEditor(MLang.Override.Editor.NewProxyNode, null) { createdDraft ->
                                 val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
                                 val latestValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
                                 val updatedValues = latestValues.update(
@@ -148,7 +149,7 @@ fun OverrideObjectListEditorScreen(
                         }
 
                         OverrideStructuredObjectType.ProxyGroups -> {
-                            onOpenProxyGroupDraftEditor("新增策略组", null) { createdDraft ->
+                            onOpenProxyGroupDraftEditor(MLang.Override.Editor.NewProxyGroup, null) { createdDraft ->
                                 val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
                                 val latestValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
                                 val updatedValues = latestValues.update(
@@ -177,7 +178,7 @@ fun OverrideObjectListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Cancel,
-                                contentDescription = "取消删除",
+                                contentDescription = MLang.Override.Editor.CancelDelete,
                             )
                         }
                         IconButton(
@@ -222,7 +223,7 @@ fun OverrideObjectListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Undo,
-                                contentDescription = "清空当前模式",
+                                contentDescription = MLang.Override.Editor.ClearCurrentMode,
                             )
                         }
                         IconButton(
@@ -234,7 +235,7 @@ fun OverrideObjectListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "进入删除模式",
+                                contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             )
                         }
                     }
@@ -253,7 +254,7 @@ fun OverrideObjectListEditorScreen(
             item(key = "modifier-card") {
                 Card {
                     WindowDropdown(
-                        title = "修饰符模式",
+                        title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
@@ -283,7 +284,7 @@ fun OverrideObjectListEditorScreen(
                                 key = draft.uiId,
                             ) { isDragging ->
                                 StructuredObjectCard(
-                                    title = draft.name.ifBlank { "未命名代理节点" },
+                                    title = draft.name.ifBlank { MLang.Override.Editor.UnnamedProxyNode },
                                     isDragging = isDragging,
                                     isDeleteMode = isDeleteMode,
                                     isSelected = draft.uiId in selectedUiIds,
@@ -293,7 +294,7 @@ fun OverrideObjectListEditorScreen(
                                         } else {
                                             val draftUiId = draft.uiId
                                             val editMode = selectedMode
-                                            onOpenProxyDraftEditor("编辑代理节点", draft) { updatedDraft ->
+                                            onOpenProxyDraftEditor(MLang.Override.Editor.EditProxyNode, draft) { updatedDraft ->
                                                 val latestValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
                                                 val updatedValues = latestValues.update(
                                                     editMode,
@@ -332,7 +333,7 @@ fun OverrideObjectListEditorScreen(
                                 key = draft.uiId,
                             ) { isDragging ->
                                 StructuredObjectCard(
-                                    title = draft.name.ifBlank { "未命名策略组" },
+                                    title = draft.name.ifBlank { MLang.Override.Editor.UnnamedProxyGroup },
                                     isDragging = isDragging,
                                     isDeleteMode = isDeleteMode,
                                     isSelected = draft.uiId in selectedUiIds,
@@ -342,7 +343,7 @@ fun OverrideObjectListEditorScreen(
                                         } else {
                                             val draftUiId = draft.uiId
                                             val editMode = selectedMode
-                                            onOpenProxyGroupDraftEditor("编辑策略组", draft) { updatedDraft ->
+                                            onOpenProxyGroupDraftEditor(MLang.Override.Editor.EditProxyGroup, draft) { updatedDraft ->
                                                 val latestValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
                                                 val updatedValues = latestValues.update(
                                                     editMode,
@@ -401,8 +402,8 @@ fun OverrideObjectListEditorScreen(
                         }
                     }
                 },
-                cancelText = "取消",
-                confirmText = "清空",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Clear,
             )
         }
     }
@@ -433,7 +434,7 @@ private fun ReorderableCollectionItemScope.StructuredObjectCard(
             ) {
                 Icon(
                     imageVector = Yume.List,
-                    contentDescription = "拖拽排序",
+                    contentDescription = MLang.Override.Editor.DragToSort,
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 Column(
@@ -456,7 +457,7 @@ private fun ReorderableCollectionItemScope.StructuredObjectCard(
                     } else {
                         Icon(
                             imageVector = Yume.chevron,
-                            contentDescription = "编辑",
+                            contentDescription = MLang.Override.Editor.Edit,
                             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }
