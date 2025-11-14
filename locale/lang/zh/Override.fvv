@@ -207,6 +207,7 @@ Override = {
         RulesConfiguredInline = "已配置 %d 条规则"
         AddSubRuleGroup = "新增子规则组"
         EditSubRule = "编辑子规则"
+        RulePlaceholder = "DOMAIN-SUFFIX,example.com,DIRECT"
         KeyName = "键名"
         List = "列表"
         AddItem = "新增条目"
@@ -254,6 +255,16 @@ Override = {
         LogicalRuleHint = "逻辑规则可直接填写完整 payload"
         OtherExtraParams = "其他附加参数，多个值用逗号分隔"
         ExtraParamsHint = "例如 src,no-resolve 之外的额外参数\n逻辑规则请直接填写完整 payload，例如 ((DOMAIN,google.com),(NETWORK,udp))。"
+        JsonBlockSubtitle = "使用 JSON 格式编辑该配置块"
+        ObjectListHint = "结构化编辑对象列表，字段值支持字符串、数字、布尔和 JSON 片段。"
+        ProviderMapHint = "结构化编辑 Provider 字典，同名键会覆盖旧值。"
+        SubRuleGroupHint = "每个子规则组包含一个名称和一组规则。"
+        ObjectFieldHint = "键值内容支持简单值和 JSON 结构。"
+        ObjectJsonPlaceholder = "{ \"name\": \"proxy\", \"type\": \"ss\" }"
+        ObjectFallbackTitle = "对象 %d"
+        ObjectFieldCount = "%d 个字段"
+        NewProvider = "新增 Provider"
+        UnnamedProvider = "未命名 Provider"
     }
 
     Draft = {
@@ -286,6 +297,7 @@ Override = {
         ConfigName = "配置名称"
         ConfigDescription = "配置说明"
         PresetTemplate = "预设分流模板"
+        PresetApplySummary = "应用后会覆盖当前覆写里的规则提供者、策略组和规则"
         OfficialMrs = "官方 MRS 常用分流"
         OfficialMrsSummary = "顶部模板编辑器，支持地区自动组和每个分流项单独开关；应用时会重建当前覆写里的规则三块。"
         ConfigSections = "配置分区"
@@ -294,6 +306,7 @@ Override = {
         BasicRouting = "基础分流"
         ServiceRouting = "服务分流"
         ClickToAddExtraField = "点击添加额外字段"
+        ExtraFieldsConfigured = "已配置 %d 个额外字段"
         DeleteExtraField = "删除额外字段"
         ValueType = "值类型"
         StringValue = "字符串值"
@@ -487,5 +500,30 @@ Override = {
         SkipDomain = "跳过嗅探域名"
         TlsOverride = "TLS 覆写"
         UseSystemHosts = "使用系统 Hosts"
+    }
+
+    ProxyGroup = {
+        Field = {
+            Url = "URL"
+            Interval = "间隔"
+            Timeout = "超时"
+            MaxFailedTimes = "最大失败次数"
+            Proxies = "成员"
+            Use = "使用 Provider"
+            UseHint = "每行一个 Provider 名称"
+            InterfaceName = "接口名称"
+            RoutingMark = "路由标记"
+            Filter = "过滤器"
+            ExcludeFilter = "排除过滤器"
+            ExcludeType = "排除类型"
+            ExpectedStatus = "期望状态"
+            Icon = "图标"
+            Lazy = "懒加载"
+            DisableUdp = "禁用 UDP"
+            IncludeAll = "包含全部"
+            IncludeAllProxies = "包含全部代理"
+            IncludeAllProviders = "包含全部 Provider"
+            Hidden = "隐藏"
+        }
     }
 }

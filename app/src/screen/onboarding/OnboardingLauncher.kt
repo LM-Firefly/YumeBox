@@ -35,12 +35,7 @@ internal object OnboardingLauncher {
         context: Context,
         previewMode: Boolean = false,
     ) {
-        val intent = createIntent(
-            context = context,
-            target = OnboardingStartupActivity::class.java,
-            previewMode = previewMode,
-            resetPrivacy = !previewMode,
-        )
+        val intent = createIntent(context, previewMode, resetPrivacy = !previewMode)
         if (context !is Activity) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -49,11 +44,10 @@ internal object OnboardingLauncher {
 
     fun createIntent(
         context: Context,
-        target: Class<out Activity>,
         previewMode: Boolean,
         resetPrivacy: Boolean = false,
     ): Intent {
-        return Intent(context, target)
+        return Intent(context, OnboardingActivity::class.java)
             .putExtra(EXTRA_PREVIEW_MODE, previewMode)
             .putExtra(EXTRA_RESET_PRIVACY, resetPrivacy)
     }
@@ -64,5 +58,11 @@ internal object OnboardingLauncher {
 
     fun shouldResetPrivacy(intent: Intent?): Boolean {
         return intent?.getBooleanExtra(EXTRA_RESET_PRIVACY, false) ?: false
+    }
+
+    fun consumeResetPrivacy(intent: Intent?): Boolean {
+        val shouldReset = shouldResetPrivacy(intent)
+        intent?.removeExtra(EXTRA_RESET_PRIVACY)
+        return shouldReset
     }
 }

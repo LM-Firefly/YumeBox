@@ -41,7 +41,6 @@ fun LazyListScope.OverrideEditContent(
     onDescriptionChange: (String) -> Unit,
     onConfigChange: (ConfigurationOverride) -> Unit,
     onSectionToggle: (OverrideEditorSection) -> Unit,
-    onOpenPresetTemplate: () -> Unit,
     onEditStringList: OpenStringListModifiersEditor,
     onEditRuleList: OpenRuleListEditor,
     onEditStringMap: OpenStringMapEditor,
@@ -65,18 +64,6 @@ fun LazyListScope.OverrideEditContent(
                 value = description,
                 placeholder = MLang.Override.Draft.ConfigDescription,
                 onValueChange = { onDescriptionChange(it.orEmpty()) },
-            )
-        }
-    }
-
-    item(key = "override-preset-template-section") {
-        OverrideCardSection(
-            title = MLang.Override.Draft.PresetTemplate,
-        ) {
-            BasicComponent(
-                title = MLang.Override.Draft.OfficialMrs,
-                summary = MLang.Override.Draft.OfficialMrsSummary,
-                onClick = onOpenPresetTemplate,
             )
         }
     }
@@ -167,7 +154,6 @@ private fun OverrideSectionContent(
         )
         OverrideEditorSection.Sniffer -> SnifferEditor(config, onConfigChange, onEditStringList)
         OverrideEditorSection.Inbound -> InboundEditor(config, onConfigChange, onEditStringList)
-        OverrideEditorSection.Tun -> TunEditor(config, onConfigChange, onEditStringList)
         OverrideEditorSection.Proxies,
         OverrideEditorSection.ProxyProviders,
         OverrideEditorSection.ProxyGroups,
@@ -177,14 +163,12 @@ private fun OverrideSectionContent(
         -> Unit
     }
 }
-
 private fun OverrideEditorSection.isDirectEntry(): Boolean {
     return when (this) {
         OverrideEditorSection.General,
         OverrideEditorSection.Dns,
         OverrideEditorSection.Sniffer,
         OverrideEditorSection.Inbound,
-        OverrideEditorSection.Tun,
         -> false
 
         OverrideEditorSection.Rules,
@@ -377,7 +361,6 @@ private fun openDirectSectionEditor(
         OverrideEditorSection.Dns,
         OverrideEditorSection.Sniffer,
         OverrideEditorSection.Inbound,
-        OverrideEditorSection.Tun,
         -> Unit
     }
 }

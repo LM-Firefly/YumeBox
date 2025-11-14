@@ -22,11 +22,9 @@
 
 package com.github.yumelira.yumebox.service.clash.module
 
-import android.net.ConnectivityManager
 import android.net.VpnService
-import android.os.Build
-import androidx.core.content.getSystemService
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.service.common.util.SocketOwnerResolver
 import com.github.yumelira.yumebox.core.util.parseInetSocketAddress
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
@@ -43,20 +41,8 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
         val dns: String,
     )
 
-    private val connectivity = service.getSystemService<ConnectivityManager>()!!
+    private val ownerResolver = SocketOwnerResolver(vpn)
     private val close = Channel<Unit>(Channel.CONFLATED)
-
-    private fun queryUid(
-        protocol: Int,
-        source: InetSocketAddress,
-        target: InetSocketAddress,
-    ): Int {
-        if (Build.VERSION.SDK_INT < 29)
-            return -1
-
-        return runCatching { connectivity.getConnectionOwnerUid(protocol, source, target) }
-            .getOrElse { -1 }
-    }
 
     override suspend fun run() {
         try {
@@ -84,7 +70,7 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
             portal = device.portal,
             dns = device.dns,
             markSocket = vpn::protect,
-            querySocketUid = this::queryUid
+            querySocketOwner = ownerResolver::queryOwner,
         )
     }
 

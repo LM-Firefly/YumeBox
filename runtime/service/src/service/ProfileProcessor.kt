@@ -32,7 +32,6 @@ import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
-import com.github.yumelira.yumebox.service.runtime.util.processingDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +45,10 @@ import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.Base64
+import java.util.Calendar
+import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
@@ -64,7 +66,7 @@ object ProfileProcessor {
 
     private fun resolveUserAgent(): String {
         val settings = MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE)
-        val custom = settings?.decodeString("customUserAgent")?.trim().orEmpty()
+        val custom = settings.decodeString("customUserAgent")?.trim().orEmpty()
         return custom.ifBlank { DEFAULT_USER_AGENT }
     }
 
@@ -76,6 +78,11 @@ object ProfileProcessor {
         val title: String? = null,
         val filename: String? = null,
         val interval: Int = 24
+    )
+
+    private data class UpdateSnapshot(
+        val imported: Imported,
+        val hasCommittedConfig: Boolean
     )
 
     private suspend fun downloadWithSubscriptionInfo(
@@ -102,7 +109,7 @@ object ProfileProcessor {
                     response.headers
                 )
 
-                val body = response.body ?: return@withContext Pair(false, null)
+                val body = response.body
                 val contentLength = body.contentLength()
                 val inputStream = body.byteStream()
 
@@ -295,19 +302,18 @@ object ProfileProcessor {
     }
 
     private suspend fun fetchUrlSubscription(
-        context: Context,
-        uuid: UUID,
+        stagingDir: File,
         source: String,
         onProgress: (Int) -> Unit
     ): SubscriptionInfo? {
         return try {
             onProgress(5)
-            val tempFile = File(context.cacheDir, "temp_$uuid.yaml")
+            val tempFile = stagingDir.resolve("config.download.yaml")
             val (success, info) = downloadWithSubscriptionInfo(source, tempFile) { progress ->
                 onProgress(5 + (progress * 0.4).toInt())
             }
             val result = if (success) {
-                tempFile.copyTo(File(context.processingDir, "config.yaml"), overwrite = true)
+                tempFile.copyTo(stagingDir.resolve("config.yaml"), overwrite = true)
                 info
             } else null
             tempFile.delete()
@@ -338,76 +344,97 @@ object ProfileProcessor {
     suspend fun update(context: Context, uuid: UUID, callback: IFetchObserver?) {
         withContext(Dispatchers.IO + NonCancellable) {
             processLock.withLock {
+                val targetDir = context.importedDir.resolve(uuid.toString())
+                val stagingDir = context.cacheDir.resolve("profile-staging").resolve(uuid.toString())
                 val snapshot = profileLock.withLock {
                     val imported = ImportedDao.queryByUUID(uuid)
                         ?: throw IllegalArgumentException("profile $uuid not found")
 
-                    context.processingDir.deleteRecursively()
-                    context.processingDir.mkdirs()
+                    stagingDir.deleteRecursively()
+                    stagingDir.mkdirs()
 
-                    context.importedDir.resolve(imported.uuid.toString())
-                        .copyRecursively(context.processingDir, overwrite = true)
+                    if (targetDir.exists()) {
+                        targetDir.copyRecursively(stagingDir, overwrite = true)
+                    }
 
-                    imported
+                    UpdateSnapshot(
+                        imported = imported,
+                        hasCommittedConfig = targetDir.resolve("runtime.yaml").isFile
+                    )
                 }
 
                 var cb = callback
                 var subInfo: SubscriptionInfo? = null
 
-                if (snapshot.type == Profile.Type.Url) {
-                    subInfo = fetchUrlSubscription(context, snapshot.uuid, snapshot.source) { progress ->
+                try {
+                    if (snapshot.imported.type == Profile.Type.Url) {
+                        subInfo = fetchUrlSubscription(stagingDir, snapshot.imported.source) { progress ->
+                            try {
+                                cb?.updateStatus(
+                                    com.github.yumelira.yumebox.core.model.FetchStatus(
+                                        action = com.github.yumelira.yumebox.core.model.FetchStatus.Action.FetchConfiguration,
+                                        args = emptyList(),
+                                        progress = progress,
+                                        max = 100
+                                    )
+                                )
+                            } catch (_: Exception) {
+                                cb = null
+                            }
+                        }
+                    }
+
+                    Clash.fetchAndValid(stagingDir, snapshot.imported.source, true) {
                         try {
                             cb?.updateStatus(
-                                com.github.yumelira.yumebox.core.model.FetchStatus(
-                                    action = com.github.yumelira.yumebox.core.model.FetchStatus.Action.FetchConfiguration,
-                                    args = emptyList(),
-                                    progress = progress,
-                                    max = 100
-                                )
+                                it
                             )
                         } catch (e: Exception) {
                             cb = null
+                            Log.w("Report fetch status: $e", e)
+                        }
+                    }.await()
+
+                    profileLock.withLock {
+                        if (ImportedDao.exists(snapshot.imported.uuid)) {
+                            targetDir.deleteRecursively()
+                            stagingDir.copyRecursively(targetDir, overwrite = true)
+
+                            val finalName = if (snapshot.imported.type == Profile.Type.Url) {
+                                resolveSubscriptionName(snapshot.imported.name, snapshot.imported.source, subInfo)
+                            } else snapshot.imported.name
+
+                            val updated = Imported(
+                                snapshot.imported.uuid,
+                                finalName,
+                                snapshot.imported.type,
+                                snapshot.imported.source,
+                                if (snapshot.imported.type == Profile.Type.Url && subInfo != null) {
+                                    subInfo.interval.toLong() * 60 * 60 * 1000
+                                } else snapshot.imported.interval,
+                                subInfo?.upload ?: snapshot.imported.upload,
+                                subInfo?.download ?: snapshot.imported.download,
+                                subInfo?.total ?: snapshot.imported.total,
+                                subInfo?.expire ?: snapshot.imported.expire,
+                                snapshot.imported.createdAt
+                            )
+                            ImportedDao.update(updated)
+
+                            context.sendProfileChanged(snapshot.imported.uuid)
                         }
                     }
-                }
-
-                Clash.fetchAndValid(context.processingDir, snapshot.source, true) {
-                    try {
-                        cb?.updateStatus(it)
-                    } catch (e: Exception) {
-                        cb = null
-                        Log.w("Report fetch status: $e", e)
+                } catch (e: Exception) {
+                    profileLock.withLock {
+                        if (!snapshot.hasCommittedConfig && ImportedDao.exists(snapshot.imported.uuid)) {
+                            ImportedDao.remove(snapshot.imported.uuid)
+                            SelectionDao.clear(snapshot.imported.uuid)
+                            targetDir.deleteRecursively()
+                            context.sendProfileChanged(snapshot.imported.uuid)
+                        }
                     }
-                }.await()
-
-                profileLock.withLock {
-                    if (ImportedDao.exists(snapshot.uuid)) {
-                        context.importedDir.resolve(snapshot.uuid.toString()).deleteRecursively()
-                        context.processingDir
-                            .copyRecursively(context.importedDir.resolve(snapshot.uuid.toString()))
-
-                        val finalName = if (snapshot.type == Profile.Type.Url) {
-                            resolveSubscriptionName(snapshot.name, snapshot.source, subInfo)
-                        } else snapshot.name
-
-                        val updated = Imported(
-                            snapshot.uuid,
-                            finalName,
-                            snapshot.type,
-                            snapshot.source,
-                            if (snapshot.type == Profile.Type.Url && subInfo != null) {
-                                (subInfo.interval ?: 24).toLong() * 60 * 60 * 1000
-                            } else snapshot.interval,
-                            subInfo?.upload ?: snapshot.upload,
-                            subInfo?.download ?: snapshot.download,
-                            subInfo?.total ?: snapshot.total,
-                            subInfo?.expire ?: snapshot.expire,
-                            snapshot.createdAt
-                        )
-                        ImportedDao.update(updated)
-
-                        context.sendProfileChanged(snapshot.uuid)
-                    }
+                    throw e
+                } finally {
+                    stagingDir.deleteRecursively()
                 }
             }
         }
@@ -418,7 +445,6 @@ object ProfileProcessor {
             profileLock.withLock {
                 ImportedDao.remove(uuid)
                 SelectionDao.clear(uuid)
-                SelectionDao.removeSelectionScopeKey(uuid)
 
                 val imported = context.importedDir.resolve(uuid.toString())
                 imported.deleteRecursively()

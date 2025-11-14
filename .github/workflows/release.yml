@@ -1,0 +1,40 @@
+name: Release Stable
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Stable release tag, for manual run (example: v0.5.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: release-stable-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-native:
+    uses: ./.github/workflows/reusable-build-native.yml
+    with:
+      channel: stable
+      kernel_channel: meta
+    secrets: inherit
+
+  build-apk-and-publish:
+    needs: build-native
+    uses: ./.github/workflows/reusable-build-apk.yml
+    with:
+      channel: stable
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      release_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      prerelease: false
+      meta_asset_name: yumebox-stable-meta.json
+      cleanup_assets: false
+      telegram_title: YumeBox Stable
+    secrets: inherit

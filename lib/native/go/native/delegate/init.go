@@ -39,12 +39,14 @@ func Init(home, versionName, gitVersion string, platformVersion int) {
 			return "", process.ErrInvalidNetwork
 		}
 
-		uid := app.QuerySocketUid(metadata.RawSrcAddr, metadata.RawDstAddr)
-		pkg := app.QueryAppByUid(uid)
+		owner := app.QuerySocketOwner(metadata.RawSrcAddr, metadata.RawDstAddr)
+		if owner.UID >= 0 {
+			metadata.Uid = uint32(owner.UID)
+		}
 
-		log.Debugln("[PKG] %s --> %s by %d[%s]", metadata.SourceAddress(), metadata.RemoteAddress(), uid, pkg)
+		log.Debugln("[PKG] %s --> %s by %d[%s]", metadata.SourceAddress(), metadata.RemoteAddress(), owner.UID, owner.Package)
 
-		return pkg, nil
+		return owner.Package, nil
 	}
 
 	dialer.DefaultSocketHook = func(network, address string, conn syscall.RawConn) error {

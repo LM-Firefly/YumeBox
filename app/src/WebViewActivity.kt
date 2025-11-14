@@ -36,6 +36,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
+import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.presentation.webview.WebViewScreen
 
 class WebViewActivity : ComponentActivity() {
@@ -78,6 +79,10 @@ class WebViewActivity : ComponentActivity() {
             mimeTypes
         }
         fileChooserLauncher.launch(types)
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguageManager.wrap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

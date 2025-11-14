@@ -24,8 +24,6 @@ package com.github.yumelira.yumebox.screen.profiles
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -35,6 +33,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.repository.OverrideService
@@ -42,10 +41,7 @@ import com.github.yumelira.yumebox.data.repository.ProfileBindingProvider
 import com.github.yumelira.yumebox.domain.model.ProfileBinding
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
-import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
-import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
+import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
@@ -59,8 +55,6 @@ import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 @SuppressLint("UseKtx")
 @Composable
@@ -76,6 +70,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     val overrideService: OverrideService = koinInject()
     val systemPresets by overrideConfigViewModel.systemPresets.collectAsState()
     val userConfigs by overrideConfigViewModel.userConfigs.collectAsState()
+    val context = LocalContext.current
 
     val showAddBottomSheet = remember { mutableStateOf(false) }
     var isDeleteDialogVisible by remember { mutableStateOf(false) }
@@ -86,13 +81,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     var showEditOptionsDialog by remember { mutableStateOf<Profile?>(null) }
     var openConfigPreviewAfterEditDialogDismiss by remember { mutableStateOf(false) }
     var profileToShare by remember { mutableStateOf<Profile?>(null) }
-    var pendingProfileId by remember { mutableStateOf<String?>(null) }
     var profileToEdit by remember { mutableStateOf<Profile?>(null) }
     var profileBinding by remember { mutableStateOf<ProfileBinding?>(null) }
     var isDownloading by remember { mutableStateOf(false) }
 
     var importUrlFromScheme by remember { mutableStateOf<String?>(null) }
     val pendingImportUrl by MainActivity.pendingImportUrl.collectAsState()
+    val urlProfiles = remember(profiles) {
+        profiles.filter { it.type == Profile.Type.Url }
+    }
 
     var scannedUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pendingImportUrl) {
@@ -110,17 +107,6 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
         }
     }
 
-    rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            pendingProfileId?.let { profileId ->
-                homeViewModel.startProxy(profileId, mode = null)
-            }
-        }
-        pendingProfileId = null
-    }
-
     val scrollBehavior = MiuixScrollBehavior()
     val scope = rememberCoroutineScope()
 
@@ -131,21 +117,22 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(
+                        modifier = Modifier.padding(end = 12.dp),
                         onClick = {
-                            if (!isDownloading) {
+                            if (!isDownloading && urlProfiles.isNotEmpty()) {
                                 isDownloading = true
                                 scope.launch {
-                                    profiles.filter { it.type == Profile.Type.Url }.forEach { p ->
+                                    urlProfiles.forEach { p ->
                                         profilesViewModel.updateProfile(p.uuid)
                                     }
                                     isDownloading = false
                                 }
                             }
-                        }, modifier = Modifier.padding(end = 12.dp)
+                        }
                     ) {
                         Icon(
-                            Yume.`Circle-fading-arrow-up`,
-                            contentDescription = "Update all"
+                            ShellIcons.UpdateProfiles,
+                            contentDescription = MLang.ProfilesPage.Action.UpdateAll
                         )
                     }
 
@@ -153,11 +140,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         onClick = {
                             profileToEdit = null
                             showAddBottomSheet.value = true
-                        }, modifier = Modifier.padding(end = LocalSpacing.current.xxl)
+                        }
                     ) {
                         Icon(
-                            Yume.`Badge-plus`,
-                            contentDescription = "Add profile"
+                            ShellIcons.AddProfile,
+                            contentDescription = MLang.ProfilesPage.Action.AddProfile
                         )
                     }
                 })
@@ -192,10 +179,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     ) { isDragging ->
                         ProfileCard(
                             profile = profile,
-                            workDir = File(
-                                com.github.yumelira.yumebox.App.instance.filesDir,
-                                "imported"
-                            ),
+                            workDir = App.instance.filesDir.resolve("imported"),
                             isDownloading = isDownloading,
                             modifier = Modifier
                                 .longPressDraggableHandle()
@@ -244,7 +228,6 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
         }
     }
 
-    LocalContext.current
     AddProfileSheet(
         show = showAddBottomSheet,
         profileToEdit = profileToEdit,
@@ -279,7 +262,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     val currentProfileToEdit = profileToEdit
     if (currentProfileToEdit != null) {
         ProfileSettingsDialog(
-            show = showSettingsDialog,
+            show = showSettingsDialog.value,
             profile = currentProfileToEdit,
             systemPreset = systemPresets.firstOrNull(),
             userConfigs = userConfigs,
@@ -327,18 +310,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     }
 
     profileToShare?.let { profile ->
-        ShareOptionsDialog(show = showShareDialog, profile = profile, onDismiss = {
+        ShareOptionsDialog(show = showShareDialog.value, profile = profile, onDismiss = {
             showShareDialog.value = false
         }, onDismissFinished = {
             profileToShare = null
         }, onShareFile = { profile ->
-            val context = com.github.yumelira.yumebox.App.instance
-            val file = File(File(context.filesDir, "imported"), "${profile.uuid}/config.yaml")
-                .takeIf { it.exists() }
-                ?: File(File(context.filesDir, "clash"), "profiles/${profile.uuid}/config.yaml").takeIf { it.exists() }
+            val file = importedConfigFile(profile)
 
-            if (file == null) {
-                context.toast("Profile file does not exist")
+            if (!file.exists()) {
+                context.toast(MLang.ProfilesPage.ShareDialog.ImportedConfigMissing.format(file.absolutePath))
             } else {
                 runCatching {
                     val uri = FileProvider.getUriForFile(
@@ -362,7 +342,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             }
             showShareDialog.value = false
         }, onShareLink = { profile ->
-            val context = com.github.yumelira.yumebox.App.instance
+            val context = App.instance
             val url = if (profile.type == Profile.Type.Url) profile.source else null
             url?.let {
                 val intent = Intent(Intent.ACTION_SEND).apply {
@@ -389,32 +369,20 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             onOpenConfig = {
                 openConfigPreviewAfterEditDialogDismiss = false
                 isEditOptionsDialogVisible = false
-                val configFile = File(File(com.github.yumelira.yumebox.App.instance.filesDir, "imported"), "${profile.uuid}/config.yaml")
-                    .takeIf { it.exists() }
-                    ?: File(File(com.github.yumelira.yumebox.App.instance.filesDir, "clash"), "profiles/${profile.uuid}/config.yaml").takeIf { it.exists() }
-
-                if (configFile == null) {
-                    com.github.yumelira.yumebox.App.instance.toast("Profile file does not exist")
-                    return@ProfileEditOptionsDialog
+                openProfileConfigPreview(
+                    targetFile = importedConfigFile(profile),
+                    missingMessage = MLang.ProfilesPage.SettingsDialog.ConfigMissing.format(importedConfigFile(profile).absolutePath),
+                    editable = true,
+                    onReadFailed = context::toast,
+                ) { configContent, callback ->
+                    OverrideStructuredEditorStore.setupConfigPreview(
+                        title = profile.name,
+                        content = configContent,
+                        language = LanguageScope.Yaml,
+                        callback = callback,
+                    )
+                    openConfigPreviewAfterEditDialogDismiss = true
                 }
-
-                val configContent = runCatching { configFile.readText() }.getOrElse {
-                    com.github.yumelira.yumebox.App.instance.toast(it.message ?: "Failed to read profile")
-                    return@ProfileEditOptionsDialog
-                }
-                OverrideStructuredEditorStore.setupConfigPreview(
-                    title = profile.name,
-                    content = configContent,
-                    language = LanguageScope.Yaml,
-                    callback = { updatedContent ->
-                        runCatching {
-                            configFile.writeText(updatedContent)
-                        }.onFailure {
-                            throw IllegalStateException(it.message ?: MLang.ProfilesPage.SettingsDialog.SaveFailed, it)
-                        }
-                    },
-                )
-                openConfigPreviewAfterEditDialogDismiss = true
             },
             onEditSettings = {
                 openConfigPreviewAfterEditDialogDismiss = false
@@ -437,43 +405,5 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 }
             },
         )
-    }
-}
-
-@Composable
-private fun ProfileEditOptionsDialog(
-    show: Boolean,
-    onOpenConfig: () -> Unit,
-    onEditSettings: () -> Unit,
-    onDismiss: () -> Unit,
-    onDismissFinished: () -> Unit,
-) {
-    AppDialog(
-        show = show,
-        title = MLang.ProfilesPage.SettingsDialog.EditProfile,
-        onDismissRequest = onDismiss,
-        onDismissFinished = onDismissFinished,
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onOpenConfig,
-            ) {
-                Text(MLang.ProfilesPage.SettingsDialog.OpenConfig)
-            }
-
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onEditSettings,
-                colors = ButtonDefaults.buttonColorsPrimary(),
-            ) {
-                Text(
-                    text = MLang.ProfilesPage.SettingsDialog.EditSettings,
-                    color = MiuixTheme.colorScheme.onPrimary,
-                )
-            }
-        }
     }
 }

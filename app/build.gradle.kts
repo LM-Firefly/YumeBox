@@ -20,7 +20,6 @@
 
 @file:Suppress("UnstableApiUsage")
 
-import groovy.json.JsonSlurper
 import java.util.*
 
 plugins {
@@ -30,52 +29,27 @@ plugins {
     id("org.jetbrains.compose")
     id("com.google.devtools.ksp")
     id("com.mikepenz.aboutlibraries.plugin.android")
-    id("io.sentry.android.gradle") version "6.2.0"
 }
 
 
-val appAbiList = (gropify.abi.app.list ?: "armeabi-v7a,arm64-v8a,x86,x86_64")
-    .split(',').map { it.trim() }.filter { it.isNotEmpty() }
-
-data class EmasConfig(val appKey: String, val appSecret: String, val channelId: String)
-
-val emasConfig = runCatching {
-    val file = layout.projectDirectory.file("aliyun-emas-services.json").asFile
-    if (file.exists()) {
-        val json = JsonSlurper().parse(file) as? Map<*, *>
-        val config = json?.get("config") as? Map<*, *> ?: emptyMap<Any, Any>()
-        EmasConfig(
-            appKey = (config["emas.appKey"] ?: "").toString(),
-            appSecret = (config["emas.appSecret"] ?: "").toString(),
-            channelId = (config["emas.channelId"] ?: "official").toString()
-        )
-    } else {
-        EmasConfig("", "", "official")
-    }
-}.getOrDefault(EmasConfig("", "", "official"))
+val appAbiList =
+    gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
 val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
 
 android {
     namespace = gropify.project.namespace.base
-    compileSdk = gropify.android.compileSdk
 
     defaultConfig {
-        minSdk = gropify.android.minSdk
         applicationId = gropify.project.namespace.base
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
         manifestPlaceholders["appName"] = gropify.project.name
-
-        buildConfigField("String", "CLARITY_PROJECT_ID", "\"${gropify.clarity.projectId}\"")
-        buildConfigField("String", "EMAS_APP_KEY", "\"${emasConfig.appKey}\"")
-        buildConfigField("String", "EMAS_APP_SECRET", "\"${emasConfig.appSecret}\"")
-        buildConfigField("String", "EMAS_CHANNEL_ID", "\"${emasConfig.channelId}\"")
     }
 
     compileOptions {
-        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
+        val javaVer = gropify.android.jvm
         sourceCompatibility = JavaVersion.toVersion(javaVer)
         targetCompatibility = JavaVersion.toVersion(javaVer)
         isCoreLibraryDesugaringEnabled = true
@@ -134,6 +108,7 @@ android {
 
     splits {
         abi {
+            //noinspection WrongGradleMethod
             isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
             include(*appAbiList.toTypedArray())
@@ -167,6 +142,7 @@ android {
         }
     }
 
+    //noinspection WrongGradleMethod
     androidComponents {
         onVariants { variant ->
             variant.outputs.forEach { output ->
@@ -212,16 +188,18 @@ dependencies {
     implementation("androidx.activity:activity-compose:${gropify.dep.version.activityCompose}")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-ui:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-preference:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-blur-android:${gropify.dep.version.miuix}")
     implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
-    implementation("io.github.fletchmckee.liquid:liquid:${gropify.dep.version.liquid}")
     implementation("androidx.navigationevent:navigationevent-compose:${gropify.dep.version.navigationevent}")
 
     val mmkv64 = gropify.dep.version.mmkv64
     val mmkv32 = gropify.dep.version.mmkv32
     val injectedAbi = findProperty("android.injected.build.abi") as? String
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
+    //noinspection NewerVersionAvailable
     implementation("com.tencent:mmkv:$mmkvVersion")
 
     implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
@@ -244,12 +222,12 @@ dependencies {
     implementation("androidx.camera:camera-core:${gropify.dep.version.camera}")
     implementation("androidx.camera:camera-video:${gropify.dep.version.camera}")
 
-    implementation("io.coil-kt.coil3:coil-compose:${gropify.dep.version.coil3}")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:${gropify.dep.version.coil3}")
-    implementation("io.coil-kt.coil3:coil-svg:${gropify.dep.version.coil3}")
     implementation("io.github.panpf.sketch4:sketch-compose:${gropify.dep.version.sketch4}")
     implementation("io.github.panpf.sketch4:sketch-http:${gropify.dep.version.sketch4}")
+    implementation("io.github.panpf.sketch4:sketch-animated-gif:${gropify.dep.version.sketch4}")
+    implementation("io.github.panpf.sketch4:sketch-animated-heif:${gropify.dep.version.sketch4}")
     implementation("io.github.panpf.sketch4:sketch-animated-webp:${gropify.dep.version.sketch4}")
+    implementation("io.github.panpf.sketch4:sketch-animated-gif-koral:${gropify.dep.version.sketch4}")
 
     implementation("sh.calvin.reorderable:reorderable:${gropify.dep.version.reorderable}")
     implementation("com.mikepenz:aboutlibraries-core:${gropify.dep.version.aboutLibraries}")
@@ -258,24 +236,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${gropify.dep.version.lifecycle}")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
 
-    implementation("com.taobao.android:update-main:${gropify.dep.version.taobaoUpdate}")
-    implementation("com.taobao.android:update-common:${gropify.dep.version.taobaoUpdate}")
-    implementation("com.taobao.android:update-datasource:${gropify.dep.version.taobaoUpdate}")
-    implementation("com.taobao.android:update-adapter:${gropify.dep.version.taobaoUpdate}")
-
-    implementation("com.microsoft.clarity:clarity-compose:3.8.1")
+    implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
+    implementation("androidx.biometric:biometric:${gropify.dep.version.biometric}")
 }
 
 ksp {
     arg("compose-destinations.defaultTransitions", "none")
 }
-
-sentry {
-    org.set("12d34a06e78c")
-    projectName.set("android")
-    includeSourceContext.set(true)
-}
-
-
-
-

@@ -26,6 +26,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
@@ -34,9 +36,9 @@ import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
+import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -107,8 +109,8 @@ class NetworkSettingsViewModel(
     private val runtimeSnapshot = proxyFacade.runtimeSnapshot
 
     val serviceState: StateFlow<ServiceState> = runtimeSnapshot
-        .map { snapshot -> if (RuntimeStateMapper.isActuallyRunning(snapshot)) ServiceState.Running else ServiceState.Stopped }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Stopped)
+        .map { snapshot -> ServiceState.fromPhase(snapshot.phase) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Idle)
 
     val currentProxyMode: StateFlow<ProxyMode> = proxyMode.state
 
@@ -124,7 +126,7 @@ class NetworkSettingsViewModel(
             serviceState = serviceState,
             configuredMode = configuredMode,
             effectiveMode = effectiveMode,
-            needsRestart = serviceState == ServiceState.Running && activeMode != configuredMode,
+            needsRestart = snapshot.phase == RuntimePhase.Running && activeMode != configuredMode,
             showServiceOptions = configuredMode != ProxyMode.Http,
             showTunOnlyOptions = configuredMode == ProxyMode.Tun,
             showAccessControlMode = configuredMode != ProxyMode.Http,
@@ -283,7 +285,13 @@ class NetworkSettingsViewModel(
     private fun updateServiceConfig() {
         restartJob?.cancel()
         restartJob = viewModelScope.launch {
-            delay(RESTART_DEBOUNCE_DELAY_MS)
+            PollingTimers.awaitTick(
+                PollingTimerSpecs.dynamic(
+                    name = "network_settings_restart_debounce",
+                    intervalMillis = RESTART_DEBOUNCE_DELAY_MS,
+                    initialDelayMillis = RESTART_DEBOUNCE_DELAY_MS,
+                ),
+            )
             if (RuntimeStateMapper.isActuallyRunning(runtimeSnapshot.value)) {
                 restartService()
             }
@@ -305,7 +313,7 @@ class NetworkSettingsViewModel(
 }
 
 data class NetworkSettingsUiState(
-    val serviceState: ServiceState = ServiceState.Stopped,
+    val serviceState: ServiceState = ServiceState.Idle,
     val configuredMode: ProxyMode = ProxyMode.Tun,
     val effectiveMode: ProxyMode = ProxyMode.Tun,
     val needsRestart: Boolean = false,
@@ -317,5 +325,21 @@ data class NetworkSettingsUiState(
 )
 
 enum class ServiceState {
-    Running, Stopped
+    Idle,
+    Starting,
+    Running,
+    Stopping,
+    Failed;
+
+    companion object {
+        fun fromPhase(phase: RuntimePhase): ServiceState {
+            return when (phase) {
+                RuntimePhase.Idle -> Idle
+                RuntimePhase.Starting -> Starting
+                RuntimePhase.Running -> Running
+                RuntimePhase.Stopping -> Stopping
+                RuntimePhase.Failed -> Failed
+            }
+        }
+    }
 }

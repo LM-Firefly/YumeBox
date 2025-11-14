@@ -23,11 +23,19 @@
 package com.github.yumelira.yumebox.service.runtime.session
 
 import android.content.Context
+import android.util.Log
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.CompileRequest
 import com.github.yumelira.yumebox.core.model.CompileResult
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
+import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.buildOfficialMrsConfigurationOverride
+import com.github.yumelira.yumebox.core.model.defaultSystemOfficialMrsPresetSelection
+import com.github.yumelira.yumebox.core.model.encodeConfigurationOverride
+import com.github.yumelira.yumebox.core.util.PROXY_PROVIDER_SCOPE
+import com.github.yumelira.yumebox.core.util.RULE_PROVIDER_SCOPE
+import com.github.yumelira.yumebox.core.util.profileProviderScopeDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -40,6 +48,8 @@ import java.security.MessageDigest
 class CompiledConfigPipeline(
     private val context: Context,
 ) {
+    private val overrideEnabled = !context.packageName.endsWith(".lite")
+
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -65,6 +75,18 @@ class CompiledConfigPipeline(
         profileUuid: String,
         logger: ((String) -> Unit)?,
     ): ResolvedOverrideBundle {
+        if (!overrideEnabled) {
+            logger?.invoke("override resolve skipped for lite package=${context.packageName} profile=$profileUuid")
+            return ResolvedOverrideBundle(
+                profileUuid = profileUuid,
+                userOverridePaths = emptyList(),
+                builtinPresetPath = null,
+                customRoutingOverridePath = null,
+                runtimeInternalOverridePath = null,
+                paths = emptyList(),
+            )
+        }
+
         val overridesDir = context.filesDir.resolve("overrides")
         val metadataFile = overridesDir.resolve("metadata.json")
         val metadata = loadMetadataIndex(overridesDir, metadataFile, logger)
@@ -73,19 +95,19 @@ class CompiledConfigPipeline(
         val binding = metadata.profileChains[profileUuid]
         val systemPresetEnabled = binding?.enabled ?: false
         logger?.invoke(
-            "override resolve: profile=$profileUuid metadataFile=${metadataFile.absolutePath} " +
-                "exists=${metadataFile.exists()} size=${metadataRaw.length} sha=${metadataRaw.sha256Short()}",
-        )
-        logger?.invoke(
             "override resolve: profile=$profileUuid profileChain=" +
                 (binding?.let { json.encodeToString(ProfileChainPayload.serializer(), it) } ?: "<none>"),
         )
 
         val userOverridePaths = mutableListOf<String>()
+        val customRoutingEnabled = binding?.overrideIds
+            .orEmpty()
+            .contains(OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID)
         binding
             ?.overrideIds
             .orEmpty()
             .filterNot(::isReservedOverrideId)
+            .filterNot(::isCustomRoutingId)
             .forEach { overrideId ->
                 val file = resolveUserOverrideFile(overridesDir, overrideId)
                 if (file == null) {
@@ -95,9 +117,17 @@ class CompiledConfigPipeline(
                 userOverridePaths += file.absolutePath
             }
 
-        val systemPresetOverridePath = if (systemPresetEnabled) {
-            resolveSystemPresetOverrideFile(overridesDir)?.also { file ->
-                logger?.invoke(describeOverrideFile(file, SYSTEM_OVERRIDE_FILE_ID))
+        val builtinPresetPath = if (systemPresetEnabled) {
+            resolveBuiltinPresetFile(overridesDir)?.also { file ->
+                logger?.invoke(describeOverrideFile(file, BUILTIN_PRESET_FILE_ID))
+            }?.absolutePath
+        } else {
+            null
+        }
+
+        val customRoutingOverridePath = if (customRoutingEnabled) {
+            resolveCustomRoutingOverrideFile(overridesDir)?.also { file ->
+                logger?.invoke(describeOverrideFile(file, OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID))
             }?.absolutePath
         } else {
             null
@@ -108,7 +138,8 @@ class CompiledConfigPipeline(
             ?.absolutePath
 
         val paths = mutableListOf<String>()
-        systemPresetOverridePath?.let(paths::add)
+        builtinPresetPath?.let(paths::add)
+        customRoutingOverridePath?.let(paths::add)
         paths += userOverridePaths
         runtimeInternalOverridePath?.let(paths::add)
 
@@ -120,7 +151,8 @@ class CompiledConfigPipeline(
         return ResolvedOverrideBundle(
             profileUuid = profileUuid,
             userOverridePaths = userOverridePaths,
-            systemPresetOverridePath = systemPresetOverridePath,
+            builtinPresetPath = builtinPresetPath,
+            customRoutingOverridePath = customRoutingOverridePath,
             runtimeInternalOverridePath = runtimeInternalOverridePath,
             paths = paths,
         )
@@ -130,6 +162,7 @@ class CompiledConfigPipeline(
         val request = buildRequest(spec)
         val result = Clash.compileToFile(request)
         check(result.success) { result.error ?: "apply override to runtime config failed" }
+        validateCompiledProviderPaths(result.finalYaml, File(spec.profileDir))
         result.fingerprint
     }
 
@@ -155,12 +188,14 @@ class CompiledConfigPipeline(
         )
         val result = Clash.compilePreview(request)
         check(result.success) { result.error ?: "override preview failed" }
+        validateCompiledProviderPaths(result.finalYaml, profileDir)
         Clash.inspectCompiledConfig(result.finalYaml) ?: ConfigurationOverride()
     }
 
     suspend fun previewOverride(spec: RuntimeSpec): CompileResult = withContext(Dispatchers.Default) {
         val result = Clash.compilePreview(buildRequest(spec))
         check(result.success) { result.error ?: "override preview failed" }
+        validateCompiledProviderPaths(result.finalYaml, File(spec.profileDir))
         result
     }
 
@@ -173,6 +208,34 @@ class CompiledConfigPipeline(
             overridePaths = spec.overridePaths,
             outputPath = spec.runtimeConfigPath.ifBlank { profileDir.resolve("runtime.yaml").absolutePath },
         )
+    }
+
+    private fun validateCompiledProviderPaths(finalYaml: String, profileDir: File) {
+        val rulesBase = profileProviderScopeDir(profileDir, RULE_PROVIDER_SCOPE).absolutePath.replace('\\', '/').trimEnd('/')
+        val proxiesBase = profileProviderScopeDir(profileDir, PROXY_PROVIDER_SCOPE).absolutePath.replace('\\', '/').trimEnd('/')
+        val invalidPaths = mutableListOf<String>()
+        PATH_PATTERN.findAll(finalYaml).forEach { match ->
+            val pathValue = match.groupValues[1].replace('\\', '/').trim()
+            if (!pathValue.endsWith(".yaml") && !pathValue.endsWith(".yml") && !pathValue.endsWith(".mrs")) {
+                return@forEach
+            }
+            val isLegacyPath = pathValue.startsWith("./ruleset/") ||
+                pathValue.startsWith("ruleset/") ||
+                pathValue.contains("/clash/")
+            val inProfileProviders = pathValue.startsWith("$rulesBase/") || pathValue.startsWith("$proxiesBase/")
+            if (isLegacyPath || !inProfileProviders) {
+                invalidPaths += pathValue
+            }
+        }
+        if (invalidPaths.isNotEmpty()) {
+            invalidPaths.forEach { invalidPath ->
+                Log.e(TAG, "Compiled provider path invalid: $invalidPath")
+            }
+            error("Compiled provider path escaped profile scope: ${invalidPaths.first()}")
+        }
+        if (PATH_PATTERN.containsMatchIn(finalYaml)) {
+            Log.i(TAG, "Compiled provider paths validated: rulesBase=$rulesBase proxiesBase=$proxiesBase")
+        }
     }
 
     private fun loadMetadataIndex(
@@ -221,17 +284,43 @@ class CompiledConfigPipeline(
     private fun resolveRuntimeInternalOverrideFile(overridesDir: File, profileUuid: String): File? {
         val file = overridesDir.resolve("configs/${INTERNAL_RUNTIME_PREFIX}-profile-$profileUuid.json")
         if (!file.exists()) return null
-        if (file.readText().isBlank()) return null
+        val content = runCatching { file.readText() }.getOrElse {
+            error("Runtime override file unreadable path=${file.absolutePath} reason=${it.message}")
+        }
+        if (content.isBlank()) {
+            runCatching { file.delete() }
+            return null
+        }
         return file
     }
 
-    private fun resolveSystemPresetOverrideFile(overridesDir: File): File? {
+    private fun resolveCustomRoutingOverrideFile(overridesDir: File): File? {
+        val file = overridesDir.resolve(
+            "${OverrideInternalConstants.INTERNAL_DIR_NAME}/${OverrideInternalConstants.CUSTOM_ROUTING_FILE_NAME}",
+        )
+        if (!file.exists()) return null
+        val content = runCatching { file.readText() }.getOrElse {
+            error("Custom routing override file unreadable path=${file.absolutePath} reason=${it.message}")
+        }
+        if (content.isBlank()) {
+            runCatching { file.delete() }
+            return null
+        }
+        return file
+    }
+
+    private fun resolveBuiltinPresetFile(overridesDir: File): File? {
         val content = runCatching {
-            context.assets.open(SYSTEM_OVERRIDE_ASSET_NAME).bufferedReader().use { it.readText() }
-        }.getOrNull() ?: return null
+            encodeConfigurationOverride(
+                buildOfficialMrsConfigurationOverride(defaultSystemOfficialMrsPresetSelection()),
+            )
+        }.getOrElse {
+            Log.e(TAG, "Failed to build builtin preset file", it)
+            return null
+        }
         if (content.isBlank()) return null
 
-        val file = overridesDir.resolve("internal/$SYSTEM_OVERRIDE_FILE_NAME")
+        val file = overridesDir.resolve("${OverrideInternalConstants.INTERNAL_DIR_NAME}/$BUILTIN_PRESET_FILE_NAME")
         file.parentFile?.mkdirs()
         if (!file.exists() || file.readText() != content) {
             file.writeText(content)
@@ -244,11 +333,15 @@ class CompiledConfigPipeline(
     }
 
     private fun isBuiltinPresetId(overrideId: String): Boolean {
-        return overrideId.startsWith(SYSTEM_OVERRIDE_PREFIX)
+        return overrideId.startsWith(BUILTIN_PRESET_PREFIX)
     }
 
     private fun isReservedOverrideId(overrideId: String): Boolean {
         return isInternalRuntimeId(overrideId) || isBuiltinPresetId(overrideId)
+    }
+
+    private fun isCustomRoutingId(overrideId: String): Boolean {
+        return overrideId == OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
     }
 
     private fun describeOverrideFile(file: File, overrideId: String): String {
@@ -283,7 +376,8 @@ class CompiledConfigPipeline(
     data class ResolvedOverrideBundle(
         val profileUuid: String,
         val userOverridePaths: List<String>,
-        val systemPresetOverridePath: String?,
+        val builtinPresetPath: String?,
+        val customRoutingOverridePath: String?,
         val runtimeInternalOverridePath: String?,
         val paths: List<String>,
     )
@@ -301,10 +395,11 @@ class CompiledConfigPipeline(
     )
 
     private companion object {
+        private const val TAG = "CompiledConfigPipeline"
+        private val PATH_PATTERN = Regex("""(?m)path:\s*["']?([^"'\n]+)["']?""")
         const val INTERNAL_RUNTIME_PREFIX = "__runtime__"
-        const val SYSTEM_OVERRIDE_PREFIX = "preset-"
-        const val SYSTEM_OVERRIDE_FILE_ID = "__builtin__"
-        const val SYSTEM_OVERRIDE_FILE_NAME = "builtin-override.json"
-        const val SYSTEM_OVERRIDE_ASSET_NAME = "override.json"
+        const val BUILTIN_PRESET_PREFIX = "preset-"
+        const val BUILTIN_PRESET_FILE_ID = "__builtin__"
+        const val BUILTIN_PRESET_FILE_NAME = "builtin-preset.json"
     }
 }

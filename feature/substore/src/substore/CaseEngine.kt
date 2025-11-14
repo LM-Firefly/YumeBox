@@ -71,19 +71,24 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
                 )
             )
 
-            nodeRuntime = V8Host.getNodeInstance().createV8Runtime(nodeRuntimeOptions)
+            val runtime = V8Host.getNodeInstance().createV8Runtime<NodeRuntime>(nodeRuntimeOptions)
+            nodeRuntime = runtime
 
-            val javetStandardConsoleInterceptor = JavetStandardConsoleInterceptor(nodeRuntime)
-            javetStandardConsoleInterceptor.register(nodeRuntime!!.globalObject)
+            val javetStandardConsoleInterceptor = JavetStandardConsoleInterceptor(runtime)
+            javetStandardConsoleInterceptor.register(runtime.globalObject)
 
-            nodeRuntime!!.allowEval(true)
-            nodeRuntime!!.getExecutor(argv2EnvScript).executeVoid()
+            runtime.allowEval(true)
+            runtime.getExecutor(argv2EnvScript).executeVoid()
         } catch (e: Exception) {
             Timber.e(e, "CaseEngine init failed")
         }
     }
 
     fun startServer() {
+        val runtime = nodeRuntime ?: run {
+            Timber.w("Skip starting CaseEngine: runtime is not initialized")
+            return
+        }
         if (isRunning) return
         isRunning = true
         shouldAwait = true
@@ -93,11 +98,11 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
         thread = Thread {
             try {
                 val workingDir = SubStorePaths.workingDir.path
-                nodeRuntime!!.getExecutor("process.chdir('$workingDir')").executeVoid()
+                runtime.getExecutor("process.chdir('$workingDir')").executeVoid()
 
-                nodeRuntime!!.getExecutor(codeFile).executeVoid()
+                runtime.getExecutor(codeFile).executeVoid()
                 while (shouldAwait) {
-                    nodeRuntime!!.await(V8AwaitMode.RunNoWait)
+                    runtime.await(V8AwaitMode.RunNoWait)
                 }
             } catch (_: InterruptedException) {
             } catch (e: Exception) {

@@ -27,7 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.common.util.openUrl
 import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 
 @Composable
 fun LinkItem(
@@ -37,7 +37,7 @@ fun LinkItem(
     context: Context = LocalContext.current,
 ) {
     if (showArrow) {
-        SuperArrow(
+        ArrowPreference(
             title = title,
             summary = url,
             onClick = { openUrl(context, url) }

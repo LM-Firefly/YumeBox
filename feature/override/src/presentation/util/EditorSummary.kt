@@ -33,7 +33,6 @@ object OverrideEditorSummaryBuilder {
             OverrideEditorSection.Dns to buildDnsSummary(config),
             OverrideEditorSection.Sniffer to buildSnifferSummary(config),
             OverrideEditorSection.Inbound to buildInboundSummary(config),
-            OverrideEditorSection.Tun to buildTunSummary(config),
             OverrideEditorSection.Proxies to buildProxiesSummary(config),
             OverrideEditorSection.ProxyProviders to buildProxyProvidersSummary(config),
             OverrideEditorSection.ProxyGroups to buildProxyGroupsSummary(config),
@@ -175,75 +174,6 @@ object OverrideEditorSummaryBuilder {
                 addIfValue(config.redirectPort)
                 addIfValue(config.tproxyPort)
                 addIfValue(config.mixedPort)
-            },
-        )
-    }
-
-    private fun buildTunSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countPresent(
-                config.tun.enable,
-                config.tun.stack,
-                config.tun.autoRoute,
-                config.tun.autoDetectInterface,
-                config.tun.mtu,
-                config.tun.gso,
-                config.tun.gsoMaxSize,
-                config.tun.endpointIndependentNat,
-                config.tun.strictRoute,
-            ) +
-                countListGroup(config.tun.dnsHijack, config.tun.dnsHijackStart, config.tun.dnsHijackEnd) +
-                countListGroup(
-                    config.tun.routeAddress,
-                    config.tun.routeAddressStart,
-                    config.tun.routeAddressEnd,
-                ) +
-                countListGroup(
-                    config.tun.routeExcludeAddress,
-                    config.tun.routeExcludeAddressStart,
-                    config.tun.routeExcludeAddressEnd,
-                ) +
-                countListGroup(
-                    config.tun.includePackage,
-                    config.tun.includePackageStart,
-                    config.tun.includePackageEnd,
-                ) +
-                countListGroup(
-                    config.tun.excludePackage,
-                    config.tun.excludePackageStart,
-                    config.tun.excludePackageEnd,
-                ),
-            visualModes = buildSet {
-                addIfValue(config.tun.enable)
-                addIfValue(config.tun.stack)
-                addIfValue(config.tun.autoRoute)
-                addIfValue(config.tun.autoDetectInterface)
-                addIfValue(config.tun.mtu)
-                addIfValue(config.tun.gso)
-                addIfValue(config.tun.gsoMaxSize)
-                addIfValue(config.tun.endpointIndependentNat)
-                addIfValue(config.tun.strictRoute)
-                addListModes(config.tun.dnsHijack, config.tun.dnsHijackStart, config.tun.dnsHijackEnd)
-                addListModes(
-                    config.tun.routeAddress,
-                    config.tun.routeAddressStart,
-                    config.tun.routeAddressEnd,
-                )
-                addListModes(
-                    config.tun.routeExcludeAddress,
-                    config.tun.routeExcludeAddressStart,
-                    config.tun.routeExcludeAddressEnd,
-                )
-                addListModes(
-                    config.tun.includePackage,
-                    config.tun.includePackageStart,
-                    config.tun.includePackageEnd,
-                )
-                addListModes(
-                    config.tun.excludePackage,
-                    config.tun.excludePackageStart,
-                    config.tun.excludePackageEnd,
-                )
             },
         )
     }

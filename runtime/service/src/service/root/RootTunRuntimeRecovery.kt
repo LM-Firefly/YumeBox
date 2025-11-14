@@ -74,7 +74,7 @@ object RootTunRuntimeRecovery {
             stateStore.markIdle(message)
         }
 
-        StatusProvider.markRuntimeStopped(ProxyMode.RootTun)
+        StatusProvider.markRuntimeIdle(ProxyMode.RootTun)
         runCatching { RootTunService.stop(appContext) }
         runCatching { RootService.stop(Intent(appContext, RootTunRootService::class.java)) }
 

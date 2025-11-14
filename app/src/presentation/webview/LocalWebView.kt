@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.WebViewActivity
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
@@ -51,7 +52,7 @@ private object NoOpWebChromeClient : WebChromeClient()
 fun LocalWebView(
     initialUrl: String,
     modifier: Modifier = Modifier,
-    enableDebug: Boolean = true,
+    enableDebug: Boolean = BuildConfig.DEBUG,
     onPageFinished: (String) -> Unit = {},
     onPageError: (String, String) -> Unit = { _, _ -> },
 ) {
@@ -59,11 +60,9 @@ fun LocalWebView(
     val webViewRef = remember { mutableStateOf<WebView?>(null) }
 
     LaunchedEffect(enableDebug) {
-        if (enableDebug) {
-            try {
-                WebView.setWebContentsDebuggingEnabled(true)
-            } catch (_: Exception) {
-            }
+        try {
+            WebView.setWebContentsDebuggingEnabled(enableDebug)
+        } catch (_: Exception) {
         }
     }
 

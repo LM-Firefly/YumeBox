@@ -162,7 +162,11 @@ internal suspend fun Context.getStableCameraProvider(): ProcessCameraProvider =
     suspendCancellableCoroutine { continuation ->
         ProcessCameraProvider.getInstance(this).also { future ->
             future.addListener(
-                { continuation.resume(future.get()) },
+                {
+                    if (continuation.isActive) {
+                        continuation.resume(future.get())
+                    }
+                },
                 ContextCompat.getMainExecutor(this),
             )
         }
@@ -174,19 +178,30 @@ internal suspend fun readQrFromImage(context: Context, uri: Uri): String? =
             val inputImage = InputImage.fromFilePath(context, uri)
             val scanner = createBarcodeScannerOrNull()
                 ?: run {
-                    continuation.resume(null)
+                    if (continuation.isActive) {
+                        continuation.resume(null)
+                    }
                     return@suspendCancellableCoroutine
                 }
+            continuation.invokeOnCancellation {
+                scanner.close()
+            }
             scanner.process(inputImage).addOnSuccessListener { barcodes ->
                 val barcode = barcodes.firstOrNull { it.format == Barcode.FORMAT_QR_CODE }
-                continuation.resume(barcode?.rawValue)
+                if (continuation.isActive) {
+                    continuation.resume(barcode?.rawValue)
+                }
             }.addOnFailureListener {
-                continuation.resume(null)
+                if (continuation.isActive) {
+                    continuation.resume(null)
+                }
             }.addOnCompleteListener {
                 scanner.close()
             }
         } catch (_: Exception) {
-            continuation.resume(null)
+            if (continuation.isActive) {
+                continuation.resume(null)
+            }
         }
     }
 

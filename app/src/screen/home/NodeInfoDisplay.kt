@@ -89,7 +89,7 @@ fun NodeInfoDisplay(
                 }
             } else {
                 Text(
-                    text = "Unknown",
+                    text = MLang.Home.NodeInfo.Unknown,
                     style = MiuixTheme.textStyles.body1.copy(lineHeight = 20.sp),
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     modifier = Modifier.height(INFO_TEXT_HEIGHT)
@@ -121,7 +121,7 @@ private fun PingValue(ping: Int?) {
             Color(0xFFFFB300)
         }
         Text(
-            text = "${ping}ms",
+            text = MLang.Home.NodeInfo.DelayValue.format(ping),
             style = MiuixTheme.textStyles.body1.copy(lineHeight = 20.sp),
             color = color,
             modifier = Modifier.height(INFO_TEXT_HEIGHT)

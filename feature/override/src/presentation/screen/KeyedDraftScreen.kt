@@ -228,9 +228,10 @@ fun OverrideKeyedObjectDraftEditorScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             lazyListState = listState,
             onScrollDirectionChanged = saveFabController::onScrollDirectionChanged,
         ) {

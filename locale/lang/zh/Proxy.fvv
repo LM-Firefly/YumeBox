@@ -14,6 +14,27 @@ Proxy = {
     Action = {
         Panel = "面板"
         Test = "测试"
+        Sort = "排序"
+    }
+
+    Node = {
+        Timeout = "超时"
+        Count = "%d 节点"
+    }
+
+    Type = {
+        Direct = "直连"
+        Reject = "拒绝"
+        RejectDrop = "丢弃"
+        Compatible = "兼容"
+        Pass = "透传"
+        Relay = "中继"
+        Selector = "选择器"
+        Fallback = "回退"
+        UrlTest = "UrlTest"
+        LoadBalance = "负载均衡"
+        Smart = "智能"
+        Unknown = "未知"
     }
 
     Empty = {

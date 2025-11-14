@@ -37,9 +37,9 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.SuperSwitch
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -48,7 +48,7 @@ fun OverrideRuleDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = remember { OverrideStructuredEditorStore.ruleDraftEditorTitle.ifBlank { MLang.Override.Editor.RuleEdit } }
+    val title = OverrideStructuredEditorStore.ruleDraftEditorTitle.ifBlank { MLang.Override.Editor.RuleEdit }
     val initialValue = remember { OverrideStructuredEditorStore.ruleDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -173,9 +173,10 @@ fun OverrideRuleDraftEditorScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             lazyListState = listState,
             onScrollDirectionChanged = saveFabController::onScrollDirectionChanged,
         ) {
@@ -186,7 +187,7 @@ fun OverrideRuleDraftEditorScreen(
                 ) {
                     OverrideSection(MLang.Override.Editor.RuleBody) {
                         OverrideSelectorCard {
-                            WindowDropdown(
+                            WindowDropdownPreference(
                                 title = MLang.Override.Editor.RuleType,
                                 items = OverrideRuleTypePresets,
                                 selectedIndex = selectedPresetIndex,
@@ -200,7 +201,7 @@ fun OverrideRuleDraftEditorScreen(
                         }
                         if (isRuleSetType) {
                             OverrideSelectorCard {
-                                SuperArrow(
+                                ArrowPreference(
                                     title = MLang.Override.Form.RuleProviders,
                                     onClick = {
                                         showRuleProviderSelector = true
@@ -229,7 +230,7 @@ fun OverrideRuleDraftEditorScreen(
                             }
                         }
                         OverrideSelectorCard {
-                            SuperArrow(
+                            ArrowPreference(
                                 title = if (ruleType.equals("MATCH", ignoreCase = true)) MLang.Override.Editor.MatchResult else targetLabel,
                                 onClick = {
                                     showTargetSelector = true
@@ -320,7 +321,7 @@ private fun RuleExtraSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    SuperSwitch(
+    SwitchPreference(
         title = title,
         checked = checked,
         onCheckedChange = onCheckedChange,

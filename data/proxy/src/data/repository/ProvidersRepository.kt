@@ -102,7 +102,14 @@ class ProvidersRepository(private val context: Context) {
         if (provider.path.isBlank()) {
             throw IllegalStateException("Provider path is empty")
         }
-        val targetFile = File(provider.path)
+        val targetFile = File(provider.path).canonicalFile
+        val importedRoot = context.filesDir.resolve("imported").canonicalFile
+        val inImportedProviders = targetFile.toPath().startsWith(importedRoot.toPath()) &&
+            targetFile.toRelativeString(importedRoot).replace('\\', '/')
+                .matches(Regex("""^[^/]+/providers/(rules|proxies)/.+"""))
+        if (!inImportedProviders) {
+            throw IllegalStateException("Provider path must live under profile provider directories: ${provider.path}")
+        }
         targetFile.parentFile?.mkdirs()
         return targetFile
     }

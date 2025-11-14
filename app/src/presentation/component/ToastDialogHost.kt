@@ -25,15 +25,24 @@ package com.github.yumelira.yumebox.presentation.component
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.ToastDialogBridge
 import com.github.yumelira.yumebox.common.util.ToastDialogEvent
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.extra.DialogDefaults
-import top.yukonga.miuix.kmp.extra.WindowDialog
+import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.layout.DialogDefaults
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun ToastDialogHost() {
@@ -69,19 +78,31 @@ fun ToastDialogHost() {
             insideMargin = DialogDefaults.insideMargin,
             defaultWindowInsetsPadding = true,
             content = {
-                TextButton(
-                    text = "复制",
-                    onClick = {
-                        val clipboardManager =
-                            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        val textToCopy = snapshot.message.ifBlank { snapshot.title }
-                        clipboardManager.setPrimaryClip(
-                            ClipData.newPlainText(snapshot.title, textToCopy)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MiuixTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(16.dp),
                         )
-                        showDialog.value = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                        .clickable {
+                            val clipboardManager =
+                                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val textToCopy = snapshot.message.ifBlank { snapshot.title }
+                            clipboardManager.setPrimaryClip(
+                                ClipData.newPlainText(snapshot.title, textToCopy)
+                            )
+                            showDialog.value = false
+                        }
+                        .padding(vertical = 14.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = MLang.Component.Button.Copy,
+                        color = MiuixTheme.colorScheme.primary,
+                        style = MiuixTheme.textStyles.body1,
+                    )
+                }
             })
     }
 }

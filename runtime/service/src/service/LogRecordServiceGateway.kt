@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.service
 
 import android.app.Application
+import com.github.yumelira.yumebox.core.util.PollingTimerSpec
 import com.github.yumelira.yumebox.data.repository.LogRecordGateway
 import java.io.File
 
@@ -38,6 +39,13 @@ class LogRecordServiceGateway : LogRecordGateway {
 
     override val logSuffix: String
         get() = LogRecordService.LOG_SUFFIX
+
+    override val stopWaitSpec: PollingTimerSpec
+        get() = PollingTimerSpec(
+            name = "log_record_stop_wait",
+            intervalMillis = 300L,
+            initialDelayMillis = 300L,
+        )
 
     override fun start(application: Application) {
         LogRecordService.start(application)

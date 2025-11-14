@@ -23,8 +23,6 @@
 package com.github.yumelira.yumebox.screen.home
 
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,12 +47,14 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
-fun HomePager(mainInnerPadding: PaddingValues) {
+fun HomePager(
+    mainInnerPadding: PaddingValues,
+    isActive: Boolean,
+) {
     val homeViewModel = koinViewModel<HomeViewModel>()
     val navigator = LocalNavigator.current
 
-    val displayRunning by homeViewModel.displayRunning.collectAsState()
-    val isToggling by homeViewModel.isToggling.collectAsState()
+    val controlState by homeViewModel.controlState.collectAsState()
     val uiState by homeViewModel.uiState.collectAsState()
     val trafficNow by homeViewModel.trafficNow.collectAsState()
     val profiles by homeViewModel.profiles.collectAsState()
@@ -72,30 +72,24 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    var pendingProfileId by remember { mutableStateOf<String?>(null) }
-    var pendingMode by remember { mutableStateOf<com.github.yumelira.yumebox.data.model.ProxyMode?>(null) }
-    val vpnPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            pendingProfileId?.let { profileId ->
-                homeViewModel.startProxy(profileId, mode = pendingMode)
-            }
-        }
-        pendingProfileId = null
-        pendingMode = null
-    }
-
     LaunchedEffect(Unit) {
         homeViewModel.refreshProxyMode()
-        homeViewModel.vpnPrepareIntent.collect { intent ->
-            vpnPermissionLauncher.launch(intent)
+    }
+
+    LaunchedEffect(isActive) {
+        homeViewModel.setHomeScreenActive(isActive)
+    }
+
+    DisposableEffect(homeViewModel) {
+        onDispose {
+            homeViewModel.setHomeScreenActive(false)
         }
     }
 
     DisposableEffect(lifecycleOwner, homeViewModel) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                homeViewModel.reconcileRuntimeState()
                 homeViewModel.refreshProxyMode()
             }
         }
@@ -120,7 +114,8 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
     val scrollBehavior = MiuixScrollBehavior()
 
-    val isProxyEnabled = profilesLoaded && profiles.isNotEmpty() && !isToggling
+    val isRunning = controlState == HomeProxyControlState.Running
+    val isProxyEnabled = profilesLoaded && profiles.isNotEmpty() && controlState.canInteract
 
     Scaffold(
         topBar = { TopBar(title = MLang.Home.Title, scrollBehavior = scrollBehavior) },
@@ -139,14 +134,14 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                 ) {
 
                     TrafficDisplay(
-                        trafficNow = if (displayRunning) {
+                        trafficNow = if (isRunning) {
                             TrafficData.from(trafficNow)
                         } else {
                             TrafficData.ZERO
                         },
-                        profileName = currentProfile?.name,
+                        profileName = currentProfile?.name?.takeIf { isRunning },
                         tunnelMode = null,
-                        isRunning = displayRunning,
+                        controlState = controlState,
                         proxyMode = proxyMode,
                         isEnabled = isProxyEnabled,
                         onClick = {
@@ -155,17 +150,13 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                                 return@TrafficDisplay
                             }
                             handleProxyToggle(
-                                isRunning = displayRunning,
+                                isRunning = isRunning,
                                 recommendedProfile = recommendedProfile,
                                 onStart = { profile ->
-                                    pendingProfileId = profile.uuid.toString()
-                                    pendingMode = proxyMode
-                                    coroutineScope.launch {
-                                        homeViewModel.startProxy(
-                                            profileId = profile.uuid.toString(),
-                                            mode = null
-                                        )
-                                    }
+                                    homeViewModel.startProxy(
+                                        profileId = profile.uuid.toString(),
+                                        mode = null
+                                    )
                                 },
                                 onStop = {
                                     coroutineScope.launch { homeViewModel.stopProxy() }
@@ -179,15 +170,17 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             NodeInfoDisplay(
-                                serverName = selectedServerName,
-                                serverPing = selectedServerPing
+                                serverName = selectedServerName.takeIf { isRunning },
+                                serverPing = selectedServerPing.takeIf { isRunning }
                             )
-                            IpInfoDisplay(state = ipMonitoringState)
+                            IpInfoDisplay(
+                                state = if (isRunning) ipMonitoringState else com.github.yumelira.yumebox.data.repository.IpMonitoringState.Loading
+                            )
                         }
 
                         SpeedChart(
                             speedHistory = speedHistory,
-                            isRunning = displayRunning,
+                            isRunning = isRunning,
                             onClick = {
                                 navigator.navigate(TrafficStatisticsScreenDestination) {
                                     launchSingleTop = true

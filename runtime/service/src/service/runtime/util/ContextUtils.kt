@@ -31,9 +31,6 @@ import java.util.*
 val Context.importedDir: File
     get() = filesDir.resolve("imported")
 
-val Context.processingDir: File
-    get() = filesDir.resolve("processing")
-
 val File.directoryLastModified: Long?
     get() {
         return walk().map { it.lastModified() }.maxOrNull()

@@ -25,44 +25,47 @@ package com.github.yumelira.yumebox.service
 import android.content.Context
 import android.content.Intent
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.ProviderList
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
 import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.tencent.mmkv.MMKV
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
-import java.util.concurrent.ConcurrentHashMap
 
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
-    private data class ExternalSelectionCandidate(
-        val node: String,
-        val firstSeenAt: Long,
-    )
-
-    private companion object {
-        const val EXTERNAL_SELECTION_CONFIRM_MS = 1200L
-    }
-
     private val store = ServiceStore()
     private val compiledConfigPipeline = CompiledConfigPipeline(context)
     private val runtimeSpecFactory = SessionRuntimeSpecFactory(context)
     private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
     private var logReceiver: ReceiveChannel<LogMessage>? = null
-    private val externalCandidates = ConcurrentHashMap<String, ExternalSelectionCandidate>()
 
     override fun queryTunnelState(): TunnelState {
         return Clash.queryTunnelState()
@@ -100,11 +103,7 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         val groupNames = Clash.queryGroupNames(excludeNotSelectable)
-        return groupNames.map { groupName ->
-            Clash.queryGroup(groupName, ProxySort.Default).also { group ->
-                syncSelectionSnapshotSafely(groupName, group)
-            }
-        }
+        return groupNames.map { groupName -> Clash.queryGroup(groupName, ProxySort.Default) }
     }
 
     override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
@@ -112,9 +111,7 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
-        return Clash.queryGroup(name, proxySort).also { group ->
-            syncSelectionSnapshotSafely(name, group)
-        }
+        return Clash.queryGroup(name, proxySort)
     }
 
     override fun queryConfiguration(): UiConfiguration {
@@ -126,15 +123,19 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun patchSelector(group: String, name: String): Boolean {
-        return Clash.patchSelector(group, name).also {
+        return Clash.patchSelector(group, name).also { patched ->
             val current = store.activeProfile ?: return@also
 
-            if (it) {
-                SelectionDao.setSelected(Selection(current, group, name))
-                externalCandidates.remove(selectionKey(current.toString(), group))
+            if (!patched) {
+                SelectionDao.remove(current, group)
+                return@also
+            }
+
+            val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            if (patchedGroup?.type == Proxy.Type.Selector) {
+                SelectionDao.upsertManualSelection(current, group, name)
             } else {
                 SelectionDao.remove(current, group)
-                externalCandidates.remove(selectionKey(current.toString(), group))
             }
         }
     }
@@ -169,8 +170,8 @@ class ClashManager(private val context: Context) : IClashManager,
         return Clash.healthCheck(group).await()
     }
 
-    override suspend fun healthCheckProxy(proxyName: String): Int {
-        Timber.d("ClashManager healthCheckProxy: proxy=%s", proxyName)
+    override suspend fun healthCheckProxy(group: String, proxyName: String): Int {
+        Timber.d("ClashManager healthCheckProxy: group=%s proxy=%s", group, proxyName)
         val json = Clash.healthCheckProxy(proxyName).await()
         val obj = kotlinx.serialization.json.Json.parseToJsonElement(json)
         return obj.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
@@ -178,58 +179,6 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {
         return Clash.updateProvider(type, name).await()
-    }
-
-    private fun syncSelectionSnapshotSafely(group: String, proxyGroup: ProxyGroup) {
-        val current = store.activeProfile ?: return
-        val profileId = current.toString()
-        val key = selectionKey(profileId, group)
-        val node = proxyGroup.now.trim()
-        val fallbackNode = proxyGroup.proxies.firstOrNull()?.name?.trim().orEmpty()
-        val now = System.currentTimeMillis()
-        if (node.isEmpty()) return
-
-        val remembered = queryRememberedSelection(current, group)
-        if (remembered == null) {
-            SelectionDao.setSelected(Selection(current, group, node))
-            externalCandidates.remove(key)
-            return
-        }
-        if (remembered == node) {
-            externalCandidates.remove(key)
-            return
-        }
-        if (fallbackNode.isNotEmpty() && node == fallbackNode) {
-
-            val proxyNames = proxyGroup.proxies.mapNotNull { it.name?.trim()?.takeIf { it.isNotEmpty() } }
-            if (remembered in proxyNames) {
-                launch { Clash.patchSelector(group, remembered) }
-            }
-            return
-        }
-
-        val candidate = externalCandidates[key]
-        if (candidate == null || candidate.node != node) {
-            externalCandidates[key] = ExternalSelectionCandidate(node = node, firstSeenAt = now)
-            return
-        }
-        if (now - candidate.firstSeenAt < EXTERNAL_SELECTION_CONFIRM_MS) {
-            return
-        }
-        SelectionDao.setSelected(Selection(current, group, node))
-        externalCandidates.remove(key)
-    }
-
-    private fun selectionKey(profileId: String, group: String): String {
-        return "$profileId::$group"
-    }
-
-    private fun queryRememberedSelection(profileId: java.util.UUID, group: String): String? {
-        return SelectionDao.querySelections(profileId)
-            .firstOrNull { it.proxy == group }
-            ?.selected
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
     }
 
     private fun configuredProxyMode(): ProxyMode {
@@ -252,7 +201,7 @@ class ClashManager(private val context: Context) : IClashManager,
                             while (isActive) {
                                 observer.newItem(c.receive())
                             }
-                        } catch (e: CancellationException) {
+                        } catch (_: CancellationException) {
 
                         } catch (e: Exception) {
                             Log.w("UI crashed", e)

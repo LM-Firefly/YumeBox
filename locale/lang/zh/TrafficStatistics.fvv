@@ -24,4 +24,25 @@ TrafficStatistics = {
         Hourly = "4 小时"
         Daily = "按天"
     }
+
+    Donut = {
+        Other = "其他"
+    }
+
+    Action = {
+        Clear = "清空统计"
+        ClearSuccess = "统计数据已清空"
+    }
+
+    Section = {
+        Traffic = "流量"
+        TopApps = "高流量应用"
+        EmptyApps = "暂无应用流量统计"
+    }
+
+    Metric = {
+        Download = "下行"
+        Upload = "上行"
+        UsageLine = "下行 %s  上行 %s"
+    }
 }

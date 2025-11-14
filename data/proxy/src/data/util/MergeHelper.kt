@@ -31,6 +31,18 @@ internal object MergeHelper {
     fun <T> mergeList(
         base: List<T>?,
         replace: List<T>?,
+    ): List<T>? {
+        return mergeList(
+            base = base,
+            replace = replace,
+            start = null,
+            end = null,
+        )
+    }
+
+    fun <T> mergeList(
+        base: List<T>?,
+        replace: List<T>?,
         @Suppress("UNUSED_PARAMETER") start: List<T>?,
         @Suppress("UNUSED_PARAMETER") end: List<T>?,
     ): List<T>? {
@@ -59,6 +71,18 @@ internal object MergeHelper {
 
     fun mergeProxyList(
         base: List<Map<String, JsonElement>>?,
+        replace: List<Map<String, JsonElement>>?,
+    ): List<Map<String, JsonElement>>? {
+        return mergeProxyList(
+            base = base,
+            start = null,
+            replace = replace,
+            end = null,
+        )
+    }
+
+    fun mergeProxyList(
+        base: List<Map<String, JsonElement>>?,
         @Suppress("UNUSED_PARAMETER") start: List<Map<String, JsonElement>>?,
         replace: List<Map<String, JsonElement>>?,
         @Suppress("UNUSED_PARAMETER") end: List<Map<String, JsonElement>>?,
@@ -83,6 +107,18 @@ internal object MergeHelper {
         }
 
         return mergedMap.takeIf { it.isNotEmpty() }
+    }
+
+    fun mergeProxyGroupList(
+        base: List<Map<String, JsonElement>>?,
+        replace: List<Map<String, JsonElement>>?,
+    ): List<Map<String, JsonElement>>? {
+        return mergeProxyGroupList(
+            base = base,
+            start = null,
+            replace = replace,
+            end = null,
+        )
     }
 
     fun mergeProxyGroupList(

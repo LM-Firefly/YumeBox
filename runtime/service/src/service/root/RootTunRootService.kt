@@ -25,33 +25,23 @@ package com.github.yumelira.yumebox.service.root
 import android.content.Intent
 import android.os.IBinder
 import com.github.yumelira.yumebox.core.Global
-import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.runtime.session.RootTunTransport
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeHost
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntime
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
-import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
-import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
-import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
 import com.tencent.mmkv.MMKV
 import com.topjohnwu.superuser.ipc.RootService
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import java.util.*
 
 class RootTunRootService : RootService() {
     private lateinit var runtime: SessionRuntime
     private lateinit var stateStore: RootTunStateStore
     private lateinit var startupLogStore: RootTunStartupLogStore
-    private var startedBroadcastSent = false
-    private var lastRuntimeSpec: RuntimeSpec? = null
     private lateinit var runtimeSpecFactory: SessionRuntimeSpecFactory
+    private lateinit var runtimeHost: RootTunRuntimeHost
 
     private val binder = object : IRootTunService.Stub() {
         override fun startRootTun(requestJson: String): String {
@@ -177,13 +167,16 @@ class RootTunRootService : RootService() {
             runtime.closeAllConnections()
         }
 
-        override fun healthCheck(group: String): String? = runtime.healthCheck(group)
+        override fun healthCheck(group: String): String? = runBlocking { runtime.healthCheck(group) }
 
-        override fun healthCheckProxy(proxyName: String): String = runtime.healthCheckProxy(proxyName)
+        override fun healthCheckProxy(group: String, proxyName: String): String =
+            runBlocking { runtime.healthCheckProxy(group, proxyName) }
 
-        override fun updateProvider(type: String, name: String): String? = runtime.updateProvider(type, name)
+        override fun updateProvider(type: String, name: String): String? =
+            runBlocking { runtime.updateProvider(type, name) }
 
         override fun requestStop() {
+            runtime.requestStop()
             runtime.stop()
             stopSelf()
         }
@@ -204,61 +197,10 @@ class RootTunRootService : RootService() {
         stateStore = RootTunStateStore(this)
         startupLogStore = RootTunStartupLogStore(this)
         runtimeSpecFactory = SessionRuntimeSpecFactory(this)
+        runtimeHost = RootTunRuntimeHost(this, stateStore)
         startupLogStore.append("ROOT_TUN root-service: onCreate")
         runtime = SessionRuntime(
-            host = object : RuntimeHost {
-                override val context = this@RootTunRootService
-                override val mode: ProxyMode = ProxyMode.RootTun
-
-                override fun onStarting(spec: RuntimeSpec) {
-                    startedBroadcastSent = false
-                    lastRuntimeSpec = spec
-                    StatusProvider.clearLegacyStateFiles()
-                }
-
-                override fun onStarted(spec: RuntimeSpec) {
-                    lastRuntimeSpec = spec
-                    StatusProvider.markRuntimeStarted(ProxyMode.RootTun)
-                    sendClashStarted()
-                    startedBroadcastSent = true
-                }
-
-                override fun onStopped(reason: String?) {
-                    StatusProvider.markRuntimeStopped(ProxyMode.RootTun)
-                    sendClashStopped(reason)
-                }
-
-                override fun onProfileLoaded(profileUuid: String) {
-                    sendProfileLoaded(UUID.fromString(profileUuid))
-                }
-
-                override fun onSnapshotChanged(snapshot: RuntimeSnapshot) {
-                    stateStore.updateStatus(snapshot.toRootTunStatus())
-                    if (snapshot.phase == RuntimePhase.Running && !startedBroadcastSent) {
-                        sendClashStarted()
-                        startedBroadcastSent = true
-                    }
-                }
-
-                override fun onLogReady(ready: Boolean) {
-                    stateStore.updateStatus(stateStore.snapshot().copy(controllerReady = true, runtimeReady = ready || stateStore.snapshot().runtimeReady))
-                }
-
-                override fun onLogItem(log: LogMessage) = Unit
-
-                override fun reportFailure(error: String) {
-                    StatusProvider.markRuntimeStopped(ProxyMode.RootTun)
-                    stateStore.updateStatus(
-                        stateStore.snapshot().copy(
-                            state = RootTunState.Failed,
-                            running = false,
-                            lastError = error,
-                            runtimeReady = false,
-                        ),
-                    )
-                    sendClashStopped(error)
-                }
-            },
+            host = runtimeHost,
             transport = RootTunTransport(),
         )
     }
@@ -273,6 +215,7 @@ class RootTunRootService : RootService() {
 
     override fun onDestroy() {
         if (this::runtime.isInitialized && runtime.snapshot().phase.running) {
+            runtime.requestStop("runtime destroyed")
             runtime.destroy()
         }
         super.onDestroy()
@@ -295,31 +238,6 @@ class RootTunRootService : RootService() {
         return RootTunJson.Default.encodeToString(
             RootTunOperationResult.serializer(),
             RootTunOperationResult(success = result.success, error = result.error),
-        )
-    }
-
-    private fun RuntimeSnapshot.toRootTunStatus(): RootTunStatus {
-        val spec = lastRuntimeSpec
-        val state = when (phase) {
-            RuntimePhase.Idle -> RootTunState.Idle
-            RuntimePhase.Starting -> RootTunState.Starting
-            RuntimePhase.Running -> RootTunState.Running
-            RuntimePhase.Stopping -> RootTunState.Stopping
-            RuntimePhase.Failed -> RootTunState.Failed
-        }
-        return RootTunStatus(
-            state = state,
-            running = state.isActive,
-            lastError = lastError,
-            profileUuid = profileUuid,
-            profileName = profileName,
-            runtimeReady = phase == RuntimePhase.Running,
-            controllerReady = true,
-            startedAt = startedAt,
-            staticPlanFingerprint = spec?.staticPlanFingerprint,
-            transportFingerprint = spec?.transportFingerprint,
-            overrideFingerprint = effectiveFingerprint ?: spec?.effectiveFingerprint,
-            profileFingerprint = spec?.profileFingerprint,
         )
     }
 }

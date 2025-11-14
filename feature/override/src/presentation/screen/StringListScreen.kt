@@ -49,8 +49,8 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -75,7 +75,6 @@ fun OverrideStringListEditorScreen(
             endValue = OverrideStructuredEditorStore.stringListEditorValues.endValue?.toList(),
         )
     }
-
     val currentItems = editorValues.valueFor(selectedMode).orEmpty()
     val selectedModeIndex = availableModes.indexOf(selectedMode).coerceAtLeast(0)
     val showAddFab = !showItemDialog && !showResetDialog
@@ -120,7 +119,6 @@ fun OverrideStringListEditorScreen(
                 actions = {
                     IconButton(
                         onClick = { showResetDialog = true },
-                        modifier = Modifier.padding(end = 24.dp),
                     ) {
                         Icon(
                             imageVector = Yume.Undo,
@@ -131,16 +129,16 @@ fun OverrideStringListEditorScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
-            topPadding = 20.dp,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             lazyListState = listState,
             onScrollDirectionChanged = addFabController::onScrollDirectionChanged,
         ) {
             item {
                 Card {
-                    WindowDropdown(
+                    WindowDropdownPreference(
                         title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
@@ -153,7 +151,10 @@ fun OverrideStringListEditorScreen(
             }
 
             if (currentItems.isNotEmpty()) {
-                itemsIndexed(currentItems) { index, itemValue ->
+                itemsIndexed(
+                    items = currentItems,
+                    key = { index, itemValue -> "$index:$itemValue" },
+                ) { index, itemValue ->
                     StringListEntryCard(
                         index = index + 1,
                         value = itemValue,
@@ -216,7 +217,7 @@ fun OverrideStringListEditorScreen(
         AppDialog(
             show = showResetDialog,
             title = MLang.Override.Editor.ClearCurrentMode,
-            summary = "清空后将移除当前修饰符模式里的全部条目。",
+            summary = MLang.Override.Editor.ClearDialog.Summary.format(MLang.Override.Editor.List),
             onDismissRequest = { showResetDialog = false },
         ) {
             DialogButtonRow(

@@ -29,8 +29,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 
 enum class MessageType {
     SUCCESS,
@@ -76,7 +78,7 @@ fun MessageHost(
                     .padding(16.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                SuperArrow(
+                ArrowPreference(
                     title = MLang.Component.Message.Confirm,
                     onClick = dismissDialog,
                 )
@@ -85,7 +87,13 @@ fun MessageHost(
 
         if (message.autoClose) {
             LaunchedEffect(message.title, message.content, message.type, message.autoCloseDelay) {
-                kotlinx.coroutines.delay(message.autoCloseDelay)
+                PollingTimers.awaitTick(
+                    PollingTimerSpecs.dynamic(
+                        name = "message_host_autoclose_${message.autoCloseDelay}",
+                        intervalMillis = message.autoCloseDelay,
+                        initialDelayMillis = message.autoCloseDelay,
+                    ),
+                )
                 dismissDialog()
             }
         }

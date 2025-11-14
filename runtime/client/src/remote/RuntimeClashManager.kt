@@ -24,6 +24,8 @@ package com.github.yumelira.yumebox.remote
 
 import android.content.Context
 import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.runtime.client.root.RootTunController
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.remote.IClashManager
@@ -31,11 +33,11 @@ import com.github.yumelira.yumebox.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.root.RootTunRuntimeRecovery
 import com.github.yumelira.yumebox.service.root.RootTunStateStore
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
-import kotlin.time.Duration.Companion.milliseconds
 
 class RuntimeClashManager(
     context: Context,
@@ -172,14 +174,14 @@ class RuntimeClashManager(
         )
     }
 
-    override suspend fun healthCheckProxy(proxyName: String): Int {
+    override suspend fun healthCheckProxy(group: String, proxyName: String): Int {
         return queryWithRuntimeSuspend(
             rootCall = {
-                val payload = RootTunController.healthCheckProxy(appContext, proxyName)
+                val payload = RootTunController.healthCheckProxy(appContext, group, proxyName)
                 val json = kotlinx.serialization.json.Json.parseToJsonElement(payload)
                 json.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
             },
-            localCall = { local.healthCheckProxy(proxyName) },
+            localCall = { local.healthCheckProxy(group, proxyName) },
             fallbackOnRootFailure = false,
         )
     }
@@ -209,7 +211,7 @@ class RuntimeClashManager(
                 return
             }
             rootLogJob = scope.launch {
-                while (isActive) {
+                PollingTimers.ticks(PollingTimerSpecs.RuntimeRootLogPolling).collect {
                     runCatching {
                         val chunk = RootTunController.queryRecentLogs(appContext, rootLogSeq)
                         if (chunk.items.isNotEmpty()) {
@@ -226,7 +228,6 @@ class RuntimeClashManager(
                     }.onFailure { error ->
                         Timber.d(error, "Root runtime log polling skipped")
                     }
-                    delay(300.milliseconds)
                 }
             }
         } else {

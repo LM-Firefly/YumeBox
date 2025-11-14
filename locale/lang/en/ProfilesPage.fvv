@@ -94,6 +94,7 @@ ProfilesPage = {
         ShareFile = "Share Config File"
         ShareLink = "Share Subscription Link"
         NoLink = "This profile has no subscription link"
+        ImportedConfigMissing = "Imported config missing: %s"
     }
 
     Misc = {
@@ -104,12 +105,15 @@ ProfilesPage = {
     SettingsDialog = {
         Title = "Subscription Settings"
         ChangeLink = "Change Subscription Link"
-        SystemPreset = "System Preset Override"
-        SystemPresetSummary = "If you don't know what routing is, recommend enabling this"
+        SystemPreset = "Enable Override Preset"
+        SystemPresetSummary = "Enable the built-in override preset"
+        CustomRouting = "Custom Routing"
+        CustomRoutingSummary = "Standalone routing rules (mutually exclusive with override preset)"
         NoDescription = "No description set"
         EditProfile = "Edit Profile"
         OpenConfig = "Open Config"
         EditSettings = "Edit Settings"
         SaveFailed = "Failed to save profile"
+        ConfigMissing = "Config not found: %s"
     }
 }

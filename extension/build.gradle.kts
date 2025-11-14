@@ -32,12 +32,6 @@ dependencies {
 
 android {
     namespace = gropify.project.namespace.extension
-    compileSdk = gropify.android.compileSdk
-
-    val ndkVersionValue = gropify.android.ndkVersion
-    if (ndkVersionValue.isNotBlank()) {
-        ndkVersion = ndkVersionValue
-    }
 
     defaultConfig {
         applicationId = gropify.project.namespace.extension
@@ -47,35 +41,9 @@ android {
         versionName = gropify.project.version.name
     }
 
-    compileOptions {
-        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
-        sourceCompatibility = JavaVersion.toVersion(javaVer)
-        targetCompatibility = JavaVersion.toVersion(javaVer)
-    }
-
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("src")
-            res.srcDirs("res")
-            assets.srcDirs("assets")
-            aidl.srcDirs("aidl")
-            resources.srcDirs("resources")
             jniLibs.srcDirs("jniLibs")
-            if (project.file("AndroidManifest.xml").isFile) {
-                manifest.srcFile("AndroidManifest.xml")
-            }
-        }
-        getByName("test") {
-            kotlin.setSrcDirs(emptyList<String>())
-            resources.setSrcDirs(emptyList<String>())
-            assets.setSrcDirs(emptyList<String>())
-        }
-        getByName("androidTest") {
-            kotlin.setSrcDirs(emptyList<String>())
-            res.setSrcDirs(emptyList<String>())
-            assets.setSrcDirs(emptyList<String>())
-            aidl.setSrcDirs(emptyList<String>())
-            resources.setSrcDirs(emptyList<String>())
         }
     }
 
@@ -120,6 +88,5 @@ android {
         }
     }
 }
-
 
 

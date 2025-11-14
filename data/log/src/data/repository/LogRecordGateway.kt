@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.data.repository
 
 import android.app.Application
+import com.github.yumelira.yumebox.core.util.PollingTimerSpec
 import java.io.File
 
 interface LogRecordGateway {
@@ -30,6 +31,7 @@ interface LogRecordGateway {
     val currentLogFileName: String?
     val logPrefix: String
     val logSuffix: String
+    val stopWaitSpec: PollingTimerSpec
 
     fun start(application: Application)
     fun stop(application: Application)

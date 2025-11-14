@@ -39,6 +39,7 @@ class NetworkSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv =
     val systemProxy by boolFlow(true)
 
     val tunStack by enumFlow(TunStack.System)
+    val tunRouteExcludeAddress by stringListFlow(emptyList())
     val rootTunIfName by strFlow("Yume")
     val rootTunMtu by intFlow(1500)
     val rootTunAutoRoute by boolFlow(true)

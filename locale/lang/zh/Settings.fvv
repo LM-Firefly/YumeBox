@@ -20,7 +20,7 @@ Settings = {
 
     More = {
         Lab = "实验室"
-        LabSummary = "SubStore · 实验功能"
+        LabSummary = "Sub-Store · 实验功能"
         Logs = "日志"
         LogsSummary = "运行日志"
         About = "关于"

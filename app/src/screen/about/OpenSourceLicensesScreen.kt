@@ -26,6 +26,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +41,8 @@ import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.mikepenz.aboutlibraries.entity.Library
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.util.strippedLicenseContent
@@ -57,14 +60,15 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Destination<RootGraph>
 fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
-    val showLicenseSheet = remember { mutableStateOf(false) }
-    val selectedLibrary = remember { mutableStateOf<Library?>(null) }
+    var showLicenseSheet by remember { mutableStateOf(false) }
+    var selectedLibrary by remember { mutableStateOf<Library?>(null) }
 
     BackHandler {
         navigator.popBackStack()
     }
 
     val libraries by produceLibraries(R.raw.aboutlibraries)
+    val libraryItems = remember(libraries) { libraries?.libraries.orEmpty() }
 
     Scaffold(
         topBar = {
@@ -75,19 +79,21 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
         },
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
+            val mainLikePadding = rememberStandalonePageMainPadding()
             ScreenLazyColumn(
                 scrollBehavior = scrollBehavior,
-                innerPadding = innerPadding,
-                topPadding = 20.dp,
+                innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             ) {
-                libraries?.libraries?.let { libs ->
-                    items(libs.size) { index ->
-                        val library = libs[index]
+                if (libraryItems.isNotEmpty()) {
+                    items(
+                        items = libraryItems,
+                        key = { library -> "${library.uniqueId}:${library.artifactId}:${library.name}" },
+                    ) { library ->
                         LibraryItem(
                             library = library,
                             onClick = {
-                                selectedLibrary.value = library
-                                showLicenseSheet.value = true
+                                selectedLibrary = library
+                                showLicenseSheet = true
                             },
                         )
                     }
@@ -98,11 +104,11 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
                 }
             }
 
-            selectedLibrary.value?.let { library ->
+            selectedLibrary?.let { library ->
                 LicenseBottomSheet(
                     show = showLicenseSheet,
                     library = library,
-                    onDismiss = { showLicenseSheet.value = false },
+                    onDismiss = { showLicenseSheet = false },
                 )
             }
         }
@@ -189,7 +195,7 @@ private fun LicenseChip(licenseName: String) {
 
 @Composable
 private fun LicenseBottomSheet(
-    show: MutableState<Boolean>,
+    show: Boolean,
     library: Library,
     onDismiss: () -> Unit,
 ) {
@@ -197,7 +203,7 @@ private fun LicenseBottomSheet(
     val licenseContent = remember(library) { library.strippedLicenseContent.takeIf { it.isNotEmpty() } }
 
     AppActionBottomSheet(
-        show = show.value,
+        show = show,
         title = library.name,
         onDismissRequest = onDismiss,
         content = {

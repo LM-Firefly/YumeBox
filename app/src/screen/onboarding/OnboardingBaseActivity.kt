@@ -22,6 +22,7 @@
 
 package com.github.yumelira.yumebox.screen.onboarding
 
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -37,8 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.github.yumelira.yumebox.MainActivity
-import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.runtime.StartupGate
+import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
@@ -51,6 +52,10 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
 
     protected val previewMode: Boolean
         get() = OnboardingLauncher.isPreviewMode(intent)
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguageManager.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         StartupGate.loadPrimary()
@@ -69,58 +74,6 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
                 content()
             }
         }
-    }
-
-    protected fun buildOnboardingIntent(
-        target: Class<out ComponentActivity>,
-        resetPrivacy: Boolean = false,
-    ): Intent {
-        return OnboardingLauncher.createIntent(
-            context = this,
-            target = target,
-            previewMode = previewMode,
-            resetPrivacy = resetPrivacy,
-        )
-    }
-
-    protected fun navigateForwardTo(
-        target: Class<out ComponentActivity>,
-    ) {
-        startActivity(buildOnboardingIntent(target))
-        @Suppress("DEPRECATION")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            overrideActivityTransition(
-                OVERRIDE_TRANSITION_OPEN,
-                R.anim.onboarding_slide_in_right,
-                R.anim.onboarding_slide_out_left,
-            )
-        } else {
-            overridePendingTransition(
-                R.anim.onboarding_slide_in_right,
-                R.anim.onboarding_slide_out_left,
-            )
-        }
-        finish()
-    }
-
-    protected fun navigateBackwardTo(
-        target: Class<out ComponentActivity>,
-    ) {
-        startActivity(buildOnboardingIntent(target))
-        @Suppress("DEPRECATION")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            overrideActivityTransition(
-                OVERRIDE_TRANSITION_OPEN,
-                R.anim.onboarding_slide_in_left,
-                R.anim.onboarding_slide_out_right,
-            )
-        } else {
-            overridePendingTransition(
-                R.anim.onboarding_slide_in_left,
-                R.anim.onboarding_slide_out_right,
-            )
-        }
-        finish()
     }
 
     protected fun finishOnboarding() {

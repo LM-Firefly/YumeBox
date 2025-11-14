@@ -27,15 +27,18 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.domain.ConnectionHistoryManager
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.remote.ServiceClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonPrimitive
@@ -70,29 +73,30 @@ class ConnectionViewModel : ViewModel() {
     private val _state = MutableStateFlow(ConnectionState())
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
-    private val _filteredConnections = MutableStateFlow<List<ConnectionInfo>>(emptyList())
-    val filteredConnections: StateFlow<List<ConnectionInfo>> = _filteredConnections.asStateFlow()
+    val filteredConnections: StateFlow<List<ConnectionInfo>> = state
+        .map(::buildFilteredConnections)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
 
     private var pollingJob: Job? = null
     private var _isPolling = false
-
-    init {
-        startPolling()
-    }
 
     fun startPolling() {
         if (_isPolling) return
         _isPolling = true
 
         pollingJob = viewModelScope.launch {
-            while (isActive) {
+            refreshConnections(showRefreshing = false)
+            PollingTimers.ticks(PollingTimerSpecs.ConnectionsPolling).collect {
                 try {
-                    refreshConnections()
+                    refreshConnections(showRefreshing = true)
                 } catch (e: Exception) {
                     Timber.w(e, "Failed to poll connections")
-                    _state.update { it.copy(error = e.message) }
+                    _state.update { it.copy(error = e.message, isRefreshing = false) }
                 }
-                delay(POLL_INTERVAL_MS)
             }
         }
     }
@@ -105,50 +109,65 @@ class ConnectionViewModel : ViewModel() {
 
     fun setSearchQuery(query: String) {
         _state.update { it.copy(searchQuery = query) }
-        updateFilteredConnections()
     }
 
     fun setSortBy(sort: ConnectionSort) {
         _state.update { it.copy(sortBy = sort) }
-        updateFilteredConnections()
     }
 
     fun setTab(tab: ConnectionTab) {
         _state.update { it.copy(selectedTab = tab) }
-        updateFilteredConnections()
     }
 
     fun clearError() {
         _state.update { it.copy(error = null) }
     }
 
-    private suspend fun refreshConnections() {
+    suspend fun closeConnection(id: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                ServiceClient.clash().closeConnection(id)
+            }.onFailure { error ->
+                Timber.w(error, "Failed to close connection: %s", id)
+                _state.update { it.copy(error = error.message) }
+            }.getOrDefault(false)
+        }.also {
+            refreshConnections(showRefreshing = true)
+        }
+    }
+
+    private suspend fun refreshConnections(showRefreshing: Boolean) {
+        if (showRefreshing) {
+            _state.update { current ->
+                current.copy(isRefreshing = true)
+            }
+        }
         withContext(Dispatchers.IO) {
             try {
                 val snapshot = ServiceClient.clash().queryConnections()
-                if (snapshot != null) {
-
-                    ConnectionHistoryManager.updateConnections(snapshot.connections)
-
-                    _state.update {
-                        it.copy(
-                            snapshot = snapshot,
-                            error = null,
-                            isLoading = false,
-                        )
-                    }
-                    updateFilteredConnections()
+                ConnectionHistoryManager.updateConnections(snapshot.connections)
+                _state.update {
+                    it.copy(
+                        snapshot = snapshot,
+                        error = null,
+                        isLoading = false,
+                        isRefreshing = false,
+                    )
                 }
             } catch (e: Exception) {
                 Timber.w(e, "Failed to query connections")
-                _state.update { it.copy(error = e.message, isLoading = false) }
+                _state.update {
+                    it.copy(
+                        error = e.message,
+                        isLoading = false,
+                        isRefreshing = false,
+                    )
+                }
             }
         }
     }
 
-    private fun updateFilteredConnections() {
-        val currentState = _state.value
-
+    private fun buildFilteredConnections(currentState: ConnectionState): List<ConnectionInfo> {
         val connections = when (currentState.selectedTab) {
             ConnectionTab.ACTIVE -> currentState.snapshot?.connections ?: emptyList()
             ConnectionTab.CLOSED -> ConnectionHistoryManager.getClosedConnections()
@@ -159,7 +178,7 @@ class ConnectionViewModel : ViewModel() {
         } else {
             val query = currentState.searchQuery.lowercase()
             connections.filter { conn ->
-                val host = conn.metadata["host"]?.jsonPrimitive?.content?.lowercase() ?: ""
+                val host = connectionDisplayTarget(conn).lowercase()
                 val process = conn.metadata["process"]?.jsonPrimitive?.content?.lowercase() ?: ""
                 val chains = conn.chains.joinToString(" ").lowercase()
                 val rule = conn.rule.lowercase()
@@ -176,25 +195,33 @@ class ConnectionViewModel : ViewModel() {
                 ConnectionSort.Time -> filtered.sortedByDescending { it.start }
                 ConnectionSort.Upload -> filtered.sortedByDescending { it.upload }
                 ConnectionSort.Download -> filtered.sortedByDescending { it.download }
-                ConnectionSort.Host -> {
-                    filtered.sortedBy { conn ->
-                        conn.metadata["host"]?.jsonPrimitive?.content ?: ""
-                    }
-                }
+                ConnectionSort.Host -> filtered.sortedBy { connectionDisplayTarget(it) }
             }
         } else {
             filtered
         }
-
-        _filteredConnections.value = sorted
+        return sorted
     }
 
     override fun onCleared() {
         super.onCleared()
         stopPolling()
     }
+}
 
-    companion object {
-        private const val POLL_INTERVAL_MS = 1000L
+private fun connectionDisplayTarget(connection: ConnectionInfo): String {
+    val metadata = connection.metadata
+    val host = metadata["host"]?.jsonPrimitive?.content.orEmpty()
+    val destinationIp = metadata["destinationIP"]?.jsonPrimitive?.content.orEmpty()
+    val destinationPort = metadata["destinationPort"]?.jsonPrimitive?.content.orEmpty()
+    val sourceIp = metadata["sourceIP"]?.jsonPrimitive?.content.orEmpty()
+    val sourcePort = metadata["sourcePort"]?.jsonPrimitive?.content.orEmpty()
+    return when {
+        host.isNotBlank() && destinationPort.isNotBlank() -> "$host:$destinationPort"
+        host.isNotBlank() -> host
+        destinationIp.isNotBlank() && destinationPort.isNotBlank() -> "$destinationIp:$destinationPort"
+        destinationIp.isNotBlank() -> destinationIp
+        sourceIp.isNotBlank() && sourcePort.isNotBlank() -> "$sourceIp:$sourcePort"
+        else -> sourceIp
     }
 }

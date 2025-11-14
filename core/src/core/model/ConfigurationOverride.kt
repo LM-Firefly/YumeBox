@@ -215,9 +215,6 @@ data class ConfigurationOverride(
     @SerialName("profile")
     val profile: Profile = Profile(),
 
-    @SerialName("tun")
-    val tun: Tun = Tun(),
-
     @SerialName("sniffer")
     val sniffer: Sniffer = Sniffer(),
 
@@ -404,87 +401,6 @@ data class ConfigurationOverride(
 
         @SerialName("store-fake-ip")
         var storeFakeIp: Boolean? = null,
-    )
-
-    @Serializable
-    data class Tun(
-        @SerialName("enable")
-        var enable: Boolean? = null,
-
-        @SerialName("stack")
-        var stack: String? = null,
-
-        @SerialName("dns-hijack")
-        var dnsHijack: List<String>? = null,
-
-        @SerialName("dns-hijack-start")
-        var dnsHijackStart: List<String>? = null,
-
-        @SerialName("dns-hijack-end")
-        var dnsHijackEnd: List<String>? = null,
-
-        @SerialName("auto-route")
-        var autoRoute: Boolean? = null,
-
-        @SerialName("auto-detect-interface")
-        var autoDetectInterface: Boolean? = null,
-
-        @SerialName("auto-redirect")
-        var autoRedirect: Boolean? = null,
-
-        @SerialName("mtu")
-        var mtu: Int? = null,
-
-        @SerialName("gso")
-        var gso: Boolean? = null,
-
-        @SerialName("gso-max-size")
-        var gsoMaxSize: Int? = null,
-
-        @SerialName("strict-route")
-        var strictRoute: Boolean? = null,
-
-        @SerialName("disable-icmp-forwarding")
-        var disableIcmpForwarding: Boolean? = null,
-
-        @SerialName("route-address")
-        var routeAddress: List<String>? = null,
-
-        @SerialName("route-address-start")
-        var routeAddressStart: List<String>? = null,
-
-        @SerialName("route-address-end")
-        var routeAddressEnd: List<String>? = null,
-
-        @SerialName("route-exclude-address")
-        var routeExcludeAddress: List<String>? = null,
-
-        @SerialName("route-exclude-address-start")
-        var routeExcludeAddressStart: List<String>? = null,
-
-        @SerialName("route-exclude-address-end")
-        var routeExcludeAddressEnd: List<String>? = null,
-
-        @SerialName("endpoint-independent-nat")
-        var endpointIndependentNat: Boolean? = null,
-
-        @SerialName("include-package")
-        var includePackage: List<String>? = null,
-
-        @SerialName("include-package-start")
-        var includePackageStart: List<String>? = null,
-
-        @SerialName("include-package-end")
-        var includePackageEnd: List<String>? = null,
-
-        @SerialName("exclude-package")
-        var excludePackage: List<String>? = null,
-
-        @SerialName("exclude-package-start")
-        var excludePackageStart: List<String>? = null,
-
-        @SerialName("exclude-package-end")
-        var excludePackageEnd: List<String>? = null,
     )
 
     @Serializable

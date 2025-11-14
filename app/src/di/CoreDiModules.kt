@@ -70,7 +70,6 @@ val appDataRuntimeModule = module {
     single { ProfileLinksRepository(get()) }
     single { LogRepository(androidApplication(), get()) }
     single { NetworkInfoService() }
-    single { ProxyChainResolver() }
     single { OverrideRepository(androidContext(), get()) }
     single { ProvidersRepository(androidContext()) }
 
@@ -86,8 +85,9 @@ val appDataRuntimeModule = module {
 
     single { com.github.yumelira.yumebox.remote.ServiceClient }
     single { ProxyFacade(androidContext()) }
+    single { com.github.yumelira.yumebox.runtime.client.AppIdentityResolver(androidContext()) }
     single { ProfilesRepository(androidContext()) }
-    single { TrafficStatisticsCollector(get(), get()) }
+    single { AppTrafficStatisticsCollector(androidContext(), get(), get(), get()) }
 }
 
 val coreDiModules: List<Module> = listOf(

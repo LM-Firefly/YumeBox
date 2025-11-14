@@ -34,11 +34,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditorState
+import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.format.CodeFormatter
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.language.TextMateInitializer
-import com.github.yumelira.yumebox.feature.editor.theme.EditorThemeManager
+import com.github.yumelira.yumebox.presentation.component.SmallTopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.ArrowLeft
 import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
@@ -66,36 +65,21 @@ fun ConfigPreviewScreen(
         }
     }
 
-    val editorState = remember(formattedContent) {
-        CodeEditorState(
-            initialContent = formattedContent,
-            language = language,
-            readOnly = false
-        )
-    }
-
-    val editorThemeState = EditorThemeManager.rememberEditorTheme()
+    val editorState = rememberConfiguredCodeEditorState(
+        initialContent = formattedContent,
+        language = language,
+        readOnly = false,
+    )
     val scrollBehavior = MiuixScrollBehavior()
-
-    LaunchedEffect(Unit) {
-        TextMateInitializer.initialize(context)
-    }
-
-    LaunchedEffect(editorThemeState.isDark) {
-        editorState.editor?.let {
-            TextMateInitializer.setTheme(editorThemeState.isDark)
-        }
-    }
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            SmallTopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         IconButton(
-                            modifier = Modifier.padding(start = 24.dp),
                             onClick = { editorState.undo() },
                             enabled = editorState.canUndo()
                         ) { Icon(Yume.ArrowLeft, null) }
@@ -107,13 +91,12 @@ fun ConfigPreviewScreen(
                 },
                 actions = {
                     IconButton(
-                        modifier = Modifier.padding(end = 16.dp),
+                        modifier = Modifier.padding(end = 12.dp),
                         onClick = { editorState.format() }
                     ) {
                         Icon(Yume.ListCollapse, contentDescription = "Format")
                     }
                     IconButton(
-                        modifier = Modifier.padding(end = 24.dp),
                         onClick = {
                             if (isSaving || onSave == null) return@IconButton
                             isSaving = true

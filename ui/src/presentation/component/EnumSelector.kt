@@ -23,7 +23,7 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.runtime.Composable
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
 fun <T> EnumSelector(
@@ -36,7 +36,7 @@ fun <T> EnumSelector(
 ) {
     val selectedIndex = values.indexOf(currentValue).coerceAtLeast(0)
 
-    WindowDropdown(
+    WindowDropdownPreference(
         title = title,
         summary = summary,
         items = items,

@@ -30,8 +30,9 @@ import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.GeoFileType
 import com.github.yumelira.yumebox.core.model.GeoXItem
 import com.github.yumelira.yumebox.core.model.geoXItems
+import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.substore.util.DownloadUtil
+import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.ConnectionScreenDestination
@@ -41,11 +42,12 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 import java.io.File
 
 @Composable
@@ -54,6 +56,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val downloadClient: SubStoreDownloadClient = koinInject()
 
     val showGeoXDownloadSheet = remember { mutableStateOf(false) }
 
@@ -65,11 +68,15 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             )
         },
     ) { innerPadding ->
-        ScreenLazyColumn(scrollBehavior = scrollBehavior, innerPadding = innerPadding) {
+        val mainLikePadding = rememberStandalonePageMainPadding()
+        ScreenLazyColumn(
+            scrollBehavior = scrollBehavior,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
+        ) {
             item {
-                SmallTitle(MLang.MetaFeature.Title)
+                Title(MLang.MetaFeature.Section.ConnectionAndTraffic)
                 Card {
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Connection.Title,
                         summary = MLang.Connection.Summary,
                         onClick = {
@@ -78,7 +85,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                             }
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.TrafficStatistics.Title,
                         summary = MLang.TrafficStatistics.EntrySummary,
                         onClick = {
@@ -90,9 +97,23 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                 }
             }
             item {
-                SmallTitle(MLang.MetaFeature.GeoX.OnlineUpdateTitle)
+                Title(MLang.MetaFeature.Section.CustomRouting)
                 Card {
-                    SuperArrow(
+                    ArrowPreference(
+                        title = MLang.MetaFeature.CustomRouting.Title,
+                        summary = MLang.MetaFeature.CustomRouting.Summary,
+                        onClick = {
+                            navigator.navigate(com.ramcosta.composedestinations.generated.destinations.CustomRoutingRouteDestination) {
+                                launchSingleTop = true
+                            }
+                        },
+                    )
+                }
+            }
+            item {
+                Title(MLang.MetaFeature.Section.GeoXUpdate)
+                Card {
+                    ArrowPreference(
                         title = MLang.MetaFeature.GeoX.OnlineUpdateTitle,
                         summary = MLang.MetaFeature.GeoX.OnlineUpdateSummary,
                         onClick = { showGeoXDownloadSheet.value = true },
@@ -105,6 +126,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             show = showGeoXDownloadSheet,
             context = context,
             scope = scope,
+            downloadClient = downloadClient,
         )
     }
 }
@@ -114,6 +136,7 @@ private fun GeoXDownloadSheet(
     show: MutableState<Boolean>,
     context: android.content.Context,
     scope: kotlinx.coroutines.CoroutineScope,
+    downloadClient: SubStoreDownloadClient,
 ) {
     val selectedItems = remember { mutableStateMapOf<GeoFileType, Boolean>() }
 
@@ -136,7 +159,7 @@ private fun GeoXDownloadSheet(
                         return@AppBottomSheetConfirmAction
                     }
                     show.value = false
-                    downloadGeoXFiles(context, scope, itemsToDownload)
+                    downloadGeoXFiles(context, scope, downloadClient, itemsToDownload)
                 },
             )
         },
@@ -165,16 +188,17 @@ private fun GeoXDownloadSheet(
 private fun downloadGeoXFiles(
     context: android.content.Context,
     scope: kotlinx.coroutines.CoroutineScope,
+    downloadClient: SubStoreDownloadClient,
     items: List<GeoXItem>,
 ) {
     scope.launch {
         var successCount = 0
         withContext(Dispatchers.IO) {
-            val clashDir = context.filesDir.resolve("clash")
-            clashDir.mkdirs()
+            val runtimeHome = context.runtimeHomeDir
+            runtimeHome.mkdirs()
             items.forEach { item ->
-                val targetFile = File(clashDir, item.fileName)
-                if (DownloadUtil.download(item.url, targetFile)) {
+                val targetFile = File(runtimeHome, item.fileName)
+                if (downloadClient.download(item.url, targetFile)) {
                     successCount++
                 }
             }

@@ -19,7 +19,7 @@ interface IRootTunService {
     boolean closeConnection(String id);
     void closeAllConnections();
     String healthCheck(String group);
-    String healthCheckProxy(String proxyName);
+    String healthCheckProxy(String group, String proxyName);
     String updateProvider(String type, String name);
     void requestStop();
     String queryRecentLogsJson(long sinceSeq);

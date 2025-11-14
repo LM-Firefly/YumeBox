@@ -2,9 +2,27 @@
 MetaFeature = {
     Title = "Meta 功能"
 
+    Section = {
+        ConnectionAndTraffic = "连接与流量统计"
+        CustomRouting = "自定义分流"
+        GeoXUpdate = "GeoX 更新"
+    }
+
     GeoX = {
         OnlineUpdateTitle = "更新 GeoX"
         OnlineUpdateSummary = "下载数据库文件"
+        RuntimeHomeInfo = "GeoX 数据库文件下载并存放在内核目录：%s"
+    }
+
+    CustomRouting = {
+        Title = "自定义分流"
+        Summary = "独立的分流规则配置"
+        Description = "自定义分流规则为全局共享。请在订阅配置编辑页启用“自定义分流”开关后生效。每个订阅配置都需单独开启该开关"
+        GroupTypeTitle = "策略组类型"
+        GroupTypeUrlTest = "UrlTest"
+        GroupTypeFallback = "Fallback"
+        UrlTestRegionGroupTitle = "UrlTest 地区组"
+        FallbackRegionGroupTitle = "Fallback 地区组"
     }
 
     Download = {

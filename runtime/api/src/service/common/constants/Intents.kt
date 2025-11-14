@@ -25,18 +25,27 @@ package com.github.yumelira.yumebox.service.common.constants
 import com.github.yumelira.yumebox.service.common.util.packageName
 
 object Intents {
+    private fun action(packageName: String, actionName: String): String = "$packageName.action.$actionName"
+    private fun intentAction(packageName: String, actionName: String): String = "$packageName.intent.action.$actionName"
+
     fun actionProvideUrl(packageName: String): String = "$packageName.action.PROVIDE_URL"
     fun actionStartClash(packageName: String): String = "$packageName.action.START_CLASH"
     fun actionStopClash(packageName: String): String = "$packageName.action.STOP_CLASH"
     fun actionToggleClash(packageName: String): String = "$packageName.action.TOGGLE_CLASH"
-    fun actionServiceRecreated(packageName: String): String = "$packageName.intent.action.CLASH_RECREATED"
-    fun actionClashStarted(packageName: String): String = "$packageName.intent.action.CLASH_STARTED"
-    fun actionClashStopped(packageName: String): String = "$packageName.intent.action.CLASH_STOPPED"
-    fun actionClashRequestStop(packageName: String): String = "$packageName.intent.action.CLASH_REQUEST_STOP"
-    fun actionProfileChanged(packageName: String): String = "$packageName.intent.action.PROFILE_CHANGED"
-    fun actionProfileLoaded(packageName: String): String = "$packageName.intent.action.PROFILE_LOADED"
-    fun actionOverrideChanged(packageName: String): String = "$packageName.intent.action.OVERRIDE_CHANGED"
-    fun actionRootRuntimeFailed(packageName: String): String = "$packageName.intent.action.ROOT_RUNTIME_FAILED"
+    fun actionServiceRecreated(packageName: String): String = intentAction(packageName, "CLASH_RECREATED")
+    fun actionClashStarted(packageName: String): String = intentAction(packageName, "CLASH_STARTED")
+    fun actionClashStopped(packageName: String): String = intentAction(packageName, "CLASH_STOPPED")
+    fun actionClashRequestStop(packageName: String): String = intentAction(packageName, "CLASH_REQUEST_STOP")
+    fun actionProfileChanged(packageName: String): String = intentAction(packageName, "PROFILE_CHANGED")
+    fun actionProfileLoaded(packageName: String): String = intentAction(packageName, "PROFILE_LOADED")
+    fun actionOverrideChanged(packageName: String): String = intentAction(packageName, "OVERRIDE_CHANGED")
+    fun actionRootRuntimeFailed(packageName: String): String = intentAction(packageName, "ROOT_RUNTIME_FAILED")
+    fun actionProxyGroupsUpdated(packageName: String): String = intentAction(packageName, "PROXY_GROUPS_UPDATED")
+    fun actionPatchSelector(packageName: String): String = action(packageName, "PATCH_SELECTOR")
+    fun actionPatchOverride(packageName: String): String = action(packageName, "PATCH_OVERRIDE")
+    fun actionClearOverride(packageName: String): String = action(packageName, "CLEAR_OVERRIDE")
+    fun actionHealthCheck(packageName: String): String = action(packageName, "HEALTH_CHECK")
+    fun actionHealthCheckAll(packageName: String): String = action(packageName, "HEALTH_CHECK_ALL")
 
     val ACTION_PROVIDE_URL: String
         get() = actionProvideUrl(packageName)
@@ -76,6 +85,31 @@ object Intents {
     val ACTION_ROOT_RUNTIME_FAILED: String
         get() = actionRootRuntimeFailed(packageName)
 
+    val ACTION_PROXY_GROUPS_UPDATED: String
+        get() = actionProxyGroupsUpdated(packageName)
+
+    val ACTION_PATCH_SELECTOR: String
+        get() = actionPatchSelector(packageName)
+
+    val ACTION_PATCH_OVERRIDE: String
+        get() = actionPatchOverride(packageName)
+
+    val ACTION_CLEAR_OVERRIDE: String
+        get() = actionClearOverride(packageName)
+
+    val ACTION_HEALTH_CHECK: String
+        get() = actionHealthCheck(packageName)
+
+    val ACTION_HEALTH_CHECK_ALL: String
+        get() = actionHealthCheckAll(packageName)
+
     const val EXTRA_STOP_REASON = "stop_reason"
     const val EXTRA_UUID = "uuid"
+    const val EXTRA_GROUP_NAME = "group_name"
+    const val EXTRA_PROXY_NAME = "proxy_name"
+    const val EXTRA_PROFILE_ID = "profile_id"
+    const val EXTRA_START_PROXY = "start_proxy"
+    const val EXTRA_OVERRIDE_SLOT = "override_slot"
+    const val EXTRA_OVERRIDE_CONFIG = "override_config"
+    const val EXTRA_HEALTH_CHECK_GROUP = "health_check_group"
 }

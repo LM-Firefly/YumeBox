@@ -207,6 +207,7 @@ Override = {
         RulesConfiguredInline = "%d rules configured"
         AddSubRuleGroup = "Add Sub Rule Group"
         EditSubRule = "Edit Sub Rule"
+        RulePlaceholder = "DOMAIN-SUFFIX,example.com,DIRECT"
         KeyName = "Key Name"
         List = "List"
         AddItem = "Add Item"
@@ -254,6 +255,16 @@ Override = {
         LogicalRuleHint = "Logical rules can have full payload directly"
         OtherExtraParams = "Other extra params, comma-separated"
         ExtraParamsHint = "Extra params beyond src,no-resolve\nFor logical rules, enter full payload directly, e.g. ((DOMAIN,google.com),(NETWORK,udp))."
+        JsonBlockSubtitle = "Edit this config block in JSON format"
+        ObjectListHint = "Structured object list editor. Field values support strings, numbers, booleans, and JSON fragments."
+        ProviderMapHint = "Structured Provider dictionary editor. Duplicate keys overwrite previous values."
+        SubRuleGroupHint = "Each sub-rule group contains a name and a list of rules."
+        ObjectFieldHint = "Field values support simple values and JSON structures."
+        ObjectJsonPlaceholder = "{ \"name\": \"proxy\", \"type\": \"ss\" }"
+        ObjectFallbackTitle = "Object %d"
+        ObjectFieldCount = "%d fields"
+        NewProvider = "Add Provider"
+        UnnamedProvider = "Unnamed Provider"
     }
 
     Draft = {
@@ -286,6 +297,7 @@ Override = {
         ConfigName = "Config Name"
         ConfigDescription = "Config Description"
         PresetTemplate = "Preset Routing Template"
+        PresetApplySummary = "Applying will replace the current override's rule providers, proxy groups, and rules"
         OfficialMrs = "Official MRS Common Routing"
         OfficialMrsSummary = "Top template editor with regional auto-groups and individual switches; applies by rebuilding rule sections in current override."
         ConfigSections = "Config Sections"
@@ -294,6 +306,7 @@ Override = {
         BasicRouting = "Basic Routing"
         ServiceRouting = "Service Routing"
         ClickToAddExtraField = "Click to add extra field"
+        ExtraFieldsConfigured = "%d extra fields configured"
         DeleteExtraField = "Delete extra field"
         ValueType = "Value Type"
         StringValue = "String value"
@@ -487,5 +500,30 @@ Override = {
         SkipDomain = "Skip Domain"
         TlsOverride = "TLS Override"
         UseSystemHosts = "Use System Hosts"
+    }
+
+    ProxyGroup = {
+        Field = {
+            Url = "URL"
+            Interval = "Interval"
+            Timeout = "Timeout"
+            MaxFailedTimes = "Max Failed Times"
+            Proxies = "Members"
+            Use = "Use Providers"
+            UseHint = "One Provider name per line"
+            InterfaceName = "Interface Name"
+            RoutingMark = "Routing Mark"
+            Filter = "Filter"
+            ExcludeFilter = "Exclude Filter"
+            ExcludeType = "Exclude Type"
+            ExpectedStatus = "Expected Status"
+            Icon = "Icon"
+            Lazy = "Lazy"
+            DisableUdp = "Disable UDP"
+            IncludeAll = "Include All"
+            IncludeAllProxies = "Include All Proxies"
+            IncludeAllProviders = "Include All Providers"
+            Hidden = "Hidden"
+        }
     }
 }

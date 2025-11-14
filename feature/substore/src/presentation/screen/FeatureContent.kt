@@ -36,9 +36,9 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.SuperSwitch
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
 fun FeatureContent(
@@ -53,7 +53,7 @@ fun FeatureContent(
     val backendPort by viewModel.backendPort.state.collectAsState()
     val autoCloseMode by viewModel.autoCloseMode.collectAsState()
 
-    val host = if (allowLanAccess) "0.0.0.0" else "127.0.0.1"
+    val host = "127.0.0.1"
     val frontendUrl = "http://${host}:${frontendPort}"
     val backendUrl = "http://${host}:${backendPort}"
     val subStoreUrl = "${frontendUrl}/subs?api=${backendUrl}"
@@ -77,9 +77,10 @@ fun FeatureContent(
             TopBar(title = MLang.Feature.Title, scrollBehavior = scrollBehavior)
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item {
                 val canStartService = isExtensionInstalled && isSubStoreInitialized
@@ -89,7 +90,7 @@ fun FeatureContent(
                     !isSubStoreInitialized -> MLang.Feature.ServiceStatus.NeedSubStore
                     else -> MLang.Feature.ServiceStatus.NotRunning
                 }
-                SmallTitle(MLang.Feature.ServiceStatus.Section)
+                Title(MLang.Feature.ServiceStatus.Section)
                 Card {
                     val autoCloseItems = AutoCloseMode.entries.map { it.getDisplayName() }
                     val autoCloseValues = AutoCloseMode.entries
@@ -109,18 +110,18 @@ fun FeatureContent(
                             }
                         },
                     )
-                    SuperSwitch(
+                    SwitchPreference(
                         title = MLang.Feature.ServiceStatus.AllowLan,
                         summary = MLang.Feature.ServiceStatus.AllowLanSummary,
                         checked = allowLanAccess,
                         onCheckedChange = { viewModel.setAllowLanAccess(it) },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = "Sub-Store",
                         summary = subStoreUrl,
                         enabled = !DeviceUtil.is32BitDevice() && isServiceRunning,
                         onClick = {
-                            if (!isServiceRunning) return@SuperArrow
+                            if (!isServiceRunning) return@ArrowPreference
                             when (panelOpenMode) {
                                 LinkOpenMode.IN_APP -> onOpenInAppUrl(subStoreUrl)
                                 LinkOpenMode.EXTERNAL_BROWSER -> onOpenExternalUrl(subStoreUrl)
@@ -144,10 +145,10 @@ fun FeatureContent(
                     LinkOpenMode.EXTERNAL_BROWSER -> 1
                 }
 
-                SmallTitle(MLang.Feature.Panel.Section)
+                Title(MLang.Feature.Panel.Section)
                 Card {
                     val safeSelectedPanelType = selectedPanelType.coerceIn(0, panelDisplayNames.lastIndex)
-                    WindowDropdown(
+                    WindowDropdownPreference(
                         title = MLang.Feature.Panel.SelectPanel,
                         summary = panelDisplayNames.getOrElse(safeSelectedPanelType) { panelDisplayNames.first() },
                         items = panelDisplayNames,
@@ -167,7 +168,7 @@ fun FeatureContent(
                         },
                     )
 
-                    WindowDropdown(
+                    WindowDropdownPreference(
                         title = MLang.ProfilesPage.LinkSettings.OpenMode,
                         summary = panelOpenModeItems.getOrElse(panelOpenModeIndex) { panelOpenModeItems.first() },
                         items = panelOpenModeItems,
@@ -186,10 +187,10 @@ fun FeatureContent(
             }
 
             item {
-                SmallTitle(MLang.Feature.SubStore.SectionHint)
+                Title(MLang.Feature.SubStore.SectionHint)
                 Card {
 
-                    SuperArrow(
+                    ArrowPreference(
                         title = if (isExtensionInstalled) {
                             MLang.Feature.SubStore.ExtensionInstalled
                         } else {
@@ -208,7 +209,7 @@ fun FeatureContent(
                             }
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Feature.SubStore.DownloadResources,
                         summary = MLang.Feature.SubStore.DownloadResourcesSummary,
                         onClick = { viewModel.downloadSubStoreAll() },

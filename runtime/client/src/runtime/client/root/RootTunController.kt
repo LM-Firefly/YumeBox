@@ -102,6 +102,7 @@ object RootTunController {
         startupLogStore: RootTunStartupLogStore,
         startedAt: Long,
     ): RootTunOperationResult {
+        val appContext = context.appContextOrSelf
         val remoteStartAt = System.currentTimeMillis()
         val result = runCatching {
             remoteCall(context) { service ->
@@ -111,11 +112,21 @@ object RootTunController {
                 RootTunJson.Default.decodeFromString(RootTunOperationResult.serializer(), resultJson)
             }
         }.getOrElse { error ->
+            rollbackFailedStart(
+                context = appContext,
+                stateStore = stateStore,
+                error = error.message ?: "RootTun start failed",
+            )
             startupLogStore.append("ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms failed=${error.message}")
             return RootTunOperationResult(success = false, error = error.message ?: "RootTun start failed")
         }
         startupLogStore.append("ROOT_TUN controller: remoteStart=${System.currentTimeMillis() - remoteStartAt}ms")
         if (!result.success) {
+            rollbackFailedStart(
+                context = appContext,
+                stateStore = stateStore,
+                error = result.error ?: "RootTun start failed",
+            )
             startupLogStore.append("ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms")
             return result
         }
@@ -140,9 +151,10 @@ object RootTunController {
                 append(error.message ?: "failed to start RootTun foreground service")
                 rollbackResult?.error
                     ?.takeIf { it.isNotBlank() }
-                    ?.let { append(" | rollback: ").append(it) }
+                        ?.let { append(" | rollback: ").append(it) }
             }
             startupLogStore.append("ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms failed=$message")
+            stateStore.markIdle(message)
             RootTunOperationResult(success = false, error = message)
         }
     }
@@ -296,8 +308,8 @@ object RootTunController {
         }
     }
 
-    suspend fun healthCheckProxy(context: Context, proxyName: String): String {
-        return remoteCall(context) { service -> service.healthCheckProxy(proxyName) }
+    suspend fun healthCheckProxy(context: Context, group: String, proxyName: String): String {
+        return remoteCall(context) { service -> service.healthCheckProxy(group, proxyName) }
     }
 
     suspend fun updateProvider(context: Context, type: Provider.Type, name: String) {
@@ -346,13 +358,17 @@ object RootTunController {
                         val remote = IRootTunService.Stub.asInterface(service)
                         if (remote == null) {
                             invalidateConnection(appContext, "root tun binder is null")
-                            continuation.resumeWithException(IllegalStateException("root tun binder is null"))
+                            if (continuation.isActive) {
+                                continuation.resumeWithException(IllegalStateException("root tun binder is null"))
+                            }
                             return
                         }
 
                         binder = remote
                         connection = this
-                        continuation.resume(remote)
+                        if (continuation.isActive) {
+                            continuation.resume(remote)
+                        }
                     }
 
                     override fun onServiceDisconnected(name: ComponentName?) {
@@ -391,7 +407,9 @@ object RootTunController {
                     }.onFailure { error ->
                         connection = null
                         binder = null
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(error)
+                        }
                     }
                 }
             }
@@ -421,5 +439,16 @@ object RootTunController {
 
     private fun createIntent(context: Context): Intent {
         return Intent(context, RootTunRootService::class.java)
+    }
+
+    private suspend fun rollbackFailedStart(
+        context: Context,
+        stateStore: RootTunStateStore,
+        error: String,
+    ) {
+        stateStore.markIdle(error)
+        runCatching { RootTunService.stop(context) }
+        runCatching { RootService.stop(createIntent(context)) }
+        disconnect()
     }
 }

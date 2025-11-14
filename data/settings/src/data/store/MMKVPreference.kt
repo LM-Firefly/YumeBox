@@ -30,6 +30,120 @@ import kotlinx.serialization.json.Json
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
+/**
+ * Base class for MMKV-based preference storage with process-local reactive StateFlow support.
+ *
+ * This class provides a type-safe property delegation pattern for storing and observing
+ * preferences using MMKV (a fast key-value storage library).
+ *
+ * ## Features
+ * - **Type-safe delegates**: `boolFlow`, `strFlow`, `intFlow`, `longFlow`, `floatFlow`, `enumFlow`, etc.
+ * - **Reactive updates**: All `*Flow` delegates expose [Preference] with [StateFlow] for in-process observation
+ * - **Multi-process storage compatibility**: Uses `MMKV.MULTI_PROCESS_MODE` so app and service can safely read/write the same store
+ * - **JSON serialization**: Support for complex types via `jsonListFlow`
+ *
+ * ## Usage Example
+ *
+ * ### 1. Define Storage Class
+ * ```kotlin
+ * class AppSettingsStorage(mmkv: MMKV) : MMKVPreference(externalMmkv = mmkv) {
+ *     // Boolean preference with default false
+ *     val darkModeEnabled by boolFlow(false)
+ *
+ *     // String preference
+ *     val userName by strFlow("")
+ *
+ *     // Enum preference
+ *     val theme by enumFlow(ThemeMode.Auto)
+ *
+ *     // Integer preference
+ *     val notificationCount by intFlow(0)
+ *
+ *     // Complex type (JSON serialization)
+ *     val recentSearches by stringListFlow(emptyList())
+ * }
+ * ```
+ *
+ * ### 2. Use in Repository
+ * ```kotlin
+ * class AppSettingsRepository(private val storage: AppSettingsStorage) {
+ *     // Expose as Preference<T> which provides StateFlow and set/get methods
+ *     val darkModeEnabled: Preference<Boolean> = storage.darkModeEnabled
+ *     val userName: Preference<String> = storage.userName
+ * }
+ * ```
+ *
+ * ### 3. Use in ViewModel
+ * ```kotlin
+ * class SettingsViewModel(private val repository: AppSettingsRepository) : ViewModel() {
+ *     // Collect as StateFlow
+ *     val darkModeState: StateFlow<Boolean> = repository.darkModeEnabled.state
+ *
+ *     fun toggleDarkMode() {
+ *         // Update value
+ *         repository.darkModeEnabled.set(!repository.darkModeEnabled.value)
+ *     }
+ * }
+ * ```
+ *
+ * ### 4. Use in Composable
+ * ```kotlin
+ * @Composable
+ * fun SettingsScreen(viewModel: SettingsViewModel) {
+ *     val darkMode by viewModel.darkModeState.collectAsState()
+ *
+ *     Switch(
+ *         checked = darkMode,
+ *         onCheckedChange = { viewModel.toggleDarkMode() }
+ *     )
+ * }
+ * ```
+ *
+ * ## Property Delegates Available
+ *
+ * ### Simple (non-reactive):
+ * - `bool(default)` → Boolean
+ * - `str(default)` → String
+ * - `int(default)` → Int
+ * - `long(default)` → Long
+ * - `float(default)` → Float
+ * - `double(default)` → Double
+ * - `enum<T>(default)` → T (where T : Enum<T>)
+ * - `byteArray(default)` → ByteArray
+ * - `stringSet(default)` → Set<String>
+ *
+ * ### Reactive (StateFlow):
+ * - `boolFlow(default)` → Preference<Boolean>
+ * - `strFlow(default)` → Preference<String>
+ * - `intFlow(default)` → Preference<Int>
+ * - `longFlow(default)` → Preference<Long>
+ * - `floatFlow(default)` → Preference<Float>
+ * - `doubleFlow(default)` → Preference<Double>
+ * - `enumFlow<T>(default)` → Preference<T>
+ * - `stringSetFlow(default)` → Preference<Set<String>>
+ * - `stringListFlow(default)` → Preference<List<String>>
+ * - `intListFlow(default)` → Preference<List<Int>>
+ * - `jsonListFlow<T>(...)` → Preference<List<T>>
+ *
+ * ## Performance Notes
+ * - MMKV is extremely fast (mmap-based, zero-copy)
+ * - `MULTI_PROCESS_MODE` required for IPC between app and VPN service process
+ * - StateFlow updates are efficient (only notifies on value change)
+ * - JSON serialization has overhead but acceptable for small lists
+ *
+ * ## Cross-Process Behavior
+ * `MULTI_PROCESS_MODE` keeps storage access compatible across processes, but existing [Preference.state]
+ * instances do not automatically receive remote-process updates. Call [Preference.refresh] / [Preference.invalidate]
+ * when you need to pull the latest persisted value into the local flow cache.
+ *
+ * The storage mode ensures safe access when:
+ * - Main app UI reads/writes preferences
+ * - Background VPN service reads/writes preferences
+ * - Both processes access same MMKV storage simultaneously
+ *
+ * @param mmkvID Optional MMKV instance ID (null = default)
+ * @param externalMmkv Optional external MMKV instance (overrides mmkvID)
+ */
 abstract class MMKVPreference(
     mmkvID: String? = null,
     externalMmkv: MMKV? = null,
@@ -250,7 +364,13 @@ abstract class MMKVPreference(
                             flow.value = value
                         }
                     },
-                    get = { getter(key, default) }
+                    get = { getter(key, default) },
+                    refreshState = {
+                        val latest = getter(key, default)
+                        if (skipEqualityCheck || latest != flow.value) {
+                            flow.value = latest
+                        }
+                    },
                 ).also { cached = it }
             }
         }
@@ -261,12 +381,15 @@ data class Preference<T>(
     val state: StateFlow<T>,
     private val update: (T) -> Unit,
     private val get: () -> T,
+    private val refreshState: () -> Unit = { update(get()) },
 ) {
     val value: T get() = get()
 
     fun set(value: T) = update(value)
 
-    fun refresh() = update(get())
+    fun refresh() = refreshState()
+
+    fun invalidate() = refresh()
 }
 
 fun Preference<Boolean>.toggle() = set(!value)

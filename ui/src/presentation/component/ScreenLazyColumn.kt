@@ -23,9 +23,12 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -36,6 +39,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -46,6 +50,7 @@ import dev.chrisbanes.haze.hazeSource
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import kotlin.math.max
 
 @Composable
 fun ScreenLazyColumn(
@@ -153,4 +158,20 @@ fun combinePaddingValues(
         start = localPadding.calculateStartPadding(LayoutDirection.Ltr),
         end = localPadding.calculateEndPadding(LayoutDirection.Ltr),
     )
+}
+
+@Composable
+fun rememberStandalonePageMainPadding(
+    reservedBottomBarHeight: Dp = 74.dp,
+): PaddingValues {
+    val density = LocalDensity.current
+    val systemBottomInset = with(density) {
+        max(
+            WindowInsets.navigationBars.getBottom(this),
+            WindowInsets.systemGestures.getBottom(this),
+        ).toDp()
+    }
+    return remember(systemBottomInset, reservedBottomBarHeight) {
+        PaddingValues(bottom = reservedBottomBarHeight + systemBottomInset)
+    }
 }

@@ -28,10 +28,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionCard
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionDetailSheet
 import com.github.yumelira.yumebox.feature.meta.presentation.component.TabRowWithContour
@@ -40,13 +40,15 @@ import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.Connectio
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionViewModel
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
+import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SuperListPopup
+import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Sort
@@ -80,17 +82,34 @@ fun ConnectionScreen(
     val viewModel = koinViewModel<ConnectionViewModel>()
     val state by viewModel.state.collectAsState()
     val filteredConnections by viewModel.filteredConnections.collectAsState()
+    val spacing = LocalSpacing.current
 
     val scrollBehavior = MiuixScrollBehavior()
     var showSearchBar by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf(state.searchQuery) }
     var showSortPopup by remember { mutableStateOf(false) }
 
-    var selectedConnection by remember { mutableStateOf<ConnectionInfo?>(null) }
+    var selectedConnection by remember { mutableStateOf<com.github.yumelira.yumebox.core.model.ConnectionInfo?>(null) }
     var showDetailSheet by remember { mutableStateOf(false) }
 
     val tabs = listOf(MLang.Connection.Tab.Active, MLang.Connection.Tab.Closed)
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by rememberSaveable(state.selectedTab) {
+        mutableIntStateOf(
+            when (state.selectedTab) {
+                ConnectionTab.ACTIVE -> 0
+                ConnectionTab.CLOSED -> 1
+            }
+        )
+    }
+    val selectedSortIndex = remember(state.sortBy) {
+        SortModes.indexOf(state.sortBy).coerceAtLeast(0)
+    }
+    val emptyStateText =
+        when {
+            state.isLoading -> MLang.Connection.Loading
+            state.searchQuery.isNotEmpty() -> MLang.Connection.NoResults
+            else -> MLang.Connection.Empty
+        }
 
     LaunchedEffect(selectedTabIndex) {
         val tab = if (selectedTabIndex == 0) ConnectionTab.ACTIVE else ConnectionTab.CLOSED
@@ -103,6 +122,25 @@ fun ConnectionScreen(
         }
     }
 
+    LaunchedEffect(state.searchQuery) {
+        if (searchText != state.searchQuery) {
+            searchText = state.searchQuery
+        }
+    }
+
+    LaunchedEffect(showDetailSheet, selectedConnection) {
+        if (showDetailSheet && selectedConnection == null) {
+            showDetailSheet = false
+        }
+    }
+    LaunchedEffect(showDetailSheet) {
+        if (showDetailSheet) {
+            viewModel.stopPolling()
+        } else {
+            viewModel.startPolling()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopBar(
@@ -111,16 +149,15 @@ fun ConnectionScreen(
                 actions = {
                     Box {
                         IconButton(
-                            modifier = Modifier.padding(end = 8.dp),
+                            modifier = Modifier.padding(end = 12.dp),
                             onClick = { showSortPopup = true }) {
                             Icon(
                                 imageVector = MiuixIcons.Sort,
-                                contentDescription = "Sort",
+                                contentDescription = MLang.Connection.SortBy.trimEnd(':', '：'),
                                 tint = MiuixTheme.colorScheme.onSurface,
                             )
                         }
-                        val selectedSortIndex = SortModes.indexOf(state.sortBy).coerceAtLeast(0)
-                        SuperListPopup(
+                        OverlayListPopup(
                             show = showSortPopup,
                             alignment = PopupPositionProvider.Align.BottomEnd,
                             onDismissRequest = { showSortPopup = false },
@@ -142,11 +179,10 @@ fun ConnectionScreen(
                         }
                     }
                     IconButton(
-                        modifier = Modifier.padding(end = 24.dp),
                         onClick = { showSearchBar = !showSearchBar }) {
                         Icon(
                             imageVector = MiuixIcons.Search,
-                            contentDescription = "Search",
+                            contentDescription = MLang.Connection.Search,
                             tint = MiuixTheme.colorScheme.onSurface,
                         )
                     }
@@ -154,19 +190,21 @@ fun ConnectionScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
             innerPadding = innerPadding,
             contentPadding = PaddingValues(
                 start = ConnectionPageSpacing.ContentHorizontal,
                 end = ConnectionPageSpacing.ContentHorizontal,
-                top = innerPadding.calculateTopPadding() + ConnectionPageSpacing.ContentTop,
-                bottom = innerPadding.calculateBottomPadding(),
+                top = innerPadding.calculateTopPadding(),
+                bottom = mainLikePadding.calculateBottomPadding() + spacing.md,
             ),
         ) {
 
             item {
                 TabRowWithContour(
+                    modifier = Modifier.padding(top = ConnectionPageSpacing.ContentTop),
                     tabs = tabs,
                     selectedTabIndex = selectedTabIndex,
                     onTabSelected = { selectedTabIndex = it },
@@ -211,13 +249,7 @@ fun ConnectionScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = if (state.isLoading) {
-                                MLang.Connection.Loading
-                            } else if (state.searchQuery.isNotEmpty()) {
-                                MLang.Connection.NoResults
-                            } else {
-                                MLang.Connection.Empty
-                            },
+                            text = emptyStateText,
                             style = MiuixTheme.textStyles.body2,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
@@ -244,6 +276,8 @@ fun ConnectionScreen(
         ConnectionDetailSheet(
             show = showDetailSheet,
             connectionInfo = selectedConnection,
+            canInterrupt = state.selectedTab == ConnectionTab.ACTIVE,
+            onInterruptConnection = { id -> viewModel.closeConnection(id) },
             onDismiss = { showDetailSheet = false },
             onDismissFinished = { selectedConnection = null },
         )

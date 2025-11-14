@@ -19,6 +19,40 @@ Connection = {
         Host = "Host"
     }
 
+    ChainCount = "x%d"
+
+    RelativeTime = {
+        JustNow = "Just now"
+        MinutesAgo = "%d minutes ago"
+        HoursAgo = "%d hours ago"
+        DaysAgo = "%d days ago"
+        Date = "%02d-%02d"
+    }
+
+    Detail = {
+        Action = {
+            Interrupting = "Interrupting connection..."
+            Interrupt = "Interrupt connection"
+        }
+
+        Section = {
+            Info = "Connection Info"
+            Rule = "Rule"
+        }
+
+        Label = {
+            Protocol = "Protocol"
+            Process = "Process"
+            SourceAddress = "Source Address"
+            DestinationAddress = "Destination Address"
+            Duration = "Duration"
+            Upload = "Upload"
+            Download = "Download"
+            Type = "Type"
+            Content = "Content"
+        }
+    }
+
     Loading = "Loading..."
     Empty = "No active connections"
     NoResults = "No matching connections"

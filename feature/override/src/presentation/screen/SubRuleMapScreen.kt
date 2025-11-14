@@ -44,12 +44,11 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val SubRuleSectionGap = 12.dp
@@ -122,19 +121,18 @@ fun OverrideSubRuleMapEditorScreen(
                 scrollBehavior = scrollBehavior,
                 actions = {
                     if (isDeleteMode) {
-                        IconButton(
+                        OverrideTopBarAction(
+                            icon = Yume.Cancel,
+                            contentDescription = MLang.Override.Editor.CancelDelete,
+                            spacedFromNext = true,
                             onClick = {
                                 isDeleteMode = false
                                 selectedUiIds = emptySet()
                             },
-                            modifier = Modifier.padding(end = 8.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Cancel,
-                                contentDescription = MLang.Override.Editor.CancelDelete,
-                            )
-                        }
-                        IconButton(
+                        )
+                        OverrideTopBarAction(
+                            icon = Yume.Delete,
+                            contentDescription = MLang.Override.Editor.DeleteSelected,
                             onClick = {
                                 if (selectedUiIds.isNotEmpty()) {
                                     val mode = OverrideStructuredEditorStore.subRuleGroupEditorSelectedMode
@@ -148,51 +146,38 @@ fun OverrideSubRuleMapEditorScreen(
                                     applySubRuleValues(updatedValues)
                                 }
                             },
-                            modifier = Modifier.padding(end = 24.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Delete,
-                                contentDescription = MLang.Override.Editor.DeleteSelected,
-                            )
-                        }
+                        )
                     } else {
-                        IconButton(
+                        OverrideTopBarAction(
+                            icon = Yume.Undo,
+                            contentDescription = MLang.Override.Editor.ClearMode,
+                            spacedFromNext = true,
                             onClick = { showResetDialog = true },
-                            modifier = Modifier.padding(end = 8.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Undo,
-                                contentDescription = MLang.Override.Editor.ClearMode,
-                            )
-                        }
-                        IconButton(
+                        )
+                        OverrideTopBarAction(
+                            icon = Yume.Delete,
+                            contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             onClick = {
                                 isDeleteMode = true
                                 selectedUiIds = emptySet()
                             },
-                            modifier = Modifier.padding(end = 24.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Delete,
-                                contentDescription = MLang.Override.Editor.EnterDeleteMode,
-                            )
-                        }
+                        )
                     }
                 },
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             modifier = Modifier.fillMaxWidth(),
-            topPadding = 20.dp,
             lazyListState = listState,
             onScrollDirectionChanged = addFabController::onScrollDirectionChanged,
         ) {
             item(key = "modifier-card") {
                 Card {
-                    WindowDropdown(
+                    WindowDropdownPreference(
                         title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,

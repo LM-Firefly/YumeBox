@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/dlclark/regexp2"
 
@@ -96,17 +97,94 @@ func patchListeners(cfg *config.RawConfig, _ string) error {
 func patchProviders(cfg *config.RawConfig, profileDir string) error {
 	forEachProviders(cfg, func(index int, total int, key string, provider map[string]any, prefix string) {
 		path, _ := provider["path"].(string)
-		if len(path) > 0 {
-			path = common.ResolveAsRoot(path)
+		extension := providerExtension(provider, prefix)
+		if strings.TrimSpace(path) != "" {
+			path = normalizeProviderPath(path, profileDir, prefix, extension)
 		} else if url, ok := provider["url"].(string); ok {
-			path = prefix + "/" + utils.MakeHash([]byte(url)).String() // same as C.GetPathByHash
+			path = profileProviderPath(profileDir, prefix, ensureProviderExtension(utils.MakeHash([]byte(url)).String(), extension))
 		} else {
 			return // both path and url is empty, WTF???
 		}
-		provider["path"] = profileDir + "/providers/" + path
+		provider["path"] = path
 	})
 
 	return nil
+}
+
+func providerExtension(provider map[string]any, prefix string) string {
+	if prefix == RULES {
+		if format, ok := provider["format"].(string); ok && strings.EqualFold(format, "mrs") {
+			return "mrs"
+		}
+	}
+	return "yaml"
+}
+
+func normalizeProviderPath(path string, profileDir string, prefix string, extension string) string {
+	normalized := strings.ReplaceAll(strings.TrimSpace(path), "\\", "/")
+	base := profileProviderBase(profileDir, prefix)
+	if strings.HasPrefix(normalized, base+"/") {
+		return normalized
+	}
+
+	if strings.HasPrefix(normalized, "/") {
+		normalized = baseName(normalized)
+	} else {
+		normalized = trimProviderPrefix(common.ResolveAsRoot(normalized))
+	}
+
+	return profileProviderPath(profileDir, prefix, ensureProviderExtension(normalized, extension))
+}
+
+func profileProviderBase(profileDir string, prefix string) string {
+	return profileDir + "/providers/" + prefix
+}
+
+func profileProviderPath(profileDir string, prefix string, relative string) string {
+	tail := strings.TrimPrefix(strings.ReplaceAll(relative, "\\", "/"), "/")
+	if tail == "" {
+		tail = "provider.yaml"
+	}
+	return profileProviderBase(profileDir, prefix) + "/" + tail
+}
+
+func trimProviderPrefix(path string) string {
+	current := path
+	for {
+		parts := strings.SplitN(current, "/", 2)
+		head := parts[0]
+		if head != "providers" && head != "provider" && head != "clash" &&
+			head != "ruleset" && head != "rules" && head != "proxies" {
+			break
+		}
+		if len(parts) == 1 {
+			current = ""
+			break
+		}
+		current = parts[1]
+	}
+	return current
+}
+
+func ensureProviderExtension(path string, extension string) string {
+	trimmed := strings.TrimSpace(path)
+	if trimmed == "" {
+		return "provider." + extension
+	}
+	last := baseName(trimmed)
+	if strings.Contains(last, ".") {
+		return trimmed
+	}
+	return trimmed + "." + extension
+}
+
+func baseName(path string) string {
+	trimmed := strings.Trim(strings.ReplaceAll(path, "\\", "/"), "/")
+	if trimmed == "" {
+		return ""
+	}
+	parts := strings.Split(trimmed, "/")
+	return parts[len(parts)-1]
 }
 
 func validConfig(cfg *config.RawConfig, _ string) error {

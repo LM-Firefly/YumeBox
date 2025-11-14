@@ -1,130 +1,137 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025 - Present
- *
- */
-
-
-
 package com.github.yumelira.yumebox.feature.meta.presentation.viewmodel
 
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.data.model.AppTrafficUsage
 import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
-import com.github.yumelira.yumebox.data.model.TimeSlot
+import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
-import com.github.yumelira.yumebox.presentation.component.BarChartItem
+import com.github.yumelira.yumebox.presentation.component.TrafficDonutSlice
+import com.github.yumelira.yumebox.runtime.client.AppIdentityResolver
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.flow.*
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class TrafficStatisticsViewModel(
     private val trafficStatisticsStore: TrafficStatisticsStore,
 ) : ViewModel() {
+    private val selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
 
-    private val _selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
-    val selectedTimeRange: StateFlow<StatisticsTimeRange> = _selectedTimeRange.asStateFlow()
+    val uiState: StateFlow<TrafficStatisticsUiState> = combine(
+        selectedTimeRange,
+        trafficStatisticsStore.dailyAppSummaries,
+    ) { range, _ ->
+        val topApps = trafficStatisticsStore.getAppUsagesSorted(range)
+        val totalUpload = topApps.sumOf(AppTrafficUsage::totalUpload)
+        val totalDownload = topApps.sumOf(AppTrafficUsage::totalDownload)
 
-    private val _selectedBarIndex = MutableStateFlow(-1)
-    val selectedBarIndex: StateFlow<Int> = _selectedBarIndex.asStateFlow()
-
-    val todaySummary: StateFlow<DailyTrafficSummary> = flow {
-        emit(trafficStatisticsStore.getTodaySummary())
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
-
-    val yesterdaySummary: StateFlow<DailyTrafficSummary> = flow {
-        emit(trafficStatisticsStore.getYesterdaySummary())
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
-
-    val weekSummary: StateFlow<Long> = flow {
-        val summaries = trafficStatisticsStore.getDailySummaries(7)
-        emit(summaries.sumOf { it.total })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
-
-    val trafficDifference: StateFlow<Long> = combine(
-        todaySummary,
-        yesterdaySummary
-    ) { today, yesterday ->
-        today.total - yesterday.total
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
-
-    val chartItems: StateFlow<List<BarChartItem>> = combine(
-        _selectedTimeRange,
-        todaySummary
-    ) { timeRange, _ ->
-        when (timeRange) {
-            StatisticsTimeRange.TODAY -> getTodayHourlyChartItems()
-            StatisticsTimeRange.WEEK -> getDailyChartItems()
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        TrafficStatisticsUiState(
+            selectedTimeRange = range,
+            summary = DailyTrafficSummary(
+                dateMillis = range.days.toLong(),
+                totalUpload = totalUpload,
+                totalDownload = totalDownload,
+            ),
+            topApps = topApps,
+            donutSlices = buildDonutSlices(topApps),
+        )
+    }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TrafficStatisticsUiState())
 
     fun setTimeRange(range: StatisticsTimeRange) {
-        _selectedTimeRange.value = range
-        _selectedBarIndex.value = -1
+        selectedTimeRange.value = range
     }
 
-    fun setSelectedBarIndex(index: Int) {
-        _selectedBarIndex.value = index
-    }
-
-    private fun getTodayHourlyChartItems(): List<BarChartItem> {
-        val hourlyData = trafficStatisticsStore.getTodayHourlyData()
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val currentSlot = TimeSlot.fromHour(currentHour)
-
-        return hourlyData.mapIndexed { index, slotData ->
-            val slot = TimeSlot.entries[index]
-            BarChartItem(
-                label = slot.label,
-                value = slotData.total,
-                isHighlighted = slot == currentSlot
-            )
+    fun clearAllStatistics() {
+        viewModelScope.launch {
+            trafficStatisticsStore.clearAll()
         }
     }
 
-    private fun getDailyChartItems(): List<BarChartItem> {
-        val summaries = trafficStatisticsStore.getDailySummaries(7)
-        val dateFormat = SimpleDateFormat("M/d", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        val todayKey = getDayKey(calendar)
+    private fun buildDonutSlices(apps: List<AppTrafficUsage>): List<TrafficDonutSlice> {
+        if (apps.isEmpty()) return emptyList()
 
-        return summaries.map { summary ->
-            calendar.timeInMillis = summary.dateMillis
-            val label = if (summary.dateMillis == todayKey) {
-                MLang.TrafficStatistics.TimeRange.Today
-            } else {
-                dateFormat.format(calendar.time)
+        val unknown = apps.firstOrNull { it.appKey == AppIdentityResolver.UNKNOWN_APP_KEY }
+        val unattributed = apps.firstOrNull { it.appKey == TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY }
+        val regularApps = apps.filterNot {
+            it.appKey == AppIdentityResolver.UNKNOWN_APP_KEY ||
+                it.appKey == TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY
+        }
+        val primaryApps = regularApps.take(MAX_DONUT_PRIMARY_APPS)
+        val overflowBytes = regularApps.drop(MAX_DONUT_PRIMARY_APPS).sumOf(AppTrafficUsage::totalBytes)
+
+        return buildList {
+            primaryApps.forEach { usage ->
+                add(
+                    TrafficDonutSlice(
+                        key = usage.appKey,
+                        label = usage.appName,
+                        value = usage.totalBytes,
+                        color = colorForAppKey(usage.appKey),
+                    ),
+                )
             }
-            BarChartItem(
-                label = label,
-                value = summary.total,
-                isHighlighted = summary.dateMillis == todayKey
-            )
+
+            if (overflowBytes > 0L) {
+                add(
+                    TrafficDonutSlice(
+                        key = OTHER_SLICE_KEY,
+                        label = MLang.TrafficStatistics.Donut.Other,
+                        value = overflowBytes,
+                        color = Color(0xFF94A3B8),
+                    ),
+                )
+            }
+
+            unattributed?.takeIf { it.totalBytes > 0L }?.let { usage ->
+                add(
+                    TrafficDonutSlice(
+                        key = usage.appKey,
+                        label = usage.appName,
+                        value = usage.totalBytes,
+                        color = Color(0xFFD97706),
+                    ),
+                )
+            }
+
+            unknown?.takeIf { it.totalBytes > 0L }?.let { usage ->
+                add(
+                    TrafficDonutSlice(
+                        key = usage.appKey,
+                        label = usage.appName,
+                        value = usage.totalBytes,
+                        color = Color(0xFF64748B),
+                    ),
+                )
+            }
         }
     }
 
-    private fun getDayKey(calendar: Calendar): Long {
-        val cal = calendar.clone() as Calendar
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        return cal.timeInMillis
+    private fun colorForAppKey(appKey: String): Color {
+        val hue = ((appKey.hashCode().toLong() and 0xFFFFFFFFL) % 360L).toFloat()
+        return Color.hsv(
+            hue = hue,
+            saturation = 0.62f,
+            value = 0.88f,
+        )
+    }
+
+    companion object {
+        const val OTHER_SLICE_KEY = "other"
+        private const val MAX_DONUT_PRIMARY_APPS = 5
     }
 }
+
+data class TrafficStatisticsUiState(
+    val selectedTimeRange: StatisticsTimeRange = StatisticsTimeRange.TODAY,
+    val summary: DailyTrafficSummary = DailyTrafficSummary.EMPTY,
+    val topApps: List<AppTrafficUsage> = emptyList(),
+    val donutSlices: List<TrafficDonutSlice> = emptyList(),
+)

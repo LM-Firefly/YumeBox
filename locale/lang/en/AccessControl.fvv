@@ -4,11 +4,12 @@ AccessControl = {
 
     Search = {
         Placeholder = "Search apps..."
+        Empty = "No matching apps"
     }
 
     AppList = {
         Title = "App List (%d selected)"
-        Loading = "loading..."
+        Loading = "Loading..."
     }
 
     Settings = {

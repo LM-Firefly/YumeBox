@@ -30,6 +30,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
 import java.io.File
@@ -103,11 +104,6 @@ object Clash {
         Bridge.nativeNotifyTimeZoneChanged(name, offset)
     }
 
-    fun notifyInstalledAppsChanged(uids: List<Pair<Int, String>>) {
-        val uidList = uids.joinToString(separator = ",") { "${it.first}:${it.second}" }
-        Bridge.nativeNotifyInstalledAppChanged(uidList)
-    }
-
     fun startTun(
         fd: Int,
         stack: String,
@@ -115,7 +111,7 @@ object Clash {
         portal: String,
         dns: String,
         markSocket: (Int) -> Boolean,
-        querySocketUid: (protocol: Int, source: InetSocketAddress, target: InetSocketAddress) -> Int,
+        querySocketOwner: (protocol: Int, source: InetSocketAddress, target: InetSocketAddress) -> String,
     ) {
         Bridge.nativeStartTun(
             fd, stack, gateway, portal, dns,
@@ -124,8 +120,8 @@ object Clash {
                     markSocket(fd)
                 }
 
-                override fun querySocketUid(protocol: Int, source: String, target: String): Int {
-                    return querySocketUid(
+                override fun querySocketOwner(protocol: Int, source: String, target: String): String {
+                    return querySocketOwner(
                         protocol,
                         parseInetSocketAddress(source),
                         parseInetSocketAddress(target),
@@ -175,6 +171,16 @@ object Clash {
             Json.decodeFromString(ConfigurationOverride.serializer(), configJson)
         }.getOrElse { error ->
             Timber.w(error, "Failed to inspect override result")
+            null
+        }
+    }
+
+    fun inspectCompiledConfigElement(yamlText: String): JsonObject? {
+        val configJson = Bridge.nativeInspectCompiledConfig(yamlText) ?: return null
+        return runCatching {
+            Json.decodeFromString(JsonObject.serializer(), configJson)
+        }.getOrElse { error ->
+            Timber.w(error, "Failed to inspect compiled config element")
             null
         }
     }

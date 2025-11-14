@@ -29,9 +29,9 @@ import android.content.Intent
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.github.yumelira.yumebox.common.util.formatBytes
-import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
@@ -39,7 +39,7 @@ import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.tencent.mmkv.MMKV
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
-import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.flow.collect
 
 class ServiceNotificationManager(
     private val service: Service,
@@ -54,6 +54,7 @@ class ServiceNotificationManager(
     private val serviceStore by lazy { ServiceStore() }
     private val settingsStore by lazy { MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE) }
     private val notificationManager by lazy { NotificationManagerCompat.from(service) }
+    private var lastNotificationFingerprint: String? = null
 
     fun createChannel() {
         notificationManager.createNotificationChannel(
@@ -70,9 +71,14 @@ class ServiceNotificationManager(
 
     fun startTrafficUpdate(scope: CoroutineScope): Job {
         return scope.launch(Dispatchers.Default) {
-            while (isActive) {
-                notificationManager.notify(config.notificationId, buildRunningNotification())
-                delay(1000L.milliseconds)
+            PollingTimers.ticks(PollingTimerSpecs.ServiceTrafficNotification).collect {
+                val notification = buildRunningNotification()
+                val fingerprint = "${notification.extras.getCharSequence(Notification.EXTRA_TITLE)}|" +
+                    "${notification.extras.getCharSequence(Notification.EXTRA_TEXT)}"
+                if (fingerprint != lastNotificationFingerprint) {
+                    lastNotificationFingerprint = fingerprint
+                    notificationManager.notify(config.notificationId, notification)
+                }
             }
         }
     }
@@ -80,23 +86,26 @@ class ServiceNotificationManager(
     private fun buildRunningNotification(): Notification {
         val profileName = resolveProfileName()
         if (!shouldShowTrafficNotification()) {
-            return buildNotification(profileName, MLang.Service.Notification.Running)
+            return buildNotification(
+                NotificationPresentationFactory.createStatus(
+                    profileName = profileName,
+                    status = MLang.Service.Notification.Running,
+                ),
+            )
         }
 
         val now = runCatching { Clash.queryTrafficNow() }.getOrDefault(0L)
         val total = runCatching { Clash.queryTrafficTotal() }.getOrDefault(0L)
-
-        val upNow = decodeTrafficHalf(now ushr 32)
-        val downNow = decodeTrafficHalf(now and 0xFFFFFFFFL)
-        val upTotal = decodeTrafficHalf(total ushr 32)
-        val downTotal = decodeTrafficHalf(total and 0xFFFFFFFFL)
-
-        val speedStr = "↓ ${formatSpeed(downNow)} ↑ ${formatSpeed(upNow)}"
-        val totalStr = MLang.Service.Notification.TrafficFormat.format(formatBytes(upTotal + downTotal))
-        return buildNotification(profileName, "$speedStr | $totalStr")
+        return buildNotification(
+            NotificationPresentationFactory.createRunning(
+                profileName = profileName,
+                trafficNow = now,
+                trafficTotal = total,
+            ),
+        )
     }
 
-    private fun buildNotification(title: CharSequence, content: CharSequence): Notification {
+    private fun buildNotification(presentation: NotificationPresentation): Notification {
         val contentIntent = PendingIntent.getActivity(
             service,
             0,
@@ -112,8 +121,14 @@ class ServiceNotificationManager(
         )
 
         return NotificationCompat.Builder(service, config.channelId)
-            .setContentTitle(title)
-            .setContentText(content)
+            .setContentTitle(presentation.title)
+            .setContentText(presentation.content)
+            .setSubText(presentation.subText)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(presentation.expandedText)
+                    .setSummaryText(presentation.subText)
+            )
             .setSmallIcon(R.drawable.ic_logo_service)
             .setColor(service.getColor(R.color.color_clash))
             .setContentIntent(contentIntent)
@@ -138,18 +153,6 @@ class ServiceNotificationManager(
             return settings.decodeBool("showTrafficNotification", true)
         }
         return serviceStore.showTrafficNotification
-    }
-
-    private fun decodeTrafficHalf(encoded: Long): Long {
-        val type = (encoded ushr 30) and 0x3L
-        val data = encoded and 0x3FFFFFFFL
-        return when (type.toInt()) {
-            0 -> data
-            1 -> (data * 1024L) / 100L
-            2 -> (data * 1024L * 1024L) / 100L
-            3 -> (data * 1024L * 1024L * 1024L) / 100L
-            else -> 0L
-        }
     }
 
     companion object {

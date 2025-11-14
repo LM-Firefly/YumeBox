@@ -25,6 +25,7 @@ package com.github.yumelira.yumebox.service.runtime.session
 import android.annotation.TargetApi
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.IpPrefix
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
@@ -32,9 +33,12 @@ import com.github.yumelira.yumebox.core.util.parseInetSocketAddress
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.compat.pendingIntentFlags
 import com.github.yumelira.yumebox.service.common.constants.Components
+import com.github.yumelira.yumebox.service.common.util.SocketOwnerResolver
 import com.github.yumelira.yumebox.service.runtime.config.AccessControlMode
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.util.buildIncludedRoutesFromExcludedCidrs
 import com.github.yumelira.yumebox.service.runtime.util.parseCIDR
+import java.net.InetAddress
 import java.security.SecureRandom
 
 class VpnTunTransport(
@@ -43,16 +47,56 @@ class VpnTunTransport(
 ) : RuntimeTransport {
     private val random = SecureRandom()
     private val startupLogStore = RuntimeStartupLogStore(vpnService, RuntimeStartupLogStore.Scope.LOCAL_TUN)
+    private val ownerResolver = SocketOwnerResolver(vpnService)
 
     override fun start(spec: RuntimeSpec) {
         startupLogStore.append("LOCAL_TUN transport start: begin")
         val device = with(vpnService.Builder()) {
+            val explicitRouteExcludes = store.tunRouteExcludeAddress
+                .map(String::trim)
+                .filter(String::isNotEmpty)
+            val hasExplicitRouteExcludes = explicitRouteExcludes.isNotEmpty()
+            val canUseExcludeRoute = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            val includedRoutes = if (hasExplicitRouteExcludes && !canUseExcludeRoute) {
+                buildIncludedRoutesFromExcludedCidrs(
+                    cidrs = explicitRouteExcludes,
+                    includeIpv6 = store.allowIpv6,
+                )
+            } else {
+                null
+            }
+
             addAddress(TUN_GATEWAY, TUN_SUBNET_PREFIX)
             if (store.allowIpv6) {
                 addAddress(TUN_GATEWAY6, TUN_SUBNET_PREFIX6)
             }
 
-            if (store.bypassPrivateNetwork) {
+            if (hasExplicitRouteExcludes && canUseExcludeRoute) {
+                addRoute(NET_ANY, 0)
+                if (store.allowIpv6) {
+                    addRoute(NET_ANY6, 0)
+                }
+                explicitRouteExcludes.map(::parseCIDR).forEach {
+                    runCatching { excludeRoute(IpPrefix(InetAddress.getByName(it.ip), it.prefix)) }
+                }
+                addRoute(TUN_DNS, 32)
+                if (store.allowIpv6) {
+                    addRoute(TUN_DNS6, 128)
+                }
+            } else if (includedRoutes != null) {
+                includedRoutes.ipv4.forEach {
+                    addRoute(it.ip, it.prefix)
+                }
+                if (store.allowIpv6) {
+                    includedRoutes.ipv6.forEach {
+                        addRoute(it.ip, it.prefix)
+                    }
+                }
+                addRoute(TUN_DNS, 32)
+                if (store.allowIpv6) {
+                    addRoute(TUN_DNS6, 128)
+                }
+            } else if (store.bypassPrivateNetwork) {
                 vpnService.resources.getStringArray(R.array.bypass_private_route).map(::parseCIDR).forEach {
                     addRoute(it.ip, it.prefix)
                 }
@@ -117,7 +161,11 @@ class VpnTunTransport(
                         ProxyInfo.buildDirectProxy(
                             it.address.hostAddress,
                             it.port,
-                            HTTP_PROXY_BLACK_LIST + if (store.bypassPrivateNetwork) HTTP_PROXY_LOCAL_LIST else emptyList(),
+                            HTTP_PROXY_BLACK_LIST + if (store.bypassPrivateNetwork || hasExplicitRouteExcludes) {
+                                HTTP_PROXY_LOCAL_LIST
+                            } else {
+                                emptyList()
+                            },
                         ),
                     )
                 }
@@ -143,7 +191,7 @@ class VpnTunTransport(
             portal = device.portal,
             dns = device.dns,
             markSocket = vpnService::protect,
-            querySocketUid = this::queryUid,
+            querySocketOwner = ownerResolver::queryOwner,
         )
         startupLogStore.append("LOCAL_TUN transport start: done")
     }
@@ -166,19 +214,6 @@ class VpnTunTransport(
         val listenAt = "127.${r()}.${r()}.${r()}:0"
         val address = com.github.yumelira.yumebox.core.Clash.startHttp(listenAt)
         return address?.let(::parseInetSocketAddress)
-    }
-
-    private fun queryUid(
-        protocol: Int,
-        source: java.net.InetSocketAddress,
-        target: java.net.InetSocketAddress,
-    ): Int {
-        if (Build.VERSION.SDK_INT < 29) {
-            return -1
-        }
-        val connectivity = vpnService.getSystemService(android.net.ConnectivityManager::class.java)
-        return runCatching { connectivity?.getConnectionOwnerUid(protocol, source, target) ?: -1 }
-            .getOrDefault(-1)
     }
 
     private data class TunDevice(

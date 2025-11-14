@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.data.repository
 
 import android.content.Context
+import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.domain.model.MetadataIndex
 import com.github.yumelira.yumebox.domain.model.OverrideMetadata
 import com.github.yumelira.yumebox.domain.model.ProfileBinding
@@ -217,4 +218,5 @@ class ProfileBindingRepository(
             binding.overrideIds.contains(overrideId)
         }
     }
+
 }

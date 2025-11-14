@@ -26,6 +26,7 @@ import android.content.Context
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import java.io.File
+import java.nio.charset.StandardCharsets
 
 class RuntimeStartupLogStore(
     context: Context,
@@ -43,7 +44,7 @@ class RuntimeStartupLogStore(
     private val appContext = context.appContextOrSelf
     private val file = File(appContext.filesDir, scope.fileName)
 
-    fun path(): String = ""
+    fun path(): String = file.absolutePath
 
     fun clear() {
         synchronized(lock) {
@@ -54,12 +55,23 @@ class RuntimeStartupLogStore(
     fun append(line: String) {
         if (line.isBlank()) return
         synchronized(lock) {
-            runCatching { file.delete() }
+            runCatching {
+                file.parentFile?.mkdirs()
+                file.appendText("${line.trimEnd()}\n", StandardCharsets.UTF_8)
+            }
         }
     }
 
     fun snapshot(): String {
-        return ""
+        return synchronized(lock) {
+            runCatching {
+                if (file.exists()) {
+                    file.readText(StandardCharsets.UTF_8)
+                } else {
+                    ""
+                }
+            }.getOrDefault("")
+        }
     }
 
     companion object {

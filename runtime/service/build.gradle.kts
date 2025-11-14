@@ -25,52 +25,8 @@ plugins {
 
 android {
     namespace = "com.github.yumelira.yumebox.runtime.service"
-    compileSdk = gropify.android.compileSdk
-
-    val ndkVersionValue = gropify.android.ndkVersion
-    if (ndkVersionValue.isNotBlank()) {
-        ndkVersion = ndkVersionValue
-    }
-
-    defaultConfig {
-        minSdk = gropify.android.minSdk
-    }
-
-    compileOptions {
-        val javaVer = gropify.android.jvm
-        sourceCompatibility = JavaVersion.toVersion(javaVer)
-        targetCompatibility = JavaVersion.toVersion(javaVer)
-    }
-
-    packaging {
-        resources {
-            excludes += setOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "/META-INF/*.kotlin_module",
-                "DebugProbesKt.bin",
-            )
-        }
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
-
-    sourceSets {
-        getByName("main") {
-            kotlin.srcDirs("src")
-            res.srcDirs("res")
-            assets.srcDirs("assets")
-            aidl.srcDirs("aidl")
-            resources.srcDirs("resources")
-            if (project.file("AndroidManifest.xml").isFile) {
-                manifest.srcFile("AndroidManifest.xml")
-            }
-        }
-    }
-
     buildFeatures {
         aidl = true
-        buildConfig = false
     }
 }
 
@@ -97,5 +53,4 @@ dependencies {
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
     implementation("com.github.topjohnwu.libsu:service:6.0.0")
 }
-
 

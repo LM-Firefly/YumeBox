@@ -27,64 +27,9 @@ plugins {
 
 android {
     namespace = "com.github.yumelira.yumebox.feature.override"
-    compileSdk = gropify.android.compileSdk
-
-    val ndkVersionValue = gropify.android.ndkVersion
-    if (ndkVersionValue.isNotBlank()) {
-        ndkVersion = ndkVersionValue
-    }
-
-    defaultConfig {
-        minSdk = gropify.android.minSdk
-    }
-
-    compileOptions {
-        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
-        sourceCompatibility = JavaVersion.toVersion(javaVer)
-        targetCompatibility = JavaVersion.toVersion(javaVer)
-    }
-
-    packaging {
-        resources {
-            excludes += setOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "/META-INF/*.kotlin_module",
-                "DebugProbesKt.bin",
-            )
-        }
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
-
-    sourceSets {
-        getByName("main") {
-            kotlin.srcDirs("src")
-            res.srcDirs("res")
-            assets.srcDirs("assets")
-            aidl.srcDirs("aidl")
-            resources.srcDirs("resources")
-            if (project.file("AndroidManifest.xml").isFile) {
-                manifest.srcFile("AndroidManifest.xml")
-            }
-        }
-        getByName("test") {
-            kotlin.srcDirs("test/kotlin")
-            resources.setSrcDirs(emptyList<String>())
-            assets.setSrcDirs(emptyList<String>())
-        }
-        getByName("androidTest") {
-            kotlin.setSrcDirs(emptyList<String>())
-            res.setSrcDirs(emptyList<String>())
-            assets.setSrcDirs(emptyList<String>())
-            aidl.setSrcDirs(emptyList<String>())
-            resources.setSrcDirs(emptyList<String>())
-        }
-    }
 
     buildFeatures {
         compose = true
-        buildConfig = false
     }
 }
 
@@ -110,10 +55,10 @@ dependencies {
     implementation("io.insert-koin:koin-androidx-compose:${gropify.dep.version.koin}")
     implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-ui:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-preference:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("sh.calvin.reorderable:reorderable:${gropify.dep.version.reorderable}")
 }
-
 
 

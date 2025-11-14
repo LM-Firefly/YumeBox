@@ -26,6 +26,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.annotation.Keep
 import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import kotlinx.coroutines.CompletableDeferred
 import java.io.File
 
@@ -44,7 +45,6 @@ object Bridge {
     external fun nativeCloseAllConnections()
     external fun nativeNotifyDnsChanged(dnsList: String)
     external fun nativeNotifyTimeZoneChanged(name: String, offset: Int)
-    external fun nativeNotifyInstalledAppChanged(uidList: String)
     external fun nativeStartTun(fd: Int, stack: String, gateway: String, portal: String, dns: String, cb: TunInterface)
     external fun nativeStopTun()
     external fun nativeStartRootTun(configJson: String): String?
@@ -91,7 +91,7 @@ object Bridge {
         ParcelFileDescriptor.open(File(ctx.packageCodePath), ParcelFileDescriptor.MODE_READ_ONLY)
             .detachFd()
 
-        val home = ctx.filesDir.resolve("clash").apply { mkdirs() }.absolutePath
+        val home = ctx.runtimeHomeDir.apply { mkdirs() }.absolutePath
         val versionName = ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "unknown"
         val sdkVersion = Build.VERSION.SDK_INT
 

@@ -34,4 +34,5 @@ data class Selection(
     val uuid: UUID,
     val proxy: String,
     val selected: String,
+    val updatedAt: Long = 0L,
 )

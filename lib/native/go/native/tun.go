@@ -38,15 +38,27 @@ func (t *remoteTun) markSocket(fd int) {
 	C.mark_socket(t.callback, C.int(fd))
 }
 
-func (t *remoteTun) querySocketUid(protocol int, source, target string) int {
+func (t *remoteTun) querySocketOwner(protocol int, source, target string) string {
 	_ = t.limit.Acquire(context.Background(), 1)
 	defer t.limit.Release(1)
 
 	if t.closed {
-		return -1
+		return "-1\t"
 	}
 
-	return int(C.query_socket_uid(t.callback, C.int(protocol), C.CString(source), C.CString(target)))
+	result := C.query_socket_owner(
+		t.callback,
+		C.int(protocol),
+		C.CString(source),
+		C.CString(target),
+	)
+
+	if result == nil {
+		return "-1\t"
+	}
+
+	defer C.free(unsafe.Pointer(result))
+	return C.GoString(result)
 }
 
 func (t *remoteTun) close() {
@@ -93,7 +105,7 @@ func startTun(fd C.int, stack, gateway, portal, dns C.c_string, callback unsafe.
 
 	remote := &remoteTun{callback: callback, closed: false, limit: semaphore.NewWeighted(4)}
 
-	app.ApplyTunContext(remote.markSocket, remote.querySocketUid)
+	app.ApplyTunContext(remote.markSocket, remote.querySocketOwner)
 
 	closer, err := tun.Start(f, s, g, p, d)
 	if err != nil {

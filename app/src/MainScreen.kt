@@ -1,0 +1,247 @@
+package com.github.yumelira.yumebox
+
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.common.util.openUrl
+import com.github.yumelira.yumebox.data.store.LinkOpenMode
+import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.screen.ProxyPager
+import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
+import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
+import com.github.yumelira.yumebox.screen.acg.AcgHomePage
+import com.github.yumelira.yumebox.screen.acg.calculateHomeVisibility
+import com.github.yumelira.yumebox.screen.home.HomeViewModel
+import com.github.yumelira.yumebox.screen.home.HomePager
+import com.github.yumelira.yumebox.screen.profiles.ProfilesPager
+import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
+import com.github.yumelira.yumebox.screen.settings.SettingPager
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.annotation.RootGraph
+import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.flow.collect
+import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.Scaffold
+import kotlin.math.max
+
+@Composable
+@Destination<RootGraph>
+fun MainScreen(
+    navigator: DestinationsNavigator,
+    initialPage: Int = 0,
+) {
+    val activity = LocalActivity.current
+    val initialMainPage = initialPage.coerceIn(0, 3)
+    val pagerState = rememberPagerState(initialPage = initialMainPage, pageCount = { 4 })
+    val mainPagerState = rememberMainPagerState(pagerState)
+    val hazeState = remember { HazeState() }
+
+    val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
+    val featureViewModel = koinViewModel<FeatureViewModel>()
+    val homeViewModel = koinViewModel<HomeViewModel>()
+    val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
+    val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsState()
+    val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsState()
+    val acgWallpaperZoom by appSettingsViewModel.acgWallpaperZoom.state.collectAsState()
+    val acgWallpaperBiasX by appSettingsViewModel.acgWallpaperBiasX.state.collectAsState()
+    val acgWallpaperBiasY by appSettingsViewModel.acgWallpaperBiasY.state.collectAsState()
+    val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
+    val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
+    val bottomBarScrollBehavior = rememberBottomBarScrollBehavior(autoHideEnabled = bottomBarAutoHideEnabled)
+    var settledMainPage by remember { mutableIntStateOf(initialMainPage) }
+    val homeVisibility by remember(mainPagerState) {
+        derivedStateOf {
+            calculateHomeVisibility(
+                currentPage = mainPagerState.pagerState.currentPage,
+                currentPageOffsetFraction = mainPagerState.pagerState.currentPageOffsetFraction,
+            )
+        }
+    }
+    val acgBottomBarVisible by remember(acgMainUiEnabled, settledMainPage, mainPagerState.selectedPage) {
+        derivedStateOf {
+            if (!acgMainUiEnabled) {
+                true
+            } else if (mainPagerState.selectedPage == 0) {
+                false
+            } else {
+                settledMainPage != 0
+            }
+        }
+    }
+
+    LaunchedEffect(mainPagerState.pagerState.currentPage) {
+        mainPagerState.syncPage()
+    }
+
+    LaunchedEffect(mainPagerState.pagerState.currentPage, mainPagerState.pagerState.isScrollInProgress) {
+        if (!mainPagerState.pagerState.isScrollInProgress) {
+            settledMainPage = mainPagerState.pagerState.currentPage
+        }
+    }
+
+    val vpnPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        homeViewModel.onVpnPermissionResult(result.resultCode == Activity.RESULT_OK)
+    }
+
+    LaunchedEffect(homeViewModel) {
+        homeViewModel.vpnPrepareIntent.collect { intent ->
+            vpnPermissionLauncher.launch(intent)
+        }
+    }
+
+    val handlePageChange: (Int) -> Unit = remember(mainPagerState) {
+        { targetPage -> mainPagerState.animateToPage(targetPage) }
+    }
+
+    BackHandler(enabled = mainPagerState.selectedPage != 0) {
+        handlePageChange(0)
+    }
+
+    CompositionLocalProvider(
+        LocalNavigator provides navigator,
+        LocalPagerState provides mainPagerState.pagerState,
+        LocalMainPagerState provides mainPagerState,
+        LocalHandlePageChange provides handlePageChange,
+        LocalBottomBarScrollBehavior provides bottomBarScrollBehavior,
+    ) {
+        Scaffold { innerPadding ->
+            Box(Modifier.fillMaxSize()) {
+                val density = LocalDensity.current
+                val layoutDirection = LocalLayoutDirection.current
+                val systemBottomInset = with(density) {
+                    val navBottom = WindowInsets.navigationBars.getBottom(this)
+                    val gestureBottom = WindowInsets.systemGestures.getBottom(this)
+                    max(navBottom, gestureBottom).toDp()
+                }
+                val bottomBarReservedHeight by animateDpAsState(
+                    targetValue = if (acgBottomBarVisible) 74.dp else 0.dp,
+                    animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+                    label = "main_bottom_bar_reserved_height",
+                )
+                val mainInnerPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding() + bottomBarReservedHeight + systemBottomInset,
+                    start = WindowInsets.systemBars.asPaddingValues().calculateStartPadding(layoutDirection),
+                    end = WindowInsets.systemBars.asPaddingValues().calculateEndPadding(layoutDirection),
+                )
+                HorizontalPager(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .hazeSource(state = hazeState),
+                    state = mainPagerState.pagerState,
+                    beyondViewportPageCount = 2,
+                    userScrollEnabled = true,
+                    overscrollEffect = null,
+                    pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
+                        state = mainPagerState.pagerState,
+                        orientation = Orientation.Horizontal,
+                    ),
+                ) { page ->
+                    MainRootPageContent(
+                        page = page,
+                        mainInnerPadding = mainInnerPadding,
+                        acgMainUiEnabled = acgMainUiEnabled,
+                        acgWallpaperUri = acgWallpaperUri,
+                        acgWallpaperZoom = acgWallpaperZoom,
+                        acgWallpaperBiasX = acgWallpaperBiasX,
+                        acgWallpaperBiasY = acgWallpaperBiasY,
+                        navigator = navigator,
+                        activity = activity,
+                        selectedPanelType = selectedPanelType,
+                        panelOpenMode = panelOpenMode,
+                        homePageProgress = homeVisibility,
+                        selectedPage = settledMainPage,
+                    )
+                }
+
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.BottomCenter,
+                ) {
+                    BottomBarContent(isVisible = acgBottomBarVisible)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainRootPageContent(
+    page: Int,
+    mainInnerPadding: PaddingValues,
+    acgMainUiEnabled: Boolean,
+    acgWallpaperUri: String,
+    acgWallpaperZoom: Float,
+    acgWallpaperBiasX: Float,
+    acgWallpaperBiasY: Float,
+    navigator: DestinationsNavigator,
+    activity: Activity?,
+    selectedPanelType: Int,
+    panelOpenMode: LinkOpenMode,
+    homePageProgress: Float,
+    selectedPage: Int,
+) {
+    when (page) {
+        0 -> {
+            if (acgMainUiEnabled) {
+                AcgHomePage(
+                    mainInnerPadding = mainInnerPadding,
+                    wallpaperUri = acgWallpaperUri,
+                    wallpaperZoom = acgWallpaperZoom,
+                    wallpaperBiasX = acgWallpaperBiasX,
+                    wallpaperBiasY = acgWallpaperBiasY,
+                    isActive = selectedPage == 0,
+                    pageProgress = homePageProgress,
+                )
+            } else {
+                HomePager(
+                    mainInnerPadding = mainInnerPadding,
+                    isActive = selectedPage == 0,
+                )
+            }
+        }
+
+        1 -> ProxyPager(
+            mainInnerPadding = mainInnerPadding,
+            onNavigateToProviders = {
+                navigator.navigate(ProvidersScreenDestination) {
+                    launchSingleTop = true
+                }
+            },
+            onOpenPanel = onOpenPanel@{
+                val context = activity ?: return@onOpenPanel
+                val panelUrl = getPanelUrl(selectedPanelType)
+                if (panelUrl.isEmpty()) return@onOpenPanel
+                when (panelOpenMode) {
+                    LinkOpenMode.IN_APP -> WebViewActivity.start(context, panelUrl)
+                    LinkOpenMode.EXTERNAL_BROWSER -> openUrl(context, panelUrl)
+                }
+            },
+            isActive = selectedPage == 1,
+        )
+
+        2 -> ProfilesPager(mainInnerPadding)
+        3 -> SettingPager(mainInnerPadding)
+    }
+}

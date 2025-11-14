@@ -207,10 +207,10 @@ fun OverrideListScreen(
             )
         },
     ) { paddingValues ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = paddingValues,
-            topPadding = 20.dp,
+            innerPadding = combinePaddingValues(paddingValues, mainLikePadding),
             lazyListState = listState,
             onScrollDirectionChanged = createFabController::onScrollDirectionChanged,
         ) {
@@ -289,10 +289,6 @@ fun OverrideListScreen(
                         }
                     }
                 }
-            }
-
-            item(key = "override-list-bottom-spacer") {
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
         CreateConfigDialog(

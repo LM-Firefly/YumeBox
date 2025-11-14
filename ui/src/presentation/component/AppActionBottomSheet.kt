@@ -32,10 +32,11 @@ import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Check
 import com.github.yumelira.yumebox.presentation.icon.yume.Close
+import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.extra.BottomSheetDefaults
-import top.yukonga.miuix.kmp.extra.SuperBottomSheet
+import top.yukonga.miuix.kmp.layout.BottomSheetDefaults
+import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 object AppBottomSheetDefaults {
@@ -88,7 +89,7 @@ fun AppBottomSheetIconAction(
 fun AppBottomSheetCloseAction(
     onClick: () -> Unit,
     enabled: Boolean = true,
-    contentDescription: String = "关闭",
+    contentDescription: String = MLang.Component.Button.Cancel,
 ) {
     AppBottomSheetIconAction(
         action = AppBottomSheetAction(
@@ -104,7 +105,7 @@ fun AppBottomSheetCloseAction(
 fun AppBottomSheetConfirmAction(
     onClick: () -> Unit,
     enabled: Boolean = true,
-    contentDescription: String = "确认",
+    contentDescription: String = MLang.Component.Button.Confirm,
 ) {
     AppBottomSheetIconAction(
         action = AppBottomSheetAction(
@@ -148,7 +149,7 @@ fun AppActionBottomSheet(
         dragHandleColor
     }
 
-    SuperBottomSheet(
+    OverlayBottomSheet(
         show = show,
         modifier = modifier,
         title = title,

@@ -25,36 +25,10 @@ package com.github.yumelira.yumebox.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TrafficRecord(
-    val timestamp: Long,
-    val upload: Long,
-    val download: Long,
-    val profileId: String? = null
-) {
-    val total: Long get() = upload + download
-}
-
-enum class TimeSlot(val startHour: Int, val endHour: Int, val label: String) {
-    SLOT_0_4(0, 4, "0-4"),
-    SLOT_4_8(4, 8, "4-8"),
-    SLOT_8_12(8, 12, "8-12"),
-    SLOT_12_16(12, 16, "12-16"),
-    SLOT_16_20(16, 20, "16-20"),
-    SLOT_20_24(20, 24, "20-24");
-
-    companion object {
-        fun fromHour(hour: Int): TimeSlot {
-            return entries.first { hour >= it.startHour && hour < it.endHour }
-        }
-    }
-}
-
-@Serializable
 data class DailyTrafficSummary(
     val dateMillis: Long,
     val totalUpload: Long,
     val totalDownload: Long,
-    val hourlyData: Map<Int, TrafficSlotData> = emptyMap()
 ) {
     val total: Long get() = totalUpload + totalDownload
 
@@ -64,23 +38,84 @@ data class DailyTrafficSummary(
 }
 
 @Serializable
-data class TrafficSlotData(
-    val slotIndex: Int,
-    val upload: Long,
-    val download: Long
-) {
-    val total: Long get() = upload + download
-}
-
-@Serializable
-data class ProfileTrafficUsage(
-    val profileId: String,
-    val profileName: String,
-    val totalUpload: Long,
-    val totalDownload: Long
+data class AppTrafficUsage(
+    val appKey: String,
+    val packageName: String? = null,
+    val appName: String,
+    val totalUpload: Long = 0L,
+    val totalDownload: Long = 0L,
+    val lastActiveAt: Long = 0L,
 ) {
     val totalBytes: Long get() = totalUpload + totalDownload
 }
+
+data class AppTrafficDeltaRecord(
+    val appKey: String,
+    val packageName: String? = null,
+    val appName: String,
+    val uploadDelta: Long,
+    val downloadDelta: Long,
+    val routeKey: String? = null,
+    val routeLabel: String? = null,
+)
+
+object TrafficStatisticsBuckets {
+    const val UNATTRIBUTED_APP_KEY = "system:unattributed"
+    const val UNATTRIBUTED_APP_NAME = "未归属流量"
+    const val UNATTRIBUTED_ROUTE_KEY = "route:unattributed"
+    const val UNATTRIBUTED_ROUTE_NAME = "未归属线路"
+
+    fun buildUnattributedRecord(
+        uploadDelta: Long,
+        downloadDelta: Long,
+    ) = AppTrafficDeltaRecord(
+        appKey = UNATTRIBUTED_APP_KEY,
+        packageName = null,
+        appName = UNATTRIBUTED_APP_NAME,
+        uploadDelta = uploadDelta,
+        downloadDelta = downloadDelta,
+        routeKey = UNATTRIBUTED_ROUTE_KEY,
+        routeLabel = UNATTRIBUTED_ROUTE_NAME,
+    )
+}
+
+@Serializable
+data class AppRouteTrafficUsage(
+    val appKey: String,
+    val routeKey: String,
+    val routeLabel: String,
+    val totalUpload: Long = 0L,
+    val totalDownload: Long = 0L,
+    val lastActiveAt: Long = 0L,
+) {
+    val totalBytes: Long get() = totalUpload + totalDownload
+}
+
+@Serializable
+data class DailyAppTrafficSummary(
+    val dateMillis: Long,
+    val appUsages: Map<String, AppTrafficUsage> = emptyMap(),
+) {
+    val totalUpload: Long get() = appUsages.values.sumOf(AppTrafficUsage::totalUpload)
+    val totalDownload: Long get() = appUsages.values.sumOf(AppTrafficUsage::totalDownload)
+    val total: Long get() = totalUpload + totalDownload
+}
+
+@Serializable
+data class DailyRouteTrafficSummary(
+    val dateMillis: Long,
+    val routeUsagesByApp: Map<String, Map<String, AppRouteTrafficUsage>> = emptyMap(),
+)
+
+@Serializable
+data class ConnectionTrafficBaseline(
+    val id: String,
+    val upload: Long,
+    val download: Long,
+    val appKey: String,
+    val packageName: String? = null,
+    val appName: String,
+)
 
 enum class StatisticsTimeRange(val days: Int) {
     TODAY(1),
@@ -90,16 +125,5 @@ enum class StatisticsTimeRange(val days: Int) {
         get() = when (this) {
             TODAY -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Today
             WEEK -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Week
-        }
-}
-
-enum class ChartGranularity {
-    HOURLY,
-    DAILY;
-
-    val label: String
-        get() = when (this) {
-            HOURLY -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.Chart.Hourly
-            DAILY -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.Chart.Daily
         }
 }

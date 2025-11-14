@@ -34,4 +34,5 @@ class FeatureSettingsRepository(
     val frontendPort: Preference<Int> = store.frontendPort
     val selectedPanelType: Preference<Int> = store.selectedPanelType
     val panelOpenMode: Preference<LinkOpenMode> = store.panelOpenMode
+    val exitUiWhenBackground: Preference<Boolean> = store.exitUiWhenBackground
 }

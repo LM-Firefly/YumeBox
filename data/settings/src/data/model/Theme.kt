@@ -26,10 +26,12 @@ enum class ThemeMode {
     Auto, Light, Dark
 }
 
-enum class AppColorTheme {
-    ClassicMonochrome,
+enum class AppLanguage {
+    System,
+    Zh,
+    En,
 }
 
-enum class AppLanguage {
-    System, Zh, En
+enum class AppColorTheme {
+    ClassicMonochrome,
 }

@@ -25,8 +25,8 @@ package com.github.yumelira.yumebox.data.repository
 import android.app.Application
 import android.net.Uri
 import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -37,7 +37,6 @@ class LogRepository(
     private val logRecordGateway: LogRecordGateway,
 ) {
     companion object {
-        private const val STOP_WAIT_MS = 300L
         private const val DEFAULT_MAX_ENTRIES = 2000
         private val LOG_LINE_REGEX = """\[(.+?)] \[(.+?)] (.+)""".toRegex()
         private val LOG_LEVELS = enumEntries<LogMessage.Level>().associateBy { it.name }
@@ -85,17 +84,7 @@ class LogRepository(
             val file = resolveLogFile(fileName) ?: return@withContext emptyList()
             if (maxEntries <= 0) return@withContext emptyList()
             try {
-                file.useLines { lines ->
-                    val ring = ArrayDeque<LogEntry>(maxEntries)
-                    lines.forEach { line ->
-                        val entry = parseLogLine(line) ?: return@forEach
-                        if (ring.size == maxEntries) {
-                            ring.removeFirst()
-                        }
-                        ring.addLast(entry)
-                    }
-                    ring.toList()
-                }
+                readTailLogEntries(file, maxEntries)
             } catch (_: IOException) {
                 emptyList()
             } catch (_: SecurityException) {
@@ -125,20 +114,7 @@ class LogRepository(
         if (!currentlyRecording || currentFileName == null) {
             return@withContext emptyList()
         }
-        val file = resolveLogFile(currentFileName) ?: return@withContext emptyList()
-        readLogFileEntries(file, maxEntries)
-    }
-
-    private fun readLogFileEntries(file: File, maxEntries: Int): List<LogEntry> {
-        return try {
-            file.readLines().takeLast(maxEntries).mapNotNull { line ->
-                parseLogLine(line)
-            }
-        } catch (_: IOException) {
-            emptyList()
-        } catch (_: SecurityException) {
-            emptyList()
-        }
+        readLogEntries(currentFileName, maxEntries)
     }
 
     suspend fun writeLogEntries(targetUri: Uri, entries: List<LogEntry>): Boolean = withContext(Dispatchers.IO) {
@@ -160,20 +136,35 @@ class LogRepository(
 
     suspend fun deleteLogFile(fileName: String): Boolean = withContext(Dispatchers.IO) {
         val file = resolveLogFile(fileName) ?: return@withContext false
-        if (isCurrentRecordingFile(file.name)) {
-            stopRecording()
-            delay(STOP_WAIT_MS)
-        }
+        stopRecordingIfNeeded(file.name)
         file.delete()
     }
 
     suspend fun deleteAllLogs() = withContext(Dispatchers.IO) {
-        if (isRecording()) {
-            stopRecording()
-            delay(STOP_WAIT_MS)
-        }
+        stopRecordingIfNeeded()
         val files = logDir.listFiles(::isManagedLogFile) ?: return@withContext
         files.forEach { it.delete() }
+    }
+
+    private suspend fun stopRecordingIfNeeded(fileName: String? = null) {
+        if (!isRecording()) return
+        if (fileName != null && !isCurrentRecordingFile(fileName)) return
+        stopRecording()
+        PollingTimers.awaitTick(logRecordGateway.stopWaitSpec)
+    }
+
+    private fun readTailLogEntries(file: File, maxEntries: Int): List<LogEntry> {
+        return file.useLines { lines ->
+            val ring = ArrayDeque<LogEntry>(maxEntries)
+            lines.forEach { line ->
+                val entry = parseLogLine(line) ?: return@forEach
+                if (ring.size == maxEntries) {
+                    ring.removeFirst()
+                }
+                ring.addLast(entry)
+            }
+            ring.toList()
+        }
     }
 
     private fun parseLogLine(line: String): LogEntry? {

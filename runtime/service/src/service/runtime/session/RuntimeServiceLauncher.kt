@@ -37,6 +37,8 @@ object RuntimeServiceLauncher {
     const val SOURCE_UI = "ui"
     const val SOURCE_TILE = "tile"
     const val SOURCE_AUTO_RESTART = "auto_restart"
+    const val SOURCE_AUTO_RESTART_BOOT = "auto_restart_boot"
+    const val SOURCE_AUTO_RESTART_REPLACED = "auto_restart_replaced"
     const val SOURCE_UNKNOWN = "unknown"
 
     fun start(
@@ -60,6 +62,7 @@ object RuntimeServiceLauncher {
         if (mode == ProxyMode.Tun) {
             StatusProvider.markTunStarting()
         }
+        StatusProvider.markRuntimeStarting(mode)
 
         val intent = Intent(
             appContext,
@@ -80,6 +83,7 @@ object RuntimeServiceLauncher {
             if (mode == ProxyMode.Tun) {
                 StatusProvider.clearTunStarting()
             }
+            StatusProvider.markRuntimeIdle(mode)
             store.append("${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: failed=${error.message}")
             throw error
         }

@@ -37,7 +37,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
 fun OverrideProxyDraftEditorScreen(
@@ -45,7 +45,7 @@ fun OverrideProxyDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = remember { OverrideStructuredEditorStore.proxyDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyNode } }
+    val title = OverrideStructuredEditorStore.proxyDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyNode }
     val initialValue = remember { OverrideStructuredEditorStore.proxyDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -118,9 +118,10 @@ fun OverrideProxyDraftEditorScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             lazyListState = listState,
             onScrollDirectionChanged = saveFabController::onScrollDirectionChanged,
         ) {
@@ -131,7 +132,7 @@ fun OverrideProxyDraftEditorScreen(
                 ) {
                     OverrideSection(MLang.Override.Editor.BasicConnection) {
                         OverrideSelectorCard {
-                            WindowDropdown(
+                            WindowDropdownPreference(
                                 title = MLang.Override.Editor.RuleType,
                                 items = OverrideProxyTypePresets,
                                 selectedIndex = selectedPresetIndex,

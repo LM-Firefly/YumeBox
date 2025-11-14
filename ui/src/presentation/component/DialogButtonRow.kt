@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.TextButton
 
 @Composable
@@ -38,6 +39,7 @@ fun DialogButtonRow(
     onConfirm: () -> Unit,
     cancelText: String = MLang.Component.Button.Cancel,
     confirmText: String = MLang.Component.Button.Confirm,
+    confirmEnabled: Boolean = true,
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
 ) {
     Row(
@@ -53,6 +55,8 @@ fun DialogButtonRow(
             text = confirmText,
             onClick = onConfirm,
             modifier = Modifier.weight(1f),
+            enabled = confirmEnabled,
+            colors = ButtonDefaults.textButtonColorsPrimary(),
         )
     }
 }

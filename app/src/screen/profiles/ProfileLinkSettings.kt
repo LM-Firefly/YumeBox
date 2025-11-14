@@ -32,9 +32,12 @@ import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
+import com.github.yumelira.yumebox.presentation.component.AppFormDialog
+import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
+import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
+import com.github.yumelira.yumebox.presentation.component.SectionCard
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.WindowDropdown
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -81,39 +84,31 @@ internal fun LinkSettingsDialog(
                     .padding(bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-
-                top.yukonga.miuix.kmp.basic.Card {
-                    WindowDropdown(
+                SectionCard(title = MLang.ProfilesPage.LinkSettings.OpenMode) {
+                    PreferenceEnumItem(
                         title = MLang.ProfilesPage.LinkSettings.OpenMode,
+                        currentValue = linkOpenMode,
                         items = openModeOptions,
-                        selectedIndex = openModeIndex,
-                        onSelectedIndexChange = { index ->
-                            val mode = when (index) {
-                                0 -> LinkOpenMode.IN_APP
-                                1 -> LinkOpenMode.EXTERNAL_BROWSER
-                                else -> LinkOpenMode.IN_APP
-                            }
-                            onOpenModeChange(mode)
-                        })
+                        values = listOf(LinkOpenMode.IN_APP, LinkOpenMode.EXTERNAL_BROWSER),
+                        onValueChange = onOpenModeChange,
+                    )
                 }
 
                 if (links.isNotEmpty()) {
-                    top.yukonga.miuix.kmp.basic.Card {
-                        WindowDropdown(
+                    SectionCard(title = MLang.ProfilesPage.LinkSettings.DefaultLink) {
+                        PreferenceEnumItem(
                             title = MLang.ProfilesPage.LinkSettings.DefaultLink,
                             summary = MLang.ProfilesPage.LinkSettings.DefaultLinkSummary,
+                            currentValue = links.getOrNull(defaultLinkIndex)?.id ?: "",
                             items = links.map { it.name },
-                            selectedIndex = defaultLinkIndex,
-                            onSelectedIndexChange = { index ->
-                                if (index in links.indices) {
-                                    onDefaultLinkChange(links[index].id)
-                                }
-                            })
+                            values = links.map { it.id },
+                            onValueChange = onDefaultLinkChange,
+                        )
                     }
                 }
 
                 if (links.isNotEmpty()) {
-                    top.yukonga.miuix.kmp.basic.Card {
+                    SectionCard(title = MLang.ProfilesPage.LinkSettings.Title) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             links.forEachIndexed { index, link ->
                                 Row(
@@ -210,73 +205,44 @@ internal fun AddLinkDialog(
         }
     }
 
-    AppActionBottomSheet(
+    AppFormDialog(
         show = show.value,
-        modifier = Modifier,
         title = if (linkToEdit != null) MLang.ProfilesPage.LinkSettings.EditLink else MLang.ProfilesPage.LinkSettings.AddLink,
         onDismissRequest = onDismiss,
-        enableNestedScroll = true,
-        content = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                TextField(
-                    value = currentName, onValueChange = {
-                        currentName = it
-                        error = ""
-                    }, label = MLang.ProfilesPage.LinkSettings.Name, modifier = Modifier.fillMaxWidth()
-                )
-
-                TextField(
-                    value = currentUrl, onValueChange = {
-                        currentUrl = it
-                        error = ""
-                    }, label = MLang.ProfilesPage.LinkSettings.Url, modifier = Modifier.fillMaxWidth()
-                )
-
-                if (error.isNotEmpty()) {
-                    Text(
-                        text = error,
-                        color = MiuixTheme.colorScheme.error,
-                        style = MiuixTheme.textStyles.body2
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(
-                        onClick = onDismiss, modifier = Modifier.weight(1f)
-                    ) {
-                        Text(MLang.ProfilesPage.Button.Cancel)
-                    }
-                    Button(
-                        onClick = {
-                            when {
-                                currentName.isBlank() -> error =
-                                    MLang.ProfilesPage.LinkSettings.Validation.EnterName
-
-                                currentUrl.isBlank() -> error =
-                                    MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
-
-                                !currentUrl.startsWith("http", ignoreCase = true) -> error =
-                                    MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
-
-                                else -> {
-                                    onNameChange(currentName)
-                                    onUrlChange(currentUrl)
-                                    onConfirm()
-                                }
-                            }
-                        }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
-                    ) {
-                        Text(MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary)
-                    }
-                }
+        onConfirm = {
+            error = when {
+                currentName.isBlank() -> MLang.ProfilesPage.LinkSettings.Validation.EnterName
+                currentUrl.isBlank() -> MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
+                !currentUrl.startsWith("http", ignoreCase = true) -> MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
+                else -> ""
             }
-        })
+            if (error.isEmpty()) {
+                onNameChange(currentName)
+                onUrlChange(currentUrl)
+                onConfirm()
+            }
+        },
+        error = error.ifBlank { null },
+        cancelText = MLang.ProfilesPage.Button.Cancel,
+        confirmText = MLang.ProfilesPage.Button.Confirm,
+    ) {
+        TextField(
+            value = currentName,
+            onValueChange = {
+                currentName = it
+                error = ""
+            },
+            label = MLang.ProfilesPage.LinkSettings.Name,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        TextField(
+            value = currentUrl,
+            onValueChange = {
+                currentUrl = it
+                error = ""
+            },
+            label = MLang.ProfilesPage.LinkSettings.Url,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }

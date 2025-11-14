@@ -40,8 +40,8 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -62,7 +62,7 @@ fun OverrideExtraFieldsCard(
                 summary = if (fields.isEmpty()) {
                     MLang.Override.Draft.ClickToAddExtraField
                 } else {
-                    "已配置 ${fields.size} 个额外字段"
+                    MLang.Override.Draft.ExtraFieldsConfigured.format(fields.size)
                 },
                 endActions = {
                     OverrideCardActionIconButton(
@@ -116,81 +116,68 @@ fun OverrideExtraFieldDialog(
     val valueTypeItems = OverrideExtraFieldValueType.entries.map(::resolveValueTypeLabel)
     val selectedTypeIndex = OverrideExtraFieldValueType.entries.indexOf(selectedType).coerceAtLeast(0)
 
-    AppDialog(
+    AppFormDialog(
         show = show,
         title = title,
         onDismissRequest = onDismiss,
+        onConfirm = {
+            val normalizedDraft = OverrideExtraFieldDraft(
+                key = keyText.trim(),
+                valueType = selectedType,
+                value = valueText.trim(),
+            )
+            if (normalizedDraft.key.isBlank()) {
+                errorText = MLang.Override.Draft.KeyNameEmpty
+                return@AppFormDialog
+            }
+            val parsedValue = extraFieldDraftToJsonElement(normalizedDraft)
+            if (parsedValue == null) {
+                errorText = MLang.Override.Draft.ValueTypeMismatch
+                return@AppFormDialog
+            }
+            onConfirm(normalizedDraft)
+        },
+        error = errorText,
+        cancelText = MLang.Override.Dialog.Button.Cancel,
+        confirmText = MLang.Override.Editor.Confirm,
     ) {
-        Column(
+        WindowDropdownPreference(
+            title = MLang.Override.Draft.ValueType,
+            items = valueTypeItems,
+            selectedIndex = selectedTypeIndex,
+            onSelectedIndexChange = { index ->
+                selectedType = OverrideExtraFieldValueType.entries.getOrElse(index) { selectedType }
+                errorText = null
+            },
+        )
+        TextField(
+            value = keyText,
+            onValueChange = {
+                keyText = it
+                errorText = null
+            },
+            label = MLang.Override.Editor.KeyName,
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            WindowDropdown(
-                title = MLang.Override.Draft.ValueType,
-                items = valueTypeItems,
-                selectedIndex = selectedTypeIndex,
-                onSelectedIndexChange = { index ->
-                    selectedType = OverrideExtraFieldValueType.entries.getOrElse(index) { selectedType }
-                    errorText = null
-                },
-            )
+        )
+        if (selectedType != OverrideExtraFieldValueType.Null) {
             TextField(
-                value = keyText,
+                value = valueText,
                 onValueChange = {
-                    keyText = it
+                    valueText = it
                     errorText = null
                 },
-                label = MLang.Override.Editor.KeyName,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (selectedType != OverrideExtraFieldValueType.Null) {
-                TextField(
-                    value = valueText,
-                    onValueChange = {
-                        valueText = it
-                        errorText = null
-                    },
-                    label = when (selectedType) {
-                        OverrideExtraFieldValueType.String -> MLang.Override.Draft.StringValue
-                        OverrideExtraFieldValueType.Boolean -> "true / false"
-                        OverrideExtraFieldValueType.Int -> MLang.Override.Draft.IntValue
-                        OverrideExtraFieldValueType.Double -> MLang.Override.Draft.DoubleValue
-                        OverrideExtraFieldValueType.Null -> ""
-                        OverrideExtraFieldValueType.JsonFragment -> MLang.Override.Draft.JsonFragment
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = if (selectedType == OverrideExtraFieldValueType.JsonFragment) 140.dp else 0.dp),
-                    maxLines = if (selectedType == OverrideExtraFieldValueType.JsonFragment) 12 else 1,
-                )
-            }
-            errorText?.let { message ->
-                OverrideFieldAssistText(
-                    text = message,
-                    color = MiuixTheme.colorScheme.error,
-                )
-            }
-            DialogButtonRow(
-                onCancel = onDismiss,
-                onConfirm = {
-                    val normalizedDraft = OverrideExtraFieldDraft(
-                        key = keyText.trim(),
-                        valueType = selectedType,
-                        value = valueText.trim(),
-                    )
-                    if (normalizedDraft.key.isBlank()) {
-                        errorText = MLang.Override.Draft.KeyNameEmpty
-                        return@DialogButtonRow
-                    }
-                    val parsedValue = extraFieldDraftToJsonElement(normalizedDraft)
-                    if (parsedValue == null) {
-                        errorText = MLang.Override.Draft.ValueTypeMismatch
-                        return@DialogButtonRow
-                    }
-                    onConfirm(normalizedDraft)
+                label = when (selectedType) {
+                    OverrideExtraFieldValueType.String -> MLang.Override.Draft.StringValue
+                    OverrideExtraFieldValueType.Boolean -> "true / false"
+                    OverrideExtraFieldValueType.Int -> MLang.Override.Draft.IntValue
+                    OverrideExtraFieldValueType.Double -> MLang.Override.Draft.DoubleValue
+                    OverrideExtraFieldValueType.Null -> ""
+                    OverrideExtraFieldValueType.JsonFragment -> MLang.Override.Draft.JsonFragment
                 },
-                cancelText = MLang.Override.Dialog.Button.Cancel,
-                confirmText = MLang.Override.Editor.Confirm,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = if (selectedType == OverrideExtraFieldValueType.JsonFragment) 140.dp else 0.dp),
+                maxLines = if (selectedType == OverrideExtraFieldValueType.JsonFragment) 12 else 1,
             )
         }
     }

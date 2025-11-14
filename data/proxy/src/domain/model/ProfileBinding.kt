@@ -97,4 +97,12 @@ data class ProfileBinding(
     fun setEnabled(enabled: Boolean): ProfileBinding {
         return copy(enabled = enabled)
     }
+
+    fun enableSystemPreset(): ProfileBinding {
+        return copy(enabled = true)
+    }
+
+    fun disableSystemPreset(): ProfileBinding {
+        return copy(enabled = false)
+    }
 }

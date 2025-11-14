@@ -22,6 +22,7 @@
 
 package com.github.yumelira.yumebox.presentation.screen.node
 
+import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -48,7 +49,6 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.BadgeDollarSign
 import com.github.yumelira.yumebox.presentation.icon.yume.CircleGauge
 import com.github.yumelira.yumebox.presentation.icon.yume.Cloud
-import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import com.github.yumelira.yumebox.presentation.util.extractNodeTags
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
@@ -66,12 +66,80 @@ internal object NodeCardDefaults {
 
 internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
     delay == null -> null
-    delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
+    delay < 0 -> MLang.Proxy.Node.Timeout to Color(0xFF9E9E9E)
     delay == 0 -> null
-    delay in 1..300 -> "${delay}ms" to Color(0xFF007906)
-    delay in 301..1000 -> "${delay}ms" to Color(0xFFFFB300)
-    delay in 1001..3000 -> "${delay}ms" to Color(0xFFE53935)
+    delay in 1..300 -> MLang.Home.NodeInfo.DelayValue.format(delay) to Color(0xFF007906)
+    delay in 301..1000 -> MLang.Home.NodeInfo.DelayValue.format(delay) to Color(0xFFFFB300)
+    delay in 1001..3000 -> MLang.Home.NodeInfo.DelayValue.format(delay) to Color(0xFFE53935)
     else -> null
+}
+
+internal fun Proxy.Type.displayName(): String = when (this) {
+    Proxy.Type.Direct -> "Direct"
+    Proxy.Type.Reject -> "Reject"
+    Proxy.Type.RejectDrop -> "RejectDrop"
+    Proxy.Type.Compatible -> "Compatible"
+    Proxy.Type.Pass -> "Pass"
+    Proxy.Type.Relay -> "Relay"
+    Proxy.Type.Selector -> "Selector"
+    Proxy.Type.Fallback -> "Fallback"
+    Proxy.Type.URLTest -> "URLTest"
+    Proxy.Type.LoadBalance -> "LoadBalance"
+    Proxy.Type.Smart -> "Smart"
+    Proxy.Type.Unknown -> "Unknown"
+    Proxy.Type.Shadowsocks -> "SS"
+    Proxy.Type.ShadowsocksR -> "SSR"
+    Proxy.Type.Snell -> "Snell"
+    Proxy.Type.Socks5 -> "SOCKS5"
+    Proxy.Type.Http -> "HTTP"
+    Proxy.Type.Vmess -> "VMess"
+    Proxy.Type.Vless -> "VLESS"
+    Proxy.Type.Trojan -> "Trojan"
+    Proxy.Type.Hysteria -> "Hysteria"
+    Proxy.Type.Hysteria2 -> "Hysteria2"
+    Proxy.Type.Tuic -> "TUIC"
+    Proxy.Type.WireGuard -> "WireGuard"
+    Proxy.Type.Dns -> "DNS"
+    Proxy.Type.Ssh -> "SSH"
+    Proxy.Type.Mieru -> "Mieru"
+    Proxy.Type.AnyTLS -> "AnyTLS"
+    Proxy.Type.Sudoku -> "Sudoku"
+    Proxy.Type.Masque -> "Masque"
+    Proxy.Type.TrustTunnel -> "TrustTunnel"
+}
+
+internal fun Proxy.Type.iconLabel(): String = when (this) {
+    Proxy.Type.Direct -> "DI"
+    Proxy.Type.Reject -> "RJ"
+    Proxy.Type.RejectDrop -> "RD"
+    Proxy.Type.Compatible -> "CP"
+    Proxy.Type.Pass -> "PS"
+    Proxy.Type.Relay -> "RL"
+    Proxy.Type.Selector -> "SE"
+    Proxy.Type.Fallback -> "FB"
+    Proxy.Type.URLTest -> "UT"
+    Proxy.Type.LoadBalance -> "LB"
+    Proxy.Type.Smart -> "SM"
+    Proxy.Type.Unknown -> "UN"
+    Proxy.Type.Shadowsocks -> "SS"
+    Proxy.Type.ShadowsocksR -> "SR"
+    Proxy.Type.Snell -> "SN"
+    Proxy.Type.Socks5 -> "S5"
+    Proxy.Type.Http -> "HT"
+    Proxy.Type.Vmess -> "VM"
+    Proxy.Type.Vless -> "VL"
+    Proxy.Type.Trojan -> "TR"
+    Proxy.Type.Hysteria -> "HY"
+    Proxy.Type.Hysteria2 -> "H2"
+    Proxy.Type.Tuic -> "TU"
+    Proxy.Type.WireGuard -> "WG"
+    Proxy.Type.Dns -> "DN"
+    Proxy.Type.Ssh -> "SH"
+    Proxy.Type.Mieru -> "MI"
+    Proxy.Type.AnyTLS -> "AT"
+    Proxy.Type.Sudoku -> "SU"
+    Proxy.Type.Masque -> "MQ"
+    Proxy.Type.TrustTunnel -> "TT"
 }
 
 @Composable
@@ -79,7 +147,7 @@ internal fun RotatingCircleGauge(
     isRotating: Boolean,
     modifier: Modifier = Modifier,
     tint: Color = MiuixTheme.colorScheme.primary,
-    contentDescription: String? = "Test",
+    contentDescription: String? = MLang.Proxy.Action.Test,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "circle_gauge_rotation")
     val rotation by infiniteTransition.animateFloat(
@@ -111,7 +179,19 @@ internal fun NodeSelectableCard(
     val shape = RoundedCornerShape(NodeCardDefaults.CornerRadius)
     val primary = MiuixTheme.colorScheme.primary
     val backgroundColor = MiuixTheme.colorScheme.background
-    val borderColor = if (isSelected) primary.copy(alpha = 0.38f) else Color.Transparent
+    val transition = updateTransition(targetState = isSelected, label = "node_card_selection")
+    val borderColor by transition.animateColor(
+        transitionSpec = {
+            if (targetState) {
+                tween(durationMillis = 180, easing = FastOutSlowInEasing)
+            } else {
+                tween(durationMillis = 220, delayMillis = 80, easing = FastOutSlowInEasing)
+            }
+        },
+        label = "node_card_border_color",
+    ) { selected ->
+        if (selected) primary.copy(alpha = 0.38f) else Color.Transparent
+    }
 
     Box(
         modifier = modifier
@@ -158,20 +238,24 @@ internal fun NodeCard(
         modifier = modifier,
         paddingVertical = 12.dp,
     ) {
-        val flagged = remember(proxy.name) { extractFlaggedName(proxy.name) }
+        val presentation = remember(proxy.name, proxy.title) {
+            resolveProxyDisplayPresentation(name = proxy.name, title = proxy.title)
+        }
         val tags = remember(proxy.name) { extractNodeTags(proxy.name) }
         val delayLabel = remember(proxy.delay) { nodeLatencyLabel(proxy.delay) }
+        val typeLabel = remember(proxy.type) { proxy.type.displayName() }
+        val iconLabel = remember(proxy.type) { proxy.type.iconLabel() }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
 
             NodeLargeIcon(
-                countryCode = flagged.countryCode.takeIf { showCountryFlag },
-                typeName = proxy.type.name,
-                isSelected = isSelected,
+                modifier = Modifier.padding(top = 2.dp),
+                countryCode = presentation.countryCode.takeIf { showCountryFlag },
+                typeName = iconLabel,
             )
 
             Column(
@@ -179,7 +263,7 @@ internal fun NodeCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
-                    text = flagged.displayName,
+                    text = presentation.displayName,
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -195,7 +279,7 @@ internal fun NodeCard(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        NodeTagChip(label = proxy.type.name)
+                        NodeTagChip(label = typeLabel)
                         tags.keywords.forEach { kw -> NodeTagChip(label = kw) }
                         tags.multiplier?.let { m ->
                             if (m > 0f) NodeMultiplierChip(multiplier = m)
@@ -234,7 +318,7 @@ internal fun NodeCard(
                             } else {
                                 Icon(
                                     imageVector = Yume.Cloud,
-                                    contentDescription = "Test",
+                                    contentDescription = MLang.Proxy.Action.Test,
                                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                                     modifier = Modifier
                                         .padding(start = 8.dp)
@@ -256,13 +340,13 @@ internal fun NodeCard(
 
 @Composable
 internal fun NodeLargeIcon(
+    modifier: Modifier = Modifier,
     countryCode: String?,
     typeName: String,
-    isSelected: Boolean,
 ) {
     val neutral = MiuixTheme.colorScheme.onSurface
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(44.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(neutral.copy(alpha = 0.06f)),

@@ -24,6 +24,7 @@ package com.github.yumelira.yumebox.runtime.client
 
 import android.content.Context
 import android.content.Intent
+import com.github.yumelira.yumebox.core.data.RepositoryUtils.safeApiCall
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.runtime.client.root.RootTunReloadScheduler
 import com.github.yumelira.yumebox.service.common.constants.Intents
@@ -36,6 +37,12 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.*
 
+/**
+ * Repository for managing Profile CRUD operations.
+ *
+ * Communicates with ServiceClient (IPC to VPN service) to perform profile operations.
+ * All methods return Result<T> for consistent error handling.
+ */
 class ProfilesRepository(
     private val context: Context,
 ) {
@@ -46,54 +53,56 @@ class ProfilesRepository(
         type: Profile.Type,
         name: String,
         source: String = ""
-    ): UUID {
+    ): UUID = safeApiCall(TAG, "createProfile") {
         Timber.d("Creating profile: type=$type, name=$name")
         ServiceClient.connect(context)
-        return ServiceClient.profile().create(type, name, source)
-    }
+        ServiceClient.profile().create(type, name, source)
+    }.getOrThrow()
 
-    suspend fun cloneProfile(uuid: UUID): UUID {
+    suspend fun cloneProfile(uuid: UUID): UUID = safeApiCall(TAG, "cloneProfile") {
         Timber.d("Cloning profile: uuid=$uuid")
         ServiceClient.connect(context)
-        return ServiceClient.profile().clone(uuid)
-    }
+        ServiceClient.profile().clone(uuid)
+    }.getOrThrow()
 
     suspend fun deleteProfile(uuid: UUID) {
+        safeApiCall(TAG, "deleteProfile") {
         Timber.d("Deleting profile: uuid=$uuid")
         ServiceClient.connect(context)
         ServiceClient.profile().delete(uuid)
+        }.getOrThrow()
     }
 
-    suspend fun queryAllProfiles(): List<Profile> {
-        return withContext(Dispatchers.IO) {
+    suspend fun queryAllProfiles(): List<Profile> = withContext(Dispatchers.IO) {
+        safeApiCall(TAG, "queryAllProfiles") {
             ServiceClient.connect(context)
             ServiceClient.profile().queryAll()
-        }
+        }.getOrThrow()
     }
 
-    suspend fun queryActiveProfile(): Profile? {
-        return withContext(Dispatchers.IO) {
+    suspend fun queryActiveProfile(): Profile? = withContext(Dispatchers.IO) {
+        safeApiCall(TAG, "queryActiveProfile") {
             ServiceClient.connect(context)
             ServiceClient.profile().queryActive()
-        }
+        }.getOrThrow()
     }
 
-    suspend fun queryProfileByUUID(uuid: UUID): Profile? {
-        return withContext(Dispatchers.IO) {
+    suspend fun queryProfileByUUID(uuid: UUID): Profile? = withContext(Dispatchers.IO) {
+        safeApiCall(TAG, "queryProfileByUUID") {
             ServiceClient.connect(context)
             ServiceClient.profile().queryByUUID(uuid)
-        }
+        }.getOrThrow()
     }
 
     suspend fun setActiveProfile(uuid: UUID) {
         withContext(Dispatchers.IO) {
+        safeApiCall(TAG, "setActiveProfile") {
             val startedAt = System.currentTimeMillis()
             Timber.d("Setting active profile: uuid=$uuid")
             ServiceClient.connect(context)
 
-            val previousActiveProfile = ServiceClient.profile().queryActive()
             val profile = ServiceClient.profile().queryByUUID(uuid)
-                ?: error("Profile not found: $uuid")
+                ?: throw IllegalArgumentException("Profile not found: $uuid")
 
             ServiceClient.profile().setActive(profile)
 
@@ -104,27 +113,33 @@ class ProfilesRepository(
             }
 
             Timber.d("Active profile applied: uuid=$uuid cost=${System.currentTimeMillis() - startedAt}ms")
+        }.getOrThrow()
         }
     }
 
     suspend fun clearActiveProfile(profile: Profile) {
+        safeApiCall(TAG, "clearActiveProfile") {
         Timber.d("Clearing active profile: uuid=${profile.uuid}")
         ServiceClient.connect(context)
         ServiceClient.profile().clearActive(profile)
-
         notifyRuntimeOverrideChanged()
+        }.getOrThrow()
     }
 
     suspend fun reorderProfiles(uuids: List<UUID>) {
+        safeApiCall(TAG, "reorderProfiles") {
         Timber.d("Reordering profiles: count=${uuids.size}")
         ServiceClient.connect(context)
         ServiceClient.profile().reorder(uuids)
+        }.getOrThrow()
     }
 
     suspend fun updateProfile(uuid: UUID, callback: IFetchObserver? = null) {
-        Timber.d("Updating profile: uuid=$uuid")
-        ServiceClient.connect(context)
-        ServiceClient.profile().update(uuid, callback)
+        safeApiCall(TAG, "updateProfile") {
+            Timber.d("Updating profile: uuid=$uuid")
+            ServiceClient.connect(context)
+            ServiceClient.profile().update(uuid, callback)
+        }.getOrThrow()
     }
 
     suspend fun patchProfile(
@@ -133,43 +148,16 @@ class ProfilesRepository(
         source: String,
         interval: Long
     ) {
+        safeApiCall(TAG, "patchProfile") {
         Timber.d("Patching profile: uuid=$uuid")
         ServiceClient.connect(context)
         ServiceClient.profile().patch(uuid, name, source, interval)
+        }.getOrThrow()
     }
 
-    suspend fun queryAll(): List<Profile> {
-        return queryAllProfiles()
-    }
+    suspend fun queryAll(): List<Profile> = queryAllProfiles()
 
-    suspend fun queryActive(): Profile? {
-        return queryActiveProfile()
-    }
-
-    private suspend fun restorePreviousActiveProfile(
-        previousActiveProfile: Profile?,
-        targetProfile: Profile,
-    ) {
-        runCatching {
-            if (previousActiveProfile != null) {
-                ServiceClient.profile().setActive(previousActiveProfile)
-                notifyRuntimeOverrideChanged()
-            } else {
-                ServiceClient.profile().clearActive(targetProfile)
-                notifyRuntimeOverrideChanged()
-            }
-            if (isRootTunActive()) {
-                RootTunReloadScheduler.schedule(appContext, RootTunReloadScheduler.Reason.PROFILE_CHANGED)
-            }
-        }.onFailure { restoreError ->
-            Timber.e(
-                restoreError,
-                "Failed to restore active profile after override sync failure: target=%s previous=%s",
-                targetProfile.uuid,
-                previousActiveProfile?.uuid,
-            )
-        }
-    }
+    suspend fun queryActive(): Profile? = queryActiveProfile()
 
     private fun isRootTunActive(): Boolean {
         val status = rootTunStateStore.snapshot()
@@ -181,5 +169,9 @@ class ProfilesRepository(
             Intent(Intents.actionOverrideChanged(appContext.packageName))
                 .setPackage(appContext.packageName),
         )
+    }
+
+    companion object {
+        private const val TAG = "ProfilesRepository"
     }
 }
