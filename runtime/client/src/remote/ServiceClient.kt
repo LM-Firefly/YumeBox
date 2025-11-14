@@ -29,6 +29,7 @@ import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.IProfileManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -54,14 +55,16 @@ object ServiceClient {
 
                 try {
                     initializeServiceGlobal(appContext)
-                    localClashManager = ClashManager(appContext)
-                    clashManager = RuntimeClashManager(appContext, localClashManager!!)
+                    val localManager = ClashManager(appContext)
+                    localClashManager = localManager
+                    clashManager = RuntimeClashManager(appContext, localManager)
                     profileManager = ProfileManager(appContext)
                     initialized = true
                     Timber.d(
                         "ServiceClient gateway initialized in pid=${android.os.Process.myPid()}, process=${android.app.Application.getProcessName()}, cost=${System.currentTimeMillis() - startedAt}ms"
                     )
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     initialized = false
                     localClashManager = null
                     clashManager = null

@@ -4,11 +4,12 @@ AccessControl = {
 
     Search = {
         Placeholder = "搜索应用..."
+        Empty = "没有匹配的应用"
     }
 
     AppList = {
         Title = "应用列表 (%d 已选择)"
-        Loading = "loading..."
+        Loading = "加载中..."
     }
 
     Settings = {

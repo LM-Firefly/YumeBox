@@ -6,7 +6,7 @@ use serde_json::{Map as JsonMap, Value as JsonValue};
 use serde_yaml::{Mapping as YamlMapping, Value as YamlValue};
 use sha2::{Digest, Sha256};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 const DEFAULT_NAME_SERVERS: &[&str] = &["223.5.5.5", "119.29.29.29", "8.8.4.4", "1.0.0.1"];
 const DEFAULT_FAKE_IP_FILTER: &[&str] = &[
@@ -294,36 +294,21 @@ fn compile_request(request_json: &str, write_output: bool) -> Result<CompileResu
     let source_yaml = fs::read_to_string(&request.profile_path)
         .map_err(|err| format!("read profile yaml: {err}"))?;
 
-    if request.override_paths.is_empty() {
-        let fingerprint = {
-            let mut hasher = Sha256::new();
-            hasher.update(request.profile_uuid.as_bytes());
-            hasher.update(source_yaml.as_bytes());
-            format!("{:x}", hasher.finalize())
-        };
-
-        if write_output {
-            write_atomic(Path::new(&request.output_path), source_yaml.as_bytes())
-                .map_err(|err| format!("write runtime yaml: {err}"))?;
-        }
-
-        return Ok(CompileResult {
-            success: true,
-            fingerprint,
-            final_yaml: source_yaml,
-            warnings: Vec::new(),
-            error: None,
-        });
-    }
-
     let mut root: JsonValue =
         serde_yaml::from_str(&source_yaml).map_err(|err| format!("parse source yaml: {err}"))?;
 
-    patch_static_runtime(&mut root, Path::new(&request.profile_dir));
+    let profile_dir = Path::new(&request.profile_dir);
+    patch_static_runtime(&mut root, profile_dir);
 
     if let Some(override_patch) = load_combined_override_patch(&request.override_paths)? {
         apply_override_document(&mut root, &override_patch);
     }
+
+    let object = root
+        .as_object_mut()
+        .ok_or_else(|| "compiled root config must be an object".to_string())?;
+    patch_providers(object, profile_dir);
+    validate_provider_paths(object, profile_dir)?;
 
     let final_yaml = serde_yaml::to_string(&normalize_root(&root))
         .map_err(|err| format!("encode final yaml: {err}"))?;
@@ -480,11 +465,6 @@ fn patch_static_runtime(root: &mut JsonValue, profile_dir: &Path) {
         }
     }
 
-    let tun = ensure_object_field(object, "tun");
-    tun.insert("enable".to_string(), JsonValue::Bool(false));
-    tun.insert("auto-route".to_string(), JsonValue::Bool(false));
-    tun.insert("auto-detect-interface".to_string(), JsonValue::Bool(false));
-
     patch_listeners(object);
     patch_providers(object, profile_dir);
 }
@@ -515,12 +495,21 @@ fn patch_providers(object: &mut JsonMap<String, JsonValue>, profile_dir: &Path) 
             let Some(provider_object) = provider.as_object_mut() else {
                 continue;
             };
+            let extension = provider_extension(provider_object, prefix);
             if let Some(path) = provider_object.get("path").and_then(JsonValue::as_str) {
                 if !path.trim().is_empty() {
-                    let normalized = normalize_provider_path(path, profile_dir);
+                    let normalized = normalize_provider_path(path, profile_dir, prefix, extension);
                     provider_object.insert("path".to_string(), JsonValue::String(normalized));
                     continue;
                 }
+            }
+            if provider_object
+                .get("type")
+                .and_then(JsonValue::as_str)
+                .map(|value| value.eq_ignore_ascii_case("inline"))
+                .unwrap_or(false)
+            {
+                continue;
             }
             let Some(url) = provider_object.get("url").and_then(JsonValue::as_str) else {
                 continue;
@@ -530,25 +519,148 @@ fn patch_providers(object: &mut JsonMap<String, JsonValue>, profile_dir: &Path) 
             let hash = format!("{:x}", hasher.finalize());
             provider_object.insert(
                 "path".to_string(),
-                JsonValue::String(format!("./providers/{prefix}/{hash}.yaml")),
+                JsonValue::String(profile_provider_path(
+                    profile_dir,
+                    prefix,
+                    &Path::new(&format!("{hash}.{extension}")),
+                )),
             );
         }
     }
 }
 
-fn normalize_provider_path(path: &str, profile_dir: &Path) -> String {
-    let raw = Path::new(path);
-    if raw.is_absolute() {
-        if let Ok(relative) = raw.strip_prefix(profile_dir) {
-            let relative = relative.to_string_lossy().replace('\\', "/");
-            if relative.starts_with("./") || relative.starts_with("../") {
-                return relative;
-            }
-            return format!("./{relative}");
-        }
-        return path.replace('\\', "/");
+fn provider_extension(provider: &JsonMap<String, JsonValue>, prefix: &str) -> &'static str {
+    if prefix == "rules"
+        && provider
+            .get("format")
+            .and_then(JsonValue::as_str)
+            .map(|value| value.eq_ignore_ascii_case("mrs"))
+            .unwrap_or(false)
+    {
+        return "mrs";
     }
-    path.replace('\\', "/")
+    "yaml"
+}
+
+fn normalize_provider_path(path: &str, profile_dir: &Path, prefix: &str, extension: &str) -> String {
+    let raw = Path::new(path);
+    let profile_base = profile_dir.join("providers").join(prefix);
+    if raw.is_absolute() && raw.starts_with(&profile_base) {
+        return raw.to_string_lossy().replace('\\', "/").to_string();
+    }
+    let cleaned = if raw.is_absolute() {
+        raw.file_name()
+            .map(PathBuf::from)
+            .unwrap_or_else(PathBuf::new)
+    } else {
+        trim_provider_prefix(clean_relative_path(raw))
+    };
+    let trimmed = trim_provider_prefix(cleaned);
+    let normalized = ensure_provider_extension(trimmed, extension);
+    profile_provider_path(profile_dir, prefix, &normalized)
+}
+
+fn profile_provider_path(profile_dir: &Path, prefix: &str, relative: &Path) -> String {
+    let tail = if relative.as_os_str().is_empty() {
+        PathBuf::from("provider.yaml")
+    } else {
+        relative.to_path_buf()
+    };
+    let target = profile_dir
+        .join("providers")
+        .join(prefix)
+        .join(tail);
+    target.to_string_lossy().replace('\\', "/").to_string()
+}
+
+fn clean_relative_path(path: &Path) -> PathBuf {
+    use std::path::Component;
+    let mut cleaned = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => continue,
+            Component::ParentDir => {
+                cleaned.pop();
+            }
+            Component::Normal(part) => {
+                cleaned.push(part);
+            }
+            _ => {}
+        }
+    }
+    cleaned
+}
+
+fn trim_provider_prefix(mut path: PathBuf) -> PathBuf {
+    loop {
+        let first = match path.iter().next() {
+            Some(value) => value.to_string_lossy(),
+            None => break,
+        };
+        if first == "providers" || first == "provider" || first == "clash" {
+            if let Ok(rest) = path.strip_prefix(Path::new(&first.to_string())) {
+                path = rest.to_path_buf();
+                continue;
+            }
+        }
+        if first == "ruleset" || first == "rules" || first == "proxies" {
+            if let Ok(rest) = path.strip_prefix(Path::new(&first.to_string())) {
+                path = rest.to_path_buf();
+                continue;
+            }
+        }
+        break;
+    }
+    path
+}
+
+fn ensure_provider_extension(path: PathBuf, extension: &str) -> PathBuf {
+    if path.as_os_str().is_empty() {
+        return PathBuf::from(format!("provider.{extension}"));
+    }
+    if path.extension().is_some() {
+        return path;
+    }
+    PathBuf::from(format!("{}.{}", path.to_string_lossy(), extension))
+}
+
+fn validate_provider_paths(
+    object: &JsonMap<String, JsonValue>,
+    profile_dir: &Path,
+) -> Result<(), String> {
+    for (field, prefix) in [("proxy-providers", "proxies"), ("rule-providers", "rules")] {
+        let Some(providers) = object.get(field).and_then(JsonValue::as_object) else {
+            continue;
+        };
+        let expected_base = profile_dir.join("providers").join(prefix);
+        for (name, provider) in providers {
+            let provider_object = provider
+                .as_object()
+                .ok_or_else(|| format!("{field}.{name} must be an object"))?;
+            let is_inline = provider_object
+                .get("type")
+                .and_then(JsonValue::as_str)
+                .map(|value| value.eq_ignore_ascii_case("inline"))
+                .unwrap_or(false);
+            let path = provider_object
+                .get("path")
+                .and_then(JsonValue::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty());
+            if is_inline && path.is_none() {
+                continue;
+            }
+            let path = path.ok_or_else(|| format!("{field}.{name} missing normalized path"))?;
+            let candidate = Path::new(path);
+            if !candidate.is_absolute() || !candidate.starts_with(&expected_base) {
+                return Err(format!(
+                    "{field}.{name} path escaped profile scope: {path} (expected under {})",
+                    expected_base.to_string_lossy()
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 fn merge_override_document(target: &mut JsonValue, patch: &JsonValue) {

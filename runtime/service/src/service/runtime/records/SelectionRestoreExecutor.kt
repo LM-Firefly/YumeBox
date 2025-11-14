@@ -23,26 +23,42 @@
 package com.github.yumelira.yumebox.service.runtime.records
 
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.runtime.entity.Selection
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
 internal object SelectionRestoreExecutor {
     private const val queryRetryCount = 3
     private const val queryRetryDelayMs = 150L
 
-    fun restore(profileUuid: UUID, selections: List<Selection>, tag: String) {
+    fun restore(
+        profileUuid: UUID,
+        selections: List<Selection>,
+        runtimeGroups: List<ProxyGroup>,
+        tag: String,
+    ) {
+        val selectorGroups = runtimeGroups.associateBy { it.name }
         selections.forEach { selection ->
-            val group = queryGroupWithRetry(selection.proxy)
+            val group = selectorGroups[selection.proxy] ?: run {
+                removeSelection(profileUuid, selection, tag, "group missing")
+                return@forEach
+            }
+            if (group.type != Proxy.Type.Selector) {
+                removeSelection(profileUuid, selection, tag, "group not selector")
+                return@forEach
+            }
 
-            val currentNodes = group?.proxies
-                ?.mapNotNull { proxy -> proxy.name.trim().takeIf { it.isNotEmpty() } }
-                .orEmpty()
+            val currentNodes = group.proxies
+                .mapNotNull { proxy -> proxy.name.trim().takeIf { it.isNotEmpty() } }
             val targetNode = selection.selected.trim()
             if (targetNode.isEmpty() || targetNode !in currentNodes) {
-                clearProfileSelections(profileUuid, selection, tag)
-                return
+                removeSelection(profileUuid, selection, tag, "node missing")
+                return@forEach
             }
 
             if (!patchSelectorWithRetry(selection.proxy, targetNode)) {
@@ -51,37 +67,31 @@ internal object SelectionRestoreExecutor {
         }
     }
 
-    private fun queryGroupWithRetry(group: String): com.github.yumelira.yumebox.core.model.ProxyGroup? {
-        repeat(queryRetryCount) { attempt ->
-            val result = runCatching {
-                Clash.queryGroup(group, ProxySort.Default)
-            }.getOrNull()
-            if (result != null) {
-                return result
-            }
-            if (attempt < queryRetryCount - 1) {
-                Thread.sleep(queryRetryDelayMs)
-            }
-        }
-        return null
-    }
-
     private fun patchSelectorWithRetry(group: String, node: String): Boolean {
         repeat(queryRetryCount) { attempt ->
             if (Clash.patchSelector(group, node)) {
                 return true
             }
             if (attempt < queryRetryCount - 1) {
-                Thread.sleep(queryRetryDelayMs)
+                runBlocking {
+                    PollingTimers.awaitTick(
+                        PollingTimerSpecs.dynamic(
+                            name = "selection_restore_patch_retry",
+                            intervalMillis = queryRetryDelayMs,
+                            initialDelayMillis = queryRetryDelayMs,
+                        ),
+                    )
+                }
             }
         }
         return false
     }
 
-    private fun clearProfileSelections(profileUuid: UUID, selection: Selection, tag: String) {
-        Log.w("$tag restore selector not found: profile=$profileUuid group=${selection.proxy} node=${selection.selected}")
-        SelectionDao.clear(profileUuid)
-        SelectionDao.removeSelectionScopeKey(profileUuid)
-        Log.i("$tag cleared persisted selections: profile=$profileUuid")
+    private fun removeSelection(profileUuid: UUID, selection: Selection, tag: String, reason: String) {
+        Log.w(
+            "$tag remove invalid selector memory: profile=$profileUuid group=${selection.proxy} " +
+                "node=${selection.selected} reason=$reason",
+        )
+        SelectionDao.remove(profileUuid, selection.proxy)
     }
 }

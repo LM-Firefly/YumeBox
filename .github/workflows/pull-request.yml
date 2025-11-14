@@ -1,0 +1,41 @@
+name: Pull Request CI
+
+on:
+  pull_request:
+    branches: [ "Yume", "Dev" ]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "website/**"
+
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-native:
+    name: Build Native (PR)
+    uses: ./.github/workflows/reusable-build-native.yml
+    with:
+      channel: pr
+      kernel_channel: alpha
+    secrets: inherit
+
+  build-apk:
+    name: Build APK (PR)
+    needs: build-native
+    uses: ./.github/workflows/reusable-build-apk.yml
+    with:
+      channel: pr
+      release_tag: pr-${{ github.event.pull_request.number }}
+      release_name: PR-${{ github.event.pull_request.number }}
+      prerelease: true
+      publish_release: false
+      meta_asset_name: yumebox-pr-meta.json
+      cleanup_assets: false
+      telegram_title: YumeBox PR
+      send_telegram: false
+    secrets: inherit

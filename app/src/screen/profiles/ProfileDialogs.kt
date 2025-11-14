@@ -29,19 +29,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.domain.model.OverrideConfig
 import com.github.yumelira.yumebox.domain.model.ProfileBinding
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.component.AppDialog
+import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.DialogDefaults
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.SuperSwitch
+import top.yukonga.miuix.kmp.layout.DialogDefaults
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val PROFILE_SETTINGS_MIN_HEIGHT_FRACTION = 0.5f
@@ -51,47 +52,23 @@ private const val SYSTEM_OVERRIDE_PREFIX = "preset-"
 
 @Composable
 internal fun EditProfileNameDialog(
-    show: MutableState<Boolean>,
+    show: Boolean,
     currentName: String,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
     var editName by remember { mutableStateOf(currentName) }
 
-    AppDialog(
-        title = MLang.ProfilesPage.EditDialog.Title, show = show.value, onDismissRequest = onDismiss
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            TextField(
-                value = editName,
-                onValueChange = { editName = it },
-                label = MLang.ProfilesPage.Input.ProfileName,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onDismiss, modifier = Modifier.weight(1f)
-                ) {
-                    Text(MLang.ProfilesPage.Button.Cancel)
-                }
-                Button(
-                    onClick = { onConfirm(editName) },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary()
-                ) {
-                    Text(
-                        MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-        }
-    }
+    AppTextFieldDialog(
+        show = show,
+        title = MLang.ProfilesPage.EditDialog.Title,
+        value = editName,
+        onValueChange = { editName = it },
+        onDismissRequest = onDismiss,
+        onConfirm = { onConfirm(editName) },
+        label = MLang.ProfilesPage.Input.ProfileName,
+        singleLine = true,
+    )
 }
 
 @Composable
@@ -128,7 +105,7 @@ internal fun DeleteConfirmDialog(
 
 @Composable
 internal fun ShareOptionsDialog(
-    show: MutableState<Boolean>,
+    show: Boolean,
     profile: Profile,
     onDismiss: () -> Unit,
     onDismissFinished: (() -> Unit)? = null,
@@ -136,7 +113,7 @@ internal fun ShareOptionsDialog(
     onShareLink: (Profile) -> Unit
 ) {
     AppDialog(
-        show = show.value,
+        show = show,
         modifier = Modifier,
         title = MLang.ProfilesPage.ShareDialog.Title,
         titleColor = DialogDefaults.titleColor(),
@@ -185,7 +162,7 @@ internal fun ShareOptionsDialog(
 
 @Composable
 internal fun ProfileSettingsDialog(
-    show: MutableState<Boolean>,
+    show: Boolean,
     profile: Profile,
     systemPreset: OverrideConfig?,
     userConfigs: List<OverrideConfig>,
@@ -195,23 +172,29 @@ internal fun ProfileSettingsDialog(
     onSaveProfileMeta: (String, String) -> Unit,
     onSaveOverrideSettings: (Boolean, List<String>) -> Unit,
 ) {
+    val initialSystemPresetEnabled = binding?.enabled ?: false
+    val initialCustomRoutingEnabled = binding?.overrideIds
+        ?.contains(OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID) == true
+
     val initialOverrideIds = binding
         ?.overrideIds
         .orEmpty()
         .filterNot(::isBuiltinPresetOverrideId)
-    val initialSystemPresetEnabled = binding?.enabled ?: false
+        .filter { it != OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID }
     val appliedOverrideIds = initialOverrideIds
     var editName by remember { mutableStateOf(profile.name) }
     var editSource by remember { mutableStateOf("") }
     var systemPresetSelected by remember { mutableStateOf(initialSystemPresetEnabled) }
+    var customRoutingSelected by remember { mutableStateOf(initialCustomRoutingEnabled) }
     var pendingSelectedUserOverrideIds by remember { mutableStateOf(emptyList<String>()) }
 
-    LaunchedEffect(show.value, profile.uuid, profile.name, binding?.overrideIds, binding?.enabled) {
-        if (show.value) {
+    LaunchedEffect(show, profile.uuid, profile.name, binding?.overrideIds, binding?.enabled) {
+        if (show) {
             editName = profile.name
             editSource = ""
             systemPresetSelected = initialSystemPresetEnabled
-            pendingSelectedUserOverrideIds = appliedOverrideIds
+            customRoutingSelected = initialCustomRoutingEnabled
+            pendingSelectedUserOverrideIds = initialOverrideIds
         }
     }
 
@@ -233,13 +216,18 @@ internal fun ProfileSettingsDialog(
             onSaveProfileMeta(trimmedName, targetSource)
         }
 
-        val finalSelectedOverrideIds = buildFinalOverrideIds(pendingSelectedUserOverrideIds)
+        val basicFinalIds = buildFinalOverrideIds(pendingSelectedUserOverrideIds)
+        val finalSelectedOverrideIds = if (customRoutingSelected) {
+            basicFinalIds + OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+        } else {
+            basicFinalIds - OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+        }
         onSaveOverrideSettings(systemPresetSelected, finalSelectedOverrideIds)
         onDismiss()
     }
 
     AppActionBottomSheet(
-        show = show.value,
+        show = show,
         modifier = Modifier,
         title = MLang.ProfilesPage.SettingsDialog.Title,
         startAction = {
@@ -288,13 +276,30 @@ internal fun ProfileSettingsDialog(
                     )
                 }
 
-                if (systemPreset != null) {
-                    Card {
-                        SuperSwitch(
+                Card {
+                    Column {
+                        SwitchPreference(
                             title = MLang.ProfilesPage.SettingsDialog.SystemPreset,
                             summary = MLang.ProfilesPage.SettingsDialog.SystemPresetSummary,
                             checked = systemPresetSelected,
-                            onCheckedChange = { systemPresetSelected = it },
+                            onCheckedChange = {
+                                systemPresetSelected = it
+                                if (it) customRoutingSelected = false
+                            },
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            thickness = 0.5.dp,
+                            color = MiuixTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        )
+                        SwitchPreference(
+                            title = MLang.ProfilesPage.SettingsDialog.CustomRouting,
+                            summary = MLang.ProfilesPage.SettingsDialog.CustomRoutingSummary,
+                            checked = customRoutingSelected,
+                            onCheckedChange = {
+                                customRoutingSelected = it
+                                if (it) systemPresetSelected = false
+                            },
                         )
                     }
                 }

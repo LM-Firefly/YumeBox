@@ -24,17 +24,14 @@ package com.github.yumelira.yumebox.feature.editor.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditorState
+import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.language.TextMateInitializer
-import com.github.yumelira.yumebox.feature.editor.theme.EditorThemeManager
 import com.github.yumelira.yumebox.presentation.component.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import top.yukonga.miuix.kmp.basic.Icon
@@ -56,26 +53,12 @@ fun FullscreenEditorScreen(
     val context = LocalContext.current
     val showDiscardDialog = remember { mutableStateOf(false) }
 
-    val editorState = remember(initialContent) {
-        CodeEditorState(
-            initialContent = initialContent,
-            language = language,
-            readOnly = false
-        )
-    }
-
-    val editorThemeState = EditorThemeManager.rememberEditorTheme()
+    val editorState = rememberConfiguredCodeEditorState(
+        initialContent = initialContent,
+        language = language,
+        readOnly = false,
+    )
     val scrollBehavior = MiuixScrollBehavior()
-
-    LaunchedEffect(Unit) {
-        TextMateInitializer.initialize(context)
-    }
-
-    LaunchedEffect(editorThemeState.isDark) {
-        editorState.editor?.let {
-            TextMateInitializer.setTheme(editorThemeState.isDark)
-        }
-    }
 
     fun handleBack() {
         if (editorState.isModified) {
@@ -97,6 +80,7 @@ fun FullscreenEditorScreen(
                 actions = {
 
                     IconButton(
+                        modifier = Modifier.padding(end = 12.dp),
                         onClick = {
                             if (editorState.format()) {
                                 context.toast("格式化成功")
@@ -104,7 +88,6 @@ fun FullscreenEditorScreen(
                                 context.toast("格式化失败或无需格式化")
                             }
                         },
-                        modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(
                             imageVector = Yume.Atom,
@@ -122,7 +105,6 @@ fun FullscreenEditorScreen(
                                 context.toast("语法错误，请检查内容")
                             }
                         },
-                        modifier = Modifier.padding(end = 16.dp)
                     ) {
                         Icon(
                             imageVector = Yume.Save,

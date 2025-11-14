@@ -29,6 +29,7 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.SerialName
@@ -87,11 +88,15 @@ class NetworkInfoService : Closeable {
             val info = json.decodeFromString<IpInfo>(body)
             return info
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             return null
         }
     }
 
-    fun startIpMonitoring(isProxyActiveFlow: Flow<Boolean>): Flow<IpMonitoringState> = flow {
+    fun startIpMonitoring(
+        isProxyActiveFlow: Flow<Boolean>,
+        externalRefreshFlow: Flow<Unit> = emptyFlow(),
+    ): Flow<IpMonitoringState> = flow {
         var lastSuccessfulState: IpMonitoringState.Success? = null
 
         try {
@@ -101,19 +106,20 @@ class NetworkInfoService : Closeable {
             lastSuccessfulState = newState
             emit(newState)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             if (lastSuccessfulState == null) {
                 emit(IpMonitoringState.Error(e.message ?: "Unknown error"))
             }
         }
 
         val refreshFlow = merge(
+            flowOf(Unit),
             _refreshTrigger,
-            flow {
-                while (true) {
-                    kotlinx.coroutines.delay(10000)
-                    emit(Unit)
-                }
-            }
+            externalRefreshFlow,
+            isProxyActiveFlow
+                .distinctUntilChanged()
+                .drop(1)
+                .map { Unit },
         )
 
         combine(refreshFlow, isProxyActiveFlow) { _, isProxyActive ->
@@ -124,6 +130,7 @@ class NetworkInfoService : Closeable {
                 lastSuccessfulState = newState
                 newState
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 lastSuccessfulState?.copy(isProxyActive = isProxyActive)
                     ?: IpMonitoringState.Error(e.message ?: "Unknown error")
             }

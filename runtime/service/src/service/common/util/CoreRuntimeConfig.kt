@@ -31,7 +31,7 @@ object CoreRuntimeConfig {
     private const val CUSTOM_USER_AGENT_KEY = "customUserAgent"
 
     fun applyCustomUserAgentIfPresent(context: Context) {
-        val settings = MMKV.mmkvWithID(SETTINGS_STORE_ID, MMKV.MULTI_PROCESS_MODE) ?: return
+        val settings = MMKV.mmkvWithID(SETTINGS_STORE_ID, MMKV.MULTI_PROCESS_MODE)
         val userAgent = settings.decodeString(CUSTOM_USER_AGENT_KEY, "").orEmpty()
         if (userAgent.isNotBlank()) {
             Clash.setCustomUserAgent(userAgent)

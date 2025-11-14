@@ -24,6 +24,7 @@ package com.github.yumelira.yumebox.data.repository
 
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.data.model.AppColorTheme
+import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.Preference
@@ -35,6 +36,7 @@ class AppSettingsRepository(
     val privacyPolicyAccepted: Preference<Boolean> = storage.privacyPolicyAccepted
 
     val themeMode: Preference<ThemeMode> = storage.themeMode
+    val appLanguage: Preference<AppLanguage> = storage.appLanguage
     val colorTheme: Preference<AppColorTheme> = storage.colorTheme
     val themeSeedColorArgb: Preference<Long> = storage.themeAccentColorArgb
     val automaticRestart: Preference<Boolean> = storage.automaticRestart
@@ -44,9 +46,18 @@ class AppSettingsRepository(
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification
     val bottomBarAutoHide: Preference<Boolean> = storage.bottomBarAutoHide
     val topBarBlurEnabled: Preference<Boolean> = storage.topBarBlurEnabled
-    val bottomBarLiquidGlassEnabled: Preference<Boolean> = storage.bottomBarLiquidGlassEnabled
+    val acgMainUiEnabled: Preference<Boolean> = storage.acgMainUiEnabled
+    val acgWallpaperUri: Preference<String> = storage.acgWallpaperUri
+    val acgWallpaperZoom: Preference<Float> = storage.acgWallpaperZoom
+    val acgWallpaperBiasX: Preference<Float> = storage.acgWallpaperBiasX
+    val acgWallpaperBiasY: Preference<Float> = storage.acgWallpaperBiasY
+    val acgHomeQuote: Preference<String> = storage.acgHomeQuote
+    val acgHomeQuoteAuthor: Preference<String> = storage.acgHomeQuoteAuthor
+    val acgSidebarExpanded: Preference<Boolean> = storage.acgSidebarExpanded
     val pageScale: Preference<Float> = storage.pageScale
     val singleNodeTest: Preference<Boolean> = storage.singleNodeTest
+    val screenshotProtectionEnabled: Preference<Boolean> = storage.screenshotProtectionEnabled
+    val biometricUnlockEnabled: Preference<Boolean> = storage.biometricUnlockEnabled
 
     val customUserAgent: Preference<String> = storage.customUserAgent
 

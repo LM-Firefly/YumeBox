@@ -175,8 +175,12 @@ internal class RootTunPackageResolver(
     private fun installedPackageUidMap(): Map<String, Int> {
         return installedPackages()
             .asSequence()
-            .filter { it.applicationInfo != null }
-            .associate { it.packageName to it.applicationInfo!!.uid }
+            .mapNotNull { packageInfo ->
+                packageInfo.applicationInfo?.uid?.let { uid ->
+                    packageInfo.packageName to uid
+                }
+            }
+            .toMap()
     }
 
     private fun hasInstalledAppsPermission(): Boolean {

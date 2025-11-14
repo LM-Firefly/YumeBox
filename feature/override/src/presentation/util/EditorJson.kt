@@ -169,10 +169,13 @@ fun editorValueToJsonElement(rawValue: String): JsonElement {
     }
 
     val primitive = JsonPrimitive(trimmedValue)
+    val booleanValue = primitive.booleanOrNull
+    val intValue = primitive.intOrNull
+    val doubleValue = primitive.doubleOrNull
     return when {
-        primitive.booleanOrNull != null -> JsonPrimitive(primitive.booleanOrNull!!)
-        primitive.intOrNull != null -> JsonPrimitive(primitive.intOrNull!!)
-        primitive.doubleOrNull != null -> JsonPrimitive(primitive.doubleOrNull!!)
+        booleanValue != null -> JsonPrimitive(booleanValue)
+        intValue != null -> JsonPrimitive(intValue)
+        doubleValue != null -> JsonPrimitive(doubleValue)
         else -> JsonPrimitive(trimmedValue)
     }
 }

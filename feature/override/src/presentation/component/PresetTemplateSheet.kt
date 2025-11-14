@@ -24,21 +24,28 @@ package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.core.model.officialMrsPresetIconUrl
 import com.github.yumelira.yumebox.data.util.OverridePresetItem
 import com.github.yumelira.yumebox.data.util.OverridePresetRegion
 import com.github.yumelira.yumebox.data.util.OverridePresetTemplateSelection
+import com.github.yumelira.yumebox.data.util.orderedBasePresetItems
+import com.github.yumelira.yumebox.data.util.orderedPresetRegions
+import com.github.yumelira.yumebox.data.util.orderedServicePresetItems
+import com.github.yumelira.yumebox.data.util.sortPresetItems
+import com.github.yumelira.yumebox.data.util.sortPresetRegions
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -48,15 +55,21 @@ fun OverridePresetTemplateSheet(
     onDismiss: () -> Unit,
     onConfirm: (OverridePresetTemplateSelection) -> Unit,
 ) {
-    val selectedRegions = remember(show) { mutableStateListOf<OverridePresetRegion>() }
+    val selectedUrlTestRegions = remember(show) { mutableStateListOf<OverridePresetRegion>() }
+    val selectedFallbackRegions = remember(show) { mutableStateListOf<OverridePresetRegion>() }
     val enabledItems = remember(show) { mutableStateListOf<OverridePresetItem>() }
-    val templateId = initialSelection.templateId
+    var enableUrlTestGroup by remember(show) { mutableStateOf(initialSelection.enableUrlTestGroup) }
+    var enableFallbackGroup by remember(show) { mutableStateOf(initialSelection.enableFallbackGroup) }
 
     LaunchedEffect(show, initialSelection) {
-        selectedRegions.clear()
-        selectedRegions.addAll(initialSelection.regions.toList().sortedBy(OverridePresetRegion::ordinal))
+        selectedUrlTestRegions.clear()
+        selectedUrlTestRegions.addAll(sortPresetRegions(initialSelection.urlTestRegions))
+        selectedFallbackRegions.clear()
+        selectedFallbackRegions.addAll(sortPresetRegions(initialSelection.fallbackRegions))
         enabledItems.clear()
-        enabledItems.addAll(initialSelection.enabledItems.toList().sortedBy(OverridePresetItem::ordinal))
+        enabledItems.addAll(sortPresetItems(initialSelection.enabledItems))
+        enableUrlTestGroup = initialSelection.enableUrlTestGroup
+        enableFallbackGroup = initialSelection.enableFallbackGroup
     }
 
     AppActionBottomSheet(
@@ -74,9 +87,11 @@ fun OverridePresetTemplateSheet(
                 onClick = {
                     onConfirm(
                         OverridePresetTemplateSelection(
-                            templateId = templateId,
-                            regions = selectedRegions.toSet(),
+                            urlTestRegions = selectedUrlTestRegions.toSet(),
+                            fallbackRegions = selectedFallbackRegions.toSet(),
                             enabledItems = enabledItems.toSet(),
+                            enableUrlTestGroup = enableUrlTestGroup,
+                            enableFallbackGroup = enableFallbackGroup,
                         ),
                     )
                 },
@@ -100,7 +115,7 @@ fun OverridePresetTemplateSheet(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = "应用后会覆盖当前覆写里的规则提供者、策略组和规则",
+                            text = MLang.Override.Draft.PresetApplySummary,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                             style = MiuixTheme.textStyles.body2,
                         )
@@ -108,94 +123,133 @@ fun OverridePresetTemplateSheet(
                 }
             }
 
-            presetSwitchCard(
-                key = "preset-regions",
-                title = MLang.Override.Draft.RegionalAutoGroup,
-                items = OverridePresetRegion.entries.toList(),
-                isChecked = { region -> region in selectedRegions },
-                onCheckedChange = { region, checked ->
-                    if (checked) {
-                        if (region !in selectedRegions) {
-                            selectedRegions.add(region)
+            item(key = "preset-group-types") {
+                RoutingSwitchCard(
+                    title = MLang.MetaFeature.CustomRouting.GroupTypeTitle,
+                    items = listOf("urltest", "fallback"),
+                    iconUrl = { type ->
+                        officialMrsPresetIconUrl(
+                            if (type == "urltest") "Urltest" else "Available",
+                        )
+                    },
+                    isChecked = { type ->
+                        when (type) {
+                            "urltest" -> enableUrlTestGroup
+                            else -> enableFallbackGroup
                         }
-                    } else {
-                        selectedRegions.remove(region)
-                    }
-                },
-                itemTitle = OverridePresetRegion::groupName,
-            )
+                    },
+                    onCheckedChange = { item, checked ->
+                        when (item) {
+                            "urltest" -> enableUrlTestGroup = checked
+                            "fallback" -> enableFallbackGroup = checked
+                        }
+                    },
+                    itemTitle = {
+                        if (it == "urltest") {
+                            MLang.MetaFeature.CustomRouting.GroupTypeUrlTest
+                        } else {
+                            MLang.MetaFeature.CustomRouting.GroupTypeFallback
+                        }
+                    },
+                    applyHorizontalPadding = false,
+                    titleContent = { title ->
+                        SmallTitle(
+                            text = title,
+                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    },
+                )
+            }
 
-            presetSwitchCard(
-                key = "preset-base-items",
-                title = MLang.Override.Draft.BasicRouting,
-                items = OverridePresetItem.entries.filterNot(OverridePresetItem::isService),
-                isChecked = { item -> item in enabledItems },
-                onCheckedChange = { item, checked ->
-                    togglePresetItem(enabledItems, item, checked)
-                },
-                itemTitle = OverridePresetItem::title,
-            )
+            item(key = "preset-urltest-regions") {
+                RoutingSwitchCard(
+                    title = MLang.MetaFeature.CustomRouting.UrlTestRegionGroupTitle,
+                    items = orderedPresetRegions(),
+                    iconUrl = OverridePresetRegion::icon,
+                    isChecked = { region -> region in selectedUrlTestRegions },
+                    onCheckedChange = { region, checked ->
+                        toggleSelection(selectedUrlTestRegions, region, checked)
+                    },
+                    itemTitle = OverridePresetRegion::displayName,
+                    applyHorizontalPadding = false,
+                    titleContent = { title ->
+                        SmallTitle(
+                            text = title,
+                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    },
+                )
+            }
 
-            presetSwitchCard(
-                key = "preset-service-items",
-                title = MLang.Override.Draft.ServiceRouting,
-                items = OverridePresetItem.entries.filter(OverridePresetItem::isService),
-                isChecked = { item -> item in enabledItems },
-                onCheckedChange = { item, checked ->
-                    togglePresetItem(enabledItems, item, checked)
-                },
-                itemTitle = OverridePresetItem::title,
-            )
+            item(key = "preset-fallback-regions") {
+                RoutingSwitchCard(
+                    title = MLang.MetaFeature.CustomRouting.FallbackRegionGroupTitle,
+                    items = orderedPresetRegions(),
+                    iconUrl = OverridePresetRegion::icon,
+                    isChecked = { region -> region in selectedFallbackRegions },
+                    onCheckedChange = { region, checked ->
+                        toggleSelection(selectedFallbackRegions, region, checked)
+                    },
+                    itemTitle = OverridePresetRegion::displayName,
+                    applyHorizontalPadding = false,
+                    titleContent = { title ->
+                        SmallTitle(
+                            text = title,
+                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    },
+                )
+            }
+
+            item(key = "preset-base-items") {
+                RoutingSwitchCard(
+                    title = MLang.Override.Draft.BasicRouting,
+                    items = orderedBasePresetItems(),
+                    iconUrl = OverridePresetItem::icon,
+                    isChecked = { item -> item in enabledItems },
+                    onCheckedChange = { item, checked -> toggleSelection(enabledItems, item, checked) },
+                    itemTitle = OverridePresetItem::title,
+                    applyHorizontalPadding = false,
+                    titleContent = { title ->
+                        SmallTitle(
+                            text = title,
+                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    },
+                )
+            }
+
+            item(key = "preset-service-items") {
+                RoutingSwitchCard(
+                    title = MLang.Override.Draft.ServiceRouting,
+                    items = orderedServicePresetItems(),
+                    iconUrl = OverridePresetItem::icon,
+                    isChecked = { item -> item in enabledItems },
+                    onCheckedChange = { item, checked -> toggleSelection(enabledItems, item, checked) },
+                    itemTitle = OverridePresetItem::title,
+                    applyHorizontalPadding = false,
+                    titleContent = { title ->
+                        SmallTitle(
+                            text = title,
+                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    },
+                )
+            }
         }
     }
 }
 
-private fun togglePresetItem(
-    enabledItems: MutableList<OverridePresetItem>,
-    item: OverridePresetItem,
+private fun <T> toggleSelection(
+    items: MutableList<T>,
+    item: T,
     checked: Boolean,
 ) {
     if (checked) {
-        if (item !in enabledItems) {
-            enabledItems.add(item)
+        if (item !in items) {
+            items.add(item)
         }
     } else {
-        enabledItems.remove(item)
-    }
-}
-
-private fun <T> LazyListScope.presetSwitchCard(
-    key: String,
-    title: String,
-    items: List<T>,
-    isChecked: (T) -> Boolean,
-    onCheckedChange: (T, Boolean) -> Unit,
-    itemTitle: (T) -> String,
-    itemSummary: ((T) -> String)? = null,
-) {
-    item(key = key) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            SmallTitle(
-                text = title,
-                insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            )
-            Card(applyHorizontalPadding = false) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    items.forEach { item ->
-                        SuperSwitch(
-                            title = itemTitle(item),
-                            summary = itemSummary?.invoke(item),
-                            checked = isChecked(item),
-                            onCheckedChange = { checked -> onCheckedChange(item, checked) },
-                        )
-                    }
-                }
-            }
-        }
+        items.remove(item)
     }
 }

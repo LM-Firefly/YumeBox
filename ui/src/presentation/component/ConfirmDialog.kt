@@ -22,32 +22,23 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.util.DialogState
+import com.github.yumelira.yumebox.presentation.util.rememberDialogVisibilityState
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ConfirmDialog(
-    show: MutableState<Boolean>,
+    show: DialogState<Unit>,
     title: String,
     message: String,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit = { show.value = false },
+    onDismiss: () -> Unit = { show.dismiss() },
     cancelText: String = MLang.Component.Button.Cancel,
     confirmText: String = MLang.Component.Button.Confirm,
 ) {
     AppActionBottomSheet(
-        show = show.value,
+        show = show.isShown,
         title = title,
         onDismissRequest = onDismiss,
     ) {
@@ -70,23 +61,26 @@ fun ConfirmDialogSimple(
     cancelText: String = MLang.Component.Button.Cancel,
     confirmText: String = MLang.Component.Button.Confirm,
 ) {
-    val show = remember { mutableStateOf(true) }
+    val show = rememberDialogVisibilityState()
+    if (!show.isShown) {
+        show.show()
+    }
     AppActionBottomSheet(
-        show = show.value,
+        show = show.isShown,
         title = title,
         onDismissRequest = {
-            show.value = false
+            show.dismiss()
             onDismiss()
         },
     ) {
         ConfirmDialogContent(
             message = message,
             onCancel = {
-                show.value = false
+                show.dismiss()
                 onDismiss()
             },
             onConfirm = {
-                show.value = false
+                show.dismiss()
                 onConfirm()
             },
             cancelText = cancelText,
@@ -103,17 +97,11 @@ private fun ConfirmDialogContent(
     cancelText: String,
     confirmText: String,
 ) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = message,
-            style = MiuixTheme.textStyles.body1,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        DialogButtonRow(
-            onCancel = onCancel,
-            onConfirm = onConfirm,
-            cancelText = cancelText,
-            confirmText = confirmText,
-        )
-    }
+    AppConfirmDialogContent(
+        message = message,
+        onCancel = onCancel,
+        onConfirm = onConfirm,
+        cancelText = cancelText,
+        confirmText = confirmText,
+    )
 }

@@ -23,7 +23,9 @@
 package com.github.yumelira.yumebox.data.repository
 
 import android.content.Context
-import com.github.yumelira.yumebox.core.model.ConfigurationOverride
+import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.data.util.OFFICIAL_MRS_PRESET_SUMMARY
+import com.github.yumelira.yumebox.data.util.OFFICIAL_MRS_PRESET_TITLE
 import com.github.yumelira.yumebox.domain.model.MetadataIndex
 import com.github.yumelira.yumebox.domain.model.OverrideConfig
 import com.github.yumelira.yumebox.domain.model.OverrideMetadata
@@ -31,10 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
+import timber.log.Timber
 import java.io.File
 
 class OverrideConfigRepository(
@@ -48,6 +47,7 @@ class OverrideConfigRepository(
 
     private val overridesDir = File(context.filesDir, "overrides")
     private val configsDir = File(overridesDir, "configs")
+    private val internalDir = File(overridesDir, OverrideInternalConstants.INTERNAL_DIR_NAME)
     private val metadataFile = File(overridesDir, "metadata.json")
 
     private val json = Json {
@@ -109,13 +109,16 @@ class OverrideConfigRepository(
     }
 
     override suspend fun getSystemPresets(): List<OverrideConfig> = withContext(Dispatchers.IO) {
-
         systemPresetsCache?.let { return@withContext it }
 
         try {
-            val jsonContent = context.assets.open("override.json").bufferedReader().use { it.readText() }
-            val configOverride = json.decodeFromString<ConfigurationOverride>(jsonContent)
-            val metadata = OverrideMetadata.createSystemPreset()
+            val configOverride = buildOfficialMrsConfigurationOverride(
+                defaultSystemOfficialMrsPresetSelection(),
+            )
+            val metadata = OverrideMetadata.createSystemPreset(
+                name = OFFICIAL_MRS_PRESET_TITLE,
+                description = OFFICIAL_MRS_PRESET_SUMMARY,
+            )
             val presets = listOf(OverrideConfig(
                 id = metadata.id,
                 name = metadata.name,
@@ -128,14 +131,18 @@ class OverrideConfigRepository(
             systemPresetsCache = presets
             presets
         } catch (e: Exception) {
+            Timber.e(e, "Failed to build system presets")
             emptyList()
         }
     }
 
-    override suspend fun getUserConfigs(): List<OverrideConfig> = loadUserConfigs()
+    override suspend fun getUserConfigs(): List<OverrideConfig> =
+        loadUserConfigs().filter { it.id != OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID }
 
     override fun getUserConfigsFlow(): Flow<List<OverrideConfig>> =
-        flow { emit(loadUserConfigs()) }.flowOn(Dispatchers.IO)
+        flow {
+            emit(loadUserConfigs().filter { it.id != OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID })
+        }.flowOn(Dispatchers.IO)
 
     override suspend fun save(config: OverrideConfig) = withContext(Dispatchers.IO) {
         if (isSystemPreset(config.id)) return@withContext
@@ -175,7 +182,6 @@ class OverrideConfigRepository(
         val configFile = configsDir.resolve("$id.json")
         val fileDeleted = !configFile.exists() || configFile.delete()
         val metadataExists = loadMetadataIndex().getById(id) != null
-        val deleted = fileDeleted && metadataExists
         if (fileDeleted && metadataExists) {
             val index = loadMetadataIndex().remove(id)
             saveMetadataIndex(index)
@@ -190,7 +196,7 @@ class OverrideConfigRepository(
             )
             return@withContext true
         }
-        if (fileDeleted && !metadataExists) {
+        if (fileDeleted) {
             refreshConfigsFlow()
         }
         false
@@ -226,6 +232,20 @@ class OverrideConfigRepository(
 
     override fun isSystemPreset(id: String): Boolean {
         return id.startsWith(OverrideMetadata.SYSTEM_PREFIX)
+    }
+
+    suspend fun loadCustomRouting(): ConfigurationOverride? = withContext(Dispatchers.IO) {
+        val file = File(internalDir, OverrideInternalConstants.CUSTOM_ROUTING_FILE_NAME)
+        if (!file.exists()) return@withContext null
+        runCatching {
+            json.decodeFromString<ConfigurationOverride>(file.readText())
+        }.getOrNull()
+    }
+
+    suspend fun saveCustomRouting(config: ConfigurationOverride) = withContext(Dispatchers.IO) {
+        val file = File(internalDir, OverrideInternalConstants.CUSTOM_ROUTING_FILE_NAME)
+        file.parentFile?.mkdirs()
+        file.writeText(encodeConfigContent(config))
     }
 
     suspend fun export(config: OverrideConfig): String = withContext(Dispatchers.IO) {
@@ -364,23 +384,7 @@ class OverrideConfigRepository(
     }
 
     private fun encodeConfigContent(config: ConfigurationOverride): String {
-        val element = json.encodeToJsonElement(ConfigurationOverride.serializer(), config)
-        val cleaned = pruneJson(element) ?: JsonObject(emptyMap())
-        return json.encodeToString(JsonElement.serializer(), cleaned)
-    }
-
-    private fun pruneJson(element: JsonElement): JsonElement? {
-        return when (element) {
-            JsonNull -> null
-            is JsonObject -> {
-                val cleaned = element.entries
-                    .mapNotNull { (key, value) -> pruneJson(value)?.let { key to it } }
-                    .toMap()
-                if (cleaned.isEmpty()) null else JsonObject(cleaned)
-            }
-            is JsonArray -> JsonArray(element.mapNotNull(::pruneJson))
-            else -> element
-        }
+        return encodeConfigurationOverride(config)
     }
 
     private fun loadMetadataIndex(): MetadataIndex {

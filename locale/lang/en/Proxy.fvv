@@ -14,6 +14,27 @@ Proxy = {
     Action = {
         Panel = "Panel"
         Test = "Test"
+        Sort = "Sort"
+    }
+
+    Node = {
+        Timeout = "Timeout"
+        Count = "%d nodes"
+    }
+
+    Type = {
+        Direct = "Direct"
+        Reject = "Reject"
+        RejectDrop = "Drop"
+        Compatible = "Compatible"
+        Pass = "Pass"
+        Relay = "Relay"
+        Selector = "Selector"
+        Fallback = "Fallback"
+        UrlTest = "UrlTest"
+        LoadBalance = "Load Balance"
+        Smart = "Smart"
+        Unknown = "Unknown"
     }
 
     Empty = {

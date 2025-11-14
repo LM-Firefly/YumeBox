@@ -25,7 +25,7 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
-import com.github.yumelira.yumebox.substore.SubStoreService
+import com.github.yumelira.yumebox.substore.SubStoreServiceController
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -35,7 +35,6 @@ class SettingViewModel(
     private val repository: FeatureSettingsRepository,
 ) : ViewModel() {
 
-    val allowLanAccess = repository.allowLanAccess
     val backendPort = repository.backendPort
     val frontendPort = repository.frontendPort
 
@@ -43,7 +42,7 @@ class SettingViewModel(
     val events: SharedFlow<SettingEvent> = _events.asSharedFlow()
 
     val isSubStoreRunning: Boolean
-        get() = SubStoreService.isRunning
+        get() = SubStoreServiceController.snapshot.value.isActive
 
     fun onSubStoreCardClicked() {
         if (!isSubStoreRunning) return
@@ -53,7 +52,8 @@ class SettingViewModel(
         emitEvent(SettingEvent.OpenWebView("$frontendUrl/subs?api=$backendUrl"))
     }
 
-    private fun currentHost(): String = if (allowLanAccess.value) "0.0.0.0" else "127.0.0.1"
+    // `0.0.0.0` is a bind address, not a browser target.
+    private fun currentHost(): String = "127.0.0.1"
 
     private fun buildUrl(host: String, port: Int): String = "http://$host:$port"
 

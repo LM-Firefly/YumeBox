@@ -23,12 +23,15 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.PagerState
@@ -60,52 +63,157 @@ import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.kyant.shapes.Capsule
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
-import io.github.fletchmckee.liquid.LiquidState
-import io.github.fletchmckee.liquid.liquid
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.abs
 import kotlin.math.max
 
+class MainPagerState(
+    val pagerState: PagerState,
+    private val coroutineScope: CoroutineScope,
+) {
+    var selectedPage by mutableIntStateOf(pagerState.currentPage)
+        private set
+
+    var isNavigating by mutableStateOf(false)
+        private set
+
+    private var navJob: Job? = null
+
+    fun animateToPage(targetIndex: Int) {
+        if (targetIndex == selectedPage) return
+
+        navJob?.cancel()
+        selectedPage = targetIndex
+        isNavigating = true
+
+        val distance = abs(targetIndex - pagerState.currentPage).coerceAtLeast(2)
+        val duration = 100 * distance + 100
+        val layoutInfo = pagerState.layoutInfo
+        val pageSize = layoutInfo.pageSize + layoutInfo.pageSpacing
+        val currentDistanceInPages =
+            targetIndex - pagerState.currentPage - pagerState.currentPageOffsetFraction
+        val scrollPixels = currentDistanceInPages * pageSize
+
+        navJob = coroutineScope.launch {
+            val myJob = coroutineContext.job
+            try {
+                pagerState.animateScrollBy(
+                    value = scrollPixels,
+                    animationSpec = tween(
+                        durationMillis = duration,
+                        easing = EaseInOut,
+                    ),
+                )
+            } finally {
+                if (navJob == myJob) {
+                    isNavigating = false
+                    if (pagerState.currentPage != targetIndex) {
+                        selectedPage = pagerState.currentPage
+                    }
+                }
+            }
+        }
+    }
+
+    fun syncPage() {
+        if (!isNavigating && selectedPage != pagerState.currentPage) {
+            selectedPage = pagerState.currentPage
+        }
+    }
+}
+
+@Composable
+fun rememberMainPagerState(
+    pagerState: PagerState,
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+): MainPagerState {
+    return remember(pagerState, coroutineScope) {
+        MainPagerState(pagerState, coroutineScope)
+    }
+}
+
 val LocalPagerState = compositionLocalOf<PagerState> { error("LocalPagerState is not provided") }
+val LocalMainPagerState = compositionLocalOf<MainPagerState> { error("LocalMainPagerState is not provided") }
 val LocalHandlePageChange = compositionLocalOf<(Int) -> Unit> { error("LocalHandlePageChange is not provided") }
 val LocalNavigator = compositionLocalOf<DestinationsNavigator> { error("LocalNavigator is not provided") }
-val LocalBottomBarLiquidState = compositionLocalOf<LiquidState?> { null }
 
 @Composable
 fun BottomBarContent(
     isVisible: Boolean = true,
 ) {
     val bottomBarScrollBehavior = LocalBottomBarScrollBehavior.current
-    val liquidState = LocalBottomBarLiquidState.current
-    val pagerState = LocalPagerState.current
-    val page by remember(pagerState) {
-        derivedStateOf { if (pagerState.isScrollInProgress) pagerState.targetPage else pagerState.currentPage }
+    val mainPagerState = LocalMainPagerState.current
+    val pagerState = mainPagerState.pagerState
+    val page by remember(mainPagerState) {
+        derivedStateOf { mainPagerState.selectedPage }
+    }
+    val indicatorProgress by remember(pagerState) {
+        derivedStateOf {
+            (
+                pagerState.currentPage.toFloat() + pagerState.currentPageOffsetFraction
+                ).coerceIn(0f, (BottomBarDestination.entries.size - 1).toFloat())
+        }
     }
     val bottomBarVisible = isVisible && (bottomBarScrollBehavior?.isBottomBarVisible ?: true)
+    val density = LocalDensity.current
+    val enterOffsetPx = remember(density) { with(density) { 68.dp.toPx() } }
+    val exitOffsetPx = remember(density) { with(density) { 84.dp.toPx() } }
+    val animatedTranslationY = remember { Animatable(if (bottomBarVisible) 0f else exitOffsetPx) }
     val animatedScale by animateFloatAsState(
-        targetValue = if (bottomBarVisible) 1f else AnimationSpecs.Proxy.VisibilityTargetScale,
+        targetValue = if (bottomBarVisible) 1f else 0.98f,
         animationSpec = tween(
-            durationMillis = AnimationSpecs.Proxy.VisibilityDuration,
-            easing = AnimationSpecs.EmphasizedDecelerate,
+            durationMillis = 240,
+            easing = if (bottomBarVisible) {
+                AnimationSpecs.EmphasizedDecelerate
+            } else {
+                AnimationSpecs.EmphasizedAccelerate
+            },
         ),
         label = "bottom_bar_scale",
     )
     val animatedAlpha by animateFloatAsState(
         targetValue = if (bottomBarVisible) 1f else 0f,
         animationSpec = tween(
-            durationMillis = AnimationSpecs.Proxy.VisibilityFadeDuration,
-            easing = AnimationSpecs.EmphasizedDecelerate,
+            durationMillis = 180,
+            easing = if (bottomBarVisible) {
+                AnimationSpecs.EmphasizedDecelerate
+            } else {
+                AnimationSpecs.EmphasizedAccelerate
+            },
         ),
         label = "bottom_bar_alpha",
     )
+    LaunchedEffect(bottomBarVisible, enterOffsetPx, exitOffsetPx) {
+        if (bottomBarVisible) {
+            animatedTranslationY.snapTo(enterOffsetPx)
+            animatedTranslationY.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    dampingRatio = 0.78f,
+                    stiffness = 520f,
+                ),
+            )
+        } else {
+            animatedTranslationY.animateTo(
+                targetValue = exitOffsetPx,
+                animationSpec = tween(
+                    durationMillis = 220,
+                    easing = AnimationSpecs.EmphasizedAccelerate,
+                ),
+            )
+        }
+    }
     val handlePageChange = LocalHandlePageChange.current
     val onItemClick: (Int) -> Unit = onItemClick@{ index ->
-        if (index == pagerState.currentPage && !pagerState.isScrollInProgress) return@onItemClick
+        if (index == mainPagerState.selectedPage) return@onItemClick
         handlePageChange(index)
     }
 
-    val density = LocalDensity.current
     val bottomSafeInset = with(density) {
         val navBottom = WindowInsets.navigationBars.getBottom(this)
         val gestureBottom = WindowInsets.systemGestures.getBottom(this)
@@ -119,8 +227,8 @@ fun BottomBarContent(
 
     BottomNavigationBar(
         selectedIndex = page,
+        indicatorProgress = indicatorProgress,
         tabsCount = BottomBarDestination.entries.size,
-        liquidState = liquidState,
         containerColor = containerColor,
         indicatorContainerColor = indicatorContainerColor,
         modifier = Modifier
@@ -135,6 +243,7 @@ fun BottomBarContent(
                 alpha = animatedAlpha
                 scaleX = animatedScale
                 scaleY = animatedScale
+                translationY = animatedTranslationY.value
                 transformOrigin = TransformOrigin(0.5f, 1f)
             },
     ) {
@@ -168,20 +277,28 @@ fun BottomBarContent(
 }
 
 enum class BottomBarDestination(
-    val label: String,
     val icon: ImageVector,
 ) {
-    Home(MLang.Component.BottomBar.Home, Yume.House),
-    Proxy(MLang.Component.BottomBar.Proxy, Yume.`Arrow-down-up`),
-    Config(MLang.Component.BottomBar.Config, Yume.`Package-check`),
-    Setting(MLang.Component.BottomBar.Setting, Yume.Bolt),
+    Home(Yume.House),
+    Proxy(Yume.`Arrow-down-up`),
+    Config(Yume.`Package-check`),
+    Setting(Yume.Bolt),
+    ;
+
+    val label: String
+        get() = when (this) {
+            Home -> MLang.Component.BottomBar.Home
+            Proxy -> MLang.Component.BottomBar.Proxy
+            Config -> MLang.Component.BottomBar.Config
+            Setting -> MLang.Component.BottomBar.Setting
+        }
 }
 
 @Composable
 private fun BottomNavigationBar(
     selectedIndex: Int,
+    indicatorProgress: Float,
     tabsCount: Int,
-    liquidState: LiquidState?,
     containerColor: Color,
     indicatorContainerColor: Color,
     modifier: Modifier = Modifier,
@@ -191,50 +308,25 @@ private fun BottomNavigationBar(
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
     val density = LocalDensity.current
     val safeSelectedIndex = selectedIndex.coerceIn(0, tabsCount - 1)
+    val safeIndicatorProgress = indicatorProgress.coerceIn(0f, (tabsCount - 1).toFloat())
 
     val contentInset = 4.dp
     val contentInsetPx = with(density) { (contentInset * 2).toPx() }
 
-    var indicatorIndex by remember { mutableIntStateOf(safeSelectedIndex) }
-    val indicatorPosition = remember { Animatable(safeSelectedIndex.toFloat()) }
     val indicatorScale = remember { Animatable(1f) }
 
     LaunchedEffect(safeSelectedIndex) {
-        if (indicatorIndex == safeSelectedIndex) return@LaunchedEffect
         launch {
-            indicatorPosition.animateTo(
-                targetValue = safeSelectedIndex.toFloat(),
-                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
-            )
+            indicatorScale.animateTo(0.9f, tween(120, easing = FastOutSlowInEasing))
+            indicatorScale.animateTo(1f, tween(220, easing = FastOutSlowInEasing))
         }
-        launch {
-            indicatorScale.animateTo(0.88f, tween(90, easing = FastOutSlowInEasing))
-            indicatorScale.animateTo(1f, tween(170, easing = FastOutSlowInEasing))
-        }
-        indicatorIndex = safeSelectedIndex
     }
 
     BoxWithConstraints(
         modifier = modifier
             .height(56.dp)
             .clip(Capsule())
-            .then(
-                if (liquidState != null) {
-                    Modifier
-                        .liquid(liquidState) {
-                            frost = 3.dp
-                            refraction = 0.5f
-                            curve = 0.6f
-                            edge = 0.4f
-                            dispersion = 0f
-                            saturation = 1.2f
-                            contrast = 1.1f
-                        }
-                        .background( if (isLightTheme) White.copy(alpha = 0.75f) else Black.copy(alpha = 0.8f), Capsule())
-                } else {
-                    Modifier.background(containerColor, Capsule())
-                }
-            ),
+            .background(containerColor, Capsule()),
         contentAlignment = Alignment.CenterStart,
     ) {
         val tabWidth = (constraints.maxWidth.toFloat() - contentInsetPx) / tabsCount
@@ -249,8 +341,8 @@ private fun BottomNavigationBar(
                 Modifier
                     .graphicsLayer {
                         translationX =
-                            if (isLtr) indicatorPosition.value * tabWidth
-                            else size.width - (indicatorPosition.value + 1f) * tabWidth
+                            if (isLtr) safeIndicatorProgress * tabWidth
+                            else size.width - (safeIndicatorProgress + 1f) * tabWidth
                         scaleX = indicatorScale.value
                         scaleY = indicatorScale.value
                     }

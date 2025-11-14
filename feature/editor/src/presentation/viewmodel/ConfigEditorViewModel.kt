@@ -23,113 +23,75 @@
 package com.github.yumelira.yumebox.feature.editor.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import timber.log.Timber
 
 class ConfigEditorViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(EditorUiState())
-    val uiState: StateFlow<EditorUiState> = _uiState.asStateFlow()
+    private val _session = MutableStateFlow(EditorSession())
+    val session: StateFlow<EditorSession> = _session.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _previewContent = MutableStateFlow("")
-    val previewContent: StateFlow<String> = _previewContent.asStateFlow()
-
-    private var currentConfigId: String? = null
-    private var currentConfigType: ConfigType? = null
-
-    fun loadConfig(configId: String, configType: ConfigType) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            currentConfigId = configId
-            currentConfigType = configType
-
-            try {
-
-                Timber.d("Config loaded: id=$configId, type=$configType")
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to load config: $configId")
-                _uiState.value = _uiState.value.copy(error = e.message)
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun loadPreviewContent(previewType: PreviewType) {
-        viewModelScope.launch {
-            _isLoading.value = true
-
-            try {
-
-                Timber.d("Preview content loaded: type=$previewType")
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to load preview content")
-                _previewContent.value = ""
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun saveConfig(content: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-
-            try {
-
-                Timber.d("Config saved: id=$currentConfigId")
-                _uiState.value = _uiState.value.copy(isSaved = true)
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to save config")
-                _uiState.value = _uiState.value.copy(error = e.message)
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun updateDraft(content: String) {
-        _uiState.value = _uiState.value.copy(
-            draftContent = content,
-            isSaved = false
+    fun loadConfig(
+        configId: String,
+        configType: ConfigType,
+        initialContent: String,
+    ) {
+        _session.value = EditorSession(
+            configId = configId,
+            configType = configType,
+            savedContent = initialContent,
+            draftContent = initialContent,
+            isDirty = false,
+            error = null,
         )
     }
 
-    fun formatContent(content: String): String? {
-        return try {
-
-            content.trimIndent()
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to format content")
-            null
+    fun updateDraft(content: String) {
+        _session.value = _session.value.let { session ->
+            session.copy(
+                draftContent = content,
+                isDirty = content != session.savedContent,
+            )
         }
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+    fun markPersisted(content: String) {
+        _session.value = _session.value.copy(
+            savedContent = content,
+            draftContent = content,
+            isDirty = false,
+            error = null,
+        )
     }
+
+    fun setError(message: String?) {
+        _session.value = _session.value.copy(error = message)
+    }
+
+    fun discardDraft() {
+        _session.value = _session.value.let { session ->
+            session.copy(
+                draftContent = session.savedContent,
+                isDirty = false,
+                error = null,
+            )
+        }
+    }
+
+    fun formatContent(content: String): String = content.trimIndent()
 }
 
-data class EditorUiState(
-    val content: String = "",
+data class EditorSession(
+    val configId: String? = null,
+    val configType: ConfigType? = null,
+    val savedContent: String = "",
     val draftContent: String = "",
-    val isSaved: Boolean = true,
-    val error: String? = null
+    val isDirty: Boolean = false,
+    val error: String? = null,
 )
 
 enum class ConfigType {
     Override,
     Profile
-}
-
-enum class PreviewType {
-    RuntimeConfig,
-    OverridePreview
 }

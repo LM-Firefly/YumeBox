@@ -5,8 +5,10 @@ AppSettings = {
     Section = {
         Behavior = "行为"
         Interface = "界面"
+        Privacy = "隐私"
         Service = "服务"
         Network = "网络"
+        Experimental = "实验性内容"
     }
 
     Behavior = {
@@ -24,6 +26,11 @@ AppSettings = {
         ThemeModeSystem = "跟随系统"
         ThemeModeLight = "浅色"
         ThemeModeDark = "深色"
+        LanguageTitle = "应用语言"
+        LanguageSummary = "选择应用语言"
+        LanguageSystem = "跟随系统"
+        LanguageChinese = "简体中文"
+        LanguageEnglish = "English"
 
         ColorThemeTitle = "主题配色"
         ColorThemeSummary = "点击选择主题色，并自动推导黑白主题配色"
@@ -33,14 +40,33 @@ AppSettings = {
 
         TopBarBlurTitle = "顶部栏背景模糊"
         TopBarBlurSummary = "滚动内容时，为顶部栏应用动态模糊背景"
-        BottomBarLiquidGlassTitle = "底栏液体玻璃"
-        BottomBarLiquidGlassSummary = "为底部导航栏启用液体玻璃采样与折射效果"
-
         AutoHideNavbarTitle = "滑动隐藏底栏"
         AutoHideNavbarSummary = "向下滑动时自动隐藏底栏，向上滑动时显示"
 
         PageScaleTitle = "页面缩放"
         PageScaleSummary = "调整应用界面的整体缩放比例"
+        PageScaleDialogSummary = "80% - 120%"
+    }
+
+    Privacy = {
+        BiometricUnlockTitle = "启动时生物验证"
+        BiometricUnlockSummary = "每次打开应用需要生物识别或锁屏凭据验证才能进入"
+        ScreenshotProtectionTitle = "禁止截图"
+        ScreenshotProtectionSummary = "禁止截图、录屏及最近任务预览"
+        BiometricDialogTitleEnable = "开启启动验证"
+        BiometricDialogTitleDisable = "关闭启动验证"
+        ScreenshotDialogTitleEnable = "开启禁止截图"
+        ScreenshotDialogTitleDisable = "关闭禁止截图"
+        BiometricPromptTitle = "验证身份"
+        BiometricPromptMessage = "请完成验证以继续进入应用"
+        BiometricRetryButton = "重试"
+        BiometricExitButton = "退出"
+        BiometricUnavailableTitle = "无法使用指纹验证"
+        BiometricUnavailableMessage = "当前无法使用生物识别，请稍后重试或检查系统锁屏与生物识别设置"
+        BiometricUnavailableNoneEnrolled = "您尚未录入生物信息，请先在系统设置中录入，或启用 PIN、图案、密码等锁屏验证"
+        BiometricUnavailableNoHardware = "当前设备不支持生物识别，请启用系统锁屏验证或关闭此功能"
+        BiometricUnavailableHwUnavailable = "生物识别硬件当前不可用，请稍后再试"
+        BiometricUnavailableNoDeviceCredential = "当前未设置系统锁屏验证，请先启用 PIN、图案或密码"
 
         HideIconTitle = "隐藏应用图标"
         HideIconSummary = "隐藏后可通过拨号盘 *#*#0721#*#* 打开"
@@ -48,14 +74,45 @@ AppSettings = {
         HideFromRecentsSummary = "启用后不在最近任务列表（后台卡片）中显示应用"
     }
 
+    Experimental = {
+        AcgHomeTitle = "ACG 实验首页"
+        AcgHomeSummary = "启用新的 ACG 风格首页布局"
+        AcgQuoteTitle = "ACG 一言"
+        AcgQuoteDefault = "在安静的线路上，等一朵云完成漫游"
+        AcgQuoteAuthorTitle = "ACG 一言作者"
+        AcgQuoteAuthorDefault = "YumeBox"
+        AcgSidebarExpandedTitle = "ACG 侧栏默认展开"
+        AcgSidebarExpandedSummary = "进入 ACG 首页时默认展开左侧信息栏"
+        WallpaperTitle = "ACG 壁纸"
+        WallpaperSummary = "为 ACG 首页选择自定义壁纸"
+        WallpaperCropTitle = "壁纸选择裁剪器"
+        WallpaperCropSummary = "以首页可视区域为选区，左右滑动选择显示范围"
+        WallpaperCropModeFree = "手动预览"
+        WallpaperCropModeFixed = "固定比例裁剪"
+        WallpaperCropSwitchMode = "切换模式"
+        ResetWallpaperTitle = "重置 ACG 壁纸"
+        EditAcgQuoteTitle = "编辑 ACG 一言"
+        EditAcgQuoteAuthorTitle = "编辑 ACG 一言作者"
+    }
+
     ServiceSection = {
         TrafficNotificationTitle = "显示流量通知"
         TrafficNotificationSummary = "在通知栏中显示流量使用情况"
         SingleNodeTestTitle = "单节点测试"
         SingleNodeTestSummary = "点击节点卡片右侧图标测试单个节点延迟"
+        ExitUiWhenBackgroundTitle = "后台隐藏时释放界面"
+        ExitUiWhenBackgroundSummary = "应用退到后台且界面不可见时主动释放 UI，仅保留运行中的代理服务"
+        BatteryOptimizationTitle = "电池优化无限制"
+        BatteryOptimizationSummaryEnabled = "当前已允许后台无限制运行，点击可打开系统电源管理设置"
+        BatteryOptimizationSummaryDisabled = "当前仍受系统电池优化限制，建议设为无限制以降低后台被杀概率"
     }
 
     Network = {
+        UpdateChannelTitle = "更新通道"
+        UpdateChannelSummary = "选择检查更新时使用的 GitHub Release 通道"
+        UpdateChannelStable = "Stable"
+        UpdateChannelPre = "Pre-release"
+        UpdateChannelSmart = "Smart"
         CustomUserAgentTitle = "自定义 User-Agent"
         CustomUserAgentSummaryDefault = "未设置，使用默认值"
     }

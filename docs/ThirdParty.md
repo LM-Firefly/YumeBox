@@ -6,7 +6,6 @@
 - [miuix](https://github.com/compose-miuix-ui/miuix)
 - [mmkv](https://github.com/Tencent/mmkv)
 - [sora-editor](https://github.com/Rosemoe/sora-editor)
-- [liquid](https://github.com/FletchMcKee/liquid)
 - [sketch](https://github.com/panpf/sketch)
 - [Gropify](https://github.com/HighCapable/Gropify)
 - [Lucide](https://github.com/lucide-icons/lucide)

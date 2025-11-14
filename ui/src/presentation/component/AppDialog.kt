@@ -26,8 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
-import top.yukonga.miuix.kmp.extra.DialogDefaults
-import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.layout.DialogDefaults
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 object AppDialogDefaults {
     @Composable
@@ -64,7 +64,7 @@ fun AppDialog(
     renderInRootScaffold: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    SuperDialog(
+    OverlayDialog(
         show = show,
         modifier = modifier,
         title = title,

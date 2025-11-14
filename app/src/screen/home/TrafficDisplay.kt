@@ -57,7 +57,7 @@ fun TrafficDisplay(
     trafficNow: TrafficData,
     profileName: String?,
     tunnelMode: TunnelState.Mode?,
-    isRunning: Boolean,
+    controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
     isEnabled: Boolean,
     onClick: () -> Unit,
@@ -83,7 +83,11 @@ fun TrafficDisplay(
             tunnelMode = tunnelMode
         )
 
-        UploadSection(uploadSpeed = trafficNow.upload, isRunning = isRunning, proxyMode = proxyMode)
+        UploadSection(
+            uploadSpeed = trafficNow.upload,
+            controlState = controlState,
+            proxyMode = proxyMode,
+        )
     }
 }
 
@@ -95,7 +99,9 @@ private fun DownloadSection(
 ) {
     Column(horizontalAlignment = Alignment.Start) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 28.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -117,6 +123,8 @@ private fun ProfileModeBadge(
     profileName: String?,
     tunnelMode: TunnelState.Mode?
 ) {
+    if (profileName == null && tunnelMode == null) return
+
     Surface(
         color = MiuixTheme.colorScheme.primary.copy(alpha = 0.1f),
         shape = RoundedCornerShape(50),
@@ -128,7 +136,7 @@ private fun ProfileModeBadge(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = profileName ?: "No Profile",
+                text = profileName ?: MLang.Home.Traffic.NoProfile,
                 style = MiuixTheme.textStyles.footnote1.copy(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
@@ -179,8 +187,13 @@ private fun SpeedValue(speed: Long) {
 }
 
 @Composable
-private fun UploadSection(uploadSpeed: Long, isRunning: Boolean, proxyMode: ProxyMode) {
+private fun UploadSection(
+    uploadSpeed: Long,
+    controlState: HomeProxyControlState,
+    proxyMode: ProxyMode,
+) {
     val (value, unit) = formatBytesForDisplay(uploadSpeed)
+    val isRunning = controlState == HomeProxyControlState.Running
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -206,7 +219,7 @@ private fun UploadSection(uploadSpeed: Long, isRunning: Boolean, proxyMode: Prox
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
         ) {
-            ProxyStatusCapsule(isRunning = isRunning)
+            ProxyStatusCapsule(controlState = controlState)
             AnimatedVisibility(
                 visible = isRunning,
                 enter = slideInHorizontally(
@@ -249,9 +262,9 @@ private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
             )
             Text(
                 text = when (proxyMode) {
-                    ProxyMode.Tun -> "VPN"
-                    ProxyMode.RootTun -> "TUN"
-                    ProxyMode.Http -> "HTTP"
+                    ProxyMode.Tun -> MLang.Home.ProxyMode.Vpn
+                    ProxyMode.RootTun -> MLang.Home.ProxyMode.Tun
+                    ProxyMode.Http -> MLang.Home.ProxyMode.Http
                 },
                 style = MiuixTheme.textStyles.footnote1.copy(
                     fontSize = 12.sp,
@@ -264,7 +277,7 @@ private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
 }
 
 @Composable
-private fun ProxyStatusCapsule(isRunning: Boolean) {
+private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
     val primary = MiuixTheme.colorScheme.primary
     Surface(
         color = primary.copy(alpha = 0.1f),
@@ -274,7 +287,7 @@ private fun ProxyStatusCapsule(isRunning: Boolean) {
             .animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
     ) {
         AnimatedContent(
-            targetState = isRunning,
+            targetState = controlState,
             transitionSpec = {
                 (slideInHorizontally(
                     initialOffsetX = { it / 2 },
@@ -288,20 +301,31 @@ private fun ProxyStatusCapsule(isRunning: Boolean) {
                 )
             },
             label = "CapsuleStateTransition"
-        ) { running ->
+        ) { state ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Icon(
-                    imageVector = if (running) Yume.Activity else Yume.Rocket,
+                    imageVector = when (state) {
+                        HomeProxyControlState.Idle -> Yume.Rocket
+                        HomeProxyControlState.Connecting,
+                        HomeProxyControlState.Disconnecting,
+                            -> Yume.Waiting
+                        HomeProxyControlState.Running -> Yume.Activity
+                    },
                     contentDescription = null,
                     tint = primary,
                     modifier = Modifier.size(12.dp)
                 )
                 Text(
-                    text = if (running) MLang.Home.Status.Running else MLang.Home.Status.TapToStart,
+                    text = when (state) {
+                        HomeProxyControlState.Idle -> MLang.Home.Status.TapToStart
+                        HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
+                        HomeProxyControlState.Running -> MLang.Home.Status.Running
+                        HomeProxyControlState.Disconnecting -> MLang.Home.Status.Disconnecting
+                    },
                     style = MiuixTheme.textStyles.footnote1.copy(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold

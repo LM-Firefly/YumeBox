@@ -27,6 +27,7 @@ type ProxyGroup struct {
 	Type    string   `json:"type"`
 	Now     string   `json:"now"`
 	Icon    string   `json:"icon"`
+	Hidden  bool     `json:"hidden"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -61,6 +62,7 @@ func buildProxyGroupsFromParsed(
 			Type:    proxy.Type().String(),
 			Now:     group.Now(),
 			Icon:    group.Icon(),
+			Hidden:  group.Hidden(),
 			Proxies: convertPreviewProxies(group.Proxies(), pattern),
 		})
 	}

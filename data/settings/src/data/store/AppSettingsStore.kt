@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.data.model.AppColorTheme
+import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.tencent.mmkv.MMKV
 
@@ -32,6 +33,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val privacyPolicyAccepted by boolFlow(false)
 
     val themeMode by enumFlow(ThemeMode.Auto)
+    val appLanguage by enumFlow(AppLanguage.System)
     val colorTheme by enumFlow(AppColorTheme.ClassicMonochrome)
     val themeAccentColorArgb by longFlow(0xFF138A74L)
     val automaticRestart by boolFlow(false)
@@ -41,9 +43,18 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val showTrafficNotification by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
     val topBarBlurEnabled by boolFlow(true)
-    val bottomBarLiquidGlassEnabled by boolFlow(false)
+    val acgMainUiEnabled by boolFlow(false)
+    val acgWallpaperUri by strFlow("")
+    val acgWallpaperZoom by floatFlow(1.0f)
+    val acgWallpaperBiasX by floatFlow(0.0f)
+    val acgWallpaperBiasY by floatFlow(0.0f)
+    val acgHomeQuote by strFlow("时间一分一秒流逝而去 终结一步一步迎面而来")
+    val acgHomeQuoteAuthor by strFlow("恋文")
+    val acgSidebarExpanded by boolFlow(true)
     val pageScale by floatFlow(1.0f)
     val singleNodeTest by boolFlow(true)
+    val screenshotProtectionEnabled by boolFlow(false)
+    val biometricUnlockEnabled by boolFlow(false)
 
     val customUserAgent by strFlow("")
 

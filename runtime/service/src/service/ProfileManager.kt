@@ -71,15 +71,6 @@ class ProfileManager(private val context: Context) : IProfileManager,
 
         ImportedDao.insert(imported)
 
-        context.importedDir.resolve(uuid.toString()).apply {
-            deleteRecursively()
-            mkdirs()
-
-            @Suppress("BlockingMethodInNonBlockingContext")
-            resolve("config.yaml").createNewFile()
-            resolve("providers").mkdir()
-        }
-
         return uuid
     }
 

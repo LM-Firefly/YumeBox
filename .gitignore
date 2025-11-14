@@ -72,12 +72,13 @@ Thumbs.db
 /.gradle-user-home/
 /.android-user-home/
 /AGENTS.md
-/app/aliyun-emas-services.json
 /scripts/rewrite-git-email.sh
-
-# Sentry Config File
-sentry.properties
 /.pensieve/
 /CLAUDE.md
 /docs/override-merge-plan/
 /docs/config/
+/docs/amper
+/lib/mihomo/mihomo/
+/.codex/environments/environment.toml
+/docs/code-review/
+/docs/code-review/

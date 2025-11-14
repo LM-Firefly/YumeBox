@@ -37,7 +37,7 @@ import java.net.InetAddress
 import java.util.concurrent.ConcurrentHashMap
 
 class NetworkObserveModule(service: Service) : Module<Network>(service) {
-    private val connectivity = service.getSystemService<ConnectivityManager>()!!
+    private val connectivity = service.getSystemService<ConnectivityManager>()
     private val networks: Channel<Network> = Channel(Channel.CONFLATED)
     private val request = NetworkRequest.Builder().apply {
         addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
@@ -90,8 +90,12 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     }
 
     private fun register(): Boolean {
+        val connectivityManager = connectivity ?: run {
+            Log.w("Register network callback failed: ConnectivityManager unavailable")
+            return false
+        }
         return try {
-            connectivity.registerNetworkCallback(request, callback)
+            connectivityManager.registerNetworkCallback(request, callback)
             true
         } catch (e: Exception) {
             Log.w("Register network callback failed", e)
@@ -100,8 +104,10 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     }
 
     private fun unregister(): Boolean {
+        val connectivityManager = connectivity ?: return false
         try {
-            connectivity.unregisterNetworkCallback(callback)
+            connectivityManager.unregisterNetworkCallback(callback)
+            return true
         } catch (e: Exception) {
             Log.w("Unregister network callback failed", e)
         }
@@ -110,7 +116,7 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
     }
 
     private fun networkToInt(entry: Map.Entry<Network, NetworkInfo>): Int {
-        val capabilities = connectivity.getNetworkCapabilities(entry.key)
+        val capabilities = connectivity?.getNetworkCapabilities(entry.key)
 
         return when {
             capabilities == null -> 100

@@ -62,5 +62,6 @@ NetworkSettings = {
 
     Error = {
         VpnDenied = "VPN 权限被拒绝"
+        RootRequired = "RootTun 需要 YumeBox 已获取可用的 Root 权限"
     }
 }

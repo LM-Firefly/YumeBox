@@ -34,6 +34,7 @@ type ProxyGroup struct {
 	Type    string   `json:"type"`
 	Now     string   `json:"now"`
 	Icon    string   `json:"icon,omitempty"`
+	Hidden  bool     `json:"hidden"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -127,6 +128,7 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		Type:    g.Type().String(),
 		Now:     g.Now(),
 		Icon:    proxyGroupIcon(g),
+		Hidden:  g.Hidden(),
 		Proxies: proxies,
 	}
 }

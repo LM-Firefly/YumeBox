@@ -22,8 +22,8 @@
 
 package com.github.yumelira.yumebox.common.util
 
-import android.content.Context
 import android.content.Intent
+import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
@@ -34,7 +34,7 @@ import org.koin.core.component.inject
 import timber.log.Timber
 
 class IntentController(
-    private val context: Context, private val scope: CoroutineScope
+    private val scope: CoroutineScope
 ) : KoinComponent {
 
     companion object {
@@ -67,6 +67,7 @@ class IntentController(
                 }
 
                 Timber.i("External start: profile=${activeProfile.name}")
+                AutoStartSessionGate.clearManualPaused()
 
                 val mode = networkSettingsStorage.proxyMode.value
                 proxyFacade.startProxy(mode)
@@ -82,6 +83,7 @@ class IntentController(
         scope.launch {
             Timber.i("External stop")
             try {
+                AutoStartSessionGate.markManualPaused()
                 proxyFacade.stopProxy()
                 Timber.i("External stop ok")
             } catch (e: Exception) {

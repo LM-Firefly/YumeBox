@@ -18,6 +18,14 @@ Home = {
     NodeInfo = {
         Node = "节点"
         Delay = "延迟"
+        Unknown = "未知"
+        DelayValue = "%dms"
+    }
+
+    Traffic = {
+        UpShort = "UP"
+        DownShort = "DOWN"
+        NoProfile = "无配置"
     }
 
     IpInfo = {
@@ -25,7 +33,22 @@ Home = {
     }
 
     Status = {
+        Connecting = "连接中"
+        Disconnecting = "断开中"
         Running = "运行中"
         TapToStart = "轻触启动"
+    }
+
+    Control = {
+        HintAddProfile = "请先添加配置文件"
+        HintEnableProfile = "请先在「配置」页面启用一个配置"
+        Start = "启动"
+        Stop = "停止"
+    }
+
+    ProxyMode = {
+        Vpn = "VPN"
+        Tun = "TUN"
+        Http = "HTTP"
     }
 }

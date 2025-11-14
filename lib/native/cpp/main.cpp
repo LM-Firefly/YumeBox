@@ -126,17 +126,6 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeNotifyTimeZoneChanged(
 }
 
 JNIEXPORT void JNICALL
-Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeNotifyInstalledAppChanged(JNIEnv *env,
-                                                                               jobject thiz,
-                                                                               jstring uid_list) {
-    TRACE_METHOD();
-
-    scoped_string _uid_list = get_string(uid_list);
-
-    notifyInstalledAppsChanged(_uid_list);
-}
-
-JNIEXPORT void JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeStartTun(JNIEnv *env, jobject thiz,
                                                               jint fd,
                                                               jstring stack,
@@ -387,7 +376,7 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv
 
 
 static jmethodID m_tun_interface_mark_socket;
-static jmethodID m_tun_interface_query_socket_uid;
+static jmethodID m_tun_interface_query_socket_owner;
 static jmethodID m_completable_complete;
 static jmethodID m_completable_complete_exceptionally;
 static jmethodID m_logcat_interface_received;
@@ -410,17 +399,35 @@ static void call_tun_interface_mark_socket_impl(void *tun_interface, int fd) {
                         (jint) fd);
 }
 
-static int call_tun_interface_query_socket_uid_impl(void *tun_interface, int protocol,
-                                                    const char *source, const char *target) {
+static char *call_tun_interface_query_socket_owner_impl(void *tun_interface, int protocol,
+                                                        const char *source, const char *target) {
     TRACE_METHOD();
 
     ATTACH_JNI();
 
-    return env->CallIntMethod((jobject) tun_interface,
-                              (jmethodID) m_tun_interface_query_socket_uid,
-                              (jint) protocol,
-                              (jstring) new_string(source),
-                              (jstring) new_string(target));
+    jstring source_string = new_string(source);
+    jstring target_string = new_string(target);
+    jstring result = (jstring) env->CallObjectMethod(
+            (jobject) tun_interface,
+            (jmethodID) m_tun_interface_query_socket_owner,
+            (jint) protocol,
+            source_string,
+            target_string);
+
+    if (source_string != NULL) {
+        env->DeleteLocalRef(source_string);
+    }
+    if (target_string != NULL) {
+        env->DeleteLocalRef(target_string);
+    }
+
+    if (jni_catch_exception(env) || result == NULL) {
+        return NULL;
+    }
+
+    scoped_string value = get_string(result);
+    env->DeleteLocalRef(result);
+    return value == NULL ? NULL : strdup(value);
 }
 
 static void call_completable_complete_impl(void *completable, const char *exception) {
@@ -434,29 +441,42 @@ static void call_completable_complete_impl(void *completable, const char *except
                 (jmethodID) m_completable_complete,
                 (jobject) o_unit);
     } else {
+        jstring exception_string = new_string(exception);
         jthrowable _exception = (jthrowable)
                 env->NewObject(
                         (jclass) c_clash_exception,
                         (jmethodID) m_clash_exception,
-                        (jstring) new_string(exception)
+                        exception_string
                 );
 
         env->CallBooleanMethod(
                 (jobject) completable,
                 (jmethodID) m_completable_complete_exceptionally,
                 (jobject) _exception);
+
+        if (exception_string != NULL) {
+            env->DeleteLocalRef(exception_string);
+        }
+        if (_exception != NULL) {
+            env->DeleteLocalRef(_exception);
+        }
     }
 }
 
-    static void call_completable_complete_with_string_impl(void *completable, const char *result) {
+static void call_completable_complete_with_string_impl(void *completable, const char *result) {
     TRACE_METHOD();
 
-ATTACH_JNI();
+    ATTACH_JNI();
 
-env->CallBooleanMethod(
-(jobject) completable,
-(jmethodID) m_completable_complete,
-(jstring) new_string(result));
+    jstring result_string = new_string(result);
+    env->CallBooleanMethod(
+            (jobject) completable,
+            (jmethodID) m_completable_complete,
+            result_string);
+
+    if (result_string != NULL) {
+        env->DeleteLocalRef(result_string);
+    }
 }
 
 static void call_fetch_callback_report_impl(void *fetch_callback, const char *status_json) {
@@ -470,6 +490,10 @@ static void call_fetch_callback_report_impl(void *fetch_callback, const char *st
             (jobject) fetch_callback,
             (jmethodID) m_fetch_callback_report,
             (jstring) _status_json);
+
+    if (_status_json != NULL) {
+        env->DeleteLocalRef(_status_json);
+    }
 }
 
 static void call_fetch_callback_complete_impl(void *fetch_callback, const char *error) {
@@ -486,6 +510,10 @@ static void call_fetch_callback_complete_impl(void *fetch_callback, const char *
             (jobject) fetch_callback,
             (jmethodID) m_fetch_callback_complete,
             (jstring) _error);
+
+    if (_error != NULL) {
+        env->DeleteLocalRef(_error);
+    }
 }
 
 static int call_logcat_interface_received_impl(void *callback, const char *payload) {
@@ -493,10 +521,15 @@ static int call_logcat_interface_received_impl(void *callback, const char *paylo
 
     ATTACH_JNI();
 
+    jstring payload_string = new_string(payload);
     env->CallVoidMethod(
             (jobject) callback,
             (jmethodID) m_logcat_interface_received,
-            (jstring) new_string(payload));
+            payload_string);
+
+    if (payload_string != NULL) {
+        env->DeleteLocalRef(payload_string);
+    }
 
     if (jni_catch_exception(env)) {
         return 1;
@@ -510,7 +543,12 @@ static int open_content_impl(const char *url, char *error, int error_length) {
 
     ATTACH_JNI();
 
-    int fd = env->CallStaticIntMethod(c_content, m_open, new_string(url));
+    jstring url_string = new_string(url);
+    int fd = env->CallStaticIntMethod(c_content, m_open, url_string);
+
+    if (url_string != NULL) {
+        env->DeleteLocalRef(url_string);
+    }
 
     if (env->ExceptionCheck()) {
         jthrowable exception = env->ExceptionOccurred();
@@ -528,7 +566,10 @@ static int open_content_impl(const char *url, char *error, int error_length) {
             scoped_string _message = get_string(message);
 
             strncpy(error, _message, error_length - 1);
+            env->DeleteLocalRef(message);
         }
+
+        env->DeleteLocalRef(exception);
 
         return -1;
     }
@@ -566,8 +607,8 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     m_tun_interface_mark_socket = find_method(c_tun_interface, "markSocket",
                                               "(I)V");
-    m_tun_interface_query_socket_uid = find_method(c_tun_interface, "querySocketUid",
-                                                   "(ILjava/lang/String;Ljava/lang/String;)I");
+    m_tun_interface_query_socket_owner = find_method(c_tun_interface, "querySocketOwner",
+                                                     "(ILjava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     m_completable_complete = find_method(c_completable, "complete",
                                          "(Ljava/lang/Object;)Z");
     m_fetch_callback_report = find_method(c_fetch_callback, "report",
@@ -594,7 +635,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     o_unit = new_global(o_unit);
 
     mark_socket_func = &call_tun_interface_mark_socket_impl;
-    query_socket_uid_func = &call_tun_interface_query_socket_uid_impl;
+    query_socket_owner_func = &call_tun_interface_query_socket_owner_impl;
     complete_func = &call_completable_complete_impl;
     complete_with_string_func = &call_completable_complete_with_string_impl;
     fetch_report_func = &call_fetch_callback_report_impl;
@@ -619,7 +660,7 @@ JNIEXPORT void JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSetCustomUserAgent(JNIEnv *env, jobject thiz, jstring user_agent) {
     TRACE_METHOD();
 
-    char *ua = get_string(user_agent);
+    scoped_string ua = get_string(user_agent);
 
     setCustomUserAgent(ua);
 }

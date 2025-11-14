@@ -27,7 +27,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,10 +39,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Play
 import com.github.yumelira.yumebox.presentation.icon.yume.PowerOff
@@ -53,13 +57,12 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 @Destination<RootGraph>
@@ -73,7 +76,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
     val logEntries by viewModel.tempLogEntries.collectAsState()
 
     var fabHidden by rememberSaveable { mutableStateOf(false) }
-    val listState = remember { LazyListState() }
+    val listState = rememberLazyListState()
 
     val saveFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
@@ -90,19 +93,19 @@ fun LogScreen(navigator: DestinationsNavigator) {
     }
 
     LaunchedEffect(listState) {
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index }.collect { firstVisibleItemIndex ->
-                val previousFirstVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.firstOrNull()?.index
-                if (previousFirstVisibleItemIndex != null && firstVisibleItemIndex != null) {
-                    fabHidden = firstVisibleItemIndex > previousFirstVisibleItemIndex
-                }
+        var previousFirstVisibleItemIndex = 0
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .distinctUntilChanged()
+            .collect { firstVisibleItemIndex ->
+                fabHidden = firstVisibleItemIndex > previousFirstVisibleItemIndex
+                previousFirstVisibleItemIndex = firstVisibleItemIndex
             }
     }
 
     LaunchedEffect(isRecording) {
         if (isRecording) {
-            while (isActive) {
+            PollingTimers.ticks(PollingTimerSpecs.LogScreenRefresh).collect {
                 viewModel.refreshTempLogEntries()
-                delay(500.milliseconds)
             }
         }
     }
@@ -115,8 +118,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
                 actions = {
                     if (logEntries.isNotEmpty()) {
                         IconButton(
-                            onClick = { saveFileLauncher.launch("log_${System.currentTimeMillis()}.txt") },
-                            modifier = Modifier.padding(end = 24.dp)
+                            onClick = { saveFileLauncher.launch("log_${System.currentTimeMillis()}.txt") }
                         ) {
                             Icon(
                                 imageVector = Yume.Share,
@@ -190,10 +192,10 @@ fun LogScreen(navigator: DestinationsNavigator) {
             return@Scaffold
         }
 
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
-            topPadding = 20.dp,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             lazyListState = listState,
         ) {
             val reversed = logEntries.asReversed()

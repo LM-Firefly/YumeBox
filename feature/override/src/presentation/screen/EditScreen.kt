@@ -28,8 +28,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.data.util.defaultOverridePresetTemplateSelection
-import com.github.yumelira.yumebox.data.util.inferPresetTemplateSelection
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.util.OverrideEditorSection
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveEvent
@@ -41,7 +39,7 @@ import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 @Composable
 fun OverrideEditScreen(
@@ -62,8 +60,6 @@ fun OverrideEditScreen(
     val showDiscardDialog = remember { mutableStateOf(false) }
     val showStringMapEditor = remember { mutableStateOf(false) }
     val showJsonEditor = remember { mutableStateOf(false) }
-    val showPresetTemplateSheet = remember { mutableStateOf(false) }
-
     var currentMapEditorCallback by remember { mutableStateOf<(Map<String, String>?) -> Unit>({}) }
     var currentJsonEditorCallback by remember { mutableStateOf<(String?) -> Unit>({}) }
 
@@ -84,10 +80,7 @@ fun OverrideEditScreen(
             OverrideEditorSection.entries.firstOrNull { it.name == sectionName }
         }.toSet()
     }
-    val presetTemplateSelection = remember(editSession?.draftSnapshot) {
-        editSession?.config?.let(::inferPresetTemplateSelection)
-            ?: defaultOverridePresetTemplateSelection()
-    }
+
 
     LaunchedEffect(configId) {
         viewModel.startEditSession(configId)
@@ -111,7 +104,6 @@ fun OverrideEditScreen(
         when {
             showStringMapEditor.value -> showStringMapEditor.value = false
             showJsonEditor.value -> showJsonEditor.value = false
-            showPresetTemplateSheet.value -> showPresetTemplateSheet.value = false
             isSaving -> Unit
             hasUnsavedInvalidChanges -> showDiscardDialog.value = true
             else -> {
@@ -135,9 +127,10 @@ fun OverrideEditScreen(
             )
         },
     ) { paddingValues ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = paddingValues,
+            innerPadding = combinePaddingValues(paddingValues, mainLikePadding),
             lazyListState = editorListState,
         ) {
             editSession?.let { session ->
@@ -163,9 +156,6 @@ fun OverrideEditScreen(
                         } else {
                             expandedSectionNames + section.name
                         }
-                    },
-                    onOpenPresetTemplate = {
-                        showPresetTemplateSheet.value = true
                     },
                     onEditStringList = onOpenStringListEditor,
                     onEditRuleList = { title, values, availableModes, selectedMode, referenceCatalog, callback ->
@@ -246,31 +236,23 @@ fun OverrideEditScreen(
         }
 
         StringMapEditorDialog(
-            show = showStringMapEditor,
+            show = showStringMapEditor.value,
             title = currentMapEditorTitle,
             keyPlaceholder = currentMapEditorKeyPlaceholder,
             valuePlaceholder = currentMapEditorValuePlaceholder,
             value = currentMapEditorValue,
             onValueChange = currentMapEditorCallback,
+            onDismiss = { showStringMapEditor.value = false },
         )
 
         JsonTextEditorDialog(
-            show = showJsonEditor,
+            show = showJsonEditor.value,
             title = currentJsonEditorTitle,
             placeholder = currentJsonEditorPlaceholder,
             value = currentJsonEditorValue,
             onValueChange = currentJsonEditorCallback,
+            onDismiss = { showJsonEditor.value = false },
         )
 
-        OverridePresetTemplateSheet(
-            show = showPresetTemplateSheet.value,
-            initialSelection = presetTemplateSelection,
-            onDismiss = { showPresetTemplateSheet.value = false },
-            onConfirm = { selection ->
-                viewModel.applyPresetTemplate(selection)
-                showPresetTemplateSheet.value = false
-                context.toast(MLang.Override.Edit.PresetApplied)
-            },
-        )
     }
 }

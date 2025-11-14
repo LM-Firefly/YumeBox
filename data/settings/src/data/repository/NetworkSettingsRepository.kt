@@ -39,6 +39,7 @@ class NetworkSettingsRepository(
     val enableIPv6: Preference<Boolean> = storage.enableIPv6
     val systemProxy: Preference<Boolean> = storage.systemProxy
     val tunStack: Preference<TunStack> = storage.tunStack
+    val tunRouteExcludeAddress: Preference<List<String>> = storage.tunRouteExcludeAddress
     val rootTunIfName: Preference<String> = storage.rootTunIfName
     val rootTunMtu: Preference<Int> = storage.rootTunMtu
     val rootTunAutoRoute: Preference<Boolean> = storage.rootTunAutoRoute

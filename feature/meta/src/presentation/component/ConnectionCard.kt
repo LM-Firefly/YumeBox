@@ -38,11 +38,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.jsonPrimitive
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -71,19 +72,25 @@ fun ConnectionCard(
         connectionInfo.metadata["sourcePort"]?.jsonPrimitive?.content ?: ""
     }
 
-    val displayHost = remember(host, destinationPort) {
+    val destinationIp = remember(connectionInfo.metadata) {
+        connectionInfo.metadata["destinationIP"]?.jsonPrimitive?.content ?: ""
+    }
+
+    val displayHost = remember(host, destinationIp, destinationPort, sourceIP, sourcePort) {
         if (host.isNotEmpty() && destinationPort.isNotEmpty()) {
             "$host:$destinationPort"
         } else if (host.isNotEmpty()) {
             host
+        } else if (destinationIp.isNotEmpty() && destinationPort.isNotEmpty()) {
+            "$destinationIp:$destinationPort"
+        } else if (destinationIp.isNotEmpty()) {
+            destinationIp
         } else {
             "$sourceIP:$sourcePort"
         }
     }
 
-    val relativeTime = remember(connectionInfo.start) {
-        formatRelativeTime(connectionInfo.start)
-    }
+    val relativeTime = formatRelativeTime(connectionInfo.start)
 
     Box(
         modifier = modifier
@@ -104,8 +111,10 @@ fun ConnectionCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-
-            ConnectionProtocolIcon(network = network)
+            ConnectionLeadingIcon(
+                metadata = connectionInfo.metadata,
+                network = network,
+            )
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -141,8 +150,9 @@ fun ConnectionCard(
                         }
 
                         if (connectionInfo.chains.isNotEmpty()) {
-                            ConnectionTagChip(label = "x${connectionInfo.chains.size}")
+                            ConnectionTagChip(label = MLang.Connection.ChainCount.format(connectionInfo.chains.size))
                         }
+
                     }
 
                     Text(
@@ -156,26 +166,6 @@ fun ConnectionCard(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ConnectionProtocolIcon(network: String) {
-    val neutral = MiuixTheme.colorScheme.onSurface
-    val protocolColor = getProtocolColor(network)
-
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(neutral.copy(alpha = 0.06f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = network.take(3).uppercase(),
-            style = MiuixTheme.textStyles.footnote1.copy(fontSize = 12.sp),
-            color = protocolColor,
-        )
     }
 }
 
@@ -195,14 +185,6 @@ private fun ConnectionTagChip(
     )
 }
 
-private fun getProtocolColor(network: String): Color = when (network.uppercase()) {
-    "TCP" -> Color(0xFF2196F3)
-    "UDP" -> Color(0xFF4CAF50)
-    "HTTP" -> Color(0xFF9E9E9E)
-    "HTTPS" -> Color(0xFF00BCD4)
-    else -> Color(0xFF9E9E9E)
-}
-
 private fun formatRelativeTime(start: String): String {
     if (start.isEmpty()) return ""
 
@@ -217,13 +199,13 @@ private fun formatRelativeTime(start: String): String {
         val days = hours / 24
 
         when {
-            seconds < 60 -> "刚刚"
-            minutes < 60 -> "${minutes}分钟前"
-            hours < 24 -> "${hours}小时前"
-            days < 7 -> "${days}天前"
+            seconds < 60 -> MLang.Connection.RelativeTime.JustNow
+            minutes < 60 -> MLang.Connection.RelativeTime.MinutesAgo.format(minutes)
+            hours < 24 -> MLang.Connection.RelativeTime.HoursAgo.format(hours)
+            days < 7 -> MLang.Connection.RelativeTime.DaysAgo.format(days)
             else -> {
                 val date = java.time.LocalDateTime.ofInstant(startTime, java.time.ZoneId.systemDefault())
-                "%02d-%02d".format(date.monthValue, date.dayOfMonth)
+                MLang.Connection.RelativeTime.Date.format(date.monthValue, date.dayOfMonth)
             }
         }
     } catch (e: Exception) {

@@ -53,7 +53,6 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.chevron
-import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -66,13 +65,7 @@ private data class GroupBadge(
     val label: String,
 )
 
-private fun groupBadge(type: Proxy.Type): GroupBadge = when (type) {
-    Proxy.Type.URLTest, Proxy.Type.Fallback, Proxy.Type.Smart ->
-        GroupBadge(type.name)
-
-    else ->
-        GroupBadge(type.name)
-}
+private fun groupBadge(type: Proxy.Type): GroupBadge = GroupBadge(type.name)
 
 internal fun LazyListScope.nodeGroupItems(
     groups: List<ProxyGroupInfo>,
@@ -111,16 +104,24 @@ internal fun NodeGroupCard(
     val cardShape = RoundedCornerShape(26.dp)
     val interactionSource = remember { MutableInteractionSource() }
 
-    val currentNode = remember(group.now) { extractFlaggedName(group.now) }
-    val currentNodeName = remember(currentNode.displayName) {
-        currentNode.displayName.ifBlank { MLang.Proxy.Mode.Direct }
+    val currentProxy = remember(group.proxies, group.now) {
+        group.proxies.firstOrNull { it.name == group.now }
+    }
+    val currentNode = remember(currentProxy?.name, currentProxy?.title, group.now) {
+        resolveProxyDisplayPresentation(
+            name = currentProxy?.name ?: group.now,
+            title = currentProxy?.title,
+        )
+    }
+    val currentNodeName = remember(currentNode.displayName, group.now) {
+        currentNode.displayName
+            .ifBlank { group.now.trim() }
+            .ifBlank { MLang.Proxy.Mode.Direct }
     }
     val iconUri = remember(group.icon) {
         group.icon?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeNodeGroupIconUri)
     }
-    val currentDelay = remember(group.proxies, group.now) {
-        group.proxies.firstOrNull { it.name == group.now }?.delay
-    }
+    val currentDelay = remember(currentProxy) { currentProxy?.delay }
     val badge = remember(group.type) { groupBadge(group.type) }
     val delayLabel = remember(currentDelay) { nodeLatencyLabel(currentDelay) }
 
@@ -205,7 +206,7 @@ internal fun NodeGroupCard(
                     }
 
                     Text(
-                        text = "${group.proxies.size} 节点",
+                        text = MLang.Proxy.Node.Count.format(group.proxies.size),
                         style = MiuixTheme.textStyles.footnote1,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         modifier = Modifier.padding(start = 8.dp),
@@ -273,9 +274,12 @@ internal fun NodeGroupCard(
 }
 
 private fun normalizeNodeGroupIconUri(raw: String): String {
-    if (raw.startsWith("//")) return "https:$raw"
-    if (raw.startsWith("www.", ignoreCase = true)) return "https://$raw"
-    return raw
+    val normalized = raw.trim()
+    if (normalized.startsWith("//")) return "https:$normalized"
+    if (normalized.startsWith("www.", ignoreCase = true)) return "https://$normalized"
+    if (normalized.matches(Regex("^[a-zA-Z][a-zA-Z\\d+.-]*:.*$"))) return normalized
+    if (normalized.matches(Regex("^[^/\\s]+\\.[^/\\s]+(?:/.*)?$"))) return "https://$normalized"
+    return normalized
 }
 
 @Composable

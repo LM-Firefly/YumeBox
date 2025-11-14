@@ -26,73 +26,82 @@ import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import java.util.*
 
 object SelectionDao {
-    data class RestoreSelectionsResult(
-        val selections: List<Selection>,
-    )
+    fun migrateLegacyIfNeeded() {
+        ProfileStore.migrateLegacySelectionMemoryIfNeeded()
+    }
 
     fun queryAll(): List<Selection> {
+        migrateLegacyIfNeeded()
         return ProfileStore.loadSelections()
     }
 
     fun querySelections(profileUUID: UUID): List<Selection> {
-        return ProfileStore.loadSelections().filter { it.uuid == profileUUID }
+        return queryAll().filter { it.uuid == profileUUID }
     }
 
-    fun setSelected(selection: Selection) {
+    fun queryRestorableSelections(profileUUID: UUID): List<Selection> {
+        return querySelections(profileUUID)
+    }
+
+    fun upsertManualSelection(profileUUID: UUID, groupName: String, selectedProxy: String) {
+        upsertManualSelection(
+            Selection(
+                uuid = profileUUID,
+                proxy = groupName.trim(),
+                selected = selectedProxy.trim(),
+                updatedAt = System.currentTimeMillis(),
+            ),
+        )
+    }
+
+    fun upsertManualSelection(selection: Selection) {
+        migrateLegacyIfNeeded()
+        val normalized = selection.copy(
+            proxy = selection.proxy.trim(),
+            selected = selection.selected.trim(),
+            updatedAt = if (selection.updatedAt > 0L) selection.updatedAt else System.currentTimeMillis(),
+        )
+        if (normalized.proxy.isEmpty() || normalized.selected.isEmpty()) {
+            return
+        }
         val list = ProfileStore.loadSelections().toMutableList()
         val index = list.indexOfFirst {
-            it.uuid == selection.uuid && it.proxy == selection.proxy
+            it.uuid == normalized.uuid && it.proxy == normalized.proxy
         }
         if (index >= 0) {
-            list[index] = selection
+            list[index] = normalized
         } else {
-            list.add(selection)
+            list.add(normalized)
         }
         ProfileStore.saveSelections(list)
     }
 
-    fun querySelectionScopeKey(profileUUID: UUID): String? {
-        return ProfileStore.loadSelectionScopeKey(profileUUID)
-    }
-
-    fun setSelectionScopeKey(profileUUID: UUID, scopeKey: String) {
-        ProfileStore.saveSelectionScopeKey(profileUUID, scopeKey)
-    }
-
-    fun removeSelectionScopeKey(profileUUID: UUID) {
-        ProfileStore.removeSelectionScopeKey(profileUUID)
-    }
-
-    fun querySelectionsForRestore(
-        profileUUID: UUID,
-        currentScopeKey: String,
-    ): RestoreSelectionsResult {
-        val selections = querySelections(profileUUID)
-        setSelectionScopeKey(profileUUID, currentScopeKey)
-
-        return RestoreSelectionsResult(
-            selections = selections,
-        )
+    fun setSelected(selection: Selection) {
+        upsertManualSelection(selection)
     }
 
     fun clear(profileUUID: UUID) {
+        migrateLegacyIfNeeded()
         val list = ProfileStore.loadSelections().toMutableList()
         list.removeAll { it.uuid == profileUUID }
         ProfileStore.saveSelections(list)
     }
 
     fun clearAll() {
+        migrateLegacyIfNeeded()
         ProfileStore.saveSelections(emptyList())
         ProfileStore.removeAllSelectionScopeKeys()
     }
 
     fun remove(profileUUID: UUID, proxy: String) {
+        migrateLegacyIfNeeded()
         val list = ProfileStore.loadSelections().toMutableList()
         list.removeAll { it.uuid == profileUUID && it.proxy == proxy }
         ProfileStore.saveSelections(list)
     }
 
     fun removeSelections(profileUUID: UUID, proxies: List<String>) {
+        migrateLegacyIfNeeded()
         val list = ProfileStore.loadSelections().toMutableList()
         list.removeAll { it.uuid == profileUUID && it.proxy in proxies }
         ProfileStore.saveSelections(list)

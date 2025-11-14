@@ -14,6 +14,11 @@ COMMIT_SHA = os.environ.get("COMMIT_SHA", "")
 REPOSITORY = os.environ.get("REPOSITORY", "")
 RUN_ID = os.environ.get("RUN_ID", "")
 SERVER_URL = os.environ.get("SERVER_URL", "https://github.com")
+VERSION_NAME = os.environ.get("VERSION_NAME", "")
+VERSION_CODE = os.environ.get("VERSION_CODE", "")
+RELEASE_URL = os.environ.get("RELEASE_URL", "")
+META_URL = os.environ.get("META_URL", "")
+PUBLISH_DIR = os.environ.get("PUBLISH_DIR", "")
 
 
 def md_escape(text):
@@ -64,9 +69,17 @@ def get_caption():
         f"*• Trigger*: {code_safe(trigger_label)}",
         f"*• Branch*: {code_safe(BRANCH)}",
     ]
+    if VERSION_NAME and VERSION_CODE:
+        lines.append(f"*• Version*: `{code_safe(VERSION_NAME)} ({code_safe(VERSION_CODE)})`")
+    elif VERSION_NAME:
+        lines.append(f"*• Version*: `{code_safe(VERSION_NAME)}`")
 
     if action_url:
         lines.append(f"*• Download*: [workpiece]({action_url})")
+    if RELEASE_URL:
+        lines.append(f"*• Release*: [open]({RELEASE_URL})")
+    if META_URL:
+        lines.append(f"*• Meta*: [json]({META_URL})")
 
     if commit_url:
         lines.append(f"*• Commit*: [{code_safe(commit_short)}]({commit_url})")
@@ -93,6 +106,17 @@ def check_environ():
 
 
 def find_apk_files():
+    if PUBLISH_DIR:
+        universal_patterns = [
+            os.path.join(PUBLISH_DIR, "*universal*.apk"),
+            os.path.join(PUBLISH_DIR, "*.apk"),
+        ]
+        for pattern in universal_patterns:
+            found = sorted(glob.glob(pattern))
+            if found:
+                print(f"[+] Found {len(found)} files in {pattern}")
+                return found
+
     patterns = [
         "./app/build/outputs/apk/release/*arm64-v8a*.apk",
         "app/build/outputs/apk/release/*arm64-v8a*.apk",

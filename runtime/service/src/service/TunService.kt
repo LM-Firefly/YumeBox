@@ -67,6 +67,12 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 Intents.ACTION_OVERRIDE_CHANGED -> scheduleReload()
                 Intents.ACTION_CLASH_REQUEST_STOP -> {
                     reason = intent.getStringExtra(Intents.EXTRA_STOP_REASON)
+                    reloadJob?.cancel()
+                    reloadJob = null
+                    StatusProvider.markRuntimeStopping(ProxyMode.Tun)
+                    if (this@TunService::runtime.isInitialized) {
+                        runtime.requestStop(reason)
+                    }
                     stopSelf()
                 }
             }
@@ -87,7 +93,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             startupLogStore.append("LOCAL_TUN service: startForeground done")
 
             StatusProvider.clearLegacyStateFiles()
-            StatusProvider.markRuntimeStarted(ProxyMode.Tun)
+            StatusProvider.markRuntimeStarting(ProxyMode.Tun)
             CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
 
             runtime = SessionRuntime(
@@ -98,13 +104,13 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                     override fun onStarting(spec: RuntimeSpec) = Unit
 
                     override fun onStarted(spec: RuntimeSpec) {
-                        StatusProvider.markRuntimeStarted(ProxyMode.Tun)
+                        StatusProvider.markRuntimeRunning(ProxyMode.Tun)
                         sendClashStarted()
                     }
 
                     override fun onStopped(reason: String?) {
                         this@TunService.reason = reason
-                        StatusProvider.markRuntimeStopped(ProxyMode.Tun)
+                        StatusProvider.markRuntimeIdle(ProxyMode.Tun)
                         sendClashStopped(reason)
                     }
 
@@ -121,7 +127,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                     override fun reportFailure(error: String) {
                         reason = error
                         startupLogStore.append("LOCAL_TUN failed=$error")
-                        StatusProvider.markRuntimeStopped(ProxyMode.Tun)
+                        StatusProvider.markRuntimeFailed(ProxyMode.Tun)
                         sendClashStopped(error)
                         Log.e("Tun runtime failed: $error")
                         stopSelf()
@@ -143,7 +149,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 }.onFailure { error ->
                     reason = error.message ?: "tun runtime start failed"
                     startupLogStore.append("LOCAL_TUN failed=$reason")
-                    StatusProvider.markRuntimeStopped(ProxyMode.Tun)
+                    StatusProvider.markRuntimeFailed(ProxyMode.Tun)
                     sendClashStopped(reason)
                     stopSelf()
                 }
@@ -151,7 +157,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         }.onFailure { error ->
             reason = error.message ?: "tun runtime start failed"
             startupLogStore.append("LOCAL_TUN failed=$reason")
-            StatusProvider.markRuntimeStopped(ProxyMode.Tun)
+            StatusProvider.markRuntimeFailed(ProxyMode.Tun)
             sendClashStopped(reason)
             stopSelf()
         }
@@ -172,10 +178,11 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         notificationJob = null
 
         if (this::runtime.isInitialized) {
+            runtime.requestStop(reason)
             runtime.destroy()
         }
 
-        StatusProvider.markRuntimeStopped(ProxyMode.Tun)
+        StatusProvider.markRuntimeIdle(ProxyMode.Tun)
         sendClashStopped(reason)
         startupLogStore.append("LOCAL_TUN destroy")
         Log.i("TunService destroyed: ${reason ?: "successfully"}")

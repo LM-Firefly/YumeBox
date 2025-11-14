@@ -25,42 +25,28 @@ package com.github.yumelira.yumebox.screen.settings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
+import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
-import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
-import com.github.yumelira.yumebox.presentation.component.SmallTitle
-import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
+import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -69,20 +55,49 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SuperSwitch
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private object AccessControlPageSpacing {
+    val ContentHorizontal = 12.dp
+}
 
 @Composable
 @Destination<RootGraph>
 fun AccessControlScreen(navigator: DestinationsNavigator) {
-    val context = LocalContext.current
+    val layoutDirection = LocalLayoutDirection.current
     val scrollBehavior = MiuixScrollBehavior()
+    val spacing = LocalSpacing.current
+    val mainLikePadding = rememberStandalonePageMainPadding()
+    val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.md
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
+    val filteredApps by viewModel.filteredApps.collectAsState()
 
-    val showSettingsSheet = rememberSaveable { mutableStateOf(false) }
-    val searchExpanded = rememberSaveable { mutableStateOf(false) }
+    var showSettingsSheet by remember { mutableStateOf(false) }
+    var searchStatus by remember {
+        mutableStateOf(
+            SearchStatus(
+                label = MLang.AccessControl.Search.Placeholder,
+                searchText = uiState.searchQuery,
+            )
+        )
+    }
+    val dynamicTopPadding by remember {
+        derivedStateOf { 12.dp * (1f - scrollBehavior.state.collapsedFraction) }
+    }
+    val listStartPadding = AccessControlPageSpacing.ContentHorizontal
+    val listEndPadding = AccessControlPageSpacing.ContentHorizontal
+    val currentSearchStatus = remember(searchStatus, filteredApps) {
+        searchStatus.copy(
+            resultStatus = when {
+                searchStatus.searchText.isBlank() -> SearchStatus.ResultStatus.DEFAULT
+                filteredApps.isEmpty() -> SearchStatus.ResultStatus.EMPTY
+                else -> SearchStatus.ResultStatus.SHOW
+            }
+        )
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -93,322 +108,302 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
         }
     )
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { uiState.needsMiuiPermission }
-            .collect { needsPermission ->
-                if (needsPermission) {
-                    permissionLauncher.launch("com.android.permission.GET_INSTALLED_APPS")
-                }
-            }
+    LaunchedEffect(uiState.needsMiuiPermission) {
+        if (uiState.needsMiuiPermission) {
+            permissionLauncher.launch("com.android.permission.GET_INSTALLED_APPS")
+        }
     }
 
-    BackHandler(enabled = searchExpanded.value) {
-        searchExpanded.value = false
-        viewModel.onSearchQueryChange("")
+    LaunchedEffect(searchStatus.searchText) {
+        if (searchStatus.searchText != uiState.searchQuery) {
+            viewModel.onSearchQueryChange(searchStatus.searchText)
+        }
+    }
+
+    LaunchedEffect(uiState.searchQuery) {
+        if (searchStatus.searchText != uiState.searchQuery) {
+            searchStatus = searchStatus.copy(searchText = uiState.searchQuery)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                TopBar(
-                    title = MLang.AccessControl.Title,
-                    scrollBehavior = scrollBehavior,
-                    actions = {
-                        IconButton(
-                            modifier = Modifier.padding(end = 24.dp),
-                            onClick = { showSettingsSheet.value = true }
-                        ) {
-                            Icon(Yume.`Settings-2`, contentDescription = "Settings")
+                currentSearchStatus.TopAppBarAnim {
+                    TopBar(
+                        title = MLang.AccessControl.Title,
+                        scrollBehavior = scrollBehavior,
+                        actions = {
+                            IconButton(
+                                onClick = { showSettingsSheet = true }
+                            ) {
+                                Icon(Yume.`Settings-2`, contentDescription = MLang.AccessControl.Settings.Title)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             },
         ) { innerPadding ->
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
-                }
-            } else {
-                ScreenLazyColumn(
-                    scrollBehavior = scrollBehavior,
-                    innerPadding = innerPadding,
-                    topPadding = 20.dp
-                ) {
-                    item {
-                        var searchText by remember { mutableStateOf("") }
-                        var expanded by remember { mutableStateOf(false) }
-                        SearchBar(
-                            inputField = {
-                                InputField(
-                                    query = searchText,
-                                    onQueryChange = {
-                                        searchText = it
-                                        viewModel.onSearchQueryChange(it)
-                                    },
-                                    onSearch = { expanded = false },
-                                    expanded = expanded,
-                                    onExpandedChange = { expanded = it },
-                                    label = MLang.AccessControl.Search.Placeholder
-                                )
-                            },
-                            expanded = expanded,
-                            onExpandedChange = { expanded = it }
-                        ) {
+        val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)
+        currentSearchStatus.SearchBox(
+            onSearchStatusChange = { searchStatus = it },
+            searchBarTopPadding = dynamicTopPadding,
+            startPadding = listStartPadding,
+            endPadding = listEndPadding,
+            contentPadding = PaddingValues(
+                top = combinedInnerPadding.calculateTopPadding(),
+                start = combinedInnerPadding.calculateStartPadding(layoutDirection),
+                end = combinedInnerPadding.calculateEndPadding(layoutDirection),
+                ),
+            ) { boxHeight ->
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
+                                start = listStartPadding,
+                                end = listEndPadding,
+                                bottom = combinedBottomPadding,
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
+                    }
+                } else {
+                    ScreenLazyColumn(
+                        scrollBehavior = scrollBehavior,
+                        innerPadding = combinedInnerPadding,
+                        contentPadding = PaddingValues(
+                            top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
+                            bottom = combinedBottomPadding,
+                            start = listStartPadding,
+                            end = listEndPadding,
+                        ),
+                    ) {
+                        item {
+                            Title(MLang.AccessControl.AppList.Title.format(uiState.selectedPackages.size))
                         }
-                    }
 
-                    item {
-                        SmallTitle(MLang.AccessControl.AppList.Title.format(uiState.selectedPackages.size))
-                    }
-
-                    items(
-                        items = uiState.filteredApps,
-                        key = { it.packageName }
-                    ) { app ->
-                        AppCard(
-                            app = app,
-                            onSelectionChange = { checked ->
-                                viewModel.onAppSelectionChange(app.packageName, checked)
-                            },
-                            onClick = {
-                                viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
-                            }
-                        )
+                        items(
+                            items = filteredApps,
+                            key = { it.packageName }
+                        ) { app ->
+                            AppCard(
+                                app = app,
+                                onSelectionChange = { checked ->
+                                    viewModel.onAppSelectionChange(app.packageName, checked)
+                                },
+                                onClick = {
+                                    viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
+                                }
+                            )
+                        }
                     }
                 }
             }
 
-            AppActionBottomSheet(
-                show = showSettingsSheet.value,
-                modifier = Modifier,
-                title = MLang.AccessControl.Settings.Title,
-                onDismissRequest = { showSettingsSheet.value = false },
-                enableNestedScroll = true,
-                content = {
-                    val context = LocalContext.current
-                    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                    Column {
-                        top.yukonga.miuix.kmp.basic.Card {
-                            SuperSwitch(
-                                title = MLang.AccessControl.Settings.ShowSystemApps,
-                                checked = uiState.showSystemApps,
-                                onCheckedChange = { viewModel.onShowSystemAppsChange(it) }
-                            )
-                            SuperSwitch(
-                                title = MLang.AccessControl.Settings.SelectedFirst,
-                                checked = uiState.selectedFirst,
-                                onCheckedChange = { viewModel.onSelectedFirstChange(it) }
-                            )
-                            WindowDropdown(
-                                title = MLang.AccessControl.Settings.SortMode,
-                                summary = MLang.AccessControl.Settings.SortModeCurrent.format(uiState.sortMode.displayName),
-                                items = AccessControlViewModel.SortMode.entries.map { it.displayName },
-                                selectedIndex = AccessControlViewModel.SortMode.entries
-                                    .indexOf(uiState.sortMode)
-                                    .coerceAtLeast(0),
-                                onSelectedIndexChange = { index ->
-                                    AccessControlViewModel.SortMode.entries.getOrNull(index)
-                                        ?.let { viewModel.onSortModeChange(it) }
-                                }
-                            )
-                            WindowDropdown(
-                                title = MLang.AccessControl.Settings.BatchOperation,
-                                items = listOf(
-                                    MLang.AccessControl.Settings.SelectAll,
-                                    MLang.AccessControl.Settings.DeselectAll,
-                                    MLang.AccessControl.Settings.Invert
-                                ),
-                                selectedIndex = 0,
-                                onSelectedIndexChange = { index ->
-                                    when (index) {
-                                        0 -> viewModel.selectAll()
-                                        1 -> viewModel.deselectAll()
-                                        2 -> viewModel.invertSelection()
-                                    }
-                                }
-                            )
-                            WindowDropdown(
-                                title = MLang.AccessControl.Settings.RegionQuickSelect,
-                                items = listOf(
-                                    MLang.AccessControl.Settings.ChinaApps,
-                                    MLang.AccessControl.Settings.OverseasApps,
-                                ),
-                                selectedIndex = 0,
-                                onSelectedIndexChange = { index ->
-                                    val selectedCount = when (index) {
-                                        0 -> viewModel.selectChinaAppsInCurrentList()
-                                        1 -> viewModel.selectNonChinaAppsInCurrentList()
-                                        else -> 0
-                                    }
-                                    val label = when (index) {
-                                        0 -> MLang.AccessControl.Settings.ChinaApps
-                                        1 -> MLang.AccessControl.Settings.OverseasApps
-                                        else -> ""
-                                    }
-                                    context.toast(
-                                        MLang.AccessControl.Settings.RegionSelectResult.format(
-                                            label,
-                                            selectedCount
-                                        )
-                                    )
-                                }
-                            )
-                            WindowDropdown(
-                                title = MLang.AccessControl.Settings.ImportExport,
-                                items = listOf(
-                                    MLang.AccessControl.Settings.Import,
-                                    MLang.AccessControl.Settings.Export
-                                ),
-                                selectedIndex = 0,
-                                onSelectedIndexChange = { index ->
-                                    when (index) {
-                                        0 -> {
-                                            val clipData = clipboardManager.primaryClip
-                                            val text = if (clipData != null && clipData.itemCount > 0) {
-                                                clipData.getItemAt(0)?.text?.toString() ?: ""
-                                            } else {
-                                                ""
-                                            }
-                                            if (text.isNotEmpty()) {
-                                                val count = viewModel.importPackages(text)
-                                                context.toast(MLang.AccessControl.Settings.ImportSuccess.format(count))
-                                            } else {
-                                                context.toast(MLang.AccessControl.Settings.ImportFailed)
-                                            }
-                                        }
-
-                                        1 -> {
-                                            val exportText = viewModel.exportPackages()
-                                            val clip = ClipData.newPlainText("packages", exportText)
-                                            clipboardManager.setPrimaryClip(clip)
-                                            context.toast(
-                                                MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size)
-                                            )
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Button(
-                            onClick = { showSettingsSheet.value = false },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(MLang.AccessControl.Button.Cancel)
-                        }
-                        Button(
-                            onClick = { showSettingsSheet.value = false },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColorsPrimary()
-                        ) {
-                            Text(MLang.AccessControl.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary)
-                        }
-                    }
-                })
-        }
-    }
-
-    AnimatedVisibility(
-        visible = searchExpanded.value,
-        enter = fadeIn(tween(300)),
-        exit = fadeOut(tween(300)),
-        modifier = Modifier
-            .fillMaxSize()
-            .zIndex(100f)
-    ) {
-        ExpandedSearchOverlay(
-            searchQuery = uiState.searchQuery,
-            onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
-            filteredApps = uiState.filteredApps,
-            onAppSelectionChange = { packageName, checked ->
-                viewModel.onAppSelectionChange(packageName, checked)
-            },
-            onDismiss = {
-                searchExpanded.value = false
-                viewModel.onSearchQueryChange("")
-            }
-        )
-    }
-}
-
-@Composable
-private fun ExpandedSearchOverlay(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    filteredApps: List<AccessControlViewModel.AppInfo>,
-    onAppSelectionChange: (String, Boolean) -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null
-            ) { onDismiss() }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) { }
-        ) {
-            TextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                label = MLang.AccessControl.Search.Placeholder,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            AccessControlSettingsSheet(
+                show = showSettingsSheet,
+                uiState = uiState,
+                onDismiss = { showSettingsSheet = false },
+                onShowSystemAppsChange = viewModel::onShowSystemAppsChange,
+                onSelectedFirstChange = viewModel::onSelectedFirstChange,
+                onSortModeChange = viewModel::onSortModeChange,
+                onSelectAll = viewModel::selectAll,
+                onDeselectAll = viewModel::deselectAll,
+                onInvertSelection = viewModel::invertSelection,
+                onSelectChinaApps = viewModel::selectChinaAppsInCurrentList,
+                onSelectNonChinaApps = viewModel::selectNonChinaAppsInCurrentList,
+                onImportPackages = viewModel::importPackages,
+                onExportPackages = viewModel::exportPackages,
             )
+        }
 
+        currentSearchStatus.SearchPager(
+            onSearchStatusChange = { searchStatus = it },
+            searchBarTopPadding = dynamicTopPadding,
+            startPadding = listStartPadding,
+            endPadding = listEndPadding,
+            emptyResult = {
+                SearchEmptyState(
+                    text = MLang.AccessControl.Search.Empty,
+                    modifier = Modifier.padding(bottom = combinedBottomPadding),
+                )
+            },
+        ) {
+            val searchListState = androidx.compose.foundation.lazy.rememberLazyListState()
+            LaunchedEffect(currentSearchStatus.searchText) {
+                if (currentSearchStatus.searchText.isNotBlank()) {
+                    searchListState.scrollToItem(0)
+                }
+            }
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                    .background(MiuixTheme.colorScheme.surface)
+                state = searchListState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = listStartPadding,
+                    end = listEndPadding,
+                    top = 6.dp,
+                    bottom = combinedBottomPadding,
+                ),
             ) {
                 items(
                     items = filteredApps,
                     key = { it.packageName }
                 ) { app ->
-                    BasicComponent(
-                        title = app.label,
-                        summary = app.packageName,
-                        startAction = {
-                            AppIcon(
-                                packageName = app.packageName,
-                                contentDescription = app.label,
-                                imageSize = 40.dp,
-                                bitmapSize = 80
-                            )
-                        },
-                        endActions = {
-                            Checkbox(
-                                state = ToggleableState(app.isSelected),
-                                onClick = {
-                                    onAppSelectionChange(app.packageName, !app.isSelected)
-                                }
-                            )
+                    AppCard(
+                        app = app,
+                        onSelectionChange = { checked ->
+                            viewModel.onAppSelectionChange(app.packageName, checked)
                         },
                         onClick = {
-                            onAppSelectionChange(app.packageName, !app.isSelected)
+                            viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccessControlSettingsSheet(
+    show: Boolean,
+    uiState: AccessControlViewModel.UiState,
+    onDismiss: () -> Unit,
+    onShowSystemAppsChange: (Boolean) -> Unit,
+    onSelectedFirstChange: (Boolean) -> Unit,
+    onSortModeChange: (AccessControlViewModel.SortMode) -> Unit,
+    onSelectAll: () -> Unit,
+    onDeselectAll: () -> Unit,
+    onInvertSelection: () -> Unit,
+    onSelectChinaApps: () -> Int,
+    onSelectNonChinaApps: () -> Int,
+    onImportPackages: (String) -> Int,
+    onExportPackages: () -> String,
+) {
+    val context = LocalContext.current
+    val clipboardManager = remember(context) {
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    }
+    val sortModeEntries = remember { AccessControlViewModel.SortMode.entries }
+
+    AppActionBottomSheet(
+        show = show,
+        modifier = Modifier,
+        title = MLang.AccessControl.Settings.Title,
+        onDismissRequest = onDismiss,
+        enableNestedScroll = true,
+    ) {
+        Column {
+            top.yukonga.miuix.kmp.basic.Card {
+                SwitchPreference(
+                    title = MLang.AccessControl.Settings.ShowSystemApps,
+                    checked = uiState.showSystemApps,
+                    onCheckedChange = onShowSystemAppsChange,
+                )
+                SwitchPreference(
+                    title = MLang.AccessControl.Settings.SelectedFirst,
+                    checked = uiState.selectedFirst,
+                    onCheckedChange = onSelectedFirstChange,
+                )
+                WindowDropdownPreference(
+                    title = MLang.AccessControl.Settings.SortMode,
+                    summary = MLang.AccessControl.Settings.SortModeCurrent.format(uiState.sortMode.displayName),
+                    items = sortModeEntries.map { it.displayName },
+                    selectedIndex = sortModeEntries.indexOf(uiState.sortMode).coerceAtLeast(0),
+                    onSelectedIndexChange = { index ->
+                        sortModeEntries.getOrNull(index)?.let(onSortModeChange)
+                    },
+                )
+                WindowDropdownPreference(
+                    title = MLang.AccessControl.Settings.BatchOperation,
+                    items = listOf(
+                        MLang.AccessControl.Settings.SelectAll,
+                        MLang.AccessControl.Settings.DeselectAll,
+                        MLang.AccessControl.Settings.Invert,
+                    ),
+                    selectedIndex = 0,
+                    onSelectedIndexChange = { index ->
+                        when (index) {
+                            0 -> onSelectAll()
+                            1 -> onDeselectAll()
+                            2 -> onInvertSelection()
+                        }
+                    },
+                )
+                WindowDropdownPreference(
+                    title = MLang.AccessControl.Settings.RegionQuickSelect,
+                    items = listOf(
+                        MLang.AccessControl.Settings.ChinaApps,
+                        MLang.AccessControl.Settings.OverseasApps,
+                    ),
+                    selectedIndex = 0,
+                    onSelectedIndexChange = { index ->
+                        val (label, selectedCount) = when (index) {
+                            0 -> MLang.AccessControl.Settings.ChinaApps to onSelectChinaApps()
+                            1 -> MLang.AccessControl.Settings.OverseasApps to onSelectNonChinaApps()
+                            else -> "" to 0
+                        }
+                        context.toast(
+                            MLang.AccessControl.Settings.RegionSelectResult.format(label, selectedCount)
+                        )
+                    },
+                )
+                WindowDropdownPreference(
+                    title = MLang.AccessControl.Settings.ImportExport,
+                    items = listOf(
+                        MLang.AccessControl.Settings.Import,
+                        MLang.AccessControl.Settings.Export,
+                    ),
+                    selectedIndex = 0,
+                    onSelectedIndexChange = { index ->
+                        when (index) {
+                            0 -> {
+                                val text = clipboardManager.primaryClip
+                                    ?.takeIf { it.itemCount > 0 }
+                                    ?.getItemAt(0)
+                                    ?.text
+                                    ?.toString()
+                                    .orEmpty()
+                                if (text.isNotEmpty()) {
+                                    val count = onImportPackages(text)
+                                    context.toast(MLang.AccessControl.Settings.ImportSuccess.format(count))
+                                } else {
+                                    context.toast(MLang.AccessControl.Settings.ImportFailed)
+                                }
+                            }
+
+                            1 -> {
+                                clipboardManager.setPrimaryClip(
+                                    ClipData.newPlainText("packages", onExportPackages())
+                                )
+                                context.toast(
+                                    MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size)
+                                )
+                            }
+                        }
+                    },
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(MLang.AccessControl.Button.Cancel)
+            }
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColorsPrimary(),
+            ) {
+                Text(MLang.AccessControl.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary)
             }
         }
     }
@@ -420,7 +415,10 @@ private fun AppCard(
     onSelectionChange: (Boolean) -> Unit,
     onClick: () -> Unit
 ) {
-    Card(modifier = Modifier.padding(vertical = 4.dp)) {
+    Card(
+        modifier = Modifier.padding(vertical = 4.dp),
+        applyHorizontalPadding = false,
+    ) {
         BasicComponent(
             title = app.label,
             summary = app.packageName,
@@ -470,4 +468,20 @@ private fun AppIcon(
         contentDescription = contentDescription,
         modifier = modifier.size(imageSize)
     )
+}
+
+@Composable
+private fun SearchEmptyState(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        )
+    }
 }

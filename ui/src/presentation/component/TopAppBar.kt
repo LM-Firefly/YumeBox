@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
@@ -36,6 +37,7 @@ import dev.chrisbanes.haze.hazeEffect
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.TopAppBarDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 val LocalTopBarHazeState = compositionLocalOf<HazeState?> { null }
@@ -62,6 +64,9 @@ fun TopBar(
     title: String,
     scrollBehavior: ScrollBehavior,
     modifier: Modifier = Modifier,
+    titlePadding: Dp = TopAppBarDefaults.TitlePadding,
+    navigationIconPadding: Dp = 24.dp,
+    actionIconPadding: Dp = 24.dp,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -73,6 +78,9 @@ fun TopBar(
         title = title,
         modifier = modifier.topBarHazeEffect(hazeState, hazeStyle),
         color = if (hazeEnabled) Color.Transparent else MiuixTheme.colorScheme.surface,
+        titlePadding = titlePadding,
+        navigationIconPadding = navigationIconPadding,
+        actionIconPadding = actionIconPadding,
         navigationIcon = navigationIcon,
         actions = actions,
         scrollBehavior = scrollBehavior,
@@ -84,6 +92,9 @@ fun SmallTopBar(
     title: String,
     scrollBehavior: ScrollBehavior,
     modifier: Modifier = Modifier,
+    titlePadding: Dp = TopAppBarDefaults.TitlePadding,
+    navigationIconPadding: Dp = 24.dp,
+    actionIconPadding: Dp = 24.dp,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -95,6 +106,9 @@ fun SmallTopBar(
         title = title,
         modifier = modifier.topBarHazeEffect(hazeState, hazeStyle),
         color = if (hazeEnabled) Color.Transparent else MiuixTheme.colorScheme.surface,
+        titlePadding = titlePadding,
+        navigationIconPadding = navigationIconPadding,
+        actionIconPadding = actionIconPadding,
         navigationIcon = navigationIcon,
         actions = actions,
         scrollBehavior = scrollBehavior,

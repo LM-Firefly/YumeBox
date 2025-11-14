@@ -30,6 +30,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -66,6 +67,10 @@ val NodeSheetContentPadding = PaddingValues(
     top = 8.dp,
     bottom = 16.dp,
 )
+
+private fun LazyListState.isScrolledFromTop(): Boolean {
+    return firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 0
+}
 
 private fun Modifier.nodeTabHaze(state: HazeState?, style: HazeStyle?): Modifier {
     if (state == null || style == null) return this
@@ -158,14 +163,22 @@ internal fun NodeGroupSheetContent(
     testingGroupNames: Set<String>,
     sheetHeightFraction: Float,
     onGroupClick: (ProxyGroupInfo) -> Unit,
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
+
+    LaunchedEffect(testingGroupNames) {
+        if (testingGroupNames.isNotEmpty() && listState.isScrolledFromTop()) {
+            listState.animateScrollToItem(0)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .height(sheetHeight)
             .overScrollVertical(),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = NodeSheetContentPadding,
         overscrollEffect = null,
@@ -190,15 +203,23 @@ fun NodeSheetContent(
     onTestDelay: () -> Unit,
     onTestProxyDelay: (String) -> Unit,
     sheetHeightFraction: Float,
+    listState: LazyListState = rememberLazyListState(),
     singleNodeTestEnabled: Boolean = true,
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
+
+    LaunchedEffect(isDelayTesting) {
+        if (isDelayTesting && listState.isScrolledFromTop()) {
+            listState.animateScrollToItem(0)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .height(sheetHeight)
             .overScrollVertical(),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = NodeSheetContentPadding,
         overscrollEffect = null,
