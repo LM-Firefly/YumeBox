@@ -1,4 +1,4 @@
-name: Reusable Build Native
+name: Reusable Build Native ABI
 
 on:
   workflow_call:
@@ -9,13 +9,18 @@ on:
       kernel_channel:
         required: true
         type: string
+      abi:
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
-  build-native:
+  build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -54,9 +59,10 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             lib/native/rust/target/
-          key: ${{ runner.os }}-rust-${{ hashFiles('lib/native/rust/**/Cargo.lock') }}
+          key: ${{ runner.os }}-rust-v2-${{ inputs.abi }}-${{ hashFiles('lib/native/rust/**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-rust-
+            ${{ runner.os }}-rust-v2-${{ inputs.abi }}-
+            ${{ runner.os }}-rust-v2-
 
       - name: Install cargo-ndk
         run: |
@@ -65,7 +71,7 @@ jobs:
           fi
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.2
+        uses: android-actions/setup-android@v4
         with:
           packages: ""
 
@@ -74,9 +80,9 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
-          key: ${{ runner.os }}-ndk-29.0.14206865-v1
+          key: ${{ runner.os }}-ndk-29.0.14206865-v2
           restore-keys: |
-            ${{ runner.os }}-ndk-29.0.14206865-
+            ${{ runner.os }}-ndk-29.0.14206865-v2-
 
       - name: Install NDK
         if: steps.cache-ndk.outputs.cache-hit != 'true'
@@ -89,7 +95,8 @@ jobs:
 
       - name: Update CA certificates
         run: |
-          sudo apt-get update && sudo apt-get install -y ca-certificates
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates
           sudo update-ca-certificates
           mkdir -p core/src/foss/golang/mihomo/component/ca
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/mihomo/component/ca/ca-certificates.crt
@@ -99,31 +106,28 @@ jobs:
           chmod +x scripts/sync-kernel.sh
           ./scripts/sync-kernel.sh "${{ inputs.kernel_channel }}"
 
-      - name: Build Native Libraries
+      - name: Build native libraries for ABI
         env:
+          ABI_APP_LIST: ${{ inputs.abi }}
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
-        run: kotlin scripts/native-build.main.kts --all
+        run: kotlin scripts/native-build.main.kts --go --rust --cpp
 
       - name: Verify native outputs
         shell: bash
         run: |
           set -eu
-          for abi in arm64-v8a armeabi-v7a x86 x86_64; do
-            test -f "jniLibs/${abi}/libclash.so"
-            test -f "jniLibs/${abi}/liboverride.so"
-            test -f "jniLibs/${abi}/libbridge.so"
-          done
-          test -f "build/generated/assets/geo/geoip.metadb.xz"
-          test -f "build/generated/assets/geo/geosite.dat.xz"
-          test -f "build/generated/assets/geo/ASN.mmdb.xz"
+          test -f "jniLibs/${{ inputs.abi }}/libclash.so"
+          test -f "jniLibs/${{ inputs.abi }}/liboverride.so"
+          test -f "jniLibs/${{ inputs.abi }}/libbridge.so"
 
-      - name: Upload native artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload ABI artifact
+        uses: actions/upload-artifact@v7
         with:
-          name: native-${{ inputs.channel }}
+          name: native-${{ inputs.channel }}-${{ inputs.abi }}
           path: |
-            jniLibs
-            build/generated/assets/geo
+            jniLibs/${{ inputs.abi }}/libclash.so
+            jniLibs/${{ inputs.abi }}/liboverride.so
+            jniLibs/${{ inputs.abi }}/libbridge.so
           if-no-files-found: error

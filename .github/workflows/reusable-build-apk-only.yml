@@ -1,0 +1,126 @@
+name: Reusable Build APK Only
+
+on:
+  workflow_call:
+    inputs:
+      channel:
+        required: true
+        type: string
+      module:
+        required: true
+        type: string
+      artifact_prefix:
+        required: true
+        type: string
+      release_tag:
+        required: true
+        type: string
+      meta_asset_name:
+        required: true
+        type: string
+      raw_apk_artifact_name:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Setup Kotlin
+        uses: fwilhe2/setup-kotlin@main
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ""
+
+      - name: Cache NDK
+        id: cache-ndk
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
+          key: ${{ runner.os }}-ndk-29.0.14206865-v2
+          restore-keys: |
+            ${{ runner.os }}-ndk-29.0.14206865-v2-
+
+      - name: Install NDK
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: sdkmanager "ndk;29.0.14206865"
+
+      - name: Configure local.properties
+        run: |
+          echo "sdk.dir=${ANDROID_SDK_ROOT}" > local.properties
+          echo "ndk.dir=${ANDROID_SDK_ROOT}/ndk/29.0.14206865" >> local.properties
+
+      - name: Download native artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: native-${{ inputs.channel }}
+          path: .
+
+      - name: Verify native and geo inputs
+        shell: bash
+        run: |
+          set -eu
+          for abi in arm64-v8a armeabi-v7a x86 x86_64; do
+            test -f "jniLibs/${abi}/libclash.so"
+            test -f "jniLibs/${abi}/liboverride.so"
+            test -f "jniLibs/${abi}/libbridge.so"
+          done
+          test -f "build/generated/assets/geo/geoip.metadb.xz"
+          test -f "build/generated/assets/geo/geosite.dat.xz"
+          test -f "build/generated/assets/geo/ASN.mmdb.xz"
+
+      - name: Write signing config
+        run: |
+          if [ -n "${{ secrets.SIGNING_STORE_PASSWORD }}" ]; then
+            echo "keystore.password=${{ secrets.SIGNING_STORE_PASSWORD }}" > signing.properties
+            echo "key.alias=${{ secrets.SIGNING_KEY_ALIAS }}" >> signing.properties
+            echo "key.password=${{ secrets.SIGNING_KEY_PASSWORD }}" >> signing.properties
+            echo "keystore.path=release.keystore" >> signing.properties
+          fi
+
+      - name: Generate locale sources
+        shell: bash
+        run: |
+          set -eu
+          kotlin scripts/generate-locale.main.kts .
+          test -f "locale/build/generated/fytxt/kotlin/commonMain/kotlin/fytxt.kt"
+
+      - name: Build Release APKs
+        shell: bash
+        run: |
+          set -eu
+          chmod +x gradlew
+          ./gradlew --no-daemon \
+            -Pupdate.channel="${{ inputs.channel }}" \
+            -Pupdate.tag="${{ inputs.release_tag }}" \
+            -Pupdate.metaAssetName="${{ inputs.meta_asset_name }}" \
+            :${{ inputs.module }}:assembleRelease
+
+      - name: Upload raw APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.raw_apk_artifact_name }}
+          path: ${{ inputs.module }}/build/outputs/apk/release/*.apk
+          if-no-files-found: error

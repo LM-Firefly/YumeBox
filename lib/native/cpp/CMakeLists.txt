@@ -14,6 +14,7 @@ set(GIT_SUFFIX "")
 set(BUILD_TIMESTAMP "")
 
 if(DEFINED GIT_INFO_FILE AND EXISTS "${GIT_INFO_FILE}")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${GIT_INFO_FILE}")
     file(STRINGS "${GIT_INFO_FILE}" GIT_INFO_LINES)
     foreach(GIT_INFO_LINE ${GIT_INFO_LINES})
         if(GIT_INFO_LINE MATCHES "^([^=]+)=(.*)$")
@@ -56,8 +57,8 @@ endif()
 
 include_directories("${GO_OUTPUT_BASE}")
 include_directories("${GO_SOURCE}")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 link_directories("${GO_OUTPUT_BASE}")
 

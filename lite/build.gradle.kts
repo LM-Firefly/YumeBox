@@ -20,6 +20,8 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     kotlin("plugin.compose")
@@ -117,6 +119,39 @@ android {
                 "lib/**/libjavet*.so",
             )
             useLegacyPackaging = true
+        }
+    }
+
+    signingConfigs {
+        val keystore = rootProject.file("signing.properties")
+        if (keystore.exists()) {
+            create("release") {
+                val prop = Properties().apply { keystore.inputStream().use(::load) }
+                storeFile = rootProject.file("release.keystore")
+                storePassword = prop.getProperty("keystore.password")!!
+                keyAlias = prop.getProperty("key.alias")!!
+                keyPassword = prop.getProperty("key.password")!!
+            }
+        }
+    }
+
+    if (signingConfigs.findByName("release") != null) {
+        buildTypes.named("release").configure {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    androidComponents {
+        onVariants { variant ->
+            variant.outputs.forEach { output ->
+                val abiName = output.filters.find {
+                    it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
+                }?.identifier ?: "universal"
+                val buildTypeName = variant.buildType ?: "release"
+                (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
+                    "${gropify.project.name}-lite-${abiName}-${buildTypeName}.apk"
+                )
+            }
         }
     }
 }
