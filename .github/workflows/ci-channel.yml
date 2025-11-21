@@ -21,59 +21,251 @@ permissions:
   contents: write
 
 jobs:
-  prepare-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Prepare matrix
-        id: set-matrix
-        shell: bash
-        run: |
-          set -eu
-          pre='{"channel":"pre","kernel_channel":"alpha","release_tag":"Pre-release","release_name":"Pre-release","meta_asset_name":"yumebox-pre-meta.json","cleanup_assets":true,"prerelease":true,"telegram_title":"YumeBox Pre"}'
-          smart='{"channel":"smart","kernel_channel":"smart","release_tag":"Smart","release_name":"Smart","meta_asset_name":"yumebox-smart-meta.json","cleanup_assets":true,"prerelease":true,"telegram_title":"YumeBox Smart"}'
-
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            case "${{ github.event.schedule }}" in
-              "0 18 * * *") matrix="{\"include\":[${pre}]}" ;;
-              "20 18 * * *") matrix="{\"include\":[${smart}]}" ;;
-              *)
-                echo "Unsupported schedule: ${{ github.event.schedule }}" >&2
-                exit 1
-                ;;
-            esac
-          else
-            matrix="{\"include\":[${pre},${smart}]}"
-          fi
-
-          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
-
-  build-native:
-    name: Build Native (${{ matrix.channel }})
-    needs: prepare-matrix
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
-    uses: ./.github/workflows/reusable-build-native.yml
+  build-geo-pre:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    uses: ./.github/workflows/reusable-build-geo.yml
     with:
-      channel: ${{ matrix.channel }}
-      kernel_channel: ${{ matrix.kernel_channel }}
+      channel: pre
     secrets: inherit
 
-  build-apk-and-publish:
-    name: Build APK And Publish (${{ matrix.channel }})
-    needs: [prepare-matrix, build-native]
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
-    uses: ./.github/workflows/reusable-build-apk.yml
+  build-native-abi-pre-armeabi-v7a:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
-      channel: ${{ matrix.channel }}
-      release_tag: ${{ matrix.release_tag }}
-      release_name: ${{ matrix.release_name }}
-      prerelease: ${{ matrix.prerelease }}
-      meta_asset_name: ${{ matrix.meta_asset_name }}
-      cleanup_assets: ${{ matrix.cleanup_assets }}
-      telegram_title: ${{ matrix.telegram_title }}
+      channel: pre
+      kernel_channel: alpha
+      abi: armeabi-v7a
+    secrets: inherit
+
+  build-native-abi-pre-arm64-v8a:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: pre
+      kernel_channel: alpha
+      abi: arm64-v8a
+    secrets: inherit
+
+  build-native-abi-pre-x86:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: pre
+      kernel_channel: alpha
+      abi: x86
+    secrets: inherit
+
+  build-native-abi-pre-x86_64:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: pre
+      kernel_channel: alpha
+      abi: x86_64
+    secrets: inherit
+
+  build-geo-smart:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    uses: ./.github/workflows/reusable-build-geo.yml
+    with:
+      channel: smart
+    secrets: inherit
+
+  build-native-abi-smart-armeabi-v7a:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: smart
+      kernel_channel: smart
+      abi: armeabi-v7a
+    secrets: inherit
+
+  build-native-abi-smart-arm64-v8a:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: smart
+      kernel_channel: smart
+      abi: arm64-v8a
+    secrets: inherit
+
+  build-native-abi-smart-x86:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: smart
+      kernel_channel: smart
+      abi: x86
+    secrets: inherit
+
+  build-native-abi-smart-x86_64:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: smart
+      kernel_channel: smart
+      abi: x86_64
+    secrets: inherit
+
+  bundle-native-pre:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs:
+      - build-geo-pre
+      - build-native-abi-pre-armeabi-v7a
+      - build-native-abi-pre-arm64-v8a
+      - build-native-abi-pre-x86
+      - build-native-abi-pre-x86_64
+    uses: ./.github/workflows/reusable-bundle-native.yml
+    with:
+      channel: pre
+    secrets: inherit
+
+  bundle-native-smart:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    needs:
+      - build-geo-smart
+      - build-native-abi-smart-armeabi-v7a
+      - build-native-abi-smart-arm64-v8a
+      - build-native-abi-smart-x86
+      - build-native-abi-smart-x86_64
+    uses: ./.github/workflows/reusable-bundle-native.yml
+    with:
+      channel: smart
+    secrets: inherit
+
+  build-apk-pre-app:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs: bundle-native-pre
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: pre
+      module: app
+      artifact_prefix: yumebox-pre
+      release_tag: Pre-release
+      meta_asset_name: yumebox-pre-meta.json
+      raw_apk_artifact_name: apk-raw-pre-app
+    secrets: inherit
+
+  build-apk-pre-lite:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs: bundle-native-pre
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: pre
+      module: lite
+      artifact_prefix: yumebox-lite-alpha
+      release_tag: Pre-release
+      meta_asset_name: yumebox-lite-alpha-meta.json
+      raw_apk_artifact_name: apk-raw-pre-lite
+    secrets: inherit
+
+  build-apk-smart-app:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    needs: bundle-native-smart
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: smart
+      module: app
+      artifact_prefix: yumebox-smart
+      release_tag: Smart
+      meta_asset_name: yumebox-smart-meta.json
+      raw_apk_artifact_name: apk-raw-smart-app
+    secrets: inherit
+
+  prepare-publish-pre-app:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs: build-apk-pre-app
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: pre
+      module: app
+      artifact_prefix: yumebox-pre
+      release_tag: Pre-release
+      meta_asset_name: yumebox-pre-meta.json
+      raw_apk_artifact_name: apk-raw-pre-app
+      publish_artifact_name: publish-pre-app
+    secrets: inherit
+
+  prepare-publish-pre-lite:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs: build-apk-pre-lite
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: pre
+      module: lite
+      artifact_prefix: yumebox-lite-alpha
+      release_tag: Pre-release
+      meta_asset_name: yumebox-lite-alpha-meta.json
+      raw_apk_artifact_name: apk-raw-pre-lite
+      publish_artifact_name: publish-pre-lite
+    secrets: inherit
+
+  prepare-publish-smart-app:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    needs: build-apk-smart-app
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: smart
+      module: app
+      artifact_prefix: yumebox-smart
+      release_tag: Smart
+      meta_asset_name: yumebox-smart-meta.json
+      raw_apk_artifact_name: apk-raw-smart-app
+      publish_artifact_name: publish-smart-app
+    secrets: inherit
+
+  publish-release-pre:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs:
+      - prepare-publish-pre-app
+      - prepare-publish-pre-lite
+    uses: ./.github/workflows/reusable-publish-release.yml
+    with:
+      channel: pre
+      release_tag: Pre-release
+      release_name: Pre-release
+      prerelease: true
+      publish_artifacts: publish-pre-app,publish-pre-lite
+      cleanup_assets: true
+    secrets: inherit
+
+  publish-release-smart:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    needs: prepare-publish-smart-app
+    uses: ./.github/workflows/reusable-publish-release.yml
+    with:
+      channel: smart
+      release_tag: Smart
+      release_name: Smart
+      prerelease: true
+      publish_artifacts: publish-smart-app
+      cleanup_assets: true
+    secrets: inherit
+
+  notify-pre:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
+    needs:
+      - prepare-publish-pre-app
+      - publish-release-pre
+    uses: ./.github/workflows/reusable-notify-telegram.yml
+    with:
+      channel: pre
+      release_tag: Pre-release
+      publish_artifact_name: publish-pre-app
+      meta_asset_name: yumebox-pre-meta.json
+      telegram_title: YumeBox Pre
+    secrets: inherit
+
+  notify-smart:
+    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
+    needs:
+      - prepare-publish-smart-app
+      - publish-release-smart
+    uses: ./.github/workflows/reusable-notify-telegram.yml
+    with:
+      channel: smart
+      release_tag: Smart
+      publish_artifact_name: publish-smart-app
+      meta_asset_name: yumebox-smart-meta.json
+      telegram_title: YumeBox Smart
     secrets: inherit

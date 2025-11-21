@@ -19,22 +19,102 @@ permissions:
   contents: write
 
 jobs:
-  build-native:
-    uses: ./.github/workflows/reusable-build-native.yml
+  build-geo-stable:
+    uses: ./.github/workflows/reusable-build-geo.yml
+    with:
+      channel: stable
+    secrets: inherit
+
+  build-native-abi-stable-armeabi-v7a:
+    uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: stable
       kernel_channel: meta
+      abi: armeabi-v7a
     secrets: inherit
 
-  build-apk-and-publish:
-    needs: build-native
-    uses: ./.github/workflows/reusable-build-apk.yml
+  build-native-abi-stable-arm64-v8a:
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: stable
+      kernel_channel: meta
+      abi: arm64-v8a
+    secrets: inherit
+
+  build-native-abi-stable-x86:
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: stable
+      kernel_channel: meta
+      abi: x86
+    secrets: inherit
+
+  build-native-abi-stable-x86_64:
+    uses: ./.github/workflows/reusable-build-native-abi.yml
+    with:
+      channel: stable
+      kernel_channel: meta
+      abi: x86_64
+    secrets: inherit
+
+  bundle-native-stable:
+    needs:
+      - build-geo-stable
+      - build-native-abi-stable-armeabi-v7a
+      - build-native-abi-stable-arm64-v8a
+      - build-native-abi-stable-x86
+      - build-native-abi-stable-x86_64
+    uses: ./.github/workflows/reusable-bundle-native.yml
+    with:
+      channel: stable
+    secrets: inherit
+
+  build-apk-stable-app:
+    needs: bundle-native-stable
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: stable
+      module: app
+      artifact_prefix: yumebox-stable
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-meta.json
+      raw_apk_artifact_name: apk-raw-stable-app
+    secrets: inherit
+
+  prepare-publish-stable-app:
+    needs: build-apk-stable-app
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: stable
+      module: app
+      artifact_prefix: yumebox-stable
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-meta.json
+      raw_apk_artifact_name: apk-raw-stable-app
+      publish_artifact_name: publish-stable-app
+    secrets: inherit
+
+  publish-release-stable:
+    needs: prepare-publish-stable-app
+    uses: ./.github/workflows/reusable-publish-release.yml
     with:
       channel: stable
       release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
       release_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
       prerelease: false
-      meta_asset_name: yumebox-stable-meta.json
+      publish_artifacts: publish-stable-app
       cleanup_assets: false
+    secrets: inherit
+
+  notify-stable:
+    needs:
+      - prepare-publish-stable-app
+      - publish-release-stable
+    uses: ./.github/workflows/reusable-notify-telegram.yml
+    with:
+      channel: stable
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      publish_artifact_name: publish-stable-app
+      meta_asset_name: yumebox-stable-meta.json
       telegram_title: YumeBox Stable
     secrets: inherit
