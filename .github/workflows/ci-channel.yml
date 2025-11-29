@@ -10,7 +10,6 @@ on:
       - ".gitignore"
   schedule:
     - cron: "0 18 * * *"
-    - cron: "20 18 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -22,14 +21,12 @@ permissions:
 
 jobs:
   build-geo-pre:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     uses: ./.github/workflows/reusable-build-geo.yml
     with:
       channel: pre
     secrets: inherit
 
   build-native-abi-pre-armeabi-v7a:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: pre
@@ -38,7 +35,6 @@ jobs:
     secrets: inherit
 
   build-native-abi-pre-arm64-v8a:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: pre
@@ -47,7 +43,6 @@ jobs:
     secrets: inherit
 
   build-native-abi-pre-x86:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: pre
@@ -56,7 +51,6 @@ jobs:
     secrets: inherit
 
   build-native-abi-pre-x86_64:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: pre
@@ -65,14 +59,12 @@ jobs:
     secrets: inherit
 
   build-geo-smart:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     uses: ./.github/workflows/reusable-build-geo.yml
     with:
       channel: smart
     secrets: inherit
 
   build-native-abi-smart-armeabi-v7a:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: smart
@@ -81,7 +73,6 @@ jobs:
     secrets: inherit
 
   build-native-abi-smart-arm64-v8a:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: smart
@@ -90,7 +81,6 @@ jobs:
     secrets: inherit
 
   build-native-abi-smart-x86:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: smart
@@ -99,7 +89,6 @@ jobs:
     secrets: inherit
 
   build-native-abi-smart-x86_64:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: smart
@@ -108,7 +97,6 @@ jobs:
     secrets: inherit
 
   bundle-native-pre:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs:
       - build-geo-pre
       - build-native-abi-pre-armeabi-v7a
@@ -121,7 +109,6 @@ jobs:
     secrets: inherit
 
   bundle-native-smart:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     needs:
       - build-geo-smart
       - build-native-abi-smart-armeabi-v7a
@@ -134,7 +121,6 @@ jobs:
     secrets: inherit
 
   build-apk-pre-app:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs: bundle-native-pre
     uses: ./.github/workflows/reusable-build-apk-only.yml
     with:
@@ -147,7 +133,6 @@ jobs:
     secrets: inherit
 
   build-apk-pre-lite:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs: bundle-native-pre
     uses: ./.github/workflows/reusable-build-apk-only.yml
     with:
@@ -160,7 +145,6 @@ jobs:
     secrets: inherit
 
   build-apk-smart-app:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     needs: bundle-native-smart
     uses: ./.github/workflows/reusable-build-apk-only.yml
     with:
@@ -173,7 +157,6 @@ jobs:
     secrets: inherit
 
   prepare-publish-pre-app:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs: build-apk-pre-app
     uses: ./.github/workflows/reusable-prepare-publish.yml
     with:
@@ -187,7 +170,6 @@ jobs:
     secrets: inherit
 
   prepare-publish-pre-lite:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs: build-apk-pre-lite
     uses: ./.github/workflows/reusable-prepare-publish.yml
     with:
@@ -201,7 +183,6 @@ jobs:
     secrets: inherit
 
   prepare-publish-smart-app:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     needs: build-apk-smart-app
     uses: ./.github/workflows/reusable-prepare-publish.yml
     with:
@@ -215,7 +196,6 @@ jobs:
     secrets: inherit
 
   publish-release-pre:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs:
       - prepare-publish-pre-app
       - prepare-publish-pre-lite
@@ -230,7 +210,6 @@ jobs:
     secrets: inherit
 
   publish-release-smart:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     needs: prepare-publish-smart-app
     uses: ./.github/workflows/reusable-publish-release.yml
     with:
@@ -243,7 +222,6 @@ jobs:
     secrets: inherit
 
   notify-pre:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 18 * * *'
     needs:
       - prepare-publish-pre-app
       - publish-release-pre
@@ -257,7 +235,6 @@ jobs:
     secrets: inherit
 
   notify-smart:
-    if: github.event_name != 'schedule' || github.event.schedule == '20 18 * * *'
     needs:
       - prepare-publish-smart-app
       - publish-release-smart

@@ -77,9 +77,11 @@ class ProxyViewModel(
     init {
         proxyFacade.warmUpProxyGroups()
         viewModelScope.launch {
-            proxyGroups.collect { groups ->
-                groupSorter.track(groups)
-            }
+            proxyGroups
+                .distinctUntilChangedBy { groups -> groups.map(ProxyGroupInfo::name) }
+                .collect { groups ->
+                    groupSorter.track(groups)
+                }
         }
     }
 

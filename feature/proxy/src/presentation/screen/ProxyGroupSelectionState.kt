@@ -22,8 +22,6 @@ package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -45,11 +43,16 @@ fun rememberProxyGroupSelectionState(
 ): ProxyGroupSelectionState {
     val selectedGroupNameState = rememberSaveable { mutableStateOf<String?>(null) }
     val selectedGroupSnapshotState = remember { mutableStateOf<ProxyGroupInfo?>(null) }
-    val groupsByName = remember(proxyGroups) { proxyGroups.associateBy { it.name } }
-    val selectedGroup by remember(selectedGroupNameState.value, groupsByName) {
-        derivedStateOf {
-            selectedGroupNameState.value?.let(groupsByName::get)
+    val selectGroup = remember { { group: ProxyGroupInfo -> selectedGroupNameState.value = group.name } }
+    val clearSelection = remember { { selectedGroupNameState.value = null } }
+    val selectedGroupName = selectedGroupNameState.value
+    val selectedGroup = remember(selectedGroupName, proxyGroups) {
+        selectedGroupName?.let { groupName ->
+            proxyGroups.firstOrNull { group -> group.name == groupName }
         }
+    }
+    val displayGroup = remember(selectedGroup, selectedGroupSnapshotState.value, retainLastKnownGroup) {
+        selectedGroup ?: selectedGroupSnapshotState.value.takeIf { retainLastKnownGroup }
     }
 
     LaunchedEffect(selectedGroup, retainLastKnownGroup) {
@@ -58,28 +61,29 @@ fun rememberProxyGroupSelectionState(
         }
     }
 
-    LaunchedEffect(proxyGroups, selectedGroupNameState.value, retainLastKnownGroup) {
-        if (!retainLastKnownGroup && selectedGroupNameState.value != null && selectedGroup == null) {
+    LaunchedEffect(selectedGroupName, selectedGroup, retainLastKnownGroup) {
+        if (!retainLastKnownGroup && selectedGroupName != null && selectedGroup == null) {
             selectedGroupNameState.value = null
         }
     }
 
-    LaunchedEffect(selectedGroupNameState.value) {
-        selectedGroupNameState.value?.let(onRefreshGroup)
+    LaunchedEffect(selectedGroupName) {
+        selectedGroupName?.let(onRefreshGroup)
     }
 
     return remember(
-        selectedGroupNameState.value,
+        selectedGroupName,
         selectedGroup,
-        selectedGroupSnapshotState.value,
-        retainLastKnownGroup,
+        displayGroup,
+        selectGroup,
+        clearSelection,
     ) {
         ProxyGroupSelectionState(
-            selectedGroupName = selectedGroupNameState.value,
+            selectedGroupName = selectedGroupName,
             selectedGroup = selectedGroup,
-            displayGroup = selectedGroup ?: selectedGroupSnapshotState.value.takeIf { retainLastKnownGroup },
-            selectGroup = { group -> selectedGroupNameState.value = group.name },
-            clearSelection = { selectedGroupNameState.value = null },
+            displayGroup = displayGroup,
+            selectGroup = selectGroup,
+            clearSelection = clearSelection,
         )
     }
 }

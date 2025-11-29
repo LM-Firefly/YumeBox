@@ -45,7 +45,9 @@ fun OverrideProxyDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = OverrideStructuredEditorStore.proxyDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyNode }
+    val title = remember {
+        OverrideStructuredEditorStore.proxyDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyNode }
+    }
     val initialValue = remember { OverrideStructuredEditorStore.proxyDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -64,9 +66,11 @@ fun OverrideProxyDraftEditorScreen(
     var editingExtraKey by remember { mutableStateOf<String?>(null) }
     var showExtraFieldDialog by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf<String?>(null) }
-    val selectedPresetIndex = OverrideProxyTypePresets.indexOfFirst {
-        it.equals(type, ignoreCase = true)
-    }.coerceAtLeast(0)
+    val selectedPresetIndex by remember(type) {
+        derivedStateOf {
+            OverrideProxyTypePresets.indexOfFirst { it.equals(type, ignoreCase = true) }.coerceAtLeast(0)
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {

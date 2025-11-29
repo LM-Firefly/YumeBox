@@ -16,7 +16,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.openUrl
@@ -37,11 +37,13 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.collect
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Scaffold
-import kotlin.math.max
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 @Destination<RootGraph>
@@ -59,6 +61,8 @@ fun MainScreen(
     val featureViewModel = koinViewModel<FeatureViewModel>()
     val homeViewModel = koinViewModel<HomeViewModel>()
     val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
+    val bottomBarUseLegacyStyle by appSettingsViewModel.bottomBarUseLegacyStyle.state.collectAsState()
+    val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsState()
     val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsState()
     val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsState()
     val acgWallpaperZoom by appSettingsViewModel.acgWallpaperZoom.state.collectAsState()
@@ -67,6 +71,7 @@ fun MainScreen(
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
     val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
     val bottomBarScrollBehavior = rememberBottomBarScrollBehavior(autoHideEnabled = bottomBarAutoHideEnabled)
+    val pagerFlingBehavior = rememberMainPagerFlingBehavior(mainPagerState.pagerState)
     var settledMainPage by remember { mutableIntStateOf(initialMainPage) }
     val homeVisibility by remember(mainPagerState) {
         derivedStateOf {
@@ -86,6 +91,17 @@ fun MainScreen(
                 settledMainPage != 0
             }
         }
+    }
+    val bottomBarBackground = if (MiuixTheme.colorScheme.background.luminance() < 0.5f) {
+        MiuixTheme.colorScheme.surface
+    } else {
+        MiuixTheme.colorScheme.background
+    }
+    val bottomBarHazeStyle = remember(bottomBarBackground) {
+        HazeStyle(
+            backgroundColor = bottomBarBackground.copy(alpha = 0.10f),
+            tint = HazeTint(bottomBarBackground.copy(alpha = 0.16f)),
+        )
     }
 
     LaunchedEffect(mainPagerState.pagerState.currentPage) {
@@ -124,33 +140,40 @@ fun MainScreen(
         LocalMainPagerState provides mainPagerState,
         LocalHandlePageChange provides handlePageChange,
         LocalBottomBarScrollBehavior provides bottomBarScrollBehavior,
+        LocalBottomBarHazeState provides if (topBarBlurEnabled) hazeState else null,
+        LocalBottomBarHazeStyle provides if (topBarBlurEnabled) bottomBarHazeStyle else null,
+        LocalBottomBarUseLegacyStyle provides bottomBarUseLegacyStyle,
     ) {
         Scaffold { innerPadding ->
             Box(Modifier.fillMaxSize()) {
-                val density = LocalDensity.current
                 val layoutDirection = LocalLayoutDirection.current
-                val systemBottomInset = with(density) {
-                    val navBottom = WindowInsets.navigationBars.getBottom(this)
-                    val gestureBottom = WindowInsets.systemGestures.getBottom(this)
-                    max(navBottom, gestureBottom).toDp()
-                }
+                val visibleBottomBarReservedHeight = rememberBottomBarReservedHeight(
+                    useLegacyStyle = bottomBarUseLegacyStyle,
+                )
                 val bottomBarReservedHeight by animateDpAsState(
-                    targetValue = if (acgBottomBarVisible) 74.dp else 0.dp,
+                    targetValue = if (acgBottomBarVisible) visibleBottomBarReservedHeight else 0.dp,
                     animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
                     label = "main_bottom_bar_reserved_height",
                 )
                 val mainInnerPadding = PaddingValues(
                     top = innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding() + bottomBarReservedHeight + systemBottomInset,
+                    bottom = innerPadding.calculateBottomPadding() + bottomBarReservedHeight,
                     start = WindowInsets.systemBars.asPaddingValues().calculateStartPadding(layoutDirection),
                     end = WindowInsets.systemBars.asPaddingValues().calculateEndPadding(layoutDirection),
                 )
                 HorizontalPager(
                     modifier = Modifier
                         .fillMaxSize()
-                        .hazeSource(state = hazeState),
+                        .let { modifier ->
+                            if (topBarBlurEnabled) {
+                                modifier.hazeSource(state = hazeState)
+                            } else {
+                                modifier
+                            }
+                        },
                     state = mainPagerState.pagerState,
                     beyondViewportPageCount = 2,
+                    flingBehavior = pagerFlingBehavior,
                     userScrollEnabled = true,
                     overscrollEffect = null,
                     pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
@@ -179,7 +202,10 @@ fun MainScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
-                    BottomBarContent(isVisible = acgBottomBarVisible)
+                    BottomBarContent(
+                        isVisible = acgBottomBarVisible,
+                        useLegacyStyle = bottomBarUseLegacyStyle,
+                    )
                 }
             }
         }

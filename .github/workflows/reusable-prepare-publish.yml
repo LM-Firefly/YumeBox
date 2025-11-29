@@ -99,7 +99,11 @@ jobs:
               *) abi="universal" ;;
             esac
 
-            new_name="${{ inputs.artifact_prefix }}-${version_name}-${version_code}-${abi}.apk"
+            if [ "$abi" = "universal" ]; then
+              new_name="${{ inputs.artifact_prefix }}.apk"
+            else
+              new_name="${{ inputs.artifact_prefix }}-${abi}.apk"
+            fi
             cp -f "$file" "publish/${new_name}"
           done < <(find "${{ inputs.module }}/build/outputs/apk/release" -maxdepth 1 -type f -name '*.apk' | sort)
 

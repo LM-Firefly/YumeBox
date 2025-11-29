@@ -24,6 +24,7 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -89,6 +90,14 @@ fun OverrideListScreen(
     val exportTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
     val listState = rememberLazyListState()
     val createFabController = rememberOverrideFabController()
+    val configItems = remember(userConfigs, usageCountMap) {
+        userConfigs.map { config ->
+            OverrideConfigListItem(
+                config = config,
+                isInUse = (usageCountMap[config.id] ?: 0) > 0,
+            )
+        }
+    }
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
         viewModel.reorderUserConfigs(
             fromIndex = from.index,
@@ -216,7 +225,10 @@ fun OverrideListScreen(
         ) {
             when {
                 userConfigs.isEmpty() -> {
-                    item(key = "override-empty") {
+                    item(
+                        key = "override-empty",
+                        contentType = "override-empty",
+                    ) {
                         Box(
                             modifier = Modifier
                                 .fillParentMaxSize()
@@ -256,11 +268,11 @@ fun OverrideListScreen(
 
                 else -> {
                     items(
-                        count = userConfigs.size,
-                        key = { index -> userConfigs[index].id },
-                    ) { index ->
-                        val config = userConfigs[index]
-                        val isInUse = (usageCountMap[config.id] ?: 0) > 0
+                        items = configItems,
+                        key = { it.config.id },
+                        contentType = { "override-config-card" },
+                    ) { item ->
+                        val config = item.config
                         ReorderableItem(
                             state = reorderState,
                             key = config.id,
@@ -268,7 +280,7 @@ fun OverrideListScreen(
                             OverrideConfigCard(
                                 config = config,
                                 isDragging = isDragging,
-                                isInUse = isInUse,
+                                isInUse = item.isInUse,
                                 onCopy = {
                                     viewModel.duplicateConfig(config.id)
                                     context.toast(MLang.Override.Card.Copy + "：" + config.name)
@@ -635,12 +647,6 @@ private fun EditOptionsDialog(
         ) {
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = onCodeEditor,
-            ) {
-                Text(MLang.Override.Dialog.EditOptions.CodeEditor)
-            }
-            Button(
-                modifier = Modifier.fillMaxWidth(),
                 onClick = onVisualEdit,
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
@@ -649,6 +655,17 @@ private fun EditOptionsDialog(
                     color = colorScheme.onPrimary,
                 )
             }
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onCodeEditor,
+            ) {
+                Text(MLang.Override.Dialog.EditOptions.CodeEditor)
+            }
         }
     }
 }
+
+private data class OverrideConfigListItem(
+    val config: OverrideConfig,
+    val isInUse: Boolean,
+)

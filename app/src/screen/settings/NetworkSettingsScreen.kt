@@ -78,35 +78,11 @@ fun NetworkSettingsScreen(
     val viewModel = koinViewModel<NetworkSettingsViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
-    val proxyMode by viewModel.currentProxyMode.collectAsState()
-    val bypassPrivateNetwork by viewModel.bypassPrivateNetwork.state.collectAsState()
-    val dnsHijack by viewModel.dnsHijack.state.collectAsState()
-    val allowBypass by viewModel.allowBypass.state.collectAsState()
-    val enableIPv6 by viewModel.enableIPv6.state.collectAsState()
-    val systemProxy by viewModel.systemProxy.state.collectAsState()
-    val tunStack by viewModel.tunStack.state.collectAsState()
-    val rootTunAutoRoute by viewModel.rootTunAutoRoute.state.collectAsState()
-    val rootTunStrictRoute by viewModel.rootTunStrictRoute.state.collectAsState()
-    val rootTunAutoRedirect by viewModel.rootTunAutoRedirect.state.collectAsState()
-    val rootTunDnsMode by viewModel.rootTunDnsMode.state.collectAsState()
-    val accessControlMode by viewModel.accessControlMode.state.collectAsState()
-
-    val rootTunIfNameDraft by viewModel.rootTunIfNameDraft.collectAsState()
-    val rootTunMtuDraft by viewModel.rootTunMtuDraft.collectAsState()
-    val rootTunFakeIpRangeDraft by viewModel.rootTunFakeIpRangeDraft.collectAsState()
-    val rootTunFakeIpRange6Draft by viewModel.rootTunFakeIpRange6Draft.collectAsState()
-    var enableModeTransition by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.errors.collect { message ->
             context.toast(message)
         }
-    }
-
-    LaunchedEffect(Unit) {
-        enableModeTransition = true
     }
 
     val vpnPermissionLauncher = rememberLauncherForActivityResult(
@@ -130,154 +106,196 @@ fun NetworkSettingsScreen(
             innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item {
-                Title(MLang.NetworkSettings.Section.VpnService)
-                Card {
-                    PreferenceEnumItem(
-                        title = MLang.NetworkSettings.VpnService.RouteTrafficTitle,
-                        summary = MLang.NetworkSettings.VpnService.RouteTrafficSummary,
-                        currentValue = proxyMode,
-                        items = listOf(
-                            MLang.NetworkSettings.VpnService.SystemProxy,
-                            MLang.NetworkSettings.VpnService.VpnMode,
-                            MLang.NetworkSettings.VpnService.RootTunMode,
-                        ),
-                        values = listOf(
-                            ProxyMode.Http,
-                            ProxyMode.Tun,
-                            ProxyMode.RootTun,
-                        ),
-                        onValueChange = { mode ->
-                            when (mode) {
-                                ProxyMode.Tun -> {
-                                    if (!VpnUtils.checkVpnPermission(context)) {
-                                        VpnUtils.getVpnPermissionIntent(context)?.let(vpnPermissionLauncher::launch)
-                                            ?: viewModel.onProxyModeChange(mode)
-                                    } else {
-                                        viewModel.onProxyModeChange(mode)
-                                    }
-                                }
-
-                                ProxyMode.RootTun -> {
-                                    coroutineScope.launch {
-                                        val rootStatus = RootAccessSupport.evaluateAsync(context)
-                                        if (!rootStatus.canStartRootTun) {
-                                            context.toast(rootStatus.rootTunBlockedMessage())
-                                            return@launch
-                                        }
-                                        viewModel.onProxyModeChange(mode)
-                                    }
-                                }
-
-                                ProxyMode.Http -> {
-                                    viewModel.onProxyModeChange(mode)
-                                }
-                            }
-                        },
-                    )
-                }
+                NetworkVpnServiceSection(
+                    viewModel = viewModel,
+                    configuredMode = uiState.configuredMode,
+                    vpnPermissionLauncher = vpnPermissionLauncher,
+                )
             }
             item {
-                AnimatedVisibility(
-                    visible = uiState.showServiceOptions,
-                    enter = if (enableModeTransition) fadeIn() + expandVertically() else EnterTransition.None,
-                    exit = if (enableModeTransition) fadeOut() + shrinkVertically() else ExitTransition.None,
-                ) {
-                    Column {
-                        Title(MLang.NetworkSettings.Section.VpnOptions)
-                        Card(
-                            modifier = Modifier.animateContentSize(),
-                        ) {
-                            AnimatedContent(
-                                targetState = uiState.configuredMode,
-                                transitionSpec = {
-                                    if (enableModeTransition) {
-                                        fadeIn() togetherWith fadeOut()
-                                    } else {
-                                        EnterTransition.None togetherWith ExitTransition.None
-                                    }
-                                },
-                                label = "network_service_options",
-                            ) { mode ->
-                                when (mode) {
-                                    ProxyMode.Http -> Spacer(modifier = Modifier.height(0.dp))
-                                    ProxyMode.Tun -> TunServiceOptions(
-                                        bypassPrivateNetwork = bypassPrivateNetwork,
-                                        dnsHijack = dnsHijack,
-                                        allowBypass = allowBypass,
-                                        enableIPv6 = enableIPv6,
-                                        systemProxy = systemProxy,
-                                        tunStack = tunStack,
-                                        onBypassPrivateNetworkChange = viewModel::onBypassPrivateNetworkChange,
-                                        onDnsHijackChange = viewModel::onDnsHijackChange,
-                                        onAllowBypassChange = viewModel::onAllowBypassChange,
-                                        onEnableIPv6Change = viewModel::onEnableIPv6Change,
-                                        onSystemProxyChange = viewModel::onSystemProxyChange,
-                                        onTunStackChange = viewModel::onTunStackChange,
-                                    )
-
-                                    ProxyMode.RootTun -> RootTunServiceOptions(
-                                        bypassPrivateNetwork = bypassPrivateNetwork,
-                                        dnsHijack = dnsHijack,
-                                        enableIPv6 = enableIPv6,
-                                        tunStack = tunStack,
-                                        rootTunAutoRoute = rootTunAutoRoute,
-                                        rootTunStrictRoute = rootTunStrictRoute,
-                                        rootTunAutoRedirect = rootTunAutoRedirect,
-                                        rootTunDnsMode = rootTunDnsMode,
-                                        rootTunIfNameDraft = rootTunIfNameDraft,
-                                        rootTunMtuDraft = rootTunMtuDraft,
-                                        rootTunFakeIpRangeDraft = rootTunFakeIpRangeDraft,
-                                        rootTunFakeIpRange6Draft = rootTunFakeIpRange6Draft,
-                                        showFakeIpRange = uiState.showFakeIpRange,
-                                        onBypassPrivateNetworkChange = viewModel::onBypassPrivateNetworkChange,
-                                        onDnsHijackChange = viewModel::onDnsHijackChange,
-                                        onEnableIPv6Change = viewModel::onEnableIPv6Change,
-                                        onTunStackChange = viewModel::onTunStackChange,
-                                        onRootTunAutoRouteChange = viewModel::onRootTunAutoRouteChange,
-                                        onRootTunStrictRouteChange = viewModel::onRootTunStrictRouteChange,
-                                        onRootTunAutoRedirectChange = viewModel::onRootTunAutoRedirectChange,
-                                        onRootTunDnsModeChange = viewModel::onRootTunDnsModeChange,
-                                        onRootTunIfNameDraftChange = viewModel::onRootTunIfNameDraftChange,
-                                        onRootTunMtuDraftChange = viewModel::onRootTunMtuDraftChange,
-                                        onRootTunFakeIpRangeDraftChange = viewModel::onRootTunFakeIpRangeDraftChange,
-                                        onRootTunFakeIpRange6DraftChange = viewModel::onRootTunFakeIpRange6DraftChange,
-                                        commitRootTunIfName = viewModel::commitRootTunIfName,
-                                        commitRootTunMtu = viewModel::commitRootTunMtu,
-                                        commitRootTunFakeIpRange = viewModel::commitRootTunFakeIpRange,
-                                        commitRootTunFakeIpRange6 = viewModel::commitRootTunFakeIpRange6,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                NetworkServiceOptionsSection(
+                    viewModel = viewModel,
+                    uiState = uiState,
+                )
             }
             item {
-                Title(MLang.NetworkSettings.Section.ProxyOptions)
-                Card {
-                    if (uiState.showAccessControlMode) {
-                        PreferenceEnumItem(
-                            title = MLang.NetworkSettings.ProxyOptions.AccessControlModeTitle,
-                            currentValue = accessControlMode,
-                            items = listOf(
-                                MLang.NetworkSettings.ProxyOptions.AllowAll,
-                                MLang.NetworkSettings.ProxyOptions.AllowSelected,
-                                MLang.NetworkSettings.ProxyOptions.RejectSelected,
-                            ),
-                            values = AccessControlMode.entries,
-                            onValueChange = viewModel::onAccessControlModeChange,
-                        )
-                    }
-                    PreferenceArrowItem(
-                        title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,
-                        summary = MLang.NetworkSettings.ProxyOptions.ManageAccessControlSummary,
-                        onClick = {
-                            navigator.navigate(AccessControlScreenDestination)
-                        },
-                    )
-                }
+                NetworkProxyOptionsSection(
+                    viewModel = viewModel,
+                    navigator = navigator,
+                    showAccessControlMode = uiState.showAccessControlMode,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun NetworkVpnServiceSection(
+    viewModel: NetworkSettingsViewModel,
+    configuredMode: ProxyMode,
+    vpnPermissionLauncher: androidx.activity.result.ActivityResultLauncher<android.content.Intent>,
+) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    Title(MLang.NetworkSettings.Section.VpnService)
+    Card {
+        PreferenceEnumItem(
+            title = MLang.NetworkSettings.VpnService.RouteTrafficTitle,
+            summary = MLang.NetworkSettings.VpnService.RouteTrafficSummary,
+            currentValue = configuredMode,
+            items = listOf(
+                MLang.NetworkSettings.VpnService.SystemProxy,
+                MLang.NetworkSettings.VpnService.VpnMode,
+                MLang.NetworkSettings.VpnService.RootTunMode,
+            ),
+            values = listOf(
+                ProxyMode.Http,
+                ProxyMode.Tun,
+                ProxyMode.RootTun,
+            ),
+            onValueChange = { mode ->
+                when (mode) {
+                    ProxyMode.Tun -> {
+                        if (!VpnUtils.checkVpnPermission(context)) {
+                            VpnUtils.getVpnPermissionIntent(context)?.let(vpnPermissionLauncher::launch)
+                                ?: viewModel.onProxyModeChange(mode)
+                        } else {
+                            viewModel.onProxyModeChange(mode)
+                        }
+                    }
+
+                    ProxyMode.RootTun -> {
+                        coroutineScope.launch {
+                            val rootStatus = RootAccessSupport.evaluateAsync(context)
+                            if (!rootStatus.canStartRootTun) {
+                                context.toast(rootStatus.rootTunBlockedMessage())
+                                return@launch
+                            }
+                            viewModel.onProxyModeChange(mode)
+                        }
+                    }
+
+                    ProxyMode.Http -> {
+                        viewModel.onProxyModeChange(mode)
+                    }
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun NetworkServiceOptionsSection(
+    viewModel: NetworkSettingsViewModel,
+    uiState: NetworkSettingsUiState,
+) {
+    if (!uiState.showServiceOptions) return
+
+    val bypassPrivateNetwork by viewModel.bypassPrivateNetwork.state.collectAsState()
+    val dnsHijack by viewModel.dnsHijack.state.collectAsState()
+    val enableIPv6 by viewModel.enableIPv6.state.collectAsState()
+    val tunStack by viewModel.tunStack.state.collectAsState()
+
+    Title(MLang.NetworkSettings.Section.VpnOptions)
+    Card {
+        when (uiState.configuredMode) {
+            ProxyMode.Http -> Spacer(modifier = Modifier.height(0.dp))
+            ProxyMode.Tun -> {
+                val allowBypass by viewModel.allowBypass.state.collectAsState()
+                val systemProxy by viewModel.systemProxy.state.collectAsState()
+
+                TunServiceOptions(
+                    bypassPrivateNetwork = bypassPrivateNetwork,
+                    dnsHijack = dnsHijack,
+                    allowBypass = allowBypass,
+                    enableIPv6 = enableIPv6,
+                    systemProxy = systemProxy,
+                    tunStack = tunStack,
+                    onBypassPrivateNetworkChange = viewModel::onBypassPrivateNetworkChange,
+                    onDnsHijackChange = viewModel::onDnsHijackChange,
+                    onAllowBypassChange = viewModel::onAllowBypassChange,
+                    onEnableIPv6Change = viewModel::onEnableIPv6Change,
+                    onSystemProxyChange = viewModel::onSystemProxyChange,
+                    onTunStackChange = viewModel::onTunStackChange,
+                )
+            }
+
+            ProxyMode.RootTun -> {
+                val rootTunAutoRoute by viewModel.rootTunAutoRoute.state.collectAsState()
+                val rootTunStrictRoute by viewModel.rootTunStrictRoute.state.collectAsState()
+                val rootTunAutoRedirect by viewModel.rootTunAutoRedirect.state.collectAsState()
+                val rootTunDnsMode by viewModel.rootTunDnsMode.state.collectAsState()
+                val rootTunIfNameDraft by viewModel.rootTunIfNameDraft.collectAsState()
+                val rootTunMtuDraft by viewModel.rootTunMtuDraft.collectAsState()
+                val rootTunFakeIpRangeDraft by viewModel.rootTunFakeIpRangeDraft.collectAsState()
+                val rootTunFakeIpRange6Draft by viewModel.rootTunFakeIpRange6Draft.collectAsState()
+
+                RootTunServiceOptions(
+                    bypassPrivateNetwork = bypassPrivateNetwork,
+                    dnsHijack = dnsHijack,
+                    enableIPv6 = enableIPv6,
+                    tunStack = tunStack,
+                    rootTunAutoRoute = rootTunAutoRoute,
+                    rootTunStrictRoute = rootTunStrictRoute,
+                    rootTunAutoRedirect = rootTunAutoRedirect,
+                    rootTunDnsMode = rootTunDnsMode,
+                    rootTunIfNameDraft = rootTunIfNameDraft,
+                    rootTunMtuDraft = rootTunMtuDraft,
+                    rootTunFakeIpRangeDraft = rootTunFakeIpRangeDraft,
+                    rootTunFakeIpRange6Draft = rootTunFakeIpRange6Draft,
+                    showFakeIpRange = uiState.showFakeIpRange,
+                    onBypassPrivateNetworkChange = viewModel::onBypassPrivateNetworkChange,
+                    onDnsHijackChange = viewModel::onDnsHijackChange,
+                    onEnableIPv6Change = viewModel::onEnableIPv6Change,
+                    onTunStackChange = viewModel::onTunStackChange,
+                    onRootTunAutoRouteChange = viewModel::onRootTunAutoRouteChange,
+                    onRootTunStrictRouteChange = viewModel::onRootTunStrictRouteChange,
+                    onRootTunAutoRedirectChange = viewModel::onRootTunAutoRedirectChange,
+                    onRootTunDnsModeChange = viewModel::onRootTunDnsModeChange,
+                    onRootTunIfNameDraftChange = viewModel::onRootTunIfNameDraftChange,
+                    onRootTunMtuDraftChange = viewModel::onRootTunMtuDraftChange,
+                    onRootTunFakeIpRangeDraftChange = viewModel::onRootTunFakeIpRangeDraftChange,
+                    onRootTunFakeIpRange6DraftChange = viewModel::onRootTunFakeIpRange6DraftChange,
+                    commitRootTunIfName = viewModel::commitRootTunIfName,
+                    commitRootTunMtu = viewModel::commitRootTunMtu,
+                    commitRootTunFakeIpRange = viewModel::commitRootTunFakeIpRange,
+                    commitRootTunFakeIpRange6 = viewModel::commitRootTunFakeIpRange6,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NetworkProxyOptionsSection(
+    viewModel: NetworkSettingsViewModel,
+    navigator: DestinationsNavigator,
+    showAccessControlMode: Boolean,
+) {
+    Title(MLang.NetworkSettings.Section.ProxyOptions)
+    Card {
+        if (showAccessControlMode) {
+            val accessControlMode by viewModel.accessControlMode.state.collectAsState()
+            PreferenceEnumItem(
+                title = MLang.NetworkSettings.ProxyOptions.AccessControlModeTitle,
+                currentValue = accessControlMode,
+                items = listOf(
+                    MLang.NetworkSettings.ProxyOptions.AllowAll,
+                    MLang.NetworkSettings.ProxyOptions.AllowSelected,
+                    MLang.NetworkSettings.ProxyOptions.RejectSelected,
+                ),
+                values = AccessControlMode.entries,
+                onValueChange = viewModel::onAccessControlModeChange,
+            )
+        }
+        PreferenceArrowItem(
+            title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,
+            summary = MLang.NetworkSettings.ProxyOptions.ManageAccessControlSummary,
+            onClick = {
+                navigator.navigate(AccessControlScreenDestination)
+            },
+        )
     }
 }
 

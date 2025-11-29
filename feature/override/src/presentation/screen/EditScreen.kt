@@ -18,20 +18,36 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.platform.LocalContext
-import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.presentation.util.OverrideEditorSection
+import androidx.compose.runtime.setValue
+import com.github.yumelira.yumebox.presentation.component.AppDialog
+import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
+import com.github.yumelira.yumebox.presentation.component.JsonTextEditorDialog
+import com.github.yumelira.yumebox.presentation.component.OpenObjectMapEditor
+import com.github.yumelira.yumebox.presentation.component.OpenRuleListEditor
+import com.github.yumelira.yumebox.presentation.component.OpenStringListModifiersEditor
+import com.github.yumelira.yumebox.presentation.component.OpenStringMapEditor
+import com.github.yumelira.yumebox.presentation.component.OpenStructuredObjectListEditor
+import com.github.yumelira.yumebox.presentation.component.OpenSubRulesEditor
+import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
+import com.github.yumelira.yumebox.presentation.component.StringMapEditorDialog
+import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.OverrideEditContent
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveEvent
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveState
+import com.github.yumelira.yumebox.presentation.util.rememberOverrideReferenceCatalog
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
@@ -39,7 +55,6 @@ import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 @Composable
 fun OverrideEditScreen(
@@ -54,33 +69,18 @@ fun OverrideEditScreen(
     val viewModel: OverrideConfigViewModel = koinViewModel()
     val editSession by viewModel.editSession.collectAsState()
     val saveState by viewModel.saveState.collectAsState()
-    val context = LocalContext.current
 
     val isNewConfig = configId == "new"
     val showDiscardDialog = remember { mutableStateOf(false) }
-    val showStringMapEditor = remember { mutableStateOf(false) }
-    val showJsonEditor = remember { mutableStateOf(false) }
-    var currentMapEditorCallback by remember { mutableStateOf<(Map<String, String>?) -> Unit>({}) }
-    var currentJsonEditorCallback by remember { mutableStateOf<(String?) -> Unit>({}) }
-
-    var currentMapEditorTitle by remember { mutableStateOf("") }
-    var currentMapEditorKeyPlaceholder by remember { mutableStateOf("") }
-    var currentMapEditorValuePlaceholder by remember { mutableStateOf("") }
-    var currentMapEditorValue by remember { mutableStateOf<Map<String, String>?>(null) }
-
-    var currentJsonEditorTitle by remember { mutableStateOf("") }
-    var currentJsonEditorPlaceholder by remember { mutableStateOf("") }
-    var currentJsonEditorValue by remember { mutableStateOf<String?>(null) }
+    var stringMapEditorState by remember { mutableStateOf<StringMapEditorDialogState?>(null) }
+    var jsonEditorState by remember { mutableStateOf<JsonEditorDialogState?>(null) }
 
     val scrollBehavior = MiuixScrollBehavior()
     val editorListState = rememberLazyListState()
-    var expandedSectionNames by rememberSaveable { mutableStateOf(setOf<String>()) }
-    val expandedSections = remember(expandedSectionNames) {
-        expandedSectionNames.mapNotNull { sectionName ->
-            OverrideEditorSection.entries.firstOrNull { it.name == sectionName }
-        }.toSet()
+    var expandedSectionNames by rememberSaveable { mutableStateOf(emptySet<String>()) }
+    val referenceCatalog = editSession?.let { session ->
+        rememberOverrideReferenceCatalog(session.config)
     }
-
 
     LaunchedEffect(configId) {
         viewModel.startEditSession(configId)
@@ -102,8 +102,8 @@ fun OverrideEditScreen(
 
     fun requestExit() {
         when {
-            showStringMapEditor.value -> showStringMapEditor.value = false
-            showJsonEditor.value -> showJsonEditor.value = false
+            stringMapEditorState != null -> stringMapEditorState = null
+            jsonEditorState != null -> jsonEditorState = null
             isSaving -> Unit
             hasUnsavedInvalidChanges -> showDiscardDialog.value = true
             else -> {
@@ -115,9 +115,7 @@ fun OverrideEditScreen(
         }
     }
 
-    BackHandler {
-        requestExit()
-    }
+    BackHandler(onBack = ::requestExit)
 
     Scaffold(
         topBar = {
@@ -138,10 +136,11 @@ fun OverrideEditScreen(
                     name = session.name,
                     description = session.description,
                     config = session.config,
+                    referenceCatalog = referenceCatalog ?: return@let,
                     currentConfigProvider = {
                         viewModel.editSession.value?.config ?: session.config
                     },
-                    expandedSections = expandedSections,
+                    expandedSectionNames = expandedSectionNames,
                     onNameChange = viewModel::updateDraftName,
                     onDescriptionChange = viewModel::updateDraftDescription,
                     onConfigChange = { updatedConfig ->
@@ -169,19 +168,21 @@ fun OverrideEditScreen(
                         )
                     },
                     onEditStringMap = { title, keyPlaceholder, valuePlaceholder, value, callback ->
-                        currentMapEditorTitle = title
-                        currentMapEditorKeyPlaceholder = keyPlaceholder
-                        currentMapEditorValuePlaceholder = valuePlaceholder
-                        currentMapEditorValue = value
-                        currentMapEditorCallback = callback
-                        showStringMapEditor.value = true
+                        stringMapEditorState = StringMapEditorDialogState(
+                            title = title,
+                            keyPlaceholder = keyPlaceholder,
+                            valuePlaceholder = valuePlaceholder,
+                            value = value,
+                            onValueChange = callback,
+                        )
                     },
                     onEditJson = { title, placeholder, value, callback ->
-                        currentJsonEditorTitle = title
-                        currentJsonEditorPlaceholder = placeholder
-                        currentJsonEditorValue = value
-                        currentJsonEditorCallback = callback
-                        showJsonEditor.value = true
+                        jsonEditorState = JsonEditorDialogState(
+                            title = title,
+                            placeholder = placeholder,
+                            value = value,
+                            onValueChange = callback,
+                        )
                     },
                     onEditObjectList = { type, title, values, availableModes, selectedMode, referenceCatalog, callback ->
                         onOpenObjectListEditor(
@@ -217,7 +218,8 @@ fun OverrideEditScreen(
                 )
             }
         }
-    AppDialog(
+
+        AppDialog(
             show = showDiscardDialog.value,
             title = MLang.Override.Edit.EmptyName.Title,
             summary = MLang.Override.Edit.EmptyName.Summary,
@@ -236,23 +238,37 @@ fun OverrideEditScreen(
         }
 
         StringMapEditorDialog(
-            show = showStringMapEditor.value,
-            title = currentMapEditorTitle,
-            keyPlaceholder = currentMapEditorKeyPlaceholder,
-            valuePlaceholder = currentMapEditorValuePlaceholder,
-            value = currentMapEditorValue,
-            onValueChange = currentMapEditorCallback,
-            onDismiss = { showStringMapEditor.value = false },
+            show = stringMapEditorState != null,
+            title = stringMapEditorState?.title.orEmpty(),
+            keyPlaceholder = stringMapEditorState?.keyPlaceholder.orEmpty(),
+            valuePlaceholder = stringMapEditorState?.valuePlaceholder.orEmpty(),
+            value = stringMapEditorState?.value,
+            onValueChange = stringMapEditorState?.onValueChange ?: {},
+            onDismiss = { stringMapEditorState = null },
         )
 
         JsonTextEditorDialog(
-            show = showJsonEditor.value,
-            title = currentJsonEditorTitle,
-            placeholder = currentJsonEditorPlaceholder,
-            value = currentJsonEditorValue,
-            onValueChange = currentJsonEditorCallback,
-            onDismiss = { showJsonEditor.value = false },
+            show = jsonEditorState != null,
+            title = jsonEditorState?.title.orEmpty(),
+            placeholder = jsonEditorState?.placeholder.orEmpty(),
+            value = jsonEditorState?.value,
+            onValueChange = jsonEditorState?.onValueChange ?: {},
+            onDismiss = { jsonEditorState = null },
         )
-
     }
 }
+
+private data class StringMapEditorDialogState(
+    val title: String,
+    val keyPlaceholder: String,
+    val valuePlaceholder: String,
+    val value: Map<String, String>?,
+    val onValueChange: (Map<String, String>?) -> Unit,
+)
+
+private data class JsonEditorDialogState(
+    val title: String,
+    val placeholder: String,
+    val value: String?,
+    val onValueChange: (String?) -> Unit,
+)

@@ -38,6 +38,7 @@ private val appFoundationModule = module {
     single<MMKV>(named("traffic_statistics")) { get<MMKVProvider>().getMMKV("traffic_statistics") }
     single<MMKV>(named("profile_links")) { get<MMKVProvider>().getMMKV("profile_links") }
     single<MMKV>(named("service_cache")) { get<MMKVProvider>().getMMKV("service_cache") }
+    single<MMKV>(named("override_bindings")) { get<MMKVProvider>().getMMKV("override_bindings") }
     single { AppSettingsStorage(get(named("settings"))) }
     single { NetworkSettingsStorage(get(named("network_settings"))) }
     single { ProfileLinksStorage(get(named("profile_links"))) }
@@ -56,6 +57,9 @@ private val appDataRuntimeModule = module {
     single { LogRepository(androidApplication(), get()) }
     single { NetworkInfoService() }
     single { ProvidersRepository(androidContext()) }
+    single { OverrideConfigRepository(androidContext()) }
+    single<OverrideConfigProvider> { get<OverrideConfigRepository>() }
+    single { OverrideRepository(androidContext(), get()) }
 
     single { ProfileBindingRepository(androidContext()) }
     single<ProfileBindingProvider> { get<ProfileBindingRepository>() }

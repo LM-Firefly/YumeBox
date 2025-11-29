@@ -38,10 +38,12 @@ AppSettings = {
         ColorThemeCodeLabel = "主题色代码（#RRGGBB）"
         ColorThemeCustomSummary = "当前主题色：%s"
 
-        TopBarBlurTitle = "顶部栏背景模糊"
-        TopBarBlurSummary = "滚动内容时，为顶部栏应用动态模糊背景"
+        TopBarBlurTitle = "背景模糊"
+        TopBarBlurSummary = "应用模糊背景"
         AutoHideNavbarTitle = "滑动隐藏底栏"
         AutoHideNavbarSummary = "向下滑动时自动隐藏底栏，向上滑动时显示"
+        LegacyNavbarStyleTitle = "浮动导航栏"
+        LegacyNavbarStyleSummary = "悬浮导航栏样式"
 
         PageScaleTitle = "页面缩放"
         PageScaleSummary = "调整应用界面的整体缩放比例"

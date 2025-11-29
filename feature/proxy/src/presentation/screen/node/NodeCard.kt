@@ -58,10 +58,10 @@ import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
 
 internal object NodeCardDefaults {
-    val CornerRadius = 24.dp
+    val CornerRadius = 20.dp
+    val GroupCornerRadius = 24.dp
     val PaddingHorizontal = 16.dp
     val PaddingVertical = 16.dp
-    val TextSpacing = 8.dp
 }
 
 internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
@@ -224,13 +224,18 @@ internal fun NodeCard(
     modifier: Modifier = Modifier,
     isDelayTesting: Boolean = false,
     isThisProxyTesting: Boolean = false,
-    onSingleNodeTestClick: (() -> Unit)? = null,
+    onSingleNodeTestClick: ((String) -> Unit)? = null,
     showCountryFlag: Boolean = true,
     singleNodeTestEnabled: Boolean = true,
 ) {
     val onCardClick = remember(proxy.name, onClick) {
         onClick?.let { click -> { click(proxy.name) } }
     }
+    val onNodeTestClick = remember(proxy.name, onSingleNodeTestClick) {
+        onSingleNodeTestClick?.let { click -> { click(proxy.name) } }
+    }
+    val delayInteractionSource = remember { MutableInteractionSource() }
+    val iconInteractionSource = remember { MutableInteractionSource() }
 
     NodeSelectableCard(
         isSelected = isSelected,
@@ -297,16 +302,16 @@ internal fun NodeCard(
                                 modifier = Modifier
                                     .padding(start = 8.dp)
                                     .let { m ->
-                                        if (onSingleNodeTestClick != null && singleNodeTestEnabled) m.clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
+                                        if (onNodeTestClick != null && singleNodeTestEnabled) m.clickable(
+                                            interactionSource = delayInteractionSource,
                                             indication = null,
-                                            onClick = onSingleNodeTestClick,
+                                            onClick = onNodeTestClick,
                                         ) else m
                                     },
                             )
                         }
 
-                        onSingleNodeTestClick != null && singleNodeTestEnabled -> {
+                        onNodeTestClick != null && singleNodeTestEnabled -> {
                             if (isThisProxyTesting) {
                                 RotatingCircleGauge(
                                     isRotating = true,
@@ -324,9 +329,9 @@ internal fun NodeCard(
                                         .padding(start = 8.dp)
                                         .size(16.dp)
                                         .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
+                                            interactionSource = iconInteractionSource,
                                             indication = null,
-                                            onClick = onSingleNodeTestClick,
+                                            onClick = onNodeTestClick,
                                         ),
                                 )
                             }

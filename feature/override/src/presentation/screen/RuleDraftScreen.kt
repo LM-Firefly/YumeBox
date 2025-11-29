@@ -32,6 +32,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Save
 import com.github.yumelira.yumebox.presentation.util.OverrideRuleDraft
 import com.github.yumelira.yumebox.presentation.util.OverrideRuleTypePresets
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
+import com.github.yumelira.yumebox.presentation.util.rememberCurrentReferenceCatalog
 import com.github.yumelira.yumebox.presentation.util.supportsRuleExtra
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
@@ -79,7 +80,7 @@ fun OverrideRuleDraftEditorScreen(
         it.equals(ruleType, ignoreCase = true)
     }.coerceAtLeast(0)
     val canUseExtraSwitches = supportsRuleExtra(ruleType)
-    val referenceCatalog = OverrideStructuredEditorStore.currentReferenceCatalog()
+    val referenceCatalog = rememberCurrentReferenceCatalog()
     val isSubRuleTarget = ruleType.equals("SUB-RULE", ignoreCase = true)
     val isRuleSetType = ruleType.equals("RULE-SET", ignoreCase = true)
     val targetCandidates = if (isSubRuleTarget) {

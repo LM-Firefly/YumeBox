@@ -24,11 +24,11 @@ package com.github.yumelira.yumebox
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
@@ -37,20 +37,23 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetIconActi
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`List-chevrons-up-down`
 import com.github.yumelira.yumebox.presentation.icon.yume.Speed
-import com.github.yumelira.yumebox.presentation.screen.rememberProxyGroupSelectionState
 import com.github.yumelira.yumebox.presentation.screen.node.NodeGroupSheetContent
 import com.github.yumelira.yumebox.presentation.screen.node.NodeSheetContent
 import com.github.yumelira.yumebox.presentation.screen.node.NodeSortPopup
+import com.github.yumelira.yumebox.presentation.screen.rememberProxyGroupSelectionState
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowBottomSheet
 
 private const val NOTIFICATION_PROXY_SHEET_HEIGHT_FRACTION = 0.55f
 
@@ -64,9 +67,6 @@ fun ProxySheetContent(
     proxyViewModel: ProxyViewModel = koinViewModel(),
 ) {
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
-    val displayMode by proxyViewModel.displayMode.collectAsState()
-    val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
-    val testingProxyNames by proxyViewModel.testingProxyNames.collectAsState()
     val sortMode by proxyViewModel.sortMode.collectAsState()
 
     val showSheet = remember { mutableStateOf(true) }
@@ -95,6 +95,32 @@ fun ProxySheetContent(
         {
             showSortPopup.value = false
             showSheet.value = false
+        }
+    }
+    val triggerTopDelayTest = remember(coroutineScope, groupListState, proxyViewModel) {
+        {
+            coroutineScope.launch {
+                if (groupListState.isScrolledFromTop()) {
+                    groupListState.animateScrollToItem(0)
+                }
+                proxyViewModel.testDelay()
+            }
+        }
+    }
+    val triggerSelectedGroupDelayTest = remember(
+        coroutineScope,
+        nodeListState,
+        proxyViewModel,
+        selectedGroupName,
+    ) {
+        {
+            val groupName = selectedGroupName ?: return@remember
+            coroutineScope.launch {
+                if (nodeListState.isScrolledFromTop()) {
+                    nodeListState.animateScrollToItem(0)
+                }
+                proxyViewModel.testDelay(groupName)
+            }
         }
     }
     LaunchedEffect(showSheet.value) {
@@ -141,19 +167,10 @@ fun ProxySheetContent(
                     icon = Yume.Speed,
                     contentDescription = MLang.Proxy.Action.Test,
                     onClick = {
-                        val group = selectedGroup
-                        coroutineScope.launch {
-                            if (group == null) {
-                                if (groupListState.isScrolledFromTop()) {
-                                    groupListState.animateScrollToItem(0)
-                                }
-                                proxyViewModel.testDelay()
-                            } else {
-                                if (nodeListState.isScrolledFromTop()) {
-                                    nodeListState.animateScrollToItem(0)
-                                }
-                                proxyViewModel.testDelay(group.name)
-                            }
+                        if (selectedGroup == null) {
+                            triggerTopDelayTest()
+                        } else {
+                            triggerSelectedGroupDelayTest()
                         }
                     },
                 ),
@@ -177,13 +194,13 @@ fun ProxySheetContent(
                         ),
                         initialOffsetX = { it },
                     ) + fadeIn(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeInDuration))) togetherWith
-                            (slideOutHorizontally(
-                                animationSpec = tween(
-                                    durationMillis = AnimationSpecs.Proxy.SheetSlideOutDuration,
-                                    easing = AnimationSpecs.Legacy
-                                ),
-                                targetOffsetX = { -it / 3 },
-                            ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeOutDuration)))
+                        (slideOutHorizontally(
+                            animationSpec = tween(
+                                durationMillis = AnimationSpecs.Proxy.SheetSlideOutDuration,
+                                easing = AnimationSpecs.Legacy
+                            ),
+                            targetOffsetX = { -it / 3 },
+                        ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeOutDuration)))
                 } else {
                     (slideInHorizontally(
                         animationSpec = tween(
@@ -192,19 +209,22 @@ fun ProxySheetContent(
                         ),
                         initialOffsetX = { -it / 3 },
                     ) + fadeIn(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeInDuration - 20))) togetherWith
-                            (slideOutHorizontally(
-                                animationSpec = tween(
-                                    durationMillis = AnimationSpecs.Proxy.SheetSlideInDuration - 20,
-                                    easing = AnimationSpecs.Legacy
-                                ),
-                                targetOffsetX = { it },
-                            ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeOutDuration)))
+                        (slideOutHorizontally(
+                            animationSpec = tween(
+                                durationMillis = AnimationSpecs.Proxy.SheetSlideInDuration - 20,
+                                easing = AnimationSpecs.Legacy
+                            ),
+                            targetOffsetX = { it },
+                        ) + fadeOut(animationSpec = tween(durationMillis = AnimationSpecs.Proxy.SheetFadeOutDuration)))
                 }
             },
             label = "notification_node_sheet_content",
         ) { targetGroupName ->
-            val group = targetGroupName?.let { name -> proxyGroups.find { it.name == name } }
-            if (group == null) {
+            val targetGroup = targetGroupName?.let { name ->
+                proxyGroups.firstOrNull { group -> group.name == name }
+            }
+            if (targetGroup == null) {
+                val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
                 NodeGroupSheetContent(
                     groups = proxyGroups,
                     onGroupClick = groupSelection.selectGroup,
@@ -213,38 +233,68 @@ fun ProxySheetContent(
                     listState = groupListState,
                 )
             } else {
-                NodeSheetContent(
-                    group = group,
-                    displayMode = displayMode,
-                    isDelayTesting = testingGroupNames.contains(group.name),
-                    testingProxyNames = testingProxyNames,
-                    onSelectProxy = { proxyName ->
-                        if (group.type == Proxy.Type.Selector) {
-                            proxyViewModel.selectProxy(group.name, proxyName)
-                        } else {
-                            coroutineScope.launch {
-                                if (nodeListState.isScrolledFromTop()) {
-                                    nodeListState.animateScrollToItem(0)
-                                }
-                                proxyViewModel.testDelay(group.name)
-                            }
-                        }
-                    },
-                    onTestDelay = {
-                        coroutineScope.launch {
-                            if (nodeListState.isScrolledFromTop()) {
-                                nodeListState.animateScrollToItem(0)
-                            }
-                            proxyViewModel.testDelay(group.name)
-                        }
-                    },
-                    onTestProxyDelay = { proxyName ->
-                        proxyViewModel.testProxyDelay(group.name, proxyName)
-                    },
+                ProxySheetNodeContent(
+                    proxyViewModel = proxyViewModel,
+                    group = targetGroup,
+                    onTestDelay = triggerSelectedGroupDelayTest,
                     sheetHeightFraction = NOTIFICATION_PROXY_SHEET_HEIGHT_FRACTION,
                     listState = nodeListState,
                 )
             }
         }
     }
+}
+
+@Composable
+private fun ProxySheetNodeContent(
+    proxyViewModel: ProxyViewModel,
+    group: com.github.yumelira.yumebox.domain.model.ProxyGroupInfo,
+    onTestDelay: () -> Unit,
+    sheetHeightFraction: Float,
+    listState: LazyListState,
+) {
+    val groupProxyNames = remember(group.proxies) {
+        group.proxies.mapTo(linkedSetOf()) { it.name }
+    }
+    val isDelayTesting by remember(group.name, proxyViewModel) {
+        proxyViewModel.testingGroupNames
+            .map { testingGroupNames -> testingGroupNames.contains(group.name) }
+            .distinctUntilChanged()
+    }.collectAsState(initial = false)
+    val testingProxyNames by remember(group.name, groupProxyNames, proxyViewModel) {
+        if (groupProxyNames.isEmpty()) {
+            flowOf(emptySet<String>())
+        } else {
+            proxyViewModel.testingProxyNames
+                .map { names ->
+                    names.filterTo(linkedSetOf()) { proxyName -> proxyName in groupProxyNames }
+                }
+                .distinctUntilChanged()
+        }
+    }.collectAsState(initial = emptySet())
+    val onSelectProxy = remember(group.name, group.type, proxyViewModel, onTestDelay) {
+        { proxyName: String ->
+            if (group.type == Proxy.Type.Selector) {
+                proxyViewModel.selectProxy(group.name, proxyName)
+            } else {
+                onTestDelay()
+            }
+        }
+    }
+    val onSingleNodeTestClick = remember(group.name, proxyViewModel) {
+        { proxyName: String ->
+            proxyViewModel.testProxyDelay(group.name, proxyName)
+        }
+    }
+
+    NodeSheetContent(
+        group = group,
+        isDelayTesting = isDelayTesting,
+        testingProxyNames = testingProxyNames,
+        onSelectProxy = onSelectProxy,
+        onTestDelay = onTestDelay,
+        onTestProxyDelay = onSingleNodeTestClick,
+        sheetHeightFraction = sheetHeightFraction,
+        listState = listState,
+    )
 }

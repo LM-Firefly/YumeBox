@@ -31,10 +31,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import com.github.yumelira.yumebox.presentation.component.CenteredText
@@ -82,12 +80,11 @@ fun ProxyPager(
     val proxyViewModel = koinViewModel<ProxyViewModel>()
 
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
-    val displayMode by proxyViewModel.displayMode.collectAsState()
     val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
     val testingProxyNames by proxyViewModel.testingProxyNames.collectAsState()
     val sortMode by proxyViewModel.sortMode.collectAsState()
     val singleNodeTest by proxyViewModel.singleNodeTest.collectAsState()
-    val groupScrollBehavior = MiuixScrollBehavior()
+    val groupScrollBehavior = MiuixScrollBehavior(snapAnimationSpec = null)
     val topBarHazeState = LocalTopBarHazeState.current
 
     val showSortPopup = rememberSaveable { mutableStateOf(false) }
@@ -243,14 +240,12 @@ fun ProxyPager(
                             mainInnerPadding = mainInnerPadding,
                             testingGroupNames = testingGroupNames,
                             onGroupClick = groupSelection.selectGroup,
-                            onGroupBoundsChanged = { _, _ -> },
                         )
                     }
                 } else {
                     val currentGroup = groupSelection.selectedGroup ?: displayGroup
                     NodeListPage(
                         group = currentGroup,
-                        displayMode = displayMode,
                         sortMode = sortMode,
                         testingGroupNames = testingGroupNames,
                         testingProxyNames = testingProxyNames,
@@ -354,7 +349,6 @@ private fun ProxyTopBar(
 @Composable
 private fun NodeListPage(
     group: ProxyGroupInfo?,
-    displayMode: ProxyDisplayMode,
     sortMode: ProxySortMode,
     testingGroupNames: Set<String>,
     testingProxyNames: Set<String>,
@@ -464,7 +458,6 @@ private fun ProxyContent(
     mainInnerPadding: PaddingValues,
     onGroupClick: (ProxyGroupInfo) -> Unit,
     testingGroupNames: Set<String>,
-    onGroupBoundsChanged: (String, Rect) -> Unit,
 ) {
     val spacing = LocalSpacing.current
     ScreenLazyColumn(
@@ -482,7 +475,6 @@ private fun ProxyContent(
             groups = proxyGroups,
             onGroupClick = onGroupClick,
             testingGroupNames = testingGroupNames,
-            onGroupBoundsChanged = onGroupBoundsChanged,
             itemVerticalPadding = ProxyPageSpacing.ItemVertical,
         )
     }

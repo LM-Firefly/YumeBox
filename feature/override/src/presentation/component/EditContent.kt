@@ -18,25 +18,26 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.presentation.util.*
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.BasicComponent
+
+private val OverrideEditorSections = OverrideEditorSection.entries.toList()
 
 fun LazyListScope.OverrideEditContent(
     name: String,
     description: String,
     config: ConfigurationOverride,
+    referenceCatalog: OverrideReferenceCatalog,
     currentConfigProvider: () -> ConfigurationOverride,
-    expandedSections: Set<OverrideEditorSection>,
+    expandedSectionNames: Set<String>,
     onNameChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onConfigChange: (ConfigurationOverride) -> Unit,
@@ -49,85 +50,154 @@ fun LazyListScope.OverrideEditContent(
     onEditObjectMap: OpenObjectMapEditor,
     onEditSubRules: OpenSubRulesEditor,
 ) {
-    item(key = "override-basic-info-section") {
-        OverrideCardSection(
-            title = MLang.Override.Draft.BasicInfo,
+    item(
+        key = "override-basic-info-section",
+        contentType = "override-basic-info",
+    ) {
+        OverrideEditorListItem(
+            bottomSpacing = OverrideSectionBottomSpacing,
         ) {
-            StringInputContent(
-                title = MLang.Override.Draft.ConfigName,
-                value = name,
-                placeholder = MLang.Override.Draft.ConfigName,
-                onValueChange = { onNameChange(it.orEmpty()) },
-            )
-            StringInputContent(
-                title = MLang.Override.Draft.ConfigDescription,
-                value = description,
-                placeholder = MLang.Override.Draft.ConfigDescription,
-                onValueChange = { onDescriptionChange(it.orEmpty()) },
-            )
-        }
-    }
-
-    item(key = "override-section-list") {
-        OverrideSection(title = MLang.Override.Draft.ConfigSections) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(OverrideSectionSpacing),
+            OverrideCardSection(
+                title = MLang.Override.Draft.BasicInfo,
             ) {
-                OverrideEditorSection.entries.forEach { section ->
-                    val directEntry = section.isDirectEntry()
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(OverrideSectionTitleSpacing),
-                    ) {
-                        OverrideSelectorCard {
-                            OverrideSectionCardHeader(
-                                title = section.title,
-                                summary = section.summary,
-                                expanded = !directEntry && section in expandedSections,
-                                onClick = {
-                                    if (directEntry) {
-                                        openDirectSectionEditor(
-                                            section = section,
-                                            config = config,
-                                            currentConfigProvider = currentConfigProvider,
-                                            onConfigChange = onConfigChange,
-                                            onEditRuleList = onEditRuleList,
-                                            onEditObjectList = onEditObjectList,
-                                            onEditObjectMap = onEditObjectMap,
-                                            onEditSubRules = onEditSubRules,
-                                        )
-                                    } else {
-                                        onSectionToggle(section)
-                                    }
-                                },
-                                showIndicator = true,
-                            )
-                        }
-                        if (!directEntry) {
-                            OverrideSectionVisibility(visible = section in expandedSections) {
-                                OverrideSectionContent(
-                                    section = section,
-                                    config = config,
-                                    onConfigChange = onConfigChange,
-                                    onEditStringList = onEditStringList,
-                                    onEditRuleList = onEditRuleList,
-                                    onEditStringMap = onEditStringMap,
-                                    onEditJson = onEditJson,
-                                    onEditObjectList = onEditObjectList,
-                                    onEditObjectMap = onEditObjectMap,
-                                    onEditSubRules = onEditSubRules,
-                                )
-                            }
-                        }
-                    }
-                }
+                StringInputContent(
+                    title = MLang.Override.Draft.ConfigName,
+                    value = name,
+                    placeholder = MLang.Override.Draft.ConfigName,
+                    onValueChange = { onNameChange(it.orEmpty()) },
+                )
+                StringInputContent(
+                    title = MLang.Override.Draft.ConfigDescription,
+                    value = description,
+                    placeholder = MLang.Override.Draft.ConfigDescription,
+                    onValueChange = { onDescriptionChange(it.orEmpty()) },
+                )
             }
         }
     }
 
-    item(key = "override-bottom-spacer") {
+    item(
+        key = "override-section-title",
+        contentType = "override-section-title",
+    ) {
+        OverrideEditorListItem {
+            Title(MLang.Override.Draft.ConfigSections)
+        }
+    }
+
+    OverrideEditorSections.forEach { section ->
+        item(
+            key = "override-section-${section.name}",
+            contentType = "override-section-card",
+        ) {
+            OverrideEditorListItem {
+                OverrideSectionEntry(
+                    section = section,
+                    config = config,
+                    referenceCatalog = referenceCatalog,
+                    currentConfigProvider = currentConfigProvider,
+                    expandedSectionNames = expandedSectionNames,
+                    onConfigChange = onConfigChange,
+                    onSectionToggle = onSectionToggle,
+                    onEditStringList = onEditStringList,
+                    onEditRuleList = onEditRuleList,
+                    onEditStringMap = onEditStringMap,
+                    onEditJson = onEditJson,
+                    onEditObjectList = onEditObjectList,
+                    onEditObjectMap = onEditObjectMap,
+                    onEditSubRules = onEditSubRules,
+                )
+            }
+        }
+    }
+
+    item(
+        key = "override-bottom-spacer",
+        contentType = "override-bottom-spacer",
+    ) {
         Spacer(modifier = Modifier.height(OverrideSectionBottomSpacing))
+    }
+}
+
+@Composable
+private fun OverrideEditorListItem(
+    modifier: Modifier = Modifier,
+    bottomSpacing: Dp = OverrideSectionSpacing,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = bottomSpacing),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun OverrideSectionEntry(
+    section: OverrideEditorSection,
+    config: ConfigurationOverride,
+    referenceCatalog: OverrideReferenceCatalog,
+    currentConfigProvider: () -> ConfigurationOverride,
+    expandedSectionNames: Set<String>,
+    onConfigChange: (ConfigurationOverride) -> Unit,
+    onSectionToggle: (OverrideEditorSection) -> Unit,
+    onEditStringList: OpenStringListModifiersEditor,
+    onEditRuleList: OpenRuleListEditor,
+    onEditStringMap: OpenStringMapEditor,
+    onEditJson: OpenJsonEditor,
+    onEditObjectList: OpenStructuredObjectListEditor,
+    onEditObjectMap: OpenObjectMapEditor,
+    onEditSubRules: OpenSubRulesEditor,
+) {
+    val directEntry = section.isDirectEntry()
+    val expanded = section.name in expandedSectionNames
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(OverrideSectionTitleSpacing),
+    ) {
+        OverrideSelectorCard {
+            OverrideSectionCardHeader(
+                title = section.title,
+                summary = section.summary,
+                expanded = !directEntry && expanded,
+                onClick = {
+                    if (directEntry) {
+                        openDirectSectionEditor(
+                            section = section,
+                            referenceCatalog = referenceCatalog,
+                            currentConfigProvider = currentConfigProvider,
+                            onConfigChange = onConfigChange,
+                            onEditRuleList = onEditRuleList,
+                            onEditObjectList = onEditObjectList,
+                            onEditObjectMap = onEditObjectMap,
+                            onEditSubRules = onEditSubRules,
+                        )
+                    } else {
+                        onSectionToggle(section)
+                    }
+                },
+                showIndicator = true,
+            )
+        }
+        if (!directEntry) {
+            OverrideSectionVisibility(visible = expanded) {
+                OverrideSectionContent(
+                    section = section,
+                    config = config,
+                    onConfigChange = onConfigChange,
+                    onEditStringList = onEditStringList,
+                    onEditRuleList = onEditRuleList,
+                    onEditStringMap = onEditStringMap,
+                    onEditJson = onEditJson,
+                    onEditObjectList = onEditObjectList,
+                    onEditObjectMap = onEditObjectMap,
+                    onEditSubRules = onEditSubRules,
+                )
+            }
+        }
     }
 }
 
@@ -152,6 +222,7 @@ private fun OverrideSectionContent(
             onEditStringList = onEditStringList,
             onEditStringMap = onEditStringMap,
         )
+
         OverrideEditorSection.Sniffer -> SnifferEditor(config, onConfigChange, onEditStringList)
         OverrideEditorSection.Inbound -> InboundEditor(config, onConfigChange, onEditStringList)
         OverrideEditorSection.Proxies,
@@ -160,16 +231,17 @@ private fun OverrideSectionContent(
         OverrideEditorSection.Rules,
         OverrideEditorSection.RuleProviders,
         OverrideEditorSection.SubRules,
-        -> Unit
+            -> Unit
     }
 }
+
 private fun OverrideEditorSection.isDirectEntry(): Boolean {
     return when (this) {
         OverrideEditorSection.General,
         OverrideEditorSection.Dns,
         OverrideEditorSection.Sniffer,
         OverrideEditorSection.Inbound,
-        -> false
+            -> false
 
         OverrideEditorSection.Rules,
         OverrideEditorSection.Proxies,
@@ -177,13 +249,13 @@ private fun OverrideEditorSection.isDirectEntry(): Boolean {
         OverrideEditorSection.ProxyGroups,
         OverrideEditorSection.RuleProviders,
         OverrideEditorSection.SubRules,
-        -> true
+            -> true
     }
 }
 
 private fun openDirectSectionEditor(
     section: OverrideEditorSection,
-    config: ConfigurationOverride,
+    referenceCatalog: OverrideReferenceCatalog,
     currentConfigProvider: () -> ConfigurationOverride,
     onConfigChange: (ConfigurationOverride) -> Unit,
     onEditRuleList: OpenRuleListEditor,
@@ -191,6 +263,7 @@ private fun openDirectSectionEditor(
     onEditObjectMap: OpenObjectMapEditor,
     onEditSubRules: OpenSubRulesEditor,
 ) {
+    val config = currentConfigProvider()
     when (section) {
         OverrideEditorSection.Rules -> {
             val values = OverrideListModeValues(
@@ -198,7 +271,6 @@ private fun openDirectSectionEditor(
                 startValue = config.rulesStart,
                 endValue = config.rulesEnd,
             )
-            val referenceCatalog = buildOverrideReferenceCatalog(currentConfigProvider())
             val availableModes = listOf(
                 OverrideListEditorMode.Replace,
                 OverrideListEditorMode.Start,
@@ -227,7 +299,6 @@ private fun openDirectSectionEditor(
                 startValue = config.proxiesStart,
                 endValue = config.proxiesEnd,
             )
-            val referenceCatalog = buildOverrideReferenceCatalog(currentConfigProvider())
             val availableModes = listOf(
                 OverrideListEditorMode.Replace,
                 OverrideListEditorMode.Start,
@@ -257,7 +328,6 @@ private fun openDirectSectionEditor(
                 startValue = config.proxyGroupsStart,
                 endValue = config.proxyGroupsEnd,
             )
-            val referenceCatalog = buildOverrideReferenceCatalog(currentConfigProvider())
             val availableModes = listOf(
                 OverrideListEditorMode.Replace,
                 OverrideListEditorMode.Start,
@@ -336,7 +406,6 @@ private fun openDirectSectionEditor(
                 replaceValue = config.subRules,
                 mergeValue = config.subRulesMerge,
             )
-            val referenceCatalog = buildOverrideReferenceCatalog(currentConfigProvider())
             val availableModes = listOf(
                 OverrideListEditorMode.Replace,
                 OverrideListEditorMode.Merge,
@@ -361,6 +430,6 @@ private fun openDirectSectionEditor(
         OverrideEditorSection.Dns,
         OverrideEditorSection.Sniffer,
         OverrideEditorSection.Inbound,
-        -> Unit
+            -> Unit
     }
 }

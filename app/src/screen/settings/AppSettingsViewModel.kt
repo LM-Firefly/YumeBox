@@ -49,6 +49,7 @@ class AppSettingsViewModel(
     val excludeFromRecents: Preference<Boolean> = repository.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = repository.showTrafficNotification
     val bottomBarAutoHide: Preference<Boolean> = repository.bottomBarAutoHide
+    val bottomBarUseLegacyStyle: Preference<Boolean> = repository.bottomBarUseLegacyStyle
     val topBarBlurEnabled: Preference<Boolean> = repository.topBarBlurEnabled
     val acgMainUiEnabled: Preference<Boolean> = repository.acgMainUiEnabled
     val acgWallpaperUri: Preference<String> = repository.acgWallpaperUri
@@ -75,6 +76,7 @@ class AppSettingsViewModel(
     fun onThemeSeedColorChange(argb: Long) = themeSeedColorArgb.set(argb)
     fun resetThemeSeedColor() = themeSeedColorArgb.set(0xFF138A74L)
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
+    fun onBottomBarUseLegacyStyleChange(enabled: Boolean) = bottomBarUseLegacyStyle.set(enabled)
     fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
     fun onAcgMainUiEnabledChange(enabled: Boolean) = acgMainUiEnabled.set(enabled)
     fun onAcgWallpaperUriChange(uri: String) = acgWallpaperUri.set(uri)

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.settings
 
 import android.content.Intent
@@ -29,8 +27,17 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
@@ -44,7 +51,19 @@ import com.github.yumelira.yumebox.common.util.LocaleUtil
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
+import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
+import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
+import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
+import com.github.yumelira.yumebox.presentation.component.PreferenceValueItem
+import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
+import com.github.yumelira.yumebox.presentation.component.TextEditBottomSheet
+import com.github.yumelira.yumebox.presentation.component.Title
+import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.WarningBottomSheet
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -52,98 +71,154 @@ import com.ramcosta.composedestinations.generated.destinations.AcgWallpaperCropS
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import androidx.core.net.toUri
 
 @Composable
 @Destination<RootGraph>
 fun AppSettingsScreen(
     navigator: DestinationsNavigator,
 ) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<AppSettingsViewModel>()
 
-    val themeMode by viewModel.themeMode.state.collectAsState()
-    val appLanguage by viewModel.appLanguage.state.collectAsState()
-    val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsState()
-
-    val automaticRestart by viewModel.automaticRestart.state.collectAsState()
-    val autoUpdateCurrentProfileOnStart by viewModel.autoUpdateCurrentProfileOnStart.state.collectAsState()
-    val hideAppIcon by viewModel.hideAppIcon.state.collectAsState()
-    val excludeFromRecents by viewModel.excludeFromRecents.state.collectAsState()
-    val showTrafficNotification by viewModel.showTrafficNotification.state.collectAsState()
-    val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
-    val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
-    val acgMainUiEnabled by viewModel.acgMainUiEnabled.state.collectAsState()
-    val acgWallpaperZoom by viewModel.acgWallpaperZoom.state.collectAsState()
-    val acgWallpaperBiasX by viewModel.acgWallpaperBiasX.state.collectAsState()
-    val acgWallpaperBiasY by viewModel.acgWallpaperBiasY.state.collectAsState()
-    val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsState()
-    val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsState()
-    val acgSidebarExpanded by viewModel.acgSidebarExpanded.state.collectAsState()
-    val pageScaleState by viewModel.pageScale.state.collectAsState()
-    val singleNodeTest by viewModel.singleNodeTest.state.collectAsState()
-    val screenshotProtectionEnabled by viewModel.screenshotProtectionEnabled.state.collectAsState()
-    val biometricUnlockEnabled by viewModel.biometricUnlockEnabled.state.collectAsState()
-    val exitUiWhenBackground by viewModel.exitUiWhenBackground.state.collectAsState()
-    var pageScaleLocal by remember(pageScaleState) { mutableFloatStateOf(pageScaleState) }
-
-    val customUserAgent by viewModel.customUserAgent.state.collectAsState()
-    val acgQuoteSummary = acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault }
-    val acgQuoteAuthorSummary = acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault }
-    var batteryOptimizationIgnored by remember {
-        mutableStateOf(isBatteryOptimizationIgnored(context))
-    }
-
-    val showHideIconDialogState = remember { mutableStateOf(false) }
-    val showEditCustomUserAgentDialogState = remember { mutableStateOf(false) }
-    val showEditAcgQuoteDialogState = remember { mutableStateOf(false) }
-    val showEditAcgQuoteAuthorDialogState = remember { mutableStateOf(false) }
-    val showPageScaleDialogState = remember { mutableStateOf(false) }
-    val showBiometricUnavailableDialogState = remember { mutableStateOf(false) }
-    var biometricUnavailableMessage by remember { mutableStateOf("") }
-
-    val customUserAgentTextFieldState = remember { mutableStateOf(TextFieldValue()) }
-    val acgQuoteTextFieldState = remember { mutableStateOf(TextFieldValue()) }
-    val acgQuoteAuthorTextFieldState = remember { mutableStateOf(TextFieldValue()) }
-    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+    Scaffold(
+        topBar = {
+            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
+        },
+    ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
+        ScreenLazyColumn(
+            scrollBehavior = scrollBehavior,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
+        ) {
+            item { AppBehaviorSettingsSection(viewModel) }
+            item { AppInterfaceSettingsSection(viewModel) }
+            item { AppPrivacySettingsSection(viewModel) }
+            item { AppServiceSettingsSection(viewModel) }
+            item { AppNetworkSettingsSection(viewModel) }
+            item {
+                AppExperimentalSettingsSection(
+                    viewModel = viewModel,
+                    navigator = navigator,
                 )
-            }
-            navigator.navigate(
-                AcgWallpaperCropScreenDestination(
-                    wallpaperUri = uri.toString(),
-                    initialZoom = acgWallpaperZoom,
-                    initialBiasX = acgWallpaperBiasX,
-                    initialBiasY = acgWallpaperBiasY,
-                )
-            ) {
-                launchSingleTop = true
             }
         }
     }
+}
 
-    fun refreshBatteryOptimizationState() {
-        batteryOptimizationIgnored = isBatteryOptimizationIgnored(context)
+@Composable
+private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
+    val automaticRestart by viewModel.automaticRestart.state.collectAsState()
+    val autoUpdateCurrentProfileOnStart by viewModel.autoUpdateCurrentProfileOnStart.state.collectAsState()
+    val isChineseLocale = remember { LocaleUtil.isChineseLocale() }
+
+    Title(MLang.AppSettings.Section.Behavior)
+    Card {
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Behavior.AutoStartTitle,
+            summary = MLang.AppSettings.Behavior.AutoStartSummary,
+            checked = automaticRestart,
+            onCheckedChange = viewModel::onAutomaticRestartChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Behavior.AutoUpdateOnStartTitle,
+            summary = MLang.AppSettings.Behavior.AutoUpdateOnStartSummary,
+            checked = autoUpdateCurrentProfileOnStart,
+            onCheckedChange = viewModel::onAutoUpdateCurrentProfileOnStartChange,
+        )
+        if (isChineseLocale) {
+            PreferenceSwitchItem(
+                title = MLang.AppSettings.Behavior.OneChinaTitle,
+                summary = MLang.AppSettings.Behavior.OneChinaSummary,
+                checked = true,
+                onCheckedChange = { },
+                enabled = false,
+            )
+        }
     }
+}
+
+@Composable
+private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
+    val themeMode by viewModel.themeMode.state.collectAsState()
+    val appLanguage by viewModel.appLanguage.state.collectAsState()
+    val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsState()
+    val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
+    val bottomBarUseLegacyStyle by viewModel.bottomBarUseLegacyStyle.state.collectAsState()
+    val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
+    val pageScale by viewModel.pageScale.state.collectAsState()
+
+    Title(MLang.AppSettings.Section.Interface)
+    Card {
+        PreferenceEnumItem(
+            title = MLang.AppSettings.Interface.LanguageTitle,
+            summary = MLang.AppSettings.Interface.LanguageSummary,
+            currentValue = appLanguage,
+            items = listOf(
+                MLang.AppSettings.Interface.LanguageSystem,
+                MLang.AppSettings.Interface.LanguageChinese,
+                MLang.AppSettings.Interface.LanguageEnglish,
+            ),
+            values = AppLanguage.entries,
+            onValueChange = viewModel::onAppLanguageChange,
+        )
+        PreferenceEnumItem(
+            title = MLang.AppSettings.Interface.ThemeModeTitle,
+            summary = MLang.AppSettings.Interface.ThemeModeSummary,
+            currentValue = themeMode,
+            items = listOf(
+                MLang.AppSettings.Interface.ThemeModeSystem,
+                MLang.AppSettings.Interface.ThemeModeLight,
+                MLang.AppSettings.Interface.ThemeModeDark,
+            ),
+            values = ThemeMode.entries,
+            onValueChange = viewModel::onThemeModeChange,
+        )
+        ThemeColorPickerItem(
+            themeSeedColorArgb = themeSeedColorArgb,
+            onThemeSeedColorChange = viewModel::onThemeSeedColorChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.AutoHideNavbarTitle,
+            summary = MLang.AppSettings.Interface.AutoHideNavbarSummary,
+            checked = bottomBarAutoHide,
+            onCheckedChange = viewModel::onBottomBarAutoHideChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.LegacyNavbarStyleTitle,
+            summary = MLang.AppSettings.Interface.LegacyNavbarStyleSummary,
+            checked = bottomBarUseLegacyStyle,
+            onCheckedChange = viewModel::onBottomBarUseLegacyStyleChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.TopBarBlurTitle,
+            summary = MLang.AppSettings.Interface.TopBarBlurSummary,
+            checked = topBarBlurEnabled,
+            onCheckedChange = viewModel::onTopBarBlurEnabledChange,
+        )
+        PageScalePreferenceItem(
+            pageScale = pageScale,
+            onApply = viewModel::onPageScaleChange,
+        )
+    }
+}
+
+@Composable
+private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
+    val context = LocalContext.current
+    val biometricUnlockEnabled by viewModel.biometricUnlockEnabled.state.collectAsState()
+    val screenshotProtectionEnabled by viewModel.screenshotProtectionEnabled.state.collectAsState()
+    val hideAppIcon by viewModel.hideAppIcon.state.collectAsState()
+    val excludeFromRecents by viewModel.excludeFromRecents.state.collectAsState()
+    val showHideIconDialogState = remember { mutableStateOf(false) }
+    val showBiometricUnavailableDialogState = remember { mutableStateOf(false) }
+    var biometricUnavailableMessage by remember { mutableStateOf("") }
 
     fun requestBiometricConfirmation(
         title: String,
@@ -179,10 +254,110 @@ fun AppSettingsScreen(
         )
     }
 
+    Title(MLang.AppSettings.Section.Privacy)
+    Card {
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Privacy.BiometricUnlockTitle,
+            summary = MLang.AppSettings.Privacy.BiometricUnlockSummary,
+            checked = biometricUnlockEnabled,
+            onCheckedChange = { targetState ->
+                requestBiometricConfirmation(
+                    title = if (targetState) {
+                        MLang.AppSettings.Privacy.BiometricDialogTitleEnable
+                    } else {
+                        MLang.AppSettings.Privacy.BiometricDialogTitleDisable
+                    },
+                    allowBypassWhenUnavailable = !targetState,
+                ) {
+                    viewModel.onBiometricUnlockEnabledChange(targetState)
+                }
+            },
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Privacy.ScreenshotProtectionTitle,
+            summary = MLang.AppSettings.Privacy.ScreenshotProtectionSummary,
+            checked = screenshotProtectionEnabled,
+            onCheckedChange = { targetState ->
+                requestBiometricConfirmation(
+                    title = if (targetState) {
+                        MLang.AppSettings.Privacy.ScreenshotDialogTitleEnable
+                    } else {
+                        MLang.AppSettings.Privacy.ScreenshotDialogTitleDisable
+                    },
+                    allowBypassWhenUnavailable = !targetState,
+                ) {
+                    viewModel.onScreenshotProtectionEnabledChange(targetState)
+                }
+            },
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Privacy.HideIconTitle,
+            summary = MLang.AppSettings.Privacy.HideIconSummary,
+            checked = hideAppIcon,
+            onCheckedChange = { checked ->
+                if (checked) {
+                    showHideIconDialogState.value = true
+                } else {
+                    viewModel.onHideAppIconChange(false)
+                    AppIconHelper.toggleIcon(context, false)
+                }
+            },
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Privacy.HideFromRecentsTitle,
+            summary = MLang.AppSettings.Privacy.HideFromRecentsSummary,
+            checked = excludeFromRecents,
+            onCheckedChange = viewModel::onExcludeFromRecentsChange,
+        )
+    }
+
+    WarningBottomSheet(
+        show = showHideIconDialogState,
+        title = MLang.AppSettings.WarningDialog.Title,
+        messages = listOf(
+            MLang.AppSettings.WarningDialog.HideIconMsg1,
+            MLang.AppSettings.WarningDialog.HideIconMsg2,
+        ),
+        onConfirm = {
+            viewModel.onHideAppIconChange(true)
+            AppIconHelper.toggleIcon(context, true)
+        },
+    )
+
+    WarningBottomSheet(
+        show = showBiometricUnavailableDialogState,
+        title = MLang.AppSettings.Privacy.BiometricUnavailableTitle,
+        messages = listOf(
+            biometricUnavailableMessage.ifBlank {
+                MLang.AppSettings.Privacy.BiometricUnavailableMessage
+            },
+        ),
+        onConfirm = { showBiometricUnavailableDialogState.value = false },
+    )
+}
+
+@Composable
+private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val showTrafficNotification by viewModel.showTrafficNotification.state.collectAsState()
+    val singleNodeTest by viewModel.singleNodeTest.state.collectAsState()
+    val exitUiWhenBackground by viewModel.exitUiWhenBackground.state.collectAsState()
+    var batteryOptimizationIgnored by remember {
+        mutableStateOf(isBatteryOptimizationIgnored(context))
+    }
+    val batteryOptimizationSummary = remember(batteryOptimizationIgnored) {
+        if (batteryOptimizationIgnored) {
+            MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryEnabled
+        } else {
+            MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryDisabled
+        }
+    }
+
     DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                refreshBatteryOptimizationState()
+                batteryOptimizationIgnored = isBatteryOptimizationIgnored(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -191,298 +366,152 @@ fun AppSettingsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
-        },
-    ) { innerPadding ->
-        val mainLikePadding = rememberStandalonePageMainPadding()
-        ScreenLazyColumn(
-            scrollBehavior = scrollBehavior,
-            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
-        ) {
-            item {
-                Title(MLang.AppSettings.Section.Behavior)
-                Card {
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Behavior.AutoStartTitle,
-                        summary = MLang.AppSettings.Behavior.AutoStartSummary,
-                        checked = automaticRestart,
-                        onCheckedChange = { viewModel.onAutomaticRestartChange(it) },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Behavior.AutoUpdateOnStartTitle,
-                        summary = MLang.AppSettings.Behavior.AutoUpdateOnStartSummary,
-                        checked = autoUpdateCurrentProfileOnStart,
-                        onCheckedChange = { viewModel.onAutoUpdateCurrentProfileOnStartChange(it) },
-                    )
-                    if (LocaleUtil.isChineseLocale()) {
-                        PreferenceSwitchItem(
-                            title = MLang.AppSettings.Behavior.OneChinaTitle,
-                            summary = MLang.AppSettings.Behavior.OneChinaSummary,
-                            checked = true,
-                            onCheckedChange = { },
-                            enabled = false,
-                        )
-                    }
+    Title(MLang.AppSettings.Section.Service)
+    Card {
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.ServiceSection.TrafficNotificationTitle,
+            summary = MLang.AppSettings.ServiceSection.TrafficNotificationSummary,
+            checked = showTrafficNotification,
+            onCheckedChange = viewModel::onShowTrafficNotificationChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.ServiceSection.SingleNodeTestTitle,
+            summary = MLang.AppSettings.ServiceSection.SingleNodeTestSummary,
+            checked = singleNodeTest,
+            onCheckedChange = viewModel::onSingleNodeTestChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.ServiceSection.ExitUiWhenBackgroundTitle,
+            summary = MLang.AppSettings.ServiceSection.ExitUiWhenBackgroundSummary,
+            checked = exitUiWhenBackground,
+            onCheckedChange = viewModel::onExitUiWhenBackgroundChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.ServiceSection.BatteryOptimizationTitle,
+            summary = batteryOptimizationSummary,
+            checked = batteryOptimizationIgnored,
+            onCheckedChange = {
+                if (!openBatteryOptimizationSettings(context, batteryOptimizationIgnored)) {
+                    context.toast(MLang.Util.Error.UnknownError)
                 }
-            }
-            item {
-                Title(MLang.AppSettings.Section.Interface)
-                Card {
-                    PreferenceEnumItem(
-                        title = MLang.AppSettings.Interface.LanguageTitle,
-                        summary = MLang.AppSettings.Interface.LanguageSummary,
-                        currentValue = appLanguage,
-                        items = listOf(
-                            MLang.AppSettings.Interface.LanguageSystem,
-                            MLang.AppSettings.Interface.LanguageChinese,
-                            MLang.AppSettings.Interface.LanguageEnglish,
-                        ),
-                        values = AppLanguage.entries,
-                        onValueChange = { viewModel.onAppLanguageChange(it) },
-                    )
-                    PreferenceEnumItem(
-                        title = MLang.AppSettings.Interface.ThemeModeTitle,
-                        summary = MLang.AppSettings.Interface.ThemeModeSummary,
-                        currentValue = themeMode,
-                        items = listOf(
-                            MLang.AppSettings.Interface.ThemeModeSystem,
-                            MLang.AppSettings.Interface.ThemeModeLight,
-                            MLang.AppSettings.Interface.ThemeModeDark
-                        ),
-                        values = ThemeMode.entries,
-                        onValueChange = { viewModel.onThemeModeChange(it) },
-                    )
-                    ThemeColorPickerItem(
-                        themeSeedColorArgb = themeSeedColorArgb,
-                        onThemeSeedColorChange = { viewModel.onThemeSeedColorChange(it) },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Interface.AutoHideNavbarTitle,
-                        summary = MLang.AppSettings.Interface.AutoHideNavbarSummary,
-                        checked = bottomBarAutoHide,
-                        onCheckedChange = { viewModel.onBottomBarAutoHideChange(it) },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Interface.TopBarBlurTitle,
-                        summary = MLang.AppSettings.Interface.TopBarBlurSummary,
-                        checked = topBarBlurEnabled,
-                        onCheckedChange = { viewModel.onTopBarBlurEnabledChange(it) },
-                    )
-                    PreferenceArrowItem(
-                        title = MLang.AppSettings.Interface.PageScaleTitle,
-                        summary = MLang.AppSettings.Interface.PageScaleSummary,
-                        endActions = {
-                            Text(
-                                text = "${(pageScaleLocal * 100).toInt()}%",
-                                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
-                            )
-                        },
-                        onClick = { showPageScaleDialogState.value = true },
-                        holdDownState = showPageScaleDialogState.value,
-                        bottomAction = {
-                            Slider(
-                                value = pageScaleLocal,
-                                onValueChange = { pageScaleLocal = it },
-                                onValueChangeFinished = { viewModel.onPageScaleChange(pageScaleLocal) },
-                                valueRange = 0.8f..1.2f,
-                                magnetThreshold = 0.01f,
-                                hapticEffect = SliderDefaults.SliderHapticEffect.Step,
-                            )
-                        },
-                    )
-                }
-            }
-            item {
-                Title(MLang.AppSettings.Section.Privacy)
-                Card {
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Privacy.BiometricUnlockTitle,
-                        summary = MLang.AppSettings.Privacy.BiometricUnlockSummary,
-                        checked = biometricUnlockEnabled,
-                        onCheckedChange = { targetState ->
-                            requestBiometricConfirmation(
-                                title = if (targetState) {
-                                    MLang.AppSettings.Privacy.BiometricDialogTitleEnable
-                                } else {
-                                    MLang.AppSettings.Privacy.BiometricDialogTitleDisable
-                                },
-                                allowBypassWhenUnavailable = !targetState,
-                            ) {
-                                viewModel.onBiometricUnlockEnabledChange(targetState)
-                            }
-                        },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Privacy.ScreenshotProtectionTitle,
-                        summary = MLang.AppSettings.Privacy.ScreenshotProtectionSummary,
-                        checked = screenshotProtectionEnabled,
-                        onCheckedChange = { targetState ->
-                            requestBiometricConfirmation(
-                                title = if (targetState) {
-                                    MLang.AppSettings.Privacy.ScreenshotDialogTitleEnable
-                                } else {
-                                    MLang.AppSettings.Privacy.ScreenshotDialogTitleDisable
-                                },
-                                allowBypassWhenUnavailable = !targetState,
-                            ) {
-                                viewModel.onScreenshotProtectionEnabledChange(targetState)
-                            }
-                        },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Privacy.HideIconTitle,
-                        summary = MLang.AppSettings.Privacy.HideIconSummary,
-                        checked = hideAppIcon,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                showHideIconDialogState.value = true
-                            } else {
-                                viewModel.onHideAppIconChange(false)
-                                AppIconHelper.toggleIcon(context, false)
-                            }
-                        },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.Privacy.HideFromRecentsTitle,
-                        summary = MLang.AppSettings.Privacy.HideFromRecentsSummary,
-                        checked = excludeFromRecents,
-                        onCheckedChange = { viewModel.onExcludeFromRecentsChange(it) },
-                    )
-                }
-            }
-            item {
-                Title(MLang.AppSettings.Section.Service)
-                Card {
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.ServiceSection.TrafficNotificationTitle,
-                        summary = MLang.AppSettings.ServiceSection.TrafficNotificationSummary,
-                        checked = showTrafficNotification,
-                        onCheckedChange = { viewModel.onShowTrafficNotificationChange(it) },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.ServiceSection.SingleNodeTestTitle,
-                        summary = MLang.AppSettings.ServiceSection.SingleNodeTestSummary,
-                        checked = singleNodeTest,
-                        onCheckedChange = { viewModel.onSingleNodeTestChange(it) },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.ServiceSection.ExitUiWhenBackgroundTitle,
-                        summary = MLang.AppSettings.ServiceSection.ExitUiWhenBackgroundSummary,
-                        checked = exitUiWhenBackground,
-                        onCheckedChange = { viewModel.onExitUiWhenBackgroundChange(it) },
-                    )
-                    PreferenceSwitchItem(
-                        title = MLang.AppSettings.ServiceSection.BatteryOptimizationTitle,
-                        summary = if (batteryOptimizationIgnored) {
-                            MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryEnabled
-                        } else {
-                            MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryDisabled
-                        },
-                        checked = batteryOptimizationIgnored,
-                        onCheckedChange = {
-                            if (!openBatteryOptimizationSettings(context, batteryOptimizationIgnored)) {
-                                context.toast(MLang.Util.Error.UnknownError)
-                            }
-                        },
-                    )
-                }
-            }
-            item {
-                Title(MLang.AppSettings.Section.Network)
-                Card {
-                    PreferenceValueItem(
-                        title = MLang.AppSettings.Network.CustomUserAgentTitle,
-                        summary = customUserAgent.ifEmpty {
-                            MLang.AppSettings.Network.CustomUserAgentSummaryDefault
-                        },
-                        onClick = {
-                            customUserAgentTextFieldState.value = TextFieldValue(customUserAgent)
-                            showEditCustomUserAgentDialogState.value = true
-                        }
-                    )
-                }
-            }
-            item {
-                Title(MLang.AppSettings.Section.Experimental)
-                ExperimentalSettingsSection(
-                    acgMainUiEnabled = acgMainUiEnabled,
-                    acgQuoteSummary = acgQuoteSummary,
-                    acgQuoteAuthorSummary = acgQuoteAuthorSummary,
-                    acgSidebarExpanded = acgSidebarExpanded,
-                    onAcgMainUiEnabledChange = viewModel::onAcgMainUiEnabledChange,
-                    onEditAcgQuote = {
-                        acgQuoteTextFieldState.value = TextFieldValue(acgHomeQuote)
-                        showEditAcgQuoteDialogState.value = true
-                    },
-                    onEditAcgQuoteAuthor = {
-                        acgQuoteAuthorTextFieldState.value = TextFieldValue(acgHomeQuoteAuthor)
-                        showEditAcgQuoteAuthorDialogState.value = true
-                    },
-                    onAcgSidebarExpandedChange = viewModel::onAcgSidebarExpandedChange,
-                    onPickWallpaper = {
-                        wallpaperPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                )
-            }
-        }
-
-        WarningBottomSheet(
-            show = showHideIconDialogState,
-            title = MLang.AppSettings.WarningDialog.Title,
-            messages = listOf(
-                MLang.AppSettings.WarningDialog.HideIconMsg1,
-                MLang.AppSettings.WarningDialog.HideIconMsg2
-            ),
-            onConfirm = {
-                viewModel.onHideAppIconChange(true)
-                AppIconHelper.toggleIcon(context, true)
             },
         )
+    }
+}
 
-        TextEditBottomSheet(
-            show = showEditCustomUserAgentDialogState,
-            title = MLang.AppSettings.EditDialog.UserAgentTitle,
-            textFieldValue = customUserAgentTextFieldState,
-            onConfirm = { viewModel.applyCustomUserAgent(it) },
-        )
+@Composable
+private fun AppNetworkSettingsSection(viewModel: AppSettingsViewModel) {
+    val customUserAgent by viewModel.customUserAgent.state.collectAsState()
 
-        TextEditBottomSheet(
-            show = showEditAcgQuoteDialogState,
-            title = MLang.AppSettings.Experimental.EditAcgQuoteTitle,
-            textFieldValue = acgQuoteTextFieldState,
-            onConfirm = { viewModel.onAcgHomeQuoteChange(it) },
-        )
-
-        TextEditBottomSheet(
-            show = showEditAcgQuoteAuthorDialogState,
-            title = MLang.AppSettings.Experimental.EditAcgQuoteAuthorTitle,
-            textFieldValue = acgQuoteAuthorTextFieldState,
-            onConfirm = { viewModel.onAcgHomeQuoteAuthorChange(it) },
-        )
-
-        PageScaleDialog(
-            show = showPageScaleDialogState.value,
-            pageScale = pageScaleLocal,
-            onPageScaleChange = { pageScaleLocal = it },
-            onApply = { viewModel.onPageScaleChange(it) },
-            onDismissRequest = { showPageScaleDialogState.value = false },
-        )
-
-        WarningBottomSheet(
-            show = showBiometricUnavailableDialogState,
-            title = MLang.AppSettings.Privacy.BiometricUnavailableTitle,
-            messages = listOf(
-                biometricUnavailableMessage.ifBlank {
-                    MLang.AppSettings.Privacy.BiometricUnavailableMessage
-                }
-            ),
-            onConfirm = { showBiometricUnavailableDialogState.value = false },
+    Title(MLang.AppSettings.Section.Network)
+    Card {
+        CustomUserAgentPreferenceItem(
+            customUserAgent = customUserAgent,
+            onConfirm = viewModel::applyCustomUserAgent,
         )
     }
+}
+
+@Composable
+private fun AppExperimentalSettingsSection(
+    viewModel: AppSettingsViewModel,
+    navigator: DestinationsNavigator,
+) {
+    val context = LocalContext.current
+    val acgMainUiEnabled by viewModel.acgMainUiEnabled.state.collectAsState()
+    val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsState()
+    val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsState()
+    val acgSidebarExpanded by viewModel.acgSidebarExpanded.state.collectAsState()
+    val acgQuoteSummary = remember(acgHomeQuote) {
+        acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault }
+    }
+    val acgQuoteAuthorSummary = remember(acgHomeQuoteAuthor) {
+        acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault }
+    }
+    val showEditAcgQuoteDialogState = remember { mutableStateOf(false) }
+    val showEditAcgQuoteAuthorDialogState = remember { mutableStateOf(false) }
+    val acgQuoteTextFieldState = remember { mutableStateOf(TextFieldValue()) }
+    val acgQuoteAuthorTextFieldState = remember { mutableStateOf(TextFieldValue()) }
+    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+            val wallpaperZoom = viewModel.acgWallpaperZoom.value
+            val wallpaperBiasX = viewModel.acgWallpaperBiasX.value
+            val wallpaperBiasY = viewModel.acgWallpaperBiasY.value
+            navigator.navigate(
+                AcgWallpaperCropScreenDestination(
+                    wallpaperUri = uri.toString(),
+                    initialZoom = wallpaperZoom,
+                    initialBiasX = wallpaperBiasX,
+                    initialBiasY = wallpaperBiasY,
+                ),
+            ) {
+                launchSingleTop = true
+            }
+        }
+    }
+
+    Title(MLang.AppSettings.Section.Experimental)
+    Card {
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Experimental.AcgHomeTitle,
+            summary = MLang.AppSettings.Experimental.AcgHomeSummary,
+            checked = acgMainUiEnabled,
+            onCheckedChange = viewModel::onAcgMainUiEnabledChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Experimental.AcgSidebarExpandedTitle,
+            summary = MLang.AppSettings.Experimental.AcgSidebarExpandedSummary,
+            checked = acgSidebarExpanded,
+            onCheckedChange = viewModel::onAcgSidebarExpandedChange,
+        )
+        PreferenceValueItem(
+            title = MLang.AppSettings.Experimental.AcgQuoteTitle,
+            summary = acgQuoteSummary,
+            onClick = {
+                acgQuoteTextFieldState.value = TextFieldValue(acgHomeQuote)
+                showEditAcgQuoteDialogState.value = true
+            },
+        )
+        PreferenceValueItem(
+            title = MLang.AppSettings.Experimental.AcgQuoteAuthorTitle,
+            summary = acgQuoteAuthorSummary,
+            onClick = {
+                acgQuoteAuthorTextFieldState.value = TextFieldValue(acgHomeQuoteAuthor)
+                showEditAcgQuoteAuthorDialogState.value = true
+            },
+        )
+        PreferenceArrowItem(
+            title = MLang.AppSettings.Experimental.WallpaperTitle,
+            summary = MLang.AppSettings.Experimental.WallpaperSummary,
+            onClick = {
+                wallpaperPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                )
+            },
+        )
+    }
+
+    TextEditBottomSheet(
+        show = showEditAcgQuoteDialogState,
+        title = MLang.AppSettings.Experimental.EditAcgQuoteTitle,
+        textFieldValue = acgQuoteTextFieldState,
+        onConfirm = viewModel::onAcgHomeQuoteChange,
+    )
+
+    TextEditBottomSheet(
+        show = showEditAcgQuoteAuthorDialogState,
+        title = MLang.AppSettings.Experimental.EditAcgQuoteAuthorTitle,
+        textFieldValue = acgQuoteAuthorTextFieldState,
+        onConfirm = viewModel::onAcgHomeQuoteAuthorChange,
+    )
 }
 
 private fun isBatteryOptimizationIgnored(context: android.content.Context): Boolean {
@@ -498,7 +527,7 @@ private fun openBatteryOptimizationSettings(
         if (!alreadyIgnored) {
             add(
                 Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:${context.packageName}")
+                    data = "package:${context.packageName}".toUri()
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 },
             )
@@ -525,46 +554,74 @@ private fun openBatteryOptimizationSettings(
 }
 
 @Composable
-private fun ExperimentalSettingsSection(
-    acgMainUiEnabled: Boolean,
-    acgQuoteSummary: String,
-    acgQuoteAuthorSummary: String,
-    acgSidebarExpanded: Boolean,
-    onAcgMainUiEnabledChange: (Boolean) -> Unit,
-    onEditAcgQuote: () -> Unit,
-    onEditAcgQuoteAuthor: () -> Unit,
-    onAcgSidebarExpandedChange: (Boolean) -> Unit,
-    onPickWallpaper: () -> Unit,
+private fun PageScalePreferenceItem(
+    pageScale: Float,
+    onApply: (Float) -> Unit,
 ) {
-    Card {
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Experimental.AcgHomeTitle,
-            summary = MLang.AppSettings.Experimental.AcgHomeSummary,
-            checked = acgMainUiEnabled,
-            onCheckedChange = onAcgMainUiEnabledChange,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Experimental.AcgSidebarExpandedTitle,
-            summary = MLang.AppSettings.Experimental.AcgSidebarExpandedSummary,
-            checked = acgSidebarExpanded,
-            onCheckedChange = onAcgSidebarExpandedChange,
-        )
-        PreferenceValueItem(
-            title = MLang.AppSettings.Experimental.AcgQuoteTitle,
-            summary = acgQuoteSummary,
-            onClick = onEditAcgQuote,
-        )
-        PreferenceValueItem(
-            title = MLang.AppSettings.Experimental.AcgQuoteAuthorTitle,
-            summary = acgQuoteAuthorSummary,
-            onClick = onEditAcgQuoteAuthor,
-        )
-        PreferenceArrowItem(
-            title = MLang.AppSettings.Experimental.WallpaperTitle,
-            summary = MLang.AppSettings.Experimental.WallpaperSummary,
-            onClick = onPickWallpaper,
-        )
+    var pageScaleLocal by remember(pageScale) { mutableFloatStateOf(pageScale) }
+    val pageScalePercentText = remember(pageScaleLocal) { "${(pageScaleLocal * 100).toInt()}%" }
+    val showPageScaleDialogState = remember { mutableStateOf(false) }
+
+    PreferenceArrowItem(
+        title = MLang.AppSettings.Interface.PageScaleTitle,
+        summary = MLang.AppSettings.Interface.PageScaleSummary,
+        endActions = {
+            Text(
+                text = pageScalePercentText,
+                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+            )
+        },
+        onClick = { showPageScaleDialogState.value = true },
+        holdDownState = showPageScaleDialogState.value,
+        bottomAction = {
+            Slider(
+                value = pageScaleLocal,
+                onValueChange = { pageScaleLocal = it },
+                onValueChangeFinished = { onApply(pageScaleLocal) },
+                valueRange = 0.8f..1.2f,
+                magnetThreshold = 0.01f,
+                hapticEffect = SliderDefaults.SliderHapticEffect.Step,
+            )
+        },
+    )
+
+    PageScaleDialog(
+        show = showPageScaleDialogState.value,
+        pageScale = pageScaleLocal,
+        onPageScaleChange = { pageScaleLocal = it },
+        onApply = onApply,
+        onDismissRequest = { showPageScaleDialogState.value = false },
+    )
+}
+
+@Composable
+private fun CustomUserAgentPreferenceItem(
+    customUserAgent: String,
+    onConfirm: (String) -> Unit,
+) {
+    val customUserAgentSummary = remember(customUserAgent) {
+        customUserAgent.ifEmpty {
+            MLang.AppSettings.Network.CustomUserAgentSummaryDefault
+        }
     }
+    val showEditCustomUserAgentDialogState = remember { mutableStateOf(false) }
+    val customUserAgentTextFieldState = remember { mutableStateOf(TextFieldValue()) }
+
+    PreferenceValueItem(
+        title = MLang.AppSettings.Network.CustomUserAgentTitle,
+        summary = customUserAgentSummary,
+        onClick = {
+            customUserAgentTextFieldState.value = TextFieldValue(customUserAgent)
+            showEditCustomUserAgentDialogState.value = true
+        },
+    )
+
+    TextEditBottomSheet(
+        show = showEditCustomUserAgentDialogState,
+        title = MLang.AppSettings.EditDialog.UserAgentTitle,
+        textFieldValue = customUserAgentTextFieldState,
+        onConfirm = onConfirm,
+    )
 }
 
 @Composable

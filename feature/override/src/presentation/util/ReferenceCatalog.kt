@@ -22,7 +22,11 @@
 
 package com.github.yumelira.yumebox.presentation.util
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 data class OverrideReferenceCatalog(
     val proxyNames: List<String> = emptyList(),
@@ -31,33 +35,45 @@ data class OverrideReferenceCatalog(
     val ruleProviderNames: List<String> = emptyList(),
 )
 
+@Composable
+fun rememberOverrideReferenceCatalog(config: ConfigurationOverride): OverrideReferenceCatalog {
+    return remember(
+        config.proxies,
+        config.proxiesStart,
+        config.proxiesEnd,
+        config.proxyGroups,
+        config.proxyGroupsStart,
+        config.proxyGroupsEnd,
+        config.subRules,
+        config.subRulesMerge,
+        config.ruleProviders,
+        config.ruleProvidersMerge,
+    ) {
+        buildOverrideReferenceCatalog(config)
+    }
+}
+
 fun buildOverrideReferenceCatalog(config: ConfigurationOverride): OverrideReferenceCatalog {
     return OverrideReferenceCatalog(
-        proxyNames = collectProxyNames(
-            OverrideListModeValues(
-                replaceValue = parseProxyDrafts(config.proxies),
-                startValue = parseProxyDrafts(config.proxiesStart),
-                endValue = parseProxyDrafts(config.proxiesEnd),
-            ),
+        proxyNames = collectJsonObjectFieldNames(
+            "name",
+            config.proxies,
+            config.proxiesStart,
+            config.proxiesEnd,
         ),
-        proxyGroupNames = collectProxyGroupNames(
-            OverrideListModeValues(
-                replaceValue = parseProxyGroupDrafts(config.proxyGroups),
-                startValue = parseProxyGroupDrafts(config.proxyGroupsStart),
-                endValue = parseProxyGroupDrafts(config.proxyGroupsEnd),
-            ),
+        proxyGroupNames = collectJsonObjectFieldNames(
+            "name",
+            config.proxyGroups,
+            config.proxyGroupsStart,
+            config.proxyGroupsEnd,
         ),
-        subRuleNames = collectSubRuleNames(
-            OverrideListModeValues(
-                replaceValue = parseSubRuleGroupDrafts(config.subRules),
-                mergeValue = parseSubRuleGroupDrafts(config.subRulesMerge),
-            ),
+        subRuleNames = collectOrderedNames(
+            config.subRules?.keys.orEmpty().toList(),
+            config.subRulesMerge?.keys.orEmpty().toList(),
         ),
-        ruleProviderNames = collectRuleProviderNames(
-            OverrideListModeValues(
-                replaceValue = parseKeyedObjectDrafts(config.ruleProviders),
-                mergeValue = parseKeyedObjectDrafts(config.ruleProvidersMerge),
-            ),
+        ruleProviderNames = collectOrderedNames(
+            config.ruleProviders?.keys.orEmpty().toList(),
+            config.ruleProvidersMerge?.keys.orEmpty().toList(),
         ),
     )
 }
@@ -136,4 +152,20 @@ private fun collectOrderedNames(vararg groups: List<String>): List<String> {
         }
     }
     return orderedNames.toList()
+}
+
+private fun collectJsonObjectFieldNames(
+    fieldName: String,
+    vararg groups: List<Map<String, JsonElement>>?,
+): List<String> {
+    return collectOrderedNames(
+        *groups.map { values ->
+            values.orEmpty().mapNotNull { fields -> fields.stringFieldOrNull(fieldName) }
+        }.toTypedArray(),
+    )
+}
+
+private fun Map<String, JsonElement>.stringFieldOrNull(key: String): String? {
+    val value = get(key) as? JsonPrimitive ?: return null
+    return value.content
 }

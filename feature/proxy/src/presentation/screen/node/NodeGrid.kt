@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -58,11 +57,10 @@ internal fun LazyListScope.nodeGridItems(
             onClick = onProxyClick,
             isDelayTesting = isDelayTesting,
             isThisProxyTesting = proxy.name in testingProxyNames,
-            onSingleNodeTestClick = onSingleNodeTestClick?.let { { it(proxy.name) } },
+            onSingleNodeTestClick = onSingleNodeTestClick,
             showCountryFlag = true,
             singleNodeTestEnabled = singleNodeTestEnabled,
             modifier = Modifier
-                .animateItem()
                 .padding(
                     horizontal = outerHorizontalPadding,
                     vertical = itemVerticalPadding,
@@ -75,7 +73,6 @@ internal fun LazyListScope.nodeGridItems(
 internal fun NodeGrid(
     proxies: List<Proxy>,
     selectedProxyName: String,
-    displayMode: ProxyDisplayMode,
     onProxyClick: ((String) -> Unit)? = null,
     isDelayTesting: Boolean = false,
     testingProxyNames: Set<String> = emptySet(),
