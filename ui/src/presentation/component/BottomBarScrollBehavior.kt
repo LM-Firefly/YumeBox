@@ -100,30 +100,15 @@ fun rememberBottomBarScrollBehavior(
 fun BottomBarScrollBehavior.withLazyListState(
     listState: LazyListState
 ): BottomBarScrollBehavior {
-    val isAtTop by remember {
+    val isAtTop by remember(listState) {
         derivedStateOf {
             listState.firstVisibleItemIndex == 0 &&
-                    listState.firstVisibleItemScrollOffset == 0
+                listState.firstVisibleItemScrollOffset == 0
         }
     }
 
     LaunchedEffect(isAtTop) {
         if (isAtTop) {
-            showBottomBar()
-        }
-    }
-
-    val isScrollingUp by remember {
-        derivedStateOf {
-            if (listState.layoutInfo.visibleItemsInfo.isNotEmpty()) {
-                val firstVisibleItem = listState.layoutInfo.visibleItemsInfo.first()
-                firstVisibleItem.index == 0 && firstVisibleItem.offset == 0
-            } else false
-        }
-    }
-
-    LaunchedEffect(isScrollingUp) {
-        if (isScrollingUp) {
             showBottomBar()
         }
     }

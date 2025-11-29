@@ -45,7 +45,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
@@ -187,7 +186,6 @@ internal fun NodeGroupSheetContent(
             groups = groups,
             onGroupClick = onGroupClick,
             testingGroupNames = testingGroupNames,
-            onGroupBoundsChanged = null,
             itemVerticalPadding = 0.dp,
         )
     }
@@ -196,7 +194,6 @@ internal fun NodeGroupSheetContent(
 @Composable
 fun NodeSheetContent(
     group: ProxyGroupInfo,
-    displayMode: ProxyDisplayMode,
     onSelectProxy: (String) -> Unit,
     isDelayTesting: Boolean,
     testingProxyNames: Set<String>,

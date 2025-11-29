@@ -45,6 +45,7 @@ class AppSettingsRepository(
     val excludeFromRecents: Preference<Boolean> = storage.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification
     val bottomBarAutoHide: Preference<Boolean> = storage.bottomBarAutoHide
+    val bottomBarUseLegacyStyle: Preference<Boolean> = storage.bottomBarUseLegacyStyle
     val topBarBlurEnabled: Preference<Boolean> = storage.topBarBlurEnabled
     val acgMainUiEnabled: Preference<Boolean> = storage.acgMainUiEnabled
     val acgWallpaperUri: Preference<String> = storage.acgWallpaperUri

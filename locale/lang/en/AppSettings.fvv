@@ -38,10 +38,12 @@ AppSettings = {
         ColorThemeCodeLabel = "Theme Color Code (#RRGGBB)"
         ColorThemeCustomSummary = "Current theme color: %s"
 
-        TopBarBlurTitle = "Blur Top Bar"
-        TopBarBlurSummary = "Apply a dynamic blur background to the top bar while scrolling"
+        TopBarBlurTitle = "Blur"
+        TopBarBlurSummary = "Apply a  blur background to"
         AutoHideNavbarTitle = "Auto-hide Navbar"
         AutoHideNavbarSummary = "Hide navbar on scroll down and show on scroll up"
+        LegacyNavbarStyleTitle = "Floating Navigation Bar"
+        LegacyNavbarStyleSummary = "Floating Navigation Bar Style"
 
         PageScaleTitle = "Page Scale"
         PageScaleSummary = "Adjust the overall UI scaling ratio of the app"

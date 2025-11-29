@@ -58,6 +58,7 @@ fun OverrideSubRuleDraftEditorScreen(
     var name by remember { mutableStateOf(storeDraft?.name.orEmpty()) }
     var rules by remember { mutableStateOf(storeDraft?.rules.orEmpty()) }
     var errorText by remember { mutableStateOf<String?>(null) }
+    val referenceCatalog = rememberCurrentReferenceCatalog()
 
     fun syncDraftSession(
         updatedName: String = name,
@@ -158,7 +159,7 @@ fun OverrideSubRuleDraftEditorScreen(
                                     OverrideListModeValues(replaceValue = rules),
                                     listOf(OverrideListEditorMode.Replace),
                                     OverrideListEditorMode.Replace,
-                                    OverrideStructuredEditorStore.currentReferenceCatalog(),
+                                    referenceCatalog,
                                 ) { updatedValues ->
                                     syncDraftSession(
                                         updatedName = OverrideStructuredEditorStore.subRuleDraftEditorValue?.name.orEmpty(),
