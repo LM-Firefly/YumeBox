@@ -104,26 +104,26 @@ class SubStoreService : Service() {
     private fun ensureJavetLibraryLoaded(): Boolean {
         return try {
             NativeLibraryManager.initialize(applicationContext)
-            val javetLibName = "libjavet-node-android.v.5.0.1.so"
+            val javetLibBaseName = "libjavet-node-android"
 
-            if (NativeLibraryManager.isLibraryAvailable(javetLibName)) {
+            if (NativeLibraryManager.isLibraryAvailable(javetLibBaseName)) {
                 Log.d("SubStoreService", "Javet 库已存在，准备加载")
             } else {
                 Log.d("SubStoreService", "Javet 库不存在，开始提取")
                 val results = NativeLibraryManager.extractAllLibraries()
                 Log.d("SubStoreService", "库提取结果: $results")
-                if (results[javetLibName] != true) {
+                if (results[javetLibBaseName] != true) {
                     Log.e("SubStoreService", "Javet 库提取失败")
                     return false
                 }
             }
 
-            val loaded = NativeLibraryManager.loadJniLibrary(javetLibName)
+            val loaded = NativeLibraryManager.loadJniLibrary(javetLibBaseName)
             if (loaded) {
                 Log.d("SubStoreService", "Javet 库加载成功")
             } else {
                 Log.e("SubStoreService", "Javet 库加载失败")
-                Log.e("SubStoreService", "库状态: ${NativeLibraryManager.getLibraryStatus(javetLibName)}")
+                Log.e("SubStoreService", "库状态: ${NativeLibraryManager.getLibraryStatus(javetLibBaseName)}")
             }
             loaded
         } catch (e: Exception) {

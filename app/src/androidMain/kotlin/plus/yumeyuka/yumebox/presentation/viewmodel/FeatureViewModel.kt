@@ -105,7 +105,7 @@ class FeatureViewModel(
 
     companion object {
         private const val EXTENSION_PACKAGE_NAME = "com.github.yumelira.yumebox.extension"
-        private const val JAVET_LIB_NAME = "libjavet-node-android.v.5.0.1.so"
+        private const val JAVET_LIB_NAME = "libjavet-node-android"
         private val PANEL_NAMES = listOf("zashboard", "metacubexd")
         private val PANEL_DISPLAY_NAMES = listOf("SubStore Zashboard", "SubStore 官方面板")
         private val PANEL_URLS = listOf(
