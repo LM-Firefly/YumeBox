@@ -22,7 +22,6 @@ package com.github.yumelira.yumebox.service.loader
 
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.model.Profile
-import com.github.yumelira.yumebox.data.model.ProfileType
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import timber.log.Timber
 
@@ -32,7 +31,6 @@ class ServiceProfileLoader(
 ) {
     companion object {
         private const val TAG = "ServiceProfileLoader"
-        private const val QUICK_START_THRESHOLD_MS = 2 * 60 * 60 * 1000L
     }
     
     suspend fun loadIfNeeded(
@@ -42,44 +40,38 @@ class ServiceProfileLoader(
     ): Result<Profile> {
         val profile = profilesStore.getAllProfiles().find { it.id == profileId }
             ?: return Result.failure(ProfileNotFoundException(profileId))
-        
+
         val currentProfile = clashManager.currentProfile.value
         if (currentProfile != null && currentProfile.id == profile.id) {
             Timber.tag(TAG).d("当前配置已加载: ${profile.name}")
             return Result.success(profile)
         }
         
-        Timber.tag(TAG).d("正在加载配置: ${profile.name}")
-        
-        val useQuickStart = shouldUseQuickStart(profile, quickStart)
+        val startTime = System.currentTimeMillis()
+        Timber.tag(TAG).d("正在加载配置: ${profile.name}, quickStart=$quickStart")
+
         val loadResult = clashManager.loadProfile(
             profile,
             forceDownload = false,
             willUseTunMode = willUseTunMode,
-            quickStart = useQuickStart
+            quickStart = quickStart
         )
         
+        val elapsed = System.currentTimeMillis() - startTime
+        
         return if (loadResult.isSuccess) {
-            if (useQuickStart) {
-                Timber.tag(TAG).d("使用快速启动模式，providers将在后台更新")
-            }
+            Timber.tag(TAG).d("配置加载成功: ${profile.name}, 耗时: ${elapsed}ms")
             Result.success(profile)
         } else {
+            val error = loadResult.exceptionOrNull()
+            Timber.tag(TAG).e("配置加载失败: ${profile.name}, 原因: ${error?.message}")
             Result.failure(
                 ProfileLoadException(
                     profileId,
-                    loadResult.exceptionOrNull()?.message ?: "未知错误"
+                    error?.message ?: "未知错误"
                 )
             )
         }
-    }
-    
-    private fun shouldUseQuickStart(profile: Profile, requestQuickStart: Boolean): Boolean {
-        if (!requestQuickStart) return false
-        if (profile.type != ProfileType.FILE) return false
-        
-        val twoHoursAgo = System.currentTimeMillis() - QUICK_START_THRESHOLD_MS
-        return profile.lastUpdatedAt?.let { it < twoHoursAgo } ?: false
     }
 }
 

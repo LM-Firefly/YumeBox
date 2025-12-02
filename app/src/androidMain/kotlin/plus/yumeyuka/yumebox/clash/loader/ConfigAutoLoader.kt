@@ -57,14 +57,16 @@ class ConfigAutoLoader(
             Timber.tag(TAG).d("手动重新加载配置: ${profile.name}")
 
             val willUseTun = clashManager.runningMode.value is RunningMode.Tun
+
             val result = clashManager.loadProfile(
                 profile = profile,
                 forceDownload = false,
-                willUseTunMode = willUseTun
+                willUseTunMode = willUseTun,
+                quickStart = true
             )
 
             if (result.isSuccess) {
-                delay(1000)
+                delay(500)
                 clashManager.refreshProxyGroups()
                 Timber.tag(TAG).d("配置重新加载成功")
             }
@@ -76,46 +78,8 @@ class ConfigAutoLoader(
         }
     }
 
-    fun cleanup() { scope.cancel(); Timber.tag(TAG).d("ConfigAutoLoader 已清理") }
-
-    suspend fun loadProfileIfNeeded(
-        profileId: String,
-        skipConfigLoad: Boolean,
-        willUseTunMode: Boolean,
-        quickStart: Boolean = false
-    ): Result<com.github.yumelira.yumebox.data.model.Profile> {
-        return try {
-            val profile = profilesStore.getAllProfiles().find { it.id == profileId }
-                ?: return Result.failure(Exception("未找到配置文件: $profileId"))
-
-            Timber.tag(TAG).d("正在加载配置: ${profile.name}")
-
-            val useQuickStart = if (quickStart && profile.type == com.github.yumelira.yumebox.data.model.ProfileType.FILE) {
-                val twoHoursAgo = System.currentTimeMillis() - 2 * 60 * 60 * 1000
-                profile.lastUpdatedAt?.let { it < twoHoursAgo } ?: false
-            } else {
-                false
-            }
-
-            val result = clashManager.loadProfile(
-                profile,
-                forceDownload = false,
-                willUseTunMode = willUseTunMode,
-                quickStart = useQuickStart
-            )
-
-            if (result.isFailure) {
-                return Result.failure(Exception("配置加载失败: ${result.exceptionOrNull()?.message}"))
-            }
-
-            if (useQuickStart) {
-                Timber.tag(TAG).d("使用快速启动模式，providers将在后台更新")
-            }
-
-            Result.success(profile)
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "加载配置失败: ${e.message}")
-            Result.failure(e)
-        }
+    fun cleanup() { 
+        scope.cancel()
+        Timber.tag(TAG).d("ConfigAutoLoader 已清理") 
     }
 }

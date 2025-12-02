@@ -47,7 +47,7 @@ class ProxyConnectionService(
         forceTunMode: Boolean? = null
     ): Result<Intent?> {
         return try {
-            Timber.tag(TAG).d("准备启动代理: profileId=$profileId, forceTunMode=$forceTunMode")
+            Timber.tag(TAG).d("准备启动代理: profileId=$profileId")
 
             val proxyMode = determineProxyMode(forceTunMode)
             Timber.tag(TAG).d("选定代理模式: $proxyMode")
@@ -74,41 +74,23 @@ class ProxyConnectionService(
         mode: ProxyMode
     ): Result<Unit> {
         return try {
-            Timber.tag(TAG).d("直接启动代理: profileId=$profileId, mode=$mode")
-            
+            Timber.tag(TAG).d("启动代理服务: profileId=$profileId, mode=$mode")
+
             val profile = profilesStore.getAllProfiles().find { it.id == profileId }
             if (profile == null) {
                 Timber.tag(TAG).e("未找到配置文件: $profileId")
                 return Result.failure(IllegalArgumentException("配置文件不存在"))
             }
 
-            val currentProfile = clashManager.currentProfile.value
-            if (currentProfile == null || currentProfile.id != profile.id) {
-                Timber.tag(TAG).d("配置未预加载或不匹配，快速加载: ${profile.name}")
-                val loadResult = clashManager.loadProfile(
-                    profile = profile,
-                    forceDownload = false,
-                    willUseTunMode = (mode == ProxyMode.Tun),
-                    quickStart = true
-                )
-                
-                if (loadResult.isFailure) {
-                    Timber.tag(TAG).e("配置加载失败: ${loadResult.exceptionOrNull()?.message}")
-                    return Result.failure(loadResult.exceptionOrNull() ?: Exception("配置加载失败"))
-                }
-            } else {
-                Timber.tag(TAG).d("配置已预加载，直接启动: ${profile.name}")
-            }
-
             profilesStore.updateLastUsedProfileId(profileId)
 
             when (mode) {
                 ProxyMode.Tun -> {
-                    Timber.tag(TAG).d("启动 VPN 服务")
+                    Timber.tag(TAG).d("启动 VPN 服务: ${profile.name}")
                     ClashVpnService.start(context, profileId)
                 }
                 ProxyMode.Http -> {
-                    Timber.tag(TAG).d("启动 HTTP 服务")
+                    Timber.tag(TAG).d("启动 HTTP 服务: ${profile.name}")
                     ClashHttpService.start(context, profileId)
                 }
             }
@@ -143,8 +125,6 @@ class ProxyConnectionService(
     }
 
     private suspend fun startProxyInternal(profileId: String, proxyMode: ProxyMode) {
-        Timber.tag(TAG).d("启动代理服务: profileId=$profileId, mode=$proxyMode")
-        
         val result = startDirect(
             profileId = profileId,
             mode = proxyMode
