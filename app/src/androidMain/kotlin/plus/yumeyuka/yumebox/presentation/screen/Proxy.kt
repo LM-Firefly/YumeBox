@@ -87,6 +87,8 @@ fun ProxyPager(
     val scrollBehavior = MiuixScrollBehavior()
 
     var isRefreshing by rememberSaveable { mutableStateOf(false) }
+    var isPagerScrolling by rememberSaveable { mutableStateOf(false) }
+    var isUserInteracting by rememberSaveable { mutableStateOf(false) }
     val showBottomSheet = rememberSaveable { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -104,15 +106,26 @@ fun ProxyPager(
         }
     }
 
-    LaunchedEffect(selectedGroupIndex) {
-        if (proxyGroups.isNotEmpty() && pagerState.currentPage != selectedGroupIndex) {
+    LaunchedEffect(selectedGroupIndex, isPagerScrolling, isUserInteracting) {
+        if (proxyGroups.isEmpty()) return@LaunchedEffect
+
+        if (!isPagerScrolling && !isUserInteracting && pagerState.currentPage != selectedGroupIndex) {
             pagerState.animateScrollToPage(selectedGroupIndex)
         }
     }
 
     LaunchedEffect(pagerState.currentPage) {
-        if (proxyGroups.isNotEmpty() && pagerState.currentPage != selectedGroupIndex) {
+        if (proxyGroups.isEmpty() || isPagerScrolling) return@LaunchedEffect
+
+        isUserInteracting = true
+
+        if (pagerState.currentPage != selectedGroupIndex) {
             proxyViewModel.setSelectedGroup(pagerState.currentPage)
+        }
+
+        coroutineScope.launch {
+            delay(300)
+            isUserInteracting = false
         }
     }
 
@@ -202,9 +215,12 @@ fun ProxyPager(
                     ) {
                         ProxyGroupTabs(
                             groups = proxyGroups, selectedIndex = selectedGroupIndex, onTabSelected = { index ->
+                                isPagerScrolling = true
+                                isUserInteracting = false
                                 proxyViewModel.setSelectedGroup(index)
                                 coroutineScope.launch {
                                     pagerState.animateScrollToPage(index)
+                                    isPagerScrolling = false
                                 }
                             })
                     }

@@ -144,7 +144,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     )
                     LinkItem(
                         title = MLang.About.Link.TelegramChannel,
-                        url = "https://t.me/YumeLira_official",
+                        url = "https://t.me/YumeLira",
                         showArrow = true
                     )
                 }
