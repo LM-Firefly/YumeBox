@@ -30,6 +30,7 @@ captures/
 .externalNativeBuild/
 cmake-build-*/
 *.so
+!app/src/main/jniLibs/**/*.so
 *.a
 *.o
 *.obj
