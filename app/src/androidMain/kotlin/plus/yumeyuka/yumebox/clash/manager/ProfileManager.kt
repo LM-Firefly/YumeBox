@@ -37,6 +37,22 @@ class ProfileManager(private val workDir: File) {
         private const val CONFIG_FILE = "config.yaml"
     }
 
+    fun getProfileDir(profileId: String): File {
+        val importedDir = workDir.parentFile?.resolve(IMPORTED_DIR) ?: File(workDir, IMPORTED_DIR)
+        return File(importedDir, profileId)
+    }
+
+    fun getConfigFile(profile: Profile): File {
+        return when (profile.type) {
+            ProfileType.FILE -> File(profile.config)
+            ProfileType.URL -> File(getProfileDir(profile.id), CONFIG_FILE)
+        }
+    }
+
+    fun isProfileImported(profile: Profile): Boolean {
+        return getConfigFile(profile).exists()
+    }
+
     suspend fun loadProfile(
         profile: Profile,
         forceDownload: Boolean = false,
@@ -45,37 +61,32 @@ class ProfileManager(private val workDir: File) {
         quickStart: Boolean = false
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
-            onProgress?.invoke("准备加载配置...", 0)
+            val configFile = getConfigFile(profile)
+            val profileDir = configFile.parentFile ?: configFile
 
-            val configFile = if (quickStart) {
-                onProgress?.invoke("正在加载配置...", 30)
-                when (profile.type) {
-                    ProfileType.FILE -> File(profile.config)
-                    ProfileType.URL -> {
-                        val importedDir = workDir.parentFile?.resolve(IMPORTED_DIR) ?: File(workDir, IMPORTED_DIR)
-                        val cachedFile = File(File(importedDir, profile.id), CONFIG_FILE)
-                        if (cachedFile.exists()) {
-                            cachedFile
-                        } else {
-                            prepareConfigFile(profile, forceDownload) { msg, progress ->
-                                onProgress?.invoke(msg, 10 + (progress * 0.4).toInt())
-                            }
-                        }
-                    }
+            if (!configFile.exists()) {
+                if (quickStart) {
+                    return@withContext Result.failure(
+                        IllegalStateException("配置未导入，请先下载配置: ${profile.name}")
+                    )
                 }
-            } else {
-                val processedFile = prepareConfigFile(profile, forceDownload) { msg, progress ->
-                    onProgress?.invoke(msg, 10 + (progress * 0.4).toInt())
+                onProgress?.invoke("正在下载配置...", 10)
+                prepareConfigFile(profile, forceDownload) { msg, progress ->
+                    onProgress?.invoke(msg, 10 + (progress * 0.5).toInt())
                 }
-                onProgress?.invoke("正在解析配置...", 55)
-                processedFile
             }
 
-            Clash.load(configFile.parentFile ?: configFile).await()
+            Clash.reset()
+            Clash.clearOverride(Clash.OverrideSlot.Session)
+            
+            onProgress?.invoke("正在加载配置...", 70)
+            Clash.load(profileDir).await()
+            
             onProgress?.invoke("加载完成", 100)
+            Timber.d("Profile loaded: ${profile.name}")
             Result.success(configFile.absolutePath)
         } catch (e: Exception) {
-            Timber.e(e, "配置加载失败")
+            Timber.e(e, "配置加载失败: ${profile.name}")
             Result.failure(e)
         }
     }
@@ -91,10 +102,11 @@ class ProfileManager(private val workDir: File) {
             val configFile = prepareConfigFile(profile, forceDownload) { msg, progress ->
                 onProgress?.invoke(msg, (progress * 0.9).toInt())
             }
-
+            
+            onProgress?.invoke("下载完成", 100)
             Result.success(configFile.absolutePath)
         } catch (e: Exception) {
-            Timber.e(e, "配置下载失败")
+            Timber.e(e, "配置下载失败: ${profile.name}")
             Result.failure(e)
         }
     }
@@ -104,18 +116,37 @@ class ProfileManager(private val workDir: File) {
             val profile = currentProfile
                 ?: return@withContext Result.failure(Exception("没有当前配置"))
 
-            val configFile = when (profile.type) {
-                ProfileType.FILE -> File(profile.config)
-                ProfileType.URL -> {
-                    val importedDir = workDir.parentFile?.resolve(IMPORTED_DIR) ?: File(workDir, IMPORTED_DIR)
-                    File(File(importedDir, profile.id), CONFIG_FILE)
-                }
+            val configFile = getConfigFile(profile)
+            if (!configFile.exists()) {
+                return@withContext Result.failure(Exception("配置文件不存在: ${profile.name}"))
             }
-            if (!configFile.exists()) return@withContext Result.failure(Exception("配置文件不存在"))
-            Clash.load(configFile.parentFile ?: configFile).await()
+            
+            val profileDir = configFile.parentFile ?: configFile
+            Clash.load(profileDir).await()
+            Timber.d("Profile reloaded: ${profile.name}")
             Result.success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "重新加载配置失败")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateProfile(
+        profile: Profile,
+        onProgress: ((String, Int) -> Unit)? = null
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            onProgress?.invoke("正在更新配置...", 0)
+            
+            val configFile = prepareConfigFile(profile, forceDownload = true) { msg, progress ->
+                onProgress?.invoke(msg, progress)
+            }
+            
+            onProgress?.invoke("更新完成", 100)
+            Timber.d("Profile updated: ${profile.name}")
+            Result.success(configFile.absolutePath)
+        } catch (e: Exception) {
+            Timber.e(e, "配置更新失败: ${profile.name}")
             Result.failure(e)
         }
     }
