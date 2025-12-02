@@ -4,6 +4,9 @@ Providers = {
     
     Action = {
         UpdateAll = "Update All"
+        Update = "Update"
+        Upload = "Upload"
+        Operation = "Operation"
     }
     
     Empty = {
@@ -23,5 +26,7 @@ Providers = {
         UpdateSuccess = "%s updated successfully"
         UpdateFailed = "Update failed: %s"
         AllUpdated = "All updated"
+        UploadSuccess = "%s uploaded successfully"
+        UploadFailed = "Upload failed: %s"
     }
 }
