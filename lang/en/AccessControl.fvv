@@ -15,12 +15,19 @@ AccessControl = {
         Title = "Access Control Settings"
         ShowSystemApps = "Show System Apps"
         DescendingOrder = "Descending Order"
+        SelectedFirst = "Selected Apps First"
         SortMode = "Sort Mode"
         SortModeCurrent = "Current: %s"
         BatchOperation = "Batch Operation"
         SelectAll = "Select All"
         DeselectAll = "Deselect All"
         Invert = "Invert"
+        ImportExport = "Import/Export"
+        Import = "Import from Clipboard"
+        Export = "Export to Clipboard"
+        ImportSuccess = "Imported: %d package names"
+        ExportSuccess = "Copied %d package names to clipboard"
+        ImportFailed = "Import failed"
     }
     
     SortMode = {
