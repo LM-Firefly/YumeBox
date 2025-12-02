@@ -47,10 +47,6 @@ class ServiceManager(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             stateManager.connecting(RunningMode.Tun)
-            
-            ClashConfiguration.applyOverride(
-                ClashConfiguration.ProxyMode.Tun
-            )
 
             Clash.startTun(
                 fd = fd,
@@ -85,7 +81,6 @@ class ServiceManager(
             val httpMode = RunningMode.Http(config.address)
             stateManager.connecting(httpMode)
             
-            ClashConfiguration.applyOverride(ClashConfiguration.ProxyMode.Http(config.port))
             val address = Clash.startHttp(config.listenAddress) ?: config.address
             stateManager.running(profile, RunningMode.Http(address))
             startMonitoring()
