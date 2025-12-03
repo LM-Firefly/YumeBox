@@ -139,10 +139,11 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
                         SmallTitle(MLang.Providers.Type.ProxyProviders.format(proxyProviders.size))
                     }
                     proxyProviders.forEach { provider ->
-                        item(key = "proxy_${provider.name}") {
+                        val providerKey = "${provider.type}_${provider.name}"
+                        item(key = providerKey) {
                             ProviderCard(
                                 provider = provider,
-                                isUpdating = uiState.updatingProviders.contains(provider.name),
+                                isUpdating = uiState.updatingProviders.contains(providerKey),
                                 onUpdate = { viewModel.updateProvider(provider) },
                                 onUpload = { uri -> viewModel.uploadProviderFile(context, provider, uri) }
                             )
@@ -155,10 +156,11 @@ fun ProvidersScreen(navigator: DestinationsNavigator) {
                         SmallTitle(MLang.Providers.Type.RuleProviders.format(ruleProviders.size))
                     }
                     ruleProviders.forEach { provider ->
-                        item(key = "rule_${provider.name}") {
+                        val providerKey = "${provider.type}_${provider.name}"
+                        item(key = providerKey) {
                             ProviderCard(
                                 provider = provider,
-                                isUpdating = uiState.updatingProviders.contains(provider.name),
+                                isUpdating = uiState.updatingProviders.contains(providerKey),
                                 onUpdate = { viewModel.updateProvider(provider) },
                                 onUpload = { uri -> viewModel.uploadProviderFile(context, provider, uri) }
                             )
@@ -229,7 +231,7 @@ private fun ProviderCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            if (provider.vehicleType == Provider.VehicleType.HTTP) {
+            if (provider.path.isNotBlank()) {
                 Box {
                     IconButton(
                         backgroundColor = updateBg,

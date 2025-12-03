@@ -54,7 +54,7 @@ fun TrafficDisplay(
             profileName = profileName,
             tunnelMode = tunnelMode
         )
-        
+
         UploadSection(uploadSpeed = trafficNow.upload)
     }
 }

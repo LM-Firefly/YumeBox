@@ -109,18 +109,10 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     Spacer(modifier = Modifier.height(32.dp))
                 }
                 Card {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "YumeBox",
-                            style = MiuixTheme.textStyles.title3
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = MLang.About.App.Description,
-                            style = MiuixTheme.textStyles.body1,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        )
-                    }
+                    BasicComponent(
+                        title = "YumeBox",
+                        summary = MLang.About.App.Description
+                    )
                 }
                 SmallTitle(MLang.About.Section.ProjectLinks)
 
@@ -156,18 +148,10 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                         summary = MLang.About.License.LibrariesSummary,
                         onClick = { navigator.navigate(OpenSourceLicensesScreenDestination) }
                     )
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = MLang.About.License.AgplName,
-                            style = MiuixTheme.textStyles.body1
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = MLang.About.License.AgplDescription,
-                            style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        )
-                    }
+                    BasicComponent(
+                        title = MLang.About.License.AgplName,
+                        summary = MLang.About.License.AgplDescription,
+                    )
                 }
             }
             item {

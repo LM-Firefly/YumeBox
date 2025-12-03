@@ -102,7 +102,6 @@ fun HomePager(mainInnerPadding: PaddingValues) {
             ScreenLazyColumn(
                 scrollBehavior = scrollBehavior,
                 innerPadding = combinePaddingValues(innerPadding, mainInnerPadding),
-                topPadding = 15.dp
             ) {
                 item {
                     Column(
@@ -140,7 +139,7 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                     }
                 }
 
-                item { Spacer(modifier = Modifier.height(120.dp)) }
+                item { Spacer(modifier = Modifier.height(32.dp)) }
             }
 
             ProxyControlButton(

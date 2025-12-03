@@ -52,7 +52,7 @@ require (
 	github.com/metacubex/kcp-go v0.0.0-20251111012849-7455698490e9 // indirect
 	github.com/metacubex/mihomo v1.19.16 // indirect
 	github.com/metacubex/nftables v0.0.0-20250503052935-30a69ab87793 // indirect
-	github.com/metacubex/quic-go v0.55.1-0.20251024060151-bd465f127128 // indirect
+	github.com/metacubex/quic-go v0.55.1-0.20251203073212-6940cac967c2 // indirect
 	github.com/metacubex/randv2 v0.2.0 // indirect
 	github.com/metacubex/restls-client-go v0.1.7 // indirect
 	github.com/metacubex/sing v0.5.6 // indirect
@@ -108,4 +108,24 @@ require (
 
 replace cfa => ../../golang
 
-replace github.com/metacubex/mihomo => ./mihomo
+replace github.com/metacubex/mihomo => <!--
+  - This file is part of YumeBox.
+  -
+  - YumeBox is free software: you can redistribute it and/or modify
+  - it under the terms of the GNU Affero General Public License as
+  - published by the Free Software Foundation, either version 3 of the
+  - License.
+  -
+  - This program is distributed in the hope that it will be useful,
+  - but WITHOUT ANY WARRANTY; without even the implied warranty of
+  - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  - GNU Affero General Public License for more details.
+  -
+  - You should have received a copy of the GNU Affero General Public License
+  - along with this program. If not, see <https://www.gnu.org/licenses/>.
+  -
+  - Copyright (c)  YumeLira 2025.
+  -
+  -->
+
+./mihomo

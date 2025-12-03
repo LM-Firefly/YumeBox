@@ -177,21 +177,27 @@ private fun PagerGroupSync(
     groupCount: Int,
     setSelectedGroup: (Int) -> Unit
 ) {
-    LaunchedEffect(groupCount, selectedGroupIndex) {
-        if (groupCount in 1..selectedGroupIndex) {
+    LaunchedEffect(groupCount) {
+        if (groupCount > 0 && selectedGroupIndex >= groupCount) {
             setSelectedGroup(0)
         }
     }
 
-    LaunchedEffect(pagerState.currentPage) {
-        if (groupCount > 0 && pagerState.currentPage != selectedGroupIndex) {
-            setSelectedGroup(pagerState.currentPage)
+    LaunchedEffect(selectedGroupIndex, groupCount) {
+        if (groupCount == 0) return@LaunchedEffect
+
+        val targetPage = selectedGroupIndex.coerceIn(0, groupCount - 1)
+        if (pagerState.currentPage != targetPage) {
+            pagerState.animateScrollToPage(targetPage)
         }
     }
 
-    LaunchedEffect(selectedGroupIndex) {
-        if (groupCount > 0 && pagerState.currentPage != selectedGroupIndex) {
-            pagerState.animateScrollToPage(selectedGroupIndex)
+    LaunchedEffect(pagerState.isScrollInProgress) {
+        if (!pagerState.isScrollInProgress && groupCount > 0) {
+            val targetPage = pagerState.currentPage.toInt()
+            if (targetPage != selectedGroupIndex && targetPage in 0 until groupCount) {
+                setSelectedGroup(targetPage)
+            }
         }
     }
 }
@@ -352,6 +358,7 @@ private fun ProxyGroupPage(
         }
 
         proxyNodeGridItems(
+            groupName = groupName,
             proxies = group.proxies,
             selectedProxyName = group.now,
             displayMode = displayMode,
@@ -446,6 +453,7 @@ private fun ProxySettingsContent(
 
 
 fun LazyListScope.proxyNodeGridItems(
+    groupName: String,
     proxies: List<Proxy>,
     selectedProxyName: String,
     displayMode: ProxyDisplayMode,
@@ -457,7 +465,7 @@ fun LazyListScope.proxyNodeGridItems(
     if (columns == 1) {
         items(
             count = proxies.size,
-            key = { index -> proxies[index].name }
+            key = { index -> "${groupName}_${proxies[index].name}_$index" }
         ) { index ->
             val proxy = proxies[index]
             ProxyNodeCard(
@@ -476,9 +484,10 @@ fun LazyListScope.proxyNodeGridItems(
         items(
             count = rowCount,
             key = { rowIndex ->
-                val first = proxies.getOrNull(rowIndex * 2)?.name ?: ""
-                val second = proxies.getOrNull(rowIndex * 2 + 1)?.name ?: ""
-                "${first}_${second}"
+                val startIndex = rowIndex * 2
+                val first = proxies.getOrNull(startIndex)?.name ?: ""
+                val second = proxies.getOrNull(startIndex + 1)?.name ?: ""
+                "${groupName}_${first}_${second}_$rowIndex"
             }
         ) { rowIndex ->
             val startIndex = rowIndex * 2

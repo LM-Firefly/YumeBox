@@ -20,7 +20,12 @@
 
 package com.github.yumelira.yumebox.presentation.screen.home
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -51,21 +56,19 @@ fun HomeRunningContent(
             profileName = profileName,
             tunnelMode = tunnelMode
         )
-        
+
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             NodeInfoDisplay(
-                serverName = serverName,
-                serverPing = serverPing
+                serverName = serverName, serverPing = serverPing
             )
-            
+
             IpInfoDisplay(state = ipMonitoringState)
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SpeedChart(
-                speedHistory = speedHistory,
-                onClick = onChartClick
+                speedHistory = speedHistory, onClick = onChartClick
             )
         }
     }

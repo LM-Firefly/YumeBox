@@ -62,7 +62,7 @@ class ProvidersViewModel(
                 val providerList = Clash.queryProviders()
                 _providers.value = providerList.sorted()
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = MLang.Providers.Message.FetchFailed.format(e.message)) }
+                _uiState.update { it.copy(error = MLang.Providers.Message.FetchFailed.format(e.message ?: "Unknown error")) }
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -70,16 +70,17 @@ class ProvidersViewModel(
     }
 
     fun updateProvider(provider: Provider) {
+        val providerKey = "${provider.type}_${provider.name}"
         viewModelScope.launch {
             try {
-                _uiState.update { it.copy(updatingProviders = it.updatingProviders + provider.name) }
+                _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
                 Clash.updateProvider(provider.type, provider.name).await()
                 refreshProviders()
                 _uiState.update { it.copy(message = MLang.Providers.Message.UpdateSuccess.format(provider.name)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = MLang.Providers.Message.UpdateFailed.format(e.message)) }
+                _uiState.update { it.copy(error = MLang.Providers.Message.UpdateFailed.format(e.message ?: "Unknown error")) }
             } finally {
-                _uiState.update { it.copy(updatingProviders = it.updatingProviders - provider.name) }
+                _uiState.update { it.copy(updatingProviders = it.updatingProviders - providerKey) }
             }
         }
     }
@@ -91,20 +92,33 @@ class ProvidersViewModel(
 
             try {
                 _uiState.update { it.copy(isUpdatingAll = true) }
-                val providerNames = httpProviders.map { it.name }.toSet()
-                _uiState.update { it.copy(updatingProviders = providerNames) }
+                val providerKeys = httpProviders.map { "${it.type}_${it.name}" }.toSet()
+                _uiState.update { it.copy(updatingProviders = providerKeys) }
 
+                val failedProviders = mutableListOf<String>()
                 httpProviders.forEach { provider ->
                     try {
                         Clash.updateProvider(provider.type, provider.name).await()
                     } catch (e: Exception) {
+                        failedProviders.add(provider.name)
+                        Timber.e(e, "Failed to update provider: ${provider.name}")
                     }
                 }
 
                 refreshProviders()
-                _uiState.update { it.copy(message = MLang.Providers.Message.AllUpdated) }
+                if (failedProviders.isEmpty()) {
+                    _uiState.update { it.copy(message = MLang.Providers.Message.AllUpdated) }
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            error = MLang.Providers.Message.UpdateFailed.format(
+                                "Failed providers: ${failedProviders.joinToString(", ")}"
+                            )
+                        )
+                    }
+                }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = MLang.Providers.Message.UpdateFailed.format(e.message)) }
+                _uiState.update { it.copy(error = MLang.Providers.Message.UpdateFailed.format(e.message ?: "Unknown error")) }
             } finally {
                 _uiState.update { it.copy(isUpdatingAll = false, updatingProviders = emptySet()) }
             }
@@ -120,37 +134,49 @@ class ProvidersViewModel(
     }
 
     fun uploadProviderFile(context: Context, provider: Provider, uri: Uri) {
+        val providerKey = "${provider.type}_${provider.name}"
         viewModelScope.launch {
             try {
                 Timber.d("Starting upload for provider: ${provider.name}, path: ${provider.path}")
-                _uiState.update { it.copy(updatingProviders = it.updatingProviders + provider.name) }
-                
+                _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
+
                 withContext(Dispatchers.IO) {
                     if (provider.path.isBlank()) {
                         throw IllegalStateException("Provider path is empty")
                     }
-                    
+
                     val targetFile = File(provider.path)
                     Timber.d("Target file: ${targetFile.absolutePath}")
-                    
+
                     targetFile.parentFile?.mkdirs()
-                    
-                    context.contentResolver.openInputStream(uri)?.use { input ->
+
+                    // Validate URI and get file size
+                    val inputStream = context.contentResolver.openInputStream(uri)
+                        ?: throw IllegalStateException("Cannot read file from uri: $uri")
+
+                    // Check file size (limit to 50MB to prevent abuse)
+                    val fileSize = inputStream.available()
+                    if (fileSize > 50 * 1024 * 1024) {
+                        inputStream.close()
+                        throw IllegalStateException("File size exceeds 50MB limit")
+                    }
+
+                    inputStream.use { input ->
                         targetFile.outputStream().use { output ->
                             val bytes = input.copyTo(output)
                             Timber.d("Copied $bytes bytes to ${targetFile.absolutePath}")
                         }
-                    } ?: throw IllegalStateException("Cannot read file from uri: $uri")
+                    }
                 }
-                
+
                 Timber.d("Upload successful for provider: ${provider.name}")
                 refreshProviders()
                 _uiState.update { it.copy(message = MLang.Providers.Message.UploadSuccess.format(provider.name)) }
             } catch (e: Exception) {
                 Timber.e(e, "Upload failed for provider: ${provider.name}")
-                _uiState.update { it.copy(error = MLang.Providers.Message.UploadFailed.format(e.message)) }
+                _uiState.update { it.copy(error = MLang.Providers.Message.UploadFailed.format(e.message ?: "Unknown error")) }
             } finally {
-                _uiState.update { it.copy(updatingProviders = it.updatingProviders - provider.name) }
+                _uiState.update { it.copy(updatingProviders = it.updatingProviders - providerKey) }
             }
         }
     }
