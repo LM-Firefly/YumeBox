@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.*
@@ -37,14 +38,13 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getLocalBaseUrl
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
+import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.ProxyGroupTabs
@@ -80,210 +80,81 @@ fun ProxyPager(
     val isRunning by homeViewModel.isRunning.collectAsState()
     val selectedGroupIndex by proxyViewModel.selectedGroupIndex.collectAsState()
     val displayMode by proxyViewModel.displayMode.collectAsState()
-    val sortMode by proxyViewModel.sortMode.collectAsState()
     val uiState by proxyViewModel.uiState.collectAsState()
-    val currentMode by proxyViewModel.currentMode.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
     val scrollBehavior = MiuixScrollBehavior()
 
     var isRefreshing by rememberSaveable { mutableStateOf(false) }
-    var isPagerScrolling by rememberSaveable { mutableStateOf(false) }
-    var isUserInteracting by rememberSaveable { mutableStateOf(false) }
     val showBottomSheet = rememberSaveable { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
 
-    val pagerState = rememberPagerState(
-        initialPage = selectedGroupIndex, pageCount = { proxyGroups.size })
-    val coroutineScope = rememberCoroutineScope()
+    val groupCount = proxyGroups.size
+    val pagerState = rememberPagerState(initialPage = selectedGroupIndex, pageCount = { groupCount })
 
     LaunchedEffect(isRunning) {
         if (isRunning) proxyViewModel.refreshProxyGroups()
     }
 
-    LaunchedEffect(proxyGroups.size) {
-        if (proxyGroups.isNotEmpty() && selectedGroupIndex >= proxyGroups.size) {
-            proxyViewModel.setSelectedGroup(0)
-        }
-    }
-
-    LaunchedEffect(selectedGroupIndex, isPagerScrolling, isUserInteracting) {
-        if (proxyGroups.isEmpty()) return@LaunchedEffect
-
-        if (!isPagerScrolling && !isUserInteracting && pagerState.currentPage != selectedGroupIndex) {
-            pagerState.animateScrollToPage(selectedGroupIndex)
-        }
-    }
-
-    LaunchedEffect(pagerState.currentPage) {
-        if (proxyGroups.isEmpty() || isPagerScrolling) return@LaunchedEffect
-
-        isUserInteracting = true
-
-        if (pagerState.currentPage != selectedGroupIndex) {
-            proxyViewModel.setSelectedGroup(pagerState.currentPage)
-        }
-
-        coroutineScope.launch {
-            delay(300)
-            isUserInteracting = false
-        }
-    }
+    PagerGroupSync(pagerState, selectedGroupIndex, groupCount, proxyViewModel::setSelectedGroup)
 
     LaunchedEffect(uiState.isLoading, isRefreshing) {
         if (!uiState.isLoading && isRefreshing) {
-            delay(300)
             isRefreshing = false
         }
     }
 
-    LaunchedEffect(isRefreshing) {
-        if (isRefreshing && proxyGroups.isNotEmpty()) {
-            val currentGroup = proxyGroups.getOrNull(selectedGroupIndex)
+    val currentGroup by remember(proxyGroups, selectedGroupIndex) {
+        derivedStateOf { proxyGroups.getOrNull(selectedGroupIndex) }
+    }
+
+    val onTestDelay = remember(currentGroup?.name) {
+        currentGroup?.name?.let { name -> { proxyViewModel.testDelay(name) } }
+    }
+
+    val onRefresh = remember(currentGroup?.name) {
+        {
             if (currentGroup != null) {
-                proxyViewModel.testDelay(currentGroup.name)
-            } else {
-                isRefreshing = false
+                isRefreshing = true
+                currentGroup?.name?.let { proxyViewModel.testDelay(it) }
             }
         }
     }
 
     Scaffold(
         topBar = {
-            TopBar(
-                title = MLang.Proxy.Title,
+            ProxyTopBar(
                 scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        IconButton(
-                            modifier = Modifier.padding(start = 24.dp),
-                            onClick = { navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true } }
-                        ) {
-                            Icon(Yume.`Squares-exclude`, contentDescription = MLang.Proxy.Action.ExternalResources)
-                        }
-
-                        IconButton(
-                            onClick = {
-                                val panelUrl = getPanelUrl(context, selectedPanelType)
-                                val webViewUrl = panelUrl.ifEmpty {
-                                    val localUrl = getLocalBaseUrl(context)
-                                    if (localUrl.isNotEmpty()) {
-                                        localUrl + "index.html"
-                                    } else {
-                                        ""
-                                    }
-                                }
-                                if (webViewUrl.isNotEmpty()) {
-                                    WebViewActivity.start(context, webViewUrl)
-                                }
-                            }
-                        ) {
-                            Icon(Yume.Zashboard, contentDescription = MLang.Proxy.Action.Panel)
-                        }
-                    }
-                },
-                actions = {
-                    val currentGroup = proxyGroups.getOrNull(selectedGroupIndex)
-
-                    IconButton(
-                        modifier = Modifier.padding(end = 16.dp), onClick = {
-                            if (currentGroup != null) {
-                                proxyViewModel.testDelay(currentGroup.name)
-                            }
-                        }) {
-                        Icon(Yume.Zap, contentDescription = MLang.Proxy.Action.Test)
-                    }
-
-                    IconButton(
-                        modifier = Modifier.padding(end = 24.dp), onClick = { showBottomSheet.value = true }) {
-                        Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Action.Settings)
-                    }
-                })
-        }) { innerPadding ->
+                context = context,
+                selectedPanelType = selectedPanelType,
+                onNavigateToProviders = { navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true } },
+                onTestDelay = onTestDelay,
+                onShowSettings = { showBottomSheet.value = true }
+            )
+        }
+    ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             if (proxyGroups.isEmpty()) {
                 CenteredText(
-                    firstLine = MLang.Proxy.Empty.NoNodes, secondLine = MLang.Proxy.Empty.Hint
+                    firstLine = MLang.Proxy.Empty.NoNodes,
+                    secondLine = MLang.Proxy.Empty.Hint
                 )
             } else {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = innerPadding.calculateTopPadding() + 4.dp)
-                    ) {
-                        ProxyGroupTabs(
-                            groups = proxyGroups, selectedIndex = selectedGroupIndex, onTabSelected = { index ->
-                                isPagerScrolling = true
-                                isUserInteracting = false
-                                proxyViewModel.setSelectedGroup(index)
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                    isPagerScrolling = false
-                                }
-                            })
-                    }
-
-                    PullToRefresh(
-                        isRefreshing = isRefreshing,
-                        onRefresh = { isRefreshing = true },
-                        pullToRefreshState = pullToRefreshState,
-                        refreshTexts = listOf(
-                            MLang.Proxy.PullToRefresh.PullToTest,
-                            MLang.Proxy.PullToRefresh.ReleaseToTest,
-                            MLang.Proxy.Refresh.Refreshing,
-                            MLang.Proxy.PullToRefresh.DelaySuccess
-                        )
-                    ) {
-                        HorizontalPager(
-                            state = pagerState, modifier = Modifier.fillMaxSize(), beyondViewportPageCount = 1
-                        ) { page ->
-                            val currentGroup = proxyGroups.getOrNull(page)
-
-                            if (currentGroup != null) {
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .scrollEndHaptic()
-                                        .overScrollVertical()
-                                        .nestedScroll(scrollBehavior.nestedScrollConnection),
-                                    contentPadding = PaddingValues(
-                                        start = 16.dp,
-                                        end = 16.dp,
-                                        top = 12.dp,
-                                        bottom = mainInnerPadding.calculateBottomPadding()
-                                    ),
-                                    overscrollEffect = null
-                                ) {
-                                    if (currentGroup.chainPath.isNotEmpty()) {
-                                        item {
-                                            ProxyChainIndicator(
-                                                chain = currentGroup.chainPath, modifier = Modifier.fillMaxWidth()
-                                            )
-                                        }
-                                    }
-
-                                    item {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                    }
-
-                                    proxyNodeGridItems(
-                                        proxies = currentGroup.proxies,
-                                        selectedProxyName = currentGroup.now,
-                                        displayMode = displayMode,
-                                        isSelectable = currentGroup.type == Proxy.Type.Selector,
-                                        onProxyClick = { proxy ->
-                                            proxyViewModel.selectProxy(currentGroup.name, proxy.name)
-                                        })
-                                }
-                            }
-                        }
-                    }
-                }
+                ProxyContent(
+                    proxyGroups = proxyGroups,
+                    selectedGroupIndex = selectedGroupIndex,
+                    displayMode = displayMode,
+                    pagerState = pagerState,
+                    scrollBehavior = scrollBehavior,
+                    innerPadding = innerPadding,
+                    mainInnerPadding = mainInnerPadding,
+                    isRefreshing = isRefreshing,
+                    pullToRefreshState = pullToRefreshState,
+                    onRefresh = onRefresh,
+                    onTabSelected = proxyViewModel::setSelectedGroup,
+                    onProxySelect = proxyViewModel::selectProxy
+                )
             }
         }
-
 
         SuperBottomSheet(
             show = showBottomSheet,
@@ -291,71 +162,283 @@ fun ProxyPager(
             onDismissRequest = { showBottomSheet.value = false },
             insideMargin = DpSize(32.dp, 16.dp),
         ) {
-            Column {
-                Text(
-                    text = MLang.Proxy.Settings.ProxyMode,
-                    style = MiuixTheme.textStyles.subtitle,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                val modeTabs = listOf(MLang.Proxy.Mode.Rule, MLang.Proxy.Mode.Global, MLang.Proxy.Mode.Direct)
-                val modeValues = listOf(TunnelState.Mode.Rule, TunnelState.Mode.Global, TunnelState.Mode.Direct)
-                val selectedModeIndex = modeValues.indexOf(currentMode).coerceAtLeast(0)
-                TabRowWithContour(
-                    tabs = modeTabs, selectedTabIndex = selectedModeIndex, onTabSelected = { index ->
-                        if (index < modeValues.size) {
-                            proxyViewModel.patchMode(modeValues[index])
-                        }
-                    })
+            ProxySettingsContent(
+                proxyViewModel = proxyViewModel,
+                onDismiss = { showBottomSheet.value = false }
+            )
+        }
+    }
+}
 
-                Spacer(Modifier.padding(12.dp))
+@Composable
+private fun PagerGroupSync(
+    pagerState: PagerState,
+    selectedGroupIndex: Int,
+    groupCount: Int,
+    setSelectedGroup: (Int) -> Unit
+) {
+    LaunchedEffect(groupCount, selectedGroupIndex) {
+        if (groupCount > 0 && selectedGroupIndex >= groupCount) {
+            setSelectedGroup(0)
+        }
+    }
 
-                Text(
-                    text = MLang.Proxy.Settings.SortMode,
-                    style = MiuixTheme.textStyles.subtitle,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                val sortTabs = ProxySortMode.entries.map { it.displayName }
-                val selectedSortIndex = sortMode.ordinal
-                TabRowWithContour(
-                    tabs = sortTabs, selectedTabIndex = selectedSortIndex, onTabSelected = { index ->
-                        if (index < ProxySortMode.entries.size) {
-                            proxyViewModel.setSortMode(ProxySortMode.entries[index])
-                        }
-                    })
+    LaunchedEffect(pagerState.currentPage) {
+        if (groupCount > 0 && pagerState.currentPage != selectedGroupIndex) {
+            setSelectedGroup(pagerState.currentPage)
+        }
+    }
 
-                Spacer(Modifier.padding(12.dp))
+    LaunchedEffect(selectedGroupIndex) {
+        if (groupCount > 0 && pagerState.currentPage != selectedGroupIndex) {
+            pagerState.animateScrollToPage(selectedGroupIndex)
+        }
+    }
+}
 
-                Text(
-                    text = MLang.Proxy.Settings.DisplayMode,
-                    style = MiuixTheme.textStyles.subtitle,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                val displayTabs = ProxyDisplayMode.entries.map { it.displayName }
-                val selectedDisplayIndex = displayMode.ordinal
-                TabRowWithContour(
-                    tabs = displayTabs, selectedTabIndex = selectedDisplayIndex, onTabSelected = { index ->
-                        if (index < ProxyDisplayMode.entries.size) {
-                            proxyViewModel.setDisplayMode(ProxyDisplayMode.entries[index])
-                        }
-                    })
-
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = { showBottomSheet.value = false }, modifier = Modifier.weight(1f)
-                    ) {
-                        Text(MLang.Component.Button.Cancel)
-                    }
-
-                    Button(
-                        onClick = { showBottomSheet.value = false },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColorsPrimary()
-                    ) {
-                        Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.background)
-                    }
+@Composable
+private fun ProxyTopBar(
+    scrollBehavior: ScrollBehavior,
+    context: android.content.Context,
+    selectedPanelType: Int,
+    onNavigateToProviders: () -> Unit,
+    onTestDelay: (() -> Unit)?,
+    onShowSettings: () -> Unit
+) {
+    TopBar(
+        title = MLang.Proxy.Title,
+        scrollBehavior = scrollBehavior,
+        navigationIcon = {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                IconButton(
+                    modifier = Modifier.padding(start = 24.dp),
+                    onClick = onNavigateToProviders
+                ) {
+                    Icon(Yume.`Squares-exclude`, contentDescription = MLang.Proxy.Action.ExternalResources)
                 }
 
+                IconButton(
+                    onClick = {
+                        val panelUrl = getPanelUrl(context, selectedPanelType)
+                        val webViewUrl = panelUrl.ifEmpty {
+                            val localUrl = getLocalBaseUrl(context)
+                            if (localUrl.isNotEmpty()) localUrl + "index.html" else ""
+                        }
+                        if (webViewUrl.isNotEmpty()) {
+                            WebViewActivity.start(context, webViewUrl)
+                        }
+                    }
+                ) {
+                    Icon(Yume.Zashboard, contentDescription = MLang.Proxy.Action.Panel)
+                }
+            }
+        },
+        actions = {
+            IconButton(
+                modifier = Modifier.padding(end = 16.dp),
+                onClick = { onTestDelay?.invoke() }
+            ) {
+                Icon(Yume.Zap, contentDescription = MLang.Proxy.Action.Test)
+            }
+
+            IconButton(
+                modifier = Modifier.padding(end = 24.dp),
+                onClick = onShowSettings
+            ) {
+                Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Action.Settings)
+            }
+        }
+    )
+}
+
+@Composable
+private fun ProxyContent(
+    proxyGroups: List<ProxyGroupInfo>,
+    selectedGroupIndex: Int,
+    displayMode: ProxyDisplayMode,
+    pagerState: PagerState,
+    scrollBehavior: ScrollBehavior,
+    innerPadding: PaddingValues,
+    mainInnerPadding: PaddingValues,
+    isRefreshing: Boolean,
+    pullToRefreshState: PullToRefreshState,
+    onRefresh: () -> Unit,
+    onTabSelected: (Int) -> Unit,
+    onProxySelect: (String, String) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = innerPadding.calculateTopPadding() + 4.dp)
+        ) {
+            ProxyGroupTabs(
+                groups = proxyGroups,
+                selectedIndex = selectedGroupIndex,
+                onTabSelected = onTabSelected
+            )
+        }
+
+        PullToRefresh(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            pullToRefreshState = pullToRefreshState,
+            refreshTexts = listOf(
+                MLang.Proxy.PullToRefresh.PullToTest,
+                MLang.Proxy.PullToRefresh.ReleaseToTest,
+                MLang.Proxy.Refresh.Refreshing,
+                MLang.Proxy.PullToRefresh.DelaySuccess
+            )
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                beyondViewportPageCount = 1
+            ) { page ->
+                val group = proxyGroups.getOrNull(page) ?: return@HorizontalPager
+
+                ProxyGroupPage(
+                    group = group,
+                    displayMode = displayMode,
+                    scrollBehavior = scrollBehavior,
+                    mainInnerPadding = mainInnerPadding,
+                    onProxySelect = onProxySelect
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProxyGroupPage(
+    group: ProxyGroupInfo,
+    displayMode: ProxyDisplayMode,
+    scrollBehavior: ScrollBehavior,
+    mainInnerPadding: PaddingValues,
+    onProxySelect: (String, String) -> Unit
+) {
+    val groupName = group.name
+    val isSelectable = group.type == Proxy.Type.Selector
+
+    val onProxyClick = remember(groupName, isSelectable) {
+        if (isSelectable) { proxyName: String -> onProxySelect(groupName, proxyName) } else null
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .scrollEndHaptic()
+            .overScrollVertical()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 12.dp,
+            bottom = mainInnerPadding.calculateBottomPadding()
+        ),
+        overscrollEffect = null
+    ) {
+        if (group.chainPath.isNotEmpty()) {
+            item(key = "chain_${groupName}") {
+                ProxyChainIndicator(
+                    chain = group.chainPath,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        item(key = "spacer_${groupName}") {
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        proxyNodeGridItems(
+            proxies = group.proxies,
+            selectedProxyName = group.now,
+            displayMode = displayMode,
+            onProxyClick = onProxyClick
+        )
+    }
+}
+
+@Composable
+private fun ProxySettingsContent(
+    proxyViewModel: ProxyViewModel,
+    onDismiss: () -> Unit
+) {
+    val currentMode by proxyViewModel.currentMode.collectAsState()
+    val sortMode by proxyViewModel.sortMode.collectAsState()
+    val displayMode by proxyViewModel.displayMode.collectAsState()
+    
+    val modeTabs = remember { listOf(MLang.Proxy.Mode.Rule, MLang.Proxy.Mode.Global, MLang.Proxy.Mode.Direct) }
+    val modeValues = remember { listOf(TunnelState.Mode.Rule, TunnelState.Mode.Global, TunnelState.Mode.Direct) }
+    val sortTabs = remember { ProxySortMode.entries.map { it.displayName } }
+    val displayTabs = remember { ProxyDisplayMode.entries.map { it.displayName } }
+    
+    Column {
+        Text(
+            text = MLang.Proxy.Settings.ProxyMode,
+            style = MiuixTheme.textStyles.subtitle,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        TabRowWithContour(
+            tabs = modeTabs,
+            selectedTabIndex = modeValues.indexOf(currentMode).coerceAtLeast(0),
+            onTabSelected = { index ->
+                if (index < modeValues.size) {
+                    proxyViewModel.patchMode(modeValues[index])
+                }
+            }
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = MLang.Proxy.Settings.SortMode,
+            style = MiuixTheme.textStyles.subtitle,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        TabRowWithContour(
+            tabs = sortTabs,
+            selectedTabIndex = sortMode.ordinal,
+            onTabSelected = { index ->
+                if (index < ProxySortMode.entries.size) {
+                    proxyViewModel.setSortMode(ProxySortMode.entries[index])
+                }
+            }
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = MLang.Proxy.Settings.DisplayMode,
+            style = MiuixTheme.textStyles.subtitle,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        TabRowWithContour(
+            tabs = displayTabs,
+            selectedTabIndex = displayMode.ordinal,
+            onTabSelected = { index ->
+                if (index < ProxyDisplayMode.entries.size) {
+                    proxyViewModel.setDisplayMode(ProxyDisplayMode.entries[index])
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(MLang.Component.Button.Cancel)
+            }
+
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColorsPrimary()
+            ) {
+                Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.background)
             }
         }
     }
@@ -366,36 +449,70 @@ fun LazyListScope.proxyNodeGridItems(
     proxies: List<Proxy>,
     selectedProxyName: String,
     displayMode: ProxyDisplayMode,
-    isSelectable: Boolean = true,
-    onProxyClick: (Proxy) -> Unit
+    onProxyClick: ((String) -> Unit)?
 ) {
     val columns = if (displayMode.isSingleColumn) 1 else 2
+    val isSingleColumn = displayMode.isSingleColumn
+    val showDetail = displayMode.showDetail
 
-    val groupedProxies = proxies.chunked(columns)
+    if (columns == 1) {
+        items(
+            count = proxies.size,
+            key = { index -> proxies[index].name }
+        ) { index ->
+            val proxy = proxies[index]
+            ProxyNodeCard(
+                proxy = proxy,
+                isSelected = proxy.name == selectedProxyName,
+                onClick = onProxyClick?.let { { it(proxy.name) } },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                isSingleColumn = true,
+                showDetail = showDetail
+            )
+        }
+    } else {
+        val rowCount = (proxies.size + 1) / 2
+        items(
+            count = rowCount,
+            key = { rowIndex ->
+                val first = proxies.getOrNull(rowIndex * 2)?.name ?: ""
+                val second = proxies.getOrNull(rowIndex * 2 + 1)?.name ?: ""
+                "${first}_${second}"
+            }
+        ) { rowIndex ->
+            val startIndex = rowIndex * 2
+            val firstProxy = proxies[startIndex]
+            val secondProxy = proxies.getOrNull(startIndex + 1)
 
-    groupedProxies.forEach { rowProxies ->
-        item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                rowProxies.forEach { proxy ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        ProxyNodeCard(
-                            proxy = proxy,
-                            isSelected = proxy.name == selectedProxyName,
-                            onClick = if (isSelectable) {
-                                { onProxyClick(proxy) }
-                            } else null,
-                            isSingleColumn = displayMode.isSingleColumn,
-                            showDetail = displayMode.showDetail
-                        )
-                    }
+                Box(modifier = Modifier.weight(1f)) {
+                    ProxyNodeCard(
+                        proxy = firstProxy,
+                        isSelected = firstProxy.name == selectedProxyName,
+                        onClick = onProxyClick?.let { { it(firstProxy.name) } },
+                        isSingleColumn = false,
+                        showDetail = showDetail
+                    )
                 }
 
-                repeat(columns - rowProxies.size) {
+                if (secondProxy != null) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        ProxyNodeCard(
+                            proxy = secondProxy,
+                            isSelected = secondProxy.name == selectedProxyName,
+                            onClick = onProxyClick?.let { { it(secondProxy.name) } },
+                            isSingleColumn = false,
+                            showDetail = showDetail
+                        )
+                    }
+                } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }

@@ -139,6 +139,7 @@ class HealthCheckUseCase(
     suspend operator fun invoke(groupName: String): Result<Unit> {
         return try {
             com.github.yumelira.yumebox.core.Clash.healthCheck(groupName).await()
+            kotlinx.coroutines.delay(500)
             refreshProxyGroupsUseCase()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -149,7 +150,7 @@ class HealthCheckUseCase(
     suspend fun checkAll(): Result<Unit> {
         return try {
             com.github.yumelira.yumebox.core.Clash.healthCheckAll()
-            kotlinx.coroutines.delay(2000)
+            kotlinx.coroutines.delay(3000)
             refreshProxyGroupsUseCase()
             Result.success(Unit)
         } catch (e: Exception) {
