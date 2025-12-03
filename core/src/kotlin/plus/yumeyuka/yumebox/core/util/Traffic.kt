@@ -1,5 +1,6 @@
 package com.github.yumelira.yumebox.core.util
 
+import android.annotation.SuppressLint
 import com.github.yumelira.yumebox.core.model.Traffic
 
 fun Traffic.trafficUpload(): String {
@@ -17,6 +18,7 @@ fun Traffic.trafficTotal(): String {
     return trafficString(upload + download)
 }
 
+@SuppressLint("DefaultLocale")
 private fun trafficString(scaled: Long): String {
     return when {
         scaled > 1024 * 1024 * 1024 * 100L -> {

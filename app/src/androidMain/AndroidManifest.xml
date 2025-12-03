@@ -29,6 +29,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="com.android.permission.GET_INSTALLED_APPS"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
@@ -117,7 +118,8 @@
 
         <service
                 android:name=".service.AutoRestartService"
-                android:exported="false"/>
+                android:exported="false"
+                android:foregroundServiceType="dataSync"/>
 
         <service
                 android:name=".service.DialerLaunchService"
