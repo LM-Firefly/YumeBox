@@ -50,7 +50,6 @@ plugins {
     id("dev.oom-wg.purejoy.mlang")
 }
 
-
 MLang {
     name = null
     configDir = "../lang"
@@ -58,7 +57,6 @@ MLang {
     base = true
     compose = true
 }
-
 val targetAbi = project.findProperty("android.injected.build.abi") as String?
 val mmkvVersion = when (targetAbi) {
     "arm64-v8a", "x86_64" -> "2.2.4"
@@ -82,38 +80,38 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
-            implementation("androidx.activity:activity-compose:1.11.0")
-            implementation("top.yukonga.miuix.kmp:miuix:0.7.1")
-            implementation("dev.chrisbanes.haze:haze-materials:1.6.10")
+            implementation("androidx.activity:activity-compose:1.12.2")
+            implementation("top.yukonga.miuix.kmp:miuix:0.7.2")
+            implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
             implementation(mmkvDependency)
             implementation("io.insert-koin:koin-core:4.1.1")
             implementation("io.insert-koin:koin-android:4.1.1")
             implementation("io.insert-koin:koin-androidx-compose:4.1.1")
             implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
-            implementation("com.squareup.okhttp3:okhttp:5.3.0")
+            implementation("com.squareup.okhttp3:okhttp:5.3.2")
             implementation("com.jakewharton.timber:timber:5.0.1")
             implementation("com.caoccao.javet:javet-node-android:5.0.2")
-            implementation("com.highcapable.pangutext:pangutext-android:1.0.4")
-            implementation("org.apache.commons:commons-compress:1.26.1")
+            implementation("com.highcapable.pangutext:pangutext-android:1.0.5")
+            implementation("org.apache.commons:commons-compress:1.28.0")
             implementation(project.dependencies.platform("com.google.firebase:firebase-bom:34.6.0"))
             implementation("com.google.firebase:firebase-crashlytics-ndk")
             implementation("com.google.firebase:firebase-analytics")
             implementation("com.google.mlkit:barcode-scanning:17.3.0")
-            implementation("androidx.camera:camera-camera2:1.4.2")
-            implementation("androidx.camera:camera-lifecycle:1.4.2")
-            implementation("androidx.camera:camera-view:1.4.2")
-            implementation("androidx.camera:camera-core:1.4.2")
-            implementation("androidx.camera:camera-video:1.4.2")
-            implementation("io.ktor:ktor-client-core:2.3.8")
-            implementation("io.ktor:ktor-client-android:2.3.8")
-            implementation("io.ktor:ktor-client-content-negotiation:2.3.8")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.8")
-            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
-            implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
-            implementation("io.coil-kt.coil3:coil-svg:3.0.4")
-            implementation("com.mikepenz:aboutlibraries-core:13.1.0")
-            implementation("com.mikepenz:aboutlibraries-compose:13.1.0")
-            implementation("com.mikepenz:aboutlibraries-compose-m3:13.1.0")
+            implementation("androidx.camera:camera-camera2:1.5.2")
+            implementation("androidx.camera:camera-lifecycle:1.5.2")
+            implementation("androidx.camera:camera-view:1.5.2")
+            implementation("androidx.camera:camera-core:1.5.2")
+            implementation("androidx.camera:camera-video:1.5.2")
+            implementation("io.ktor:ktor-client-core:3.3.3")
+            implementation("io.ktor:ktor-client-android:3.3.3")
+            implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
+            implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+            implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+            implementation("io.coil-kt.coil3:coil-svg:3.3.0")
+            implementation("com.mikepenz:aboutlibraries-core:13.2.1")
+            implementation("com.mikepenz:aboutlibraries-compose:13.2.1")
+            implementation("com.mikepenz:aboutlibraries-compose-m3:13.2.1")
         }
 
         commonMain.dependencies {
@@ -123,13 +121,8 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.uiToolingPreview)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
-            implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
-        }
-
-        commonTest.dependencies {
-            implementation("org.jetbrains.kotlin:kotlin-test:2.2.21")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+            implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
         }
     }
 }
@@ -243,7 +236,7 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     debugImplementation(compose.uiTooling)
-    ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
+    add("kspAndroid", "io.github.raamcosta.compose-destinations:ksp:2.3.0")
 }
 
 ksp {
@@ -287,6 +280,6 @@ tasks.register<Delete>("cleanGeoFiles") {
 
 aboutLibraries {
     export {
-        outputFile = file("src/androidMain/resources/aboutlibraries.json")
+        outputFile = file("src/androidMain/res/aboutlibraries.json")
     }
 }
