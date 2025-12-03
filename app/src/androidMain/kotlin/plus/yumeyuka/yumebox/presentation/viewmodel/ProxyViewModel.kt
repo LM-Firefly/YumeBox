@@ -42,8 +42,8 @@ class ProxyViewModel(
     private val _uiState = MutableStateFlow(ProxyUiState())
     val uiState: StateFlow<ProxyUiState> = _uiState.asStateFlow()
 
-    private val _currentMode = MutableStateFlow(TunnelState.Mode.Rule)
-    val currentMode: StateFlow<TunnelState.Mode> = _currentMode.asStateFlow()
+    val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsStore.proxyMode.state
+        .stateIn(viewModelScope, SharingStarted.Eagerly, TunnelState.Mode.Rule)
 
     val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsStore.displayMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxyDisplayMode.DOUBLE_SIMPLE)
@@ -70,26 +70,20 @@ class ProxyViewModel(
 
     private val _testRequested = MutableStateFlow(false)
 
-    init { loadCurrentMode() }
-
-    private fun loadCurrentMode() {
-        viewModelScope.launch {
-            runCatching {
-                val override = Clash.queryOverride(Clash.OverrideSlot.Session)
-                _currentMode.value = override.mode ?: TunnelState.Mode.Rule
-            }
-        }
-    }
-
     fun patchMode(mode: TunnelState.Mode) {
+        proxyDisplaySettingsStore.proxyMode.set(mode)
         viewModelScope.launch {
             runCatching {
-                val override = Clash.queryOverride(Clash.OverrideSlot.Session)
-                override.mode = mode
-                Clash.patchOverride(Clash.OverrideSlot.Session, override)
+                val persistOverride = Clash.queryOverride(Clash.OverrideSlot.Persist)
+                persistOverride.mode = mode
+                Clash.patchOverride(Clash.OverrideSlot.Persist, persistOverride)
+                
+                val sessionOverride = Clash.queryOverride(Clash.OverrideSlot.Session)
+                sessionOverride.mode = mode
+                Clash.patchOverride(Clash.OverrideSlot.Session, sessionOverride)
+                
                 clashManager.reloadCurrentProfile()
                 kotlinx.coroutines.delay(100)
-                _currentMode.value = mode
                 val modeName = when (mode) {
                     TunnelState.Mode.Direct -> MLang.Proxy.Mode.Direct
                     TunnelState.Mode.Global -> MLang.Proxy.Mode.Global

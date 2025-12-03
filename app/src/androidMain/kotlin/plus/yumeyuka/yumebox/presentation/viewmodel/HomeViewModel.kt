@@ -71,6 +71,12 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val _displayRunning = MutableStateFlow(false)
+    val displayRunning: StateFlow<Boolean> = _displayRunning.asStateFlow()
+
+    private val _isToggling = MutableStateFlow(false)
+    val isToggling: StateFlow<Boolean> = _isToggling.asStateFlow()
+
     private val _vpnPrepareIntent = MutableSharedFlow<Intent>(
         replay = 0,
         extraBufferCapacity = 1,
@@ -102,15 +108,41 @@ class HomeViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val ipMonitoringState: StateFlow<IpMonitoringState> =
-        networkInfoService.startIpMonitoring(isRunning)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IpMonitoringState.Loading)
+        isRunning.flatMapLatest { running ->
+            if (running) {
+                networkInfoService.startIpMonitoring(isRunning)
+            } else {
+                flowOf(IpMonitoringState.Loading)
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IpMonitoringState.Loading)
 
     private val _recentLogs = MutableStateFlow<List<LogMessage>>(emptyList())
     val recentLogs: StateFlow<List<LogMessage>> = _recentLogs.asStateFlow()
 
     init {
-        subscribeToLogs()
-        startSpeedSampling()
+        syncDisplayState()
+        lazyInitialize()
+    }
+    
+    private fun lazyInitialize() {
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(500)
+            subscribeToLogs()
+            startSpeedSampling()
+        }
+    }
+
+    private fun syncDisplayState() {
+        viewModelScope.launch {
+            isRunning.collect { running ->
+                if (!_isToggling.value) {
+                    _displayRunning.value = running
+                }
+                if (running == _displayRunning.value) {
+                    _isToggling.value = false
+                }
+            }
+        }
     }
 
     suspend fun reloadProfile(profileId: String) {
@@ -130,8 +162,12 @@ class HomeViewModel(
     }
 
     fun startProxy(profileId: String, useTunMode: Boolean? = null) {
+        if (_isToggling.value) return
+        
         viewModelScope.launch {
             try {
+                _isToggling.value = true
+                _displayRunning.value = true
                 _uiState.update { it.copy(isStartingProxy = true, loadingProgress = MLang.Home.Message.Preparing) }
 
                 val result = proxyFacade.startProxy(profileId, useTunMode)
@@ -141,16 +177,22 @@ class HomeViewModel(
                         if (intent != null) {
                             _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
                             _vpnPrepareIntent.emit(intent)
+                            _displayRunning.value = false
+                            _isToggling.value = false
                         } else {
                             _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
                         }
                     },
                     onFailure = { error ->
+                        _displayRunning.value = false
+                        _isToggling.value = false
                         _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
                         showError(MLang.Home.Message.StartFailed.format(error.message))
                     }
                 )
             } catch (e: Exception) {
+                _displayRunning.value = false
+                _isToggling.value = false
                 _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
                 showError(MLang.Home.Message.StartFailed.format(e.message))
             }
@@ -158,12 +200,18 @@ class HomeViewModel(
     }
 
     fun stopProxy() {
+        if (_isToggling.value) return
+        
         viewModelScope.launch {
             try {
+                _isToggling.value = true
+                _displayRunning.value = false
                 setLoading(true)
                 proxyFacade.stopProxy()
                 showMessage(MLang.Home.Message.ProxyStopped)
             } catch (e: Exception) {
+                _displayRunning.value = true
+                _isToggling.value = false
                 showError(MLang.Home.Message.StopFailed.format(e.message))
             } finally {
                 setLoading(false)
