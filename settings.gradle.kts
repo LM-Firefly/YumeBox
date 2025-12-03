@@ -1,5 +1,4 @@
 @file:Suppress("UnstableApiUsage")
-
 rootProject.name = "YumeBox"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
@@ -13,6 +12,12 @@ pluginManagement {
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
         maven("https://jitpack.io")
+        maven("https://oom-maven.sawahara.host") {
+            content {
+                includeGroupByRegex("ren\\.shiror.*")
+                includeGroupByRegex("dev\\.oom-wg.*")
+            }
+        }
         gradlePluginPortal()
     }
 }
@@ -25,6 +30,12 @@ dependencyResolutionManagement {
         mavenCentral()
         maven("https://jitpack.io")
         maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
+        maven("https://oom-maven.sawahara.host") {
+            content {
+                includeGroupByRegex("ren\\.shiror.*")
+                includeGroupByRegex("dev\\.oom-wg.*")
+            }
+        }
     }
 
     versionCatalogs {

@@ -528,3 +528,12 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeCoreVersion(JNIEnv *en
 
     return new_string(Version);
 }
+
+JNIEXPORT void JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSetCustomUserAgent(JNIEnv *env, jobject thiz, jstring user_agent) {
+    TRACE_METHOD();
+
+    char *ua = get_string(user_agent);
+
+    setCustomUserAgent(ua);
+}
