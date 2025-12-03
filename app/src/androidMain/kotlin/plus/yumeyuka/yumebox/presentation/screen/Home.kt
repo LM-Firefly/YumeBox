@@ -55,6 +55,8 @@ fun HomePager(mainInnerPadding: PaddingValues) {
     val navigator = LocalNavigator.current
 
     val isRunning by homeViewModel.isRunning.collectAsState()
+    val displayRunning by homeViewModel.displayRunning.collectAsState()
+    val isToggling by homeViewModel.isToggling.collectAsState()
     val trafficNow by homeViewModel.trafficNow.collectAsState()
     val profiles by homeViewModel.profiles.collectAsState()
     val ipMonitoringState by homeViewModel.ipMonitoringState.collectAsState()
@@ -71,11 +73,7 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
     val coroutineScope = rememberCoroutineScope()
 
-    val displayState by remember(isRunning) {
-        derivedStateOf {
-            if (isRunning) HomeDisplayState.Running else HomeDisplayState.Idle
-        }
-    }
+    val displayState = if (displayRunning) HomeDisplayState.Running else HomeDisplayState.Idle
 
     var pendingProfileId by remember { mutableStateOf<String?>(null) }
     val vpnPermissionLauncher = rememberLauncherForActivityResult(
@@ -146,13 +144,13 @@ fun HomePager(mainInnerPadding: PaddingValues) {
             }
 
             ProxyControlButton(
-                isRunning = isRunning,
-                isEnabled = profiles.isNotEmpty() && hasEnabledProfile,
+                isRunning = displayRunning,
+                isEnabled = profiles.isNotEmpty() && hasEnabledProfile && !isToggling,
                 hasEnabledProfile = hasEnabledProfile,
                 hasProfiles = profiles.isNotEmpty(),
                 onClick = {
                     handleProxyToggle(
-                        isRunning = isRunning,
+                        isRunning = displayRunning,
                         recommendedProfile = recommendedProfile,
                         onStart = { profile ->
                             pendingProfileId = profile.id
@@ -179,24 +177,20 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
 @OptIn(ExperimentalAnimationApi::class)
 private fun AnimatedContentTransitionScope<HomeDisplayState>.createHomeTransitionSpec(): ContentTransform {
-    val animDuration = 350
+    val animDuration = 300
     return when {
         targetState == HomeDisplayState.Idle -> {
-            (slideInVertically(animationSpec = tween(animDuration)) { -it } +
-             fadeIn(animationSpec = tween(animDuration)) +
-             scaleIn(initialScale = 0.95f, animationSpec = tween(animDuration))).togetherWith(
-                slideOutVertically(animationSpec = tween(animDuration)) { it } +
+            (fadeIn(animationSpec = tween(animDuration)) +
+             scaleIn(initialScale = 0.92f, animationSpec = tween(animDuration))).togetherWith(
                 fadeOut(animationSpec = tween(animDuration)) +
-                scaleOut(targetScale = 1.05f, animationSpec = tween(animDuration))
+                scaleOut(targetScale = 1.08f, animationSpec = tween(animDuration))
             )
         }
         else -> {
-            (slideInVertically(animationSpec = tween(animDuration)) { it } +
-             fadeIn(animationSpec = tween(animDuration)) +
-             scaleIn(initialScale = 0.95f, animationSpec = tween(animDuration))).togetherWith(
-                slideOutVertically(animationSpec = tween(animDuration)) { -it } +
+            (fadeIn(animationSpec = tween(animDuration)) +
+             scaleIn(initialScale = 0.92f, animationSpec = tween(animDuration))).togetherWith(
                 fadeOut(animationSpec = tween(animDuration)) +
-                scaleOut(targetScale = 1.05f, animationSpec = tween(animDuration))
+                scaleOut(targetScale = 1.08f, animationSpec = tween(animDuration))
             )
         }
     }
