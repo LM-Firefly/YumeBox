@@ -130,7 +130,10 @@ class ProfilesViewModel(
                         fileName
                     }
 
-                    updated = updated.copy(name = nameWithoutExt)
+                    val defaultNames = MLang.ProfilesPage.Input.NewProfile
+                    if (updated.name.isBlank() || updated.name in defaultNames || updated.name.startsWith("temp_")) {
+                        updated = updated.copy(name = nameWithoutExt)
+                    }
                 }
 
                 subscriptionInfo?.let { info ->
@@ -145,13 +148,11 @@ class ProfilesViewModel(
                 if (saveToDb) profilesStore.updateProfile(updated)
                 updated
             } else {
-                cleanupProfileDir(profile.id)
                 _downloadProgress.value = null
                 showError(MLang.ProfilesVM.Progress.DownloadFailed.format(result.exceptionOrNull()?.message))
                 null
             }
         }.getOrElse { e ->
-            cleanupProfileDir(profile.id)
             _downloadProgress.value = null
             timber.log.Timber.e(e, "downloadProfile failed")
             showError(MLang.ProfilesVM.Progress.DownloadFailed.format(e.message))
@@ -201,7 +202,6 @@ class ProfilesViewModel(
                 }
                 profile
             } else {
-                profileDir.deleteRecursively()
                 _downloadProgress.value = null
                 showError(MLang.ProfilesVM.Progress.ImportFailed.format(result.exceptionOrNull()?.message))
                 null
@@ -236,20 +236,19 @@ class ProfilesViewModel(
 
     fun exportProfile(profile: Profile): String = profile.config
 
-    fun toggleProfileEnabled(profileId: String, enabled: Boolean, onProfileEnabled: ((Profile) -> Unit)? = null) {
+    fun toggleProfileEnabled(profile: Profile, enabled: Boolean, onProfileEnabled: ((Profile) -> Unit)? = null) {
         viewModelScope.launch {
             runCatching {
                 val profiles = profilesStore.profiles.value
-                val target = profiles.find { it.id == profileId } ?: throw Exception(MLang.ProfilesVM.Error.ProfileNotExist)
                 val updated = if (enabled) {
-                    profiles.map { if (it.id == profileId) it.copy(enabled = true) else it.copy(enabled = false) }
+                    profiles.map { if (it.id == profile.id) it.copy(enabled = true) else it.copy(enabled = false) }
                 } else {
-                    profiles.map { if (it.id == profileId) it.copy(enabled = false) else it }
+                    profiles.map { if (it.id == profile.id) it.copy(enabled = false) else it }
                 }
                 updated.forEach { profilesStore.updateProfile(it) }
                 if (enabled) {
-                    profilesStore.updateLastUsedProfileId(profileId)
-                    onProfileEnabled?.invoke(target)
+                    profilesStore.updateLastUsedProfileId(profile.id)
+                    onProfileEnabled?.invoke(profile.copy(enabled = true))
                 }
             }.onFailure { e -> timber.log.Timber.e(e, "toggleProfileEnabled failed"); showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message)) }
         }
