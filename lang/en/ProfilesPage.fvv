@@ -70,4 +70,8 @@ ProfilesPage = {
         Message = "Are you sure you want to delete '%s'?"
         Confirm = "Delete"
     }
+
+    EditDialog = {
+        Title = "Edit Profile Name"
+    }
 }
