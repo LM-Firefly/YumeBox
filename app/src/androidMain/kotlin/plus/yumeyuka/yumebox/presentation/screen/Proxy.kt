@@ -299,12 +299,9 @@ fun ProxyPager(
                 )
                 val modeTabs = listOf(MLang.Proxy.Mode.Rule, MLang.Proxy.Mode.Global, MLang.Proxy.Mode.Direct)
                 val modeValues = listOf(TunnelState.Mode.Rule, TunnelState.Mode.Global, TunnelState.Mode.Direct)
-                var selectedModeIndex by remember(currentMode) {
-                    mutableIntStateOf(modeValues.indexOf(currentMode).coerceAtLeast(0))
-                }
+                val selectedModeIndex = modeValues.indexOf(currentMode).coerceAtLeast(0)
                 TabRowWithContour(
                     tabs = modeTabs, selectedTabIndex = selectedModeIndex, onTabSelected = { index ->
-                        selectedModeIndex = index
                         if (index < modeValues.size) {
                             proxyViewModel.patchMode(modeValues[index])
                         }
@@ -318,10 +315,9 @@ fun ProxyPager(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 val sortTabs = ProxySortMode.entries.map { it.displayName }
-                var selectedSortIndex by remember { mutableIntStateOf(sortMode.ordinal) }
+                val selectedSortIndex = sortMode.ordinal
                 TabRowWithContour(
                     tabs = sortTabs, selectedTabIndex = selectedSortIndex, onTabSelected = { index ->
-                        selectedSortIndex = index
                         if (index < ProxySortMode.entries.size) {
                             proxyViewModel.setSortMode(ProxySortMode.entries[index])
                         }
@@ -335,10 +331,9 @@ fun ProxyPager(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 val displayTabs = ProxyDisplayMode.entries.map { it.displayName }
-                var selectedDisplayIndex by remember { mutableIntStateOf(displayMode.ordinal) }
+                val selectedDisplayIndex = displayMode.ordinal
                 TabRowWithContour(
                     tabs = displayTabs, selectedTabIndex = selectedDisplayIndex, onTabSelected = { index ->
-                        selectedDisplayIndex = index
                         if (index < ProxyDisplayMode.entries.size) {
                             proxyViewModel.setDisplayMode(ProxyDisplayMode.entries[index])
                         }
