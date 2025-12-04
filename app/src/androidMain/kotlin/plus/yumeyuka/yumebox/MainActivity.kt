@@ -42,6 +42,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.Velocity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
@@ -58,6 +59,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
+import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
@@ -90,6 +92,8 @@ class MainActivity : ComponentActivity() {
     private val clashManager: com.github.yumelira.yumebox.clash.manager.ClashManager by inject()
     private val proxyConnectionService: com.github.yumelira.yumebox.data.repository.ProxyConnectionService by inject()
 
+    private lateinit var intentController: IntentController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -97,6 +101,8 @@ class MainActivity : ComponentActivity() {
         }
 
         super.onCreate(savedInstanceState)
+
+        intentController = IntentController(this, lifecycleScope)
         handleIntent(intent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -152,17 +158,21 @@ class MainActivity : ComponentActivity() {
     }
     
     private fun handleIntent(intent: Intent?) {
-        intent?.data?.let { uri ->
-            val scheme = uri.scheme
-            if (scheme == "clash" || scheme == "clashmeta") {
-                val host = uri.host
-                if (host == "install-config") {
-                    val configUrl = uri.getQueryParameter("url")
-                    if (!configUrl.isNullOrBlank()) {
-                        _pendingImportUrl.value = configUrl
+        intent?.let { safeIntent ->
+            safeIntent.data?.let { uri ->
+                val scheme = uri.scheme
+                if (scheme == "clash" || scheme == "clashmeta") {
+                    val host = uri.host
+                    if (host == "install-config") {
+                        val configUrl = uri.getQueryParameter("url")
+                        if (!configUrl.isNullOrBlank()) {
+                            _pendingImportUrl.value = configUrl
+                        }
                     }
                 }
             }
+
+            intentController.handleIntent(safeIntent)
         }
     }
 }
