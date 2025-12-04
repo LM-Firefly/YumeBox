@@ -75,6 +75,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="clashmeta" android:host="install-config"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.github.yumelira.yumebox.action.START_CLASH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.github.yumelira.yumebox.action.STOP_CLASH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
         </activity>
 
         <activity-alias
