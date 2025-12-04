@@ -28,8 +28,11 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import android.content.pm.PackageManager
 import com.github.yumelira.yumebox.data.store.Preference
@@ -56,8 +59,14 @@ class FeatureViewModel(
     val selectedPanelType: Preference<Int> = featureStore.selectedPanelType
     val showWebControlInProxy: Preference<Boolean> = featureStore.showWebControlInProxy
 
-    private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
-    val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()
+    val autoCloseModeState: StateFlow<AutoCloseMode> =
+        featureStore.autoCloseMode.state.map { ordinal ->
+            AutoCloseMode.entries.getOrNull(ordinal) ?: AutoCloseMode.DISABLED
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AutoCloseMode.DISABLED)
+
+    val autoCloseStartTimeState: StateFlow<Long> = featureStore.autoCloseStartTime.state
+
+    val autoCloseMode: StateFlow<AutoCloseMode> get() = autoCloseModeState
 
     private val _serviceRunningState = MutableStateFlow(SubStoreService.isRunning)
     val serviceRunningState: StateFlow<Boolean> = _serviceRunningState.asStateFlow()
@@ -128,6 +137,11 @@ class FeatureViewModel(
                 putExtra("allowLan", allowLanAccess.value)
             })
             _serviceRunningState.value = true
+
+            val currentMode = autoCloseMode.value
+            if (currentMode.shouldStartTimer) {
+                featureStore.autoCloseStartTime.set(System.currentTimeMillis())
+            }
             setupAutoCloseTimer()
         }
     }
@@ -146,7 +160,7 @@ class FeatureViewModel(
             cancelAutoCloseTimer()
             application.stopService(Intent(application, SubStoreService::class.java))
             _serviceRunningState.value = false
-            _autoCloseMode.value = AutoCloseMode.DISABLED
+            featureStore.autoCloseStartTime.set(0L)
         }
     }
 
@@ -155,9 +169,14 @@ class FeatureViewModel(
     fun setBackendPort(port: Int) = backendPort.set(port)
     fun setFrontendPort(port: Int) = frontendPort.set(port)
     fun setAutoCloseMode(mode: AutoCloseMode) {
-        _autoCloseMode.value = mode
+        featureStore.autoCloseMode.set(mode.ordinal)
         if (isServiceRunning) {
             cancelAutoCloseTimer()
+            if (mode.shouldStartTimer) {
+                featureStore.autoCloseStartTime.set(System.currentTimeMillis())
+            } else {
+                featureStore.autoCloseStartTime.set(0L)
+            }
             setupAutoCloseTimer()
         }
     }
@@ -196,6 +215,26 @@ class FeatureViewModel(
             _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
             _isExtensionInstalled.value = checkExtensionInstalled()
             initializeJavetStatus()
+            restoreAutoCloseState()
+        }
+    }
+
+    private fun restoreAutoCloseState() {
+        viewModelScope.launch {
+            val mode = autoCloseMode.value
+            val startTime = featureStore.autoCloseStartTime.value
+
+            if (isServiceRunning && mode.shouldStartTimer && startTime > 0) {
+                val elapsed = System.currentTimeMillis() - startTime
+                val totalMinutes = mode.minutes?.toLong() ?: 0L
+                val remainingMillis = totalMinutes * 60 * 1000 - elapsed
+
+                if (remainingMillis > 0) {
+                    setupAutoCloseTimer()
+                } else {
+                    stopService()
+                }
+            }
         }
     }
 
@@ -365,12 +404,18 @@ class FeatureViewModel(
 
     private fun setupAutoCloseTimer() {
         cancelAutoCloseTimer()
-        val mode = _autoCloseMode.value
+        val mode = autoCloseMode.value
         mode.minutes?.let { minutes ->
-            autoCloseJob = viewModelScope.launch {
-                delay(minutes * 60 * 1000L)
-                showToast(MLang.Feature.ServiceStatus.AutoClosed)
-                stopService()
+            val startTime = featureStore.autoCloseStartTime.value
+            val elapsed = if (startTime > 0) System.currentTimeMillis() - startTime else 0L
+            val remainingMillis = minutes * 60 * 1000L - elapsed
+
+            if (remainingMillis > 0) {
+                autoCloseJob = viewModelScope.launch {
+                    delay(remainingMillis)
+                    showToast(MLang.Feature.ServiceStatus.AutoClosed)
+                    stopService()
+                }
             }
         }
     }

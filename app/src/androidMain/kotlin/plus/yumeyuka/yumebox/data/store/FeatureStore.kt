@@ -31,6 +31,8 @@ class FeatureStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalM
     val frontendPort by intFlow(8080)
     val selectedPanelType by intFlow(0)
     val showWebControlInProxy by boolFlow(false)
+    val autoCloseMode by intFlow(AutoCloseMode.DISABLED.ordinal)
+    val autoCloseStartTime by longFlow(0L)
 
 
     var isFirstOpen by bool(true)
