@@ -29,6 +29,25 @@
 - **安装**：前往 [Releases](https://github.com/YumeYuka/YumeBox/releases)
 - **构建**：[跳转至构建章节](#构建)
 
+### 外部控制 API
+
+YumeBox 支持通过 Android Intent 进行外部控制，使其他应用能够启动或停止代理服务。
+
+- 启动 Clash.Meta 服务
+
+  向活动 `com.github.yumelira.yumebox.MainActivity` 发送带有动作  
+  `com.github.yumelira.yumebox.action.START_CLASH` 的 Intent
+
+- 停止 Clash.Meta 服务
+
+  向活动 `com.github.yumelira.yumebox.MainActivity` 发送带有动作  
+  `com.github.yumelira.yumebox.action.STOP_CLASH` 的 Intent
+
+- 导入配置文件
+
+  使用 URL Scheme：`clash://install-config?url=<encoded URI>`  
+  或 `clashmeta://install-config?url=<encoded URI>`
+
 ## 讨论
 
 - Telegram 群组：[@OOM_WG](https://t.me/OOM_Group)
@@ -85,6 +104,11 @@
    ```bash
    ./gradlew extension:assembleRelease
    ```
+
+## 特别
+
+> [!IMPORTANT]
+> 作者对这个项目中的代码一无所知。代码处于可用或不可用状态，没有第三种情况。
 
 ## 鸣谢
 
