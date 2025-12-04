@@ -23,7 +23,10 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import android.graphics.drawable.Drawable
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +43,12 @@ class AccessControlViewModel(
     application: Application,
     private val storage: NetworkSettingsStorage,
 ) : AndroidViewModel(application) {
+
+    companion object {
+        private const val MIUI_GET_INSTALLED_APPS_PERMISSION = "com.android.permission.GET_INSTALLED_APPS"
+        private const val SELF_PACKAGE_NAME = "com.github.yumelira.yumebox"
+        private const val PERMISSION_REQUEST_CODE = 999
+    }
 
     data class AppInfo(
         val packageName: String,
@@ -76,15 +85,70 @@ class AccessControlViewModel(
         val sortMode: SortMode = SortMode.LABEL,
         val descending: Boolean = false,
         val selectedFirst: Boolean = true,
+        val permissionGranted: Boolean = false,
+        val isMiuiSystem: Boolean = false,
+        val permissionCheckCompleted: Boolean = false,
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     init {
-        loadApps()
+        checkPermissionAndLoadApps()
     }
 
+    private fun checkPermissionAndLoadApps() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, permissionCheckCompleted = false) }
+
+            val isMiuiSystem = checkIsMiuiSystem()
+            val permissionGranted = if (isMiuiSystem) {
+                checkMiuiPermission()
+            } else {
+                true // 非MIUI系统默认有权限
+            }
+
+            android.util.Log.d("AccessControlVM", "权限检查: MIUI=$isMiuiSystem, 权限=$permissionGranted")
+
+            _uiState.update { state ->
+                state.copy(
+                    isMiuiSystem = isMiuiSystem,
+                    permissionGranted = permissionGranted,
+                    permissionCheckCompleted = true
+                )
+            }
+
+            if (permissionGranted) {
+                loadApps()
+            } else {
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    private fun checkIsMiuiSystem(): Boolean {
+        return try {
+            val pm = getApplication<Application>().packageManager
+            val permissionInfo = pm.getPermissionInfo(MIUI_GET_INSTALLED_APPS_PERMISSION, 0)
+            val isMiui = permissionInfo != null && permissionInfo.packageName == "com.lbe.security.miui"
+            android.util.Log.d("AccessControlVM", "MIUI系统检测结果: $isMiui, 权限包名: ${permissionInfo?.packageName}")
+            isMiui
+        } catch (e: PackageManager.NameNotFoundException) {
+            android.util.Log.d("AccessControlVM", "非MIUI系统: ${e.message}")
+            false
+        }
+    }
+
+    private fun checkMiuiPermission(): Boolean {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            getApplication(),
+            MIUI_GET_INSTALLED_APPS_PERMISSION
+        ) == PackageManager.PERMISSION_GRANTED
+        android.util.Log.d("AccessControlVM", "MIUI权限检查结果: $hasPermission")
+        return hasPermission
+    }
+
+    
     private fun loadApps() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
@@ -109,18 +173,20 @@ class AccessControlViewModel(
         val pm = getApplication<Application>().packageManager
         val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
-        return packages.map { appInfo ->
-            val pkgInfo = runCatching { pm.getPackageInfo(appInfo.packageName, 0) }.getOrNull()
-            AppInfo(
-                packageName = appInfo.packageName,
-                label = appInfo.loadLabel(pm).toString(),
-                icon = runCatching { appInfo.loadIcon(pm) }.getOrNull(),
-                isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                isSelected = selectedPackages.contains(appInfo.packageName),
-                installTime = pkgInfo?.firstInstallTime ?: 0L,
-                updateTime = pkgInfo?.lastUpdateTime ?: 0L
-            )
-        }
+        return packages
+            .filter { appInfo -> appInfo.packageName != SELF_PACKAGE_NAME }
+            .map { appInfo ->
+                val pkgInfo = runCatching { pm.getPackageInfo(appInfo.packageName, 0) }.getOrNull()
+                AppInfo(
+                    packageName = appInfo.packageName,
+                    label = appInfo.loadLabel(pm).toString(),
+                    icon = runCatching { appInfo.loadIcon(pm) }.getOrNull(),
+                    isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                    isSelected = selectedPackages.contains(appInfo.packageName),
+                    installTime = pkgInfo?.firstInstallTime ?: 0L,
+                    updateTime = pkgInfo?.lastUpdateTime ?: 0L
+                )
+            }
     }
 
     private fun filterApps(

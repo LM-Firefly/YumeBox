@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -43,8 +44,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
 import android.widget.Toast
@@ -72,6 +75,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
+    val activity = LocalActivity.current as? com.github.yumelira.yumebox.MainActivity
 
     val showSettingsSheet = rememberSaveable { mutableStateOf(false) }
     val searchExpanded = rememberSaveable { mutableStateOf(false) }
@@ -81,6 +85,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
         viewModel.onSearchQueryChange("")
     }
 
+    
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -105,7 +110,32 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 ) {
                     Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
                 }
-            } else {
+            } else if (uiState.isMiuiSystem && !uiState.permissionGranted) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Text(
+                            text = MLang.AccessControl.Permission.Title,
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center,
+                            color = MiuixTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = MLang.AccessControl.Permission.Description,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+            } else if (uiState.permissionCheckCompleted) {
                 ScreenLazyColumn(
                     scrollBehavior = scrollBehavior,
                     innerPadding = innerPadding,
@@ -190,8 +220,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                         SuperDropdown(
                             title = MLang.AccessControl.Settings.SortMode,
                             summary = MLang.AccessControl.Settings.SortModeCurrent.format(uiState.sortMode.displayName),
-                            items = AccessControlViewModel.SortMode.values().map { it.displayName },
-                            selectedIndex = AccessControlViewModel.SortMode.values()
+                            items = AccessControlViewModel.SortMode.entries.map { it.displayName },
+                            selectedIndex = AccessControlViewModel.SortMode.entries
                                 .indexOf(uiState.sortMode)
                                 .coerceAtLeast(0),
                             onSelectedIndexChange = { index ->
@@ -280,7 +310,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
             }
         )
     }
-}
+
+    }
 
 @Composable
 private fun ExpandedSearchOverlay(
@@ -388,3 +419,4 @@ private fun AppCard(
         )
     }
 }
+

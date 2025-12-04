@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,6 +29,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -175,6 +178,21 @@ class MainActivity : ComponentActivity() {
             intentController.handleIntent(safeIntent)
         }
     }
+//
+//
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//
+//        when (requestCode) {
+//            REQUEST_NOTIFICATION_PERMISSION -> {
+//                // 通知权限处理逻辑保持不变
+//            }
+//        }
+//    }
 }
 
 @Composable

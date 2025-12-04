@@ -36,6 +36,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.androidx.compose.koinViewModel
@@ -242,7 +243,10 @@ private fun ProxyTopBar(
         actions = {
             IconButton(
                 modifier = Modifier.padding(end = 16.dp),
-                onClick = { onTestDelay?.invoke() }
+                onClick = {
+                    Toast.makeText(context, MLang.AccessControl.Test.PullToTestToast, Toast.LENGTH_SHORT).show()
+                    onTestDelay?.invoke()
+                }
             ) {
                 Icon(Yume.Zap, contentDescription = MLang.Proxy.Action.Test)
             }

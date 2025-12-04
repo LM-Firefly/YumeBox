@@ -37,8 +37,17 @@ AccessControl = {
         UpdateTime = "更新时间"
     }
     
+    Permission = {
+        Title = "需要应用列表访问权限"
+        Description = "访问应用列表需要特殊权限，当前没有权限。"
+    }
+
     Button = {
         Cancel = "取消"
         Confirm = "确定"
+    }
+
+    Test = {
+        PullToTestToast = "下拉列表也可以测试哦(〃´▽`〃)ﾉﾞ"
     }
 }
