@@ -38,18 +38,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.AppConstants
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.TrafficChartConfig
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val SPEED_CHART_SAMPLE_LIMIT = AppConstants.Limits.SPEED_HISTORY_SIZE
 private const val SPEED_CHART_IDLE_SCROLL_DURATION_MS = 900
-private const val SPEED_CHART_BAR_ALPHA = 0.75f
 private const val SPEED_CHART_IDLE_WAVE_AMPLITUDE = 0.022f
 private const val SPEED_CHART_IDLE_WAVE_SPAN = 4f
-private val SPEED_CHART_BAR_GAP = 5.dp
-private val SPEED_CHART_BAR_CORNER_RADIUS = 6.dp
 
 @Composable
 fun SpeedChart(
@@ -58,6 +55,8 @@ fun SpeedChart(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val componentSizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
     val chartColor = MiuixTheme.colorScheme.primary
     val fractions = remember(speedHistory) {
         buildSpeedChartFractions(speedHistory = speedHistory)
@@ -83,7 +82,8 @@ fun SpeedChart(
             .clip(RoundedCornerShape(AppConstants.UI.CARD_CORNER_RADIUS))
             .clickable(onClick = onClick)
     ) {
-        val barGapPx = SPEED_CHART_BAR_GAP.toPx()
+        val barGapPx = componentSizes.speedChartBarGap.toPx()
+        val barCornerRadiusPx = componentSizes.speedChartBarCornerRadius.toPx()
         val chartBarCount = SPEED_CHART_SAMPLE_LIMIT
 
         val totalGapWidth = barGapPx * (chartBarCount - 1)
@@ -92,13 +92,14 @@ fun SpeedChart(
             return@Canvas
         }
 
-        val barColor = chartColor.copy(alpha = SPEED_CHART_BAR_ALPHA)
+        val barColor = chartColor.copy(alpha = opacity.mediumStrong)
 
         if (!isRunning) {
             drawIdleBars(
                 fractions = fractions,
                 barWidthPx = barWidthPx,
                 barGapPx = barGapPx,
+                barCornerRadiusPx = barCornerRadiusPx,
                 barColor = barColor,
                 wavePhase = idlePhase * chartBarCount
             )
@@ -107,6 +108,7 @@ fun SpeedChart(
                 fractions = fractions,
                 barWidthPx = barWidthPx,
                 barGapPx = barGapPx,
+                barCornerRadiusPx = barCornerRadiusPx,
                 barColor = barColor
             )
         }
@@ -132,9 +134,13 @@ private fun DrawScope.drawStaticBars(
     fractions: FloatArray,
     barWidthPx: Float,
     barGapPx: Float,
+    barCornerRadiusPx: Float,
     barColor: Color
 ) {
-    val barCornerRadius = createBarCornerRadius(barWidthPx)
+    val barCornerRadius = createBarCornerRadius(
+        barWidthPx = barWidthPx,
+        barCornerRadiusPx = barCornerRadiusPx
+    )
     for (index in fractions.indices) {
         val barLeftPx = index * (barWidthPx + barGapPx)
         if (barLeftPx >= size.width || barLeftPx + barWidthPx <= 0f) {
@@ -154,10 +160,14 @@ private fun DrawScope.drawIdleBars(
     fractions: FloatArray,
     barWidthPx: Float,
     barGapPx: Float,
+    barCornerRadiusPx: Float,
     barColor: Color,
     wavePhase: Float
 ) {
-    val barCornerRadius = createBarCornerRadius(barWidthPx)
+    val barCornerRadius = createBarCornerRadius(
+        barWidthPx = barWidthPx,
+        barCornerRadiusPx = barCornerRadiusPx
+    )
     for (index in fractions.indices) {
         val barLeftPx = index * (barWidthPx + barGapPx)
         if (barLeftPx >= size.width || barLeftPx + barWidthPx <= 0f) {
@@ -177,11 +187,13 @@ private fun DrawScope.drawIdleBars(
     }
 }
 
-private fun DrawScope.createBarCornerRadius(barWidthPx: Float): CornerRadius {
-    val cornerRadiusPx = SPEED_CHART_BAR_CORNER_RADIUS.toPx()
+private fun DrawScope.createBarCornerRadius(
+    barWidthPx: Float,
+    barCornerRadiusPx: Float
+): CornerRadius {
     return CornerRadius(
-        x = cornerRadiusPx.coerceAtMost(barWidthPx / 2f),
-        y = cornerRadiusPx.coerceAtMost(size.height / 2f)
+        x = barCornerRadiusPx.coerceAtMost(barWidthPx / 2f),
+        y = barCornerRadiusPx.coerceAtMost(size.height / 2f)
     )
 }
 

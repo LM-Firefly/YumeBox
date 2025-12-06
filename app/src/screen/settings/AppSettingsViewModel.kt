@@ -23,58 +23,57 @@
 package com.github.yumelira.yumebox.screen.settings
 
 import androidx.lifecycle.ViewModel
-import com.github.yumelira.yumebox.common.util.AppLanguageManager
+import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.model.AppColorTheme
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
-import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.Preference
+import com.github.yumelira.yumebox.presentation.theme.DEFAULT_CUSTOM_THEME_SEED_ARGB
 
 class AppSettingsViewModel(
-    private val repository: AppSettingsRepository,
-    private val featureRepository: FeatureSettingsRepository,
+    private val settings: AppSettingsStore,
+    private val featureStore: FeatureStore,
+    private val controller: AppSettingsController,
 ) : ViewModel() {
 
-    val initialSetupCompleted: Preference<Boolean> = repository.initialSetupCompleted
-    val privacyPolicyAccepted: Preference<Boolean> = repository.privacyPolicyAccepted
+    val initialSetupCompleted: Preference<Boolean> = settings.initialSetupCompleted
+    val privacyPolicyAccepted: Preference<Boolean> = settings.privacyPolicyAccepted
 
-    val themeMode: Preference<ThemeMode> = repository.themeMode
-    val appLanguage: Preference<AppLanguage> = repository.appLanguage
-    val colorTheme: Preference<AppColorTheme> = repository.colorTheme
-    val themeSeedColorArgb: Preference<Long> = repository.themeSeedColorArgb
-    val automaticRestart: Preference<Boolean> = repository.automaticRestart
-    val autoUpdateCurrentProfileOnStart: Preference<Boolean> = repository.autoUpdateCurrentProfileOnStart
-    val hideAppIcon: Preference<Boolean> = repository.hideAppIcon
-    val excludeFromRecents: Preference<Boolean> = repository.excludeFromRecents
-    val showTrafficNotification: Preference<Boolean> = repository.showTrafficNotification
-    val bottomBarAutoHide: Preference<Boolean> = repository.bottomBarAutoHide
-    val bottomBarUseLegacyStyle: Preference<Boolean> = repository.bottomBarUseLegacyStyle
-    val topBarBlurEnabled: Preference<Boolean> = repository.topBarBlurEnabled
-    val acgMainUiEnabled: Preference<Boolean> = repository.acgMainUiEnabled
-    val acgWallpaperUri: Preference<String> = repository.acgWallpaperUri
-    val acgWallpaperZoom: Preference<Float> = repository.acgWallpaperZoom
-    val acgWallpaperBiasX: Preference<Float> = repository.acgWallpaperBiasX
-    val acgWallpaperBiasY: Preference<Float> = repository.acgWallpaperBiasY
-    val acgHomeQuote: Preference<String> = repository.acgHomeQuote
-    val acgHomeQuoteAuthor: Preference<String> = repository.acgHomeQuoteAuthor
-    val acgSidebarExpanded: Preference<Boolean> = repository.acgSidebarExpanded
-    val pageScale: Preference<Float> = repository.pageScale
-    val singleNodeTest: Preference<Boolean> = repository.singleNodeTest
-    val screenshotProtectionEnabled: Preference<Boolean> = repository.screenshotProtectionEnabled
-    val biometricUnlockEnabled: Preference<Boolean> = repository.biometricUnlockEnabled
-    val exitUiWhenBackground: Preference<Boolean> = featureRepository.exitUiWhenBackground
+    val themeMode: Preference<ThemeMode> = settings.themeMode
+    val appLanguage: Preference<AppLanguage> = settings.appLanguage
+    val colorTheme: Preference<AppColorTheme> = settings.colorTheme
+    val themeSeedColorArgb: Preference<Long> = settings.themeAccentColorArgb
+    val automaticRestart: Preference<Boolean> = settings.automaticRestart
+    val autoUpdateCurrentProfileOnStart: Preference<Boolean> = settings.autoUpdateCurrentProfileOnStart
+    val hideAppIcon: Preference<Boolean> = settings.hideAppIcon
+    val excludeFromRecents: Preference<Boolean> = settings.excludeFromRecents
+    val showTrafficNotification: Preference<Boolean> = settings.showTrafficNotification
+    val bottomBarAutoHide: Preference<Boolean> = settings.bottomBarAutoHide
+    val bottomBarUseLegacyStyle: Preference<Boolean> = settings.bottomBarUseLegacyStyle
+    val topBarBlurEnabled: Preference<Boolean> = settings.topBarBlurEnabled
+    val acgMainUiEnabled: Preference<Boolean> = settings.acgMainUiEnabled
+    val acgWallpaperUri: Preference<String> = settings.acgWallpaperUri
+    val acgWallpaperZoom: Preference<Float> = settings.acgWallpaperZoom
+    val acgWallpaperBiasX: Preference<Float> = settings.acgWallpaperBiasX
+    val acgWallpaperBiasY: Preference<Float> = settings.acgWallpaperBiasY
+    val acgHomeQuote: Preference<String> = settings.acgHomeQuote
+    val acgHomeQuoteAuthor: Preference<String> = settings.acgHomeQuoteAuthor
+    val acgSidebarExpanded: Preference<Boolean> = settings.acgSidebarExpanded
+    val pageScale: Preference<Float> = settings.pageScale
+    val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
+    val screenshotProtectionEnabled: Preference<Boolean> = settings.screenshotProtectionEnabled
+    val biometricUnlockEnabled: Preference<Boolean> = settings.biometricUnlockEnabled
+    val exitUiWhenBackground: Preference<Boolean> = featureStore.exitUiWhenBackground
 
-    val customUserAgent: Preference<String> = repository.customUserAgent
+    val customUserAgent: Preference<String> = settings.customUserAgent
 
     fun onThemeModeChange(mode: ThemeMode) = themeMode.set(mode)
-    fun onAppLanguageChange(language: AppLanguage) {
-        appLanguage.set(language)
-        AppLanguageManager.apply(language)
-    }
+    fun onAppLanguageChange(language: AppLanguage) = controller.applyAppLanguage(language)
     fun onColorThemeChange(theme: AppColorTheme) = colorTheme.set(theme)
     fun onThemeSeedColorChange(argb: Long) = themeSeedColorArgb.set(argb)
-    fun resetThemeSeedColor() = themeSeedColorArgb.set(0xFF138A74L)
+    fun resetThemeSeedColor() = themeSeedColorArgb.set(DEFAULT_CUSTOM_THEME_SEED_ARGB)
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
     fun onBottomBarUseLegacyStyleChange(enabled: Boolean) = bottomBarUseLegacyStyle.set(enabled)
     fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
@@ -103,7 +102,7 @@ class AppSettingsViewModel(
     fun onBiometricUnlockEnabledChange(enabled: Boolean) = biometricUnlockEnabled.set(enabled)
     fun onExitUiWhenBackgroundChange(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 
-    fun applyCustomUserAgent(userAgent: String) = repository.applyCustomUserAgent(userAgent)
+    fun applyCustomUserAgent(userAgent: String) = controller.applyCustomUserAgent(userAgent)
 
     fun setInitialSetupCompleted(completed: Boolean) = initialSetupCompleted.set(completed)
     fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)

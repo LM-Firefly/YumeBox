@@ -36,9 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.formatBytes
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -55,11 +55,15 @@ fun TrafficBarChart(
     maxDisplayValue: Long? = null,
     onItemClick: ((Int) -> Unit)? = null,
     selectedIndex: Int = -1,
-    barColor: Color = MiuixTheme.colorScheme.primary.copy(alpha = 0.5f),
+    barColor: Color = MiuixTheme.colorScheme.primary.copy(alpha = AppTheme.opacity.medium),
     highlightColor: Color = MiuixTheme.colorScheme.primary,
-    chartHeight: Dp = 140.dp,
-    barWidth: Dp = 20.dp
+    chartHeight: Dp = AppTheme.sizes.trafficBarChartHeight,
+    barWidth: Dp = AppTheme.sizes.trafficBarWidth
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val componentSizes = AppTheme.sizes
+
     val computedMaxValue = maxDisplayValue ?: items.maxOfOrNull { it.value } ?: 1L
     val safeMaxValue = if (computedMaxValue <= 0L) 1L else computedMaxValue
 
@@ -81,11 +85,12 @@ fun TrafficBarChart(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(18.dp),
-            contentAlignment = Alignment.CenterEnd
+                .height(componentSizes.trafficBarLabelHeight),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = formatBytes(animatedMaxValue.toLong()),
@@ -95,7 +100,7 @@ fun TrafficBarChart(
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(spacing.space4))
 
         Row(
             modifier = Modifier
@@ -123,17 +128,18 @@ fun TrafficBarChart(
                     label = "barHeight_$index"
                 )
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Bottom
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.BottomCenter,
                 ) {
                     if (isValidItem && animatedHeight > 0f) {
-                        Box(
+                        Spacer(
                             modifier = Modifier
                                 .width(barWidth)
                                 .fillMaxHeight(animatedHeight)
-                                .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                .clip(RoundedCornerShape(topStart = radii.radius4, topEnd = radii.radius4))
                                 .background(if (isSelected) highlightColor else barColor)
                                 .then(
                                     if (onItemClick != null) {
@@ -148,32 +154,30 @@ fun TrafficBarChart(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(spacing.space8))
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(18.dp),
+                .height(componentSizes.trafficBarLabelHeight),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             displayItems.forEachIndexed { index, item ->
                 val isSelected = index == selectedIndex || item.isHighlighted
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = item.label,
-                        style = MiuixTheme.textStyles.footnote1.copy(fontSize = 9.sp),
-                        color = if (isSelected) {
-                            MiuixTheme.colorScheme.primary
-                        } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        },
-                        maxLines = 1
-                    )
-                }
+                Text(
+                    modifier = Modifier
+                        .weight(1f)
+                        .wrapContentWidth(Alignment.CenterHorizontally),
+                    text = item.label,
+                    style = MiuixTheme.textStyles.footnote1.copy(fontSize = 9.sp),
+                    color = if (isSelected) {
+                        MiuixTheme.colorScheme.primary
+                    } else {
+                        MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    },
+                    maxLines = 1
+                )
             }
         }
     }

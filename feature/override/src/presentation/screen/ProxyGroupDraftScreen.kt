@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
@@ -247,7 +246,7 @@ fun OverrideProxyGroupDraftEditorScreen(
                                 onValueChange = { useText = it },
                                 label = MLang.Override.ProxyGroup.Field.Use,
                                 supportText = MLang.Override.ProxyGroup.Field.UseHint,
-                                modifier = Modifier.heightIn(min = 100.dp),
+                                modifier = Modifier.heightIn(min = UiDp.dp100),
                                 maxLines = 8,
                             )
                         }

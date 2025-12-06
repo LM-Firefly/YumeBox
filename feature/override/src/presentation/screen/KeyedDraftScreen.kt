@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -309,7 +308,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                         onValueChange = { headerText = it },
                         label = "header",
                         supportText = MLang.Override.Draft.HeaderHint,
-                        modifier = Modifier.height(120.dp),
+                        modifier = Modifier.height(UiDp.dp120),
                         maxLines = 8,
                     )
                 }

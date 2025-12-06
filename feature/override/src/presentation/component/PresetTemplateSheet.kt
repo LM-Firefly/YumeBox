@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
@@ -102,17 +101,17 @@ fun OverridePresetTemplateSheet(
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 560.dp)
-                .padding(bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .heightIn(max = UiDp.dp560)
+                .padding(bottom = UiDp.dp12),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp8),
         ) {
             item(key = "preset-template-intro") {
                 Card(applyHorizontalPadding = false) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                            .padding(horizontal = UiDp.dp16, vertical = UiDp.dp14),
+                        verticalArrangement = Arrangement.spacedBy(UiDp.dp4),
                     ) {
                         Text(
                             text = MLang.Override.Draft.PresetApplySummary,
@@ -155,7 +154,7 @@ fun OverridePresetTemplateSheet(
                     titleContent = { title ->
                         SmallTitle(
                             text = title,
-                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            insideMargin = PaddingValues(horizontal = UiDp.dp16, vertical = UiDp.dp8),
                         )
                     },
                 )
@@ -175,7 +174,7 @@ fun OverridePresetTemplateSheet(
                     titleContent = { title ->
                         SmallTitle(
                             text = title,
-                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            insideMargin = PaddingValues(horizontal = UiDp.dp16, vertical = UiDp.dp8),
                         )
                     },
                 )
@@ -195,7 +194,7 @@ fun OverridePresetTemplateSheet(
                     titleContent = { title ->
                         SmallTitle(
                             text = title,
-                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            insideMargin = PaddingValues(horizontal = UiDp.dp16, vertical = UiDp.dp8),
                         )
                     },
                 )
@@ -213,7 +212,7 @@ fun OverridePresetTemplateSheet(
                     titleContent = { title ->
                         SmallTitle(
                             text = title,
-                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            insideMargin = PaddingValues(horizontal = UiDp.dp16, vertical = UiDp.dp8),
                         )
                     },
                 )
@@ -231,7 +230,7 @@ fun OverridePresetTemplateSheet(
                     titleContent = { title ->
                         SmallTitle(
                             text = title,
-                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            insideMargin = PaddingValues(horizontal = UiDp.dp16, vertical = UiDp.dp8),
                         )
                     },
                 )

@@ -24,7 +24,7 @@ package com.github.yumelira.yumebox.common.util
 
 import android.content.Intent
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +44,7 @@ class IntentController(
 
     private val proxyFacade: ProxyFacade by inject()
     private val profilesRepository: ProfilesRepository by inject()
-    private val networkSettingsStorage: NetworkSettingsStorage by inject()
+    private val networkSettingsStorage: NetworkSettingsStore by inject()
 
     fun handleIntent(intent: Intent?) {
         intent?.let { safeIntent ->

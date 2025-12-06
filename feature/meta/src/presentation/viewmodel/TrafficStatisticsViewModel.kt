@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.feature.meta.presentation.viewmodel
 
 import androidx.compose.ui.graphics.Color
@@ -8,8 +28,9 @@ import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
 import com.github.yumelira.yumebox.presentation.component.TrafficDonutSlice
-import com.github.yumelira.yumebox.runtime.client.AppIdentityResolver
+import com.github.yumelira.yumebox.presentation.theme.AppColors
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +44,7 @@ class TrafficStatisticsViewModel(
     private val trafficStatisticsStore: TrafficStatisticsStore,
 ) : ViewModel() {
     private val selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
+    private val appColors = AppColors()
 
     val uiState: StateFlow<TrafficStatisticsUiState> = combine(
         selectedTimeRange,
@@ -85,7 +107,7 @@ class TrafficStatisticsViewModel(
                         key = OTHER_SLICE_KEY,
                         label = MLang.TrafficStatistics.Donut.Other,
                         value = overflowBytes,
-                        color = Color(0xFF94A3B8),
+                        color = appColors.traffic.other,
                     ),
                 )
             }
@@ -96,7 +118,7 @@ class TrafficStatisticsViewModel(
                         key = usage.appKey,
                         label = usage.appName,
                         value = usage.totalBytes,
-                        color = Color(0xFFD97706),
+                        color = appColors.traffic.unattributed,
                     ),
                 )
             }
@@ -107,7 +129,7 @@ class TrafficStatisticsViewModel(
                         key = usage.appKey,
                         label = usage.appName,
                         value = usage.totalBytes,
-                        color = Color(0xFF64748B),
+                        color = appColors.traffic.unknown,
                     ),
                 )
             }

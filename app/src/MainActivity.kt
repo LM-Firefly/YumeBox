@@ -89,9 +89,9 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private val appSettingsStorage: com.github.yumelira.yumebox.data.store.AppSettingsStorage by inject()
+    private val appSettingsStorage: com.github.yumelira.yumebox.data.store.AppSettingsStore by inject()
     private val featureStore: FeatureStore by inject()
-    private val networkSettingsStorage: com.github.yumelira.yumebox.data.store.NetworkSettingsStorage by inject()
+    private val networkSettingsStorage: com.github.yumelira.yumebox.data.store.NetworkSettingsStore by inject()
     private val profilesRepository: com.github.yumelira.yumebox.runtime.client.ProfilesRepository by inject()
     private val proxyFacade: com.github.yumelira.yumebox.runtime.client.ProxyFacade by inject()
     private val serviceCache: MMKV by inject(qualifier = named("service_cache"))

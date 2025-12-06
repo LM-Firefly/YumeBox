@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -130,7 +129,7 @@ fun StringMapEditorDialog(
         onDismissRequest = onDismiss,
     ) {
         LazyColumn(
-            modifier = Modifier.heightIn(max = 320.dp),
+            modifier = Modifier.heightIn(max = UiDp.dp320),
         ) {
             itemsIndexed(entries, key = { index, _ -> itemKeys[index] }) { index, entry ->
                 StringMapEntryItem(
@@ -145,13 +144,13 @@ fun StringMapEditorDialog(
                         entries[index] = entry.first to updatedValue
                     },
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(UiDp.dp8))
             }
         }
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
         ) {
-            top.yukonga.miuix.kmp.basic.Button(
+            Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
                     entries.add("" to "")
@@ -160,7 +159,7 @@ fun StringMapEditorDialog(
             ) {
                 Text(MLang.Override.Editor.AddItem)
             }
-            top.yukonga.miuix.kmp.basic.Button(
+            Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
                     if (entries.size > 1) {
@@ -202,21 +201,21 @@ fun JsonObjectListEditorDialog(
         onDismissRequest = { show.value = false },
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(UiDp.dp20),
         ) {
             Text(
                 text = MLang.Override.Editor.ObjectListHint,
                 style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.outline,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp12))
             LazyColumn(
-                modifier = Modifier.heightIn(max = 360.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = UiDp.dp360),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp8),
             ) {
                 itemsIndexed(drafts, key = { index, _ -> itemKeys[index] }) { index, fields ->
                     Card(
-                        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(UiDp.dp12),
                     ) {
                         Text(
                             text = objectCardTitle(fields, MLang.Override.Editor.ObjectFallbackTitle.format(index + 1)),
@@ -227,11 +226,11 @@ fun JsonObjectListEditorDialog(
                             text = objectCardSubtitle(fields),
                             fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = UiDp.dp4),
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(UiDp.dp10))
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                         ) {
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -261,9 +260,9 @@ fun JsonObjectListEditorDialog(
                                 Text(MLang.Override.Card.Delete)
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(UiDp.dp8))
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                         ) {
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -289,7 +288,7 @@ fun JsonObjectListEditorDialog(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp12))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
@@ -305,7 +304,7 @@ fun JsonObjectListEditorDialog(
                         color = MiuixTheme.colorScheme.onPrimary,
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp24))
             DialogButtonRow(
                 onCancel = { show.value = false },
                 onConfirm = {
@@ -356,21 +355,21 @@ fun JsonObjectMapEditorDialog(
         onDismissRequest = { show.value = false },
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(UiDp.dp20),
         ) {
             Text(
                 text = MLang.Override.Editor.ProviderMapHint,
                 style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.outline,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp12))
             LazyColumn(
-                modifier = Modifier.heightIn(max = 360.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = UiDp.dp360),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp8),
             ) {
                 itemsIndexed(drafts, key = { index, _ -> itemKeys[index] }) { index, draft ->
                     Card(
-                        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(UiDp.dp12),
                     ) {
                         Text(
                             text = draft.first.ifBlank { MLang.Override.Editor.UnnamedProvider },
@@ -381,11 +380,11 @@ fun JsonObjectMapEditorDialog(
                             text = objectCardSubtitle(draft.second),
                             fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = UiDp.dp4),
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(UiDp.dp10))
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                         ) {
                             Button(
                                 modifier = Modifier.weight(1f),
@@ -409,7 +408,7 @@ fun JsonObjectMapEditorDialog(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp12))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
@@ -425,7 +424,7 @@ fun JsonObjectMapEditorDialog(
                         color = MiuixTheme.colorScheme.onPrimary,
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp24))
             DialogButtonRow(
                 onCancel = { show.value = false },
                 onConfirm = {
@@ -485,17 +484,17 @@ fun SubRulesEditorDialog(
         onDismissRequest = { show.value = false },
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(UiDp.dp20),
         ) {
             Text(
                 text = MLang.Override.Editor.SubRuleGroupHint,
                 style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.outline,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp12))
             LazyColumn(
-                modifier = Modifier.heightIn(max = 360.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = UiDp.dp360),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp8),
             ) {
                 itemsIndexed(drafts, key = { index, _ -> itemKeys[index] }) { index, draft ->
                     SubRuleEntryCard(
@@ -517,7 +516,7 @@ fun SubRulesEditorDialog(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp12))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
@@ -531,7 +530,7 @@ fun SubRulesEditorDialog(
                         color = MiuixTheme.colorScheme.onPrimary,
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp24))
             DialogButtonRow(
                 onCancel = { show.value = false },
                 onConfirm = {
@@ -601,7 +600,7 @@ private fun JsonObjectFieldsDialog(
             label = MLang.Override.Editor.ObjectJsonPlaceholder,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 220.dp),
+                .heightIn(min = UiDp.dp220),
             maxLines = 30,
         )
     }
@@ -659,7 +658,7 @@ private fun StringMapEntryItem(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
     ) {
         TextField(
             value = keyText,
@@ -693,7 +692,7 @@ private fun SubRuleEntryCard(
     var nameText by remember(name) { mutableStateOf(name) }
 
     Card(
-        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp),
+        insideMargin = androidx.compose.foundation.layout.PaddingValues(UiDp.dp12),
     ) {
         TextField(
             value = nameText,
@@ -704,15 +703,15 @@ private fun SubRuleEntryCard(
             label = MLang.Override.Editor.SubRuleName,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(UiDp.dp8))
         Text(
             text = if (rulesCount == 0) MLang.Override.Draft.NoRules else MLang.Override.Editor.RulesConfiguredInline.format(rulesCount),
             fontSize = 13.sp,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(UiDp.dp8))
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
         ) {
             Button(
                 modifier = Modifier.weight(1f),

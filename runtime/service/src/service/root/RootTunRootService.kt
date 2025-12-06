@@ -136,7 +136,7 @@ class RootTunRootService : RootService() {
             )
         }
 
-        override fun queryProxyGroupJson(name: String, sort: String): String? {
+        override fun queryProxyGroupJson(name: String, sort: String): String {
             return RootTunJson.Default.encodeToString(
                 com.github.yumelira.yumebox.core.model.ProxyGroup.serializer(),
                 runtime.queryProxyGroup(name, com.github.yumelira.yumebox.core.model.ProxySort.valueOf(sort)),

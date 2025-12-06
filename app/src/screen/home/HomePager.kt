@@ -19,15 +19,16 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.home
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -68,6 +69,7 @@ fun HomePager(
     val speedHistory by homeViewModel.speedHistory.collectAsState()
     val proxyMode by homeViewModel.proxyMode.collectAsState()
     val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val coroutineScope = rememberCoroutineScope()
@@ -149,6 +151,7 @@ fun HomePager(
                                 context.toast(MLang.ProfilesVM.Error.ProfileNotExist)
                                 return@TrafficDisplay
                             }
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             handleProxyToggle(
                                 isRunning = isRunning,
                                 recommendedProfile = recommendedProfile,
@@ -165,33 +168,29 @@ fun HomePager(
                         }
                     )
 
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(AppConstants.UI.DEFAULT_VERTICAL_SPACING)
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            NodeInfoDisplay(
-                                serverName = selectedServerName.takeIf { isRunning },
-                                serverPing = selectedServerPing.takeIf { isRunning }
-                            )
-                            IpInfoDisplay(
-                                state = if (isRunning) ipMonitoringState else com.github.yumelira.yumebox.data.repository.IpMonitoringState.Loading
-                            )
-                        }
-
-                        SpeedChart(
-                            speedHistory = speedHistory,
-                            isRunning = isRunning,
-                            onClick = {
-                                navigator.navigate(TrafficStatisticsScreenDestination) {
-                                    launchSingleTop = true
-                                }
-                            }
+                    Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp16)) {
+                        NodeInfoDisplay(
+                            serverName = selectedServerName.takeIf { isRunning },
+                            serverPing = selectedServerPing.takeIf { isRunning }
+                        )
+                        IpInfoDisplay(
+                            state = if (isRunning) ipMonitoringState else com.github.yumelira.yumebox.data.gateway.IpMonitoringState.Loading
                         )
                     }
+
+                    SpeedChart(
+                        speedHistory = speedHistory,
+                        isRunning = isRunning,
+                        onClick = {
+                            navigator.navigate(TrafficStatisticsScreenDestination) {
+                                launchSingleTop = true
+                            }
+                        }
+                    )
                 }
             }
 
-            item { Spacer(modifier = Modifier.height(32.dp)) }
+            item { Spacer(modifier = Modifier.height(UiDp.dp32)) }
         }
     }
 }

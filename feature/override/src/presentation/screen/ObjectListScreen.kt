@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
@@ -51,7 +50,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val ObjectListSectionGap = 12.dp
 private const val ObjectListReorderHeaderCount = 2
 
 @Composable
@@ -278,7 +276,7 @@ fun OverrideObjectListEditorScreen(
             }
 
             item(key = "modifier-card-gap") {
-                Spacer(modifier = Modifier.height(ObjectListSectionGap))
+    Spacer(modifier = Modifier.height(UiDp.dp12))
             }
 
             if (currentItemCount > 0) {
@@ -448,8 +446,8 @@ private fun ReorderableCollectionItemScope.StructuredObjectCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onClick)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = UiDp.dp14, vertical = UiDp.dp14),
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
@@ -466,7 +464,7 @@ private fun ReorderableCollectionItemScope.StructuredObjectCard(
                     )
                 }
                 Box(
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(UiDp.dp32),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (isDeleteMode) {
@@ -484,6 +482,6 @@ private fun ReorderableCollectionItemScope.StructuredObjectCard(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(ObjectListSectionGap))
+    Spacer(modifier = Modifier.height(UiDp.dp12))
     }
 }

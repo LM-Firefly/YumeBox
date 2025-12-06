@@ -53,10 +53,10 @@ object AnimationSpecs {
         const val FabDuration = VisibilityDuration
         const val FabFadeDuration = VisibilityFadeDuration
 
-        const val SheetSlideInDuration = 260
-        const val SheetSlideOutDuration = 220
-        const val SheetFadeInDuration = 220
-        const val SheetFadeOutDuration = 180
+        const val SheetSlideInDuration = 340
+        const val SheetSlideOutDuration = 300
+        const val SheetFadeInDuration = 140
+        const val SheetFadeOutDuration = 140
 
         const val RefreshIndicatorDuration = 200
         const val RefreshIndicatorFadeDuration = 150

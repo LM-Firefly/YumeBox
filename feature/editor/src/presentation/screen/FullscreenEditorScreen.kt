@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.feature.editor.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -80,7 +79,7 @@ fun FullscreenEditorScreen(
                 actions = {
 
                     IconButton(
-                        modifier = Modifier.padding(end = 12.dp),
+                        modifier = Modifier.padding(end = UiDp.dp12),
                         onClick = {
                             if (editorState.format()) {
                                 context.toast("格式化成功")

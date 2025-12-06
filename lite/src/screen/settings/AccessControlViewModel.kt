@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.settings
 
 import android.app.Application
@@ -6,23 +26,16 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.config.TunProfileSync
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.data.repository.NetworkSettingsRepository
-import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.service.root.RootPackageShell
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -30,16 +43,14 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val repository: NetworkSettingsRepository,
-    private val proxyFacade: ProxyFacade,
-    private val tunProfileSync: TunProfileSync,
+    private val settings: NetworkSettingsStore,
+    private val controller: AccessControlController,
 ) : AndroidViewModel(application) {
     data class AppInfo(
         val packageName: String,
         val label: String,
         val isSystemApp: Boolean,
         val isChinaApp: Boolean,
-        val isSelected: Boolean,
         val installTime: Long,
         val updateTime: Long,
     )
@@ -71,24 +82,17 @@ class AccessControlViewModel(
     )
 
     private val uiStateFlow = MutableStateFlow(UiState())
-    private var applyJob: Job? = null
-
     val uiState: StateFlow<UiState> = uiStateFlow.asStateFlow()
-    val accessControlMode = repository.accessControlMode
+    val accessControlMode = settings.accessControlMode
 
-    val filteredApps: StateFlow<List<AppInfo>> = combine(
-        uiStateFlow,
-        uiStateFlow,
-        uiStateFlow,
-        uiStateFlow,
-        uiStateFlow,
-    ) { stateForApps, stateForQuery, stateForSystem, stateForSort, stateForSelectedFirst ->
+    val filteredApps: StateFlow<List<AppInfo>> = uiStateFlow.map { state ->
         filterApps(
-            apps = stateForApps.apps,
-            query = stateForQuery.searchQuery,
-            showSystemApps = stateForSystem.showSystemApps,
-            sortMode = stateForSort.sortMode,
-            selectedFirst = stateForSelectedFirst.selectedFirst,
+            apps = state.apps,
+            selectedPackages = state.selectedPackages,
+            query = state.searchQuery,
+            showSystemApps = state.showSystemApps,
+            sortMode = state.sortMode,
+            selectedFirst = state.selectedFirst,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -102,9 +106,7 @@ class AccessControlViewModel(
     }
 
     fun onAccessControlModeChange(mode: AccessControlMode) {
-        if (repository.accessControlMode.value == mode) return
-        repository.accessControlMode.set(mode)
-        scheduleApply()
+        controller.setAccessControlMode(mode)
     }
 
     fun onSearchQueryChange(query: String) {
@@ -125,17 +127,7 @@ class AccessControlViewModel(
 
     fun onAppSelectionChange(packageName: String, selected: Boolean) {
         uiStateFlow.update { state ->
-            val selectedPackages = if (selected) {
-                state.selectedPackages + packageName
-            } else {
-                state.selectedPackages - packageName
-            }
-            state.copy(
-                selectedPackages = selectedPackages,
-                apps = state.apps.map { app ->
-                    if (app.packageName == packageName) app.copy(isSelected = selected) else app
-                },
-            )
+            state.copy(selectedPackages = state.selectedPackages.updatePackage(packageName, selected))
         }
         persistSelectionAndApply()
     }
@@ -143,12 +135,7 @@ class AccessControlViewModel(
     fun selectAll() {
         val packageSet = filteredApps.value.mapTo(linkedSetOf()) { it.packageName }
         uiStateFlow.update { state ->
-            state.copy(
-                selectedPackages = state.selectedPackages + packageSet,
-                apps = state.apps.map { app ->
-                    if (app.packageName in packageSet) app.copy(isSelected = true) else app
-                },
-            )
+            state.copy(selectedPackages = state.selectedPackages + packageSet)
         }
         persistSelectionAndApply()
     }
@@ -156,12 +143,7 @@ class AccessControlViewModel(
     fun deselectAll() {
         val packageSet = filteredApps.value.mapTo(linkedSetOf()) { it.packageName }
         uiStateFlow.update { state ->
-            state.copy(
-                selectedPackages = state.selectedPackages - packageSet,
-                apps = state.apps.map { app ->
-                    if (app.packageName in packageSet) app.copy(isSelected = false) else app
-                },
-            )
+            state.copy(selectedPackages = state.selectedPackages - packageSet)
         }
         persistSelectionAndApply()
     }
@@ -175,12 +157,7 @@ class AccessControlViewModel(
                     selectedPackages.remove(pkg)
                 }
             }
-            state.copy(
-                selectedPackages = selectedPackages,
-                apps = state.apps.map { app ->
-                    if (app.packageName in packageSet) app.copy(isSelected = !app.isSelected) else app
-                },
-            )
+            state.copy(selectedPackages = selectedPackages)
         }
         persistSelectionAndApply()
     }
@@ -203,19 +180,12 @@ class AccessControlViewModel(
             .filter(String::isNotEmpty)
             .toSet()
 
+        val validPackages = packages.intersect(uiStateFlow.value.apps.mapTo(linkedSetOf()) { it.packageName })
         uiStateFlow.update { state ->
-            val validPackages = packages.intersect(state.apps.map { it.packageName }.toSet())
-            val newSelectedPackages = state.selectedPackages + validPackages
-            state.copy(
-                selectedPackages = newSelectedPackages,
-                apps = state.apps.map { app ->
-                    if (app.packageName in validPackages) app.copy(isSelected = true) else app
-                },
-            )
+            state.copy(selectedPackages = state.selectedPackages + validPackages)
         }
-
         persistSelectionAndApply()
-        return packages.intersect(uiStateFlow.value.apps.map { it.packageName }.toSet()).size
+        return validPackages.size
     }
 
     private fun checkAndLoad() {
@@ -247,10 +217,10 @@ class AccessControlViewModel(
     private fun loadApps() {
         viewModelScope.launch {
             uiStateFlow.update { it.copy(isLoading = true) }
-            val selectedPackages = repository.accessControlPackages.value
+            val selectedPackages = settings.accessControlPackages.value
             val apps = try {
                 withContext(Dispatchers.IO) {
-                    loadInstalledApps(selectedPackages)
+                    loadInstalledApps()
                 }
             } catch (_: Exception) {
                 uiStateFlow.update { state -> state.copy(isLoading = false, needsMiuiPermission = true) }
@@ -268,7 +238,7 @@ class AccessControlViewModel(
         }
     }
 
-    private fun loadInstalledApps(selectedPackages: Set<String>): List<AppInfo> {
+    private fun loadInstalledApps(): List<AppInfo> {
         val application = getApplication<Application>()
         val pm = application.packageManager
         val selfPackageName = application.packageName
@@ -292,7 +262,6 @@ class AccessControlViewModel(
                     label = appInfo.loadLabel(pm).toString(),
                     isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                     isChinaApp = isChinaPackage(appInfo.packageName),
-                    isSelected = selectedPackages.contains(appInfo.packageName),
                     installTime = packageInfo?.firstInstallTime ?: 0L,
                     updateTime = packageInfo?.lastUpdateTime ?: 0L,
                 )
@@ -317,6 +286,7 @@ class AccessControlViewModel(
 
     private fun filterApps(
         apps: List<AppInfo>,
+        selectedPackages: Set<String>,
         query: String,
         showSystemApps: Boolean,
         sortMode: SortMode,
@@ -338,68 +308,33 @@ class AccessControlViewModel(
         }
 
         val sorted = filtered.sortedWith(comparator)
-        return if (selectedFirst) sorted.sortedByDescending { it.isSelected } else sorted
+        return if (selectedFirst) {
+            sorted.sortedByDescending { selectedPackages.contains(it.packageName) }
+        } else {
+            sorted
+        }
     }
 
     private fun applyRegionalSelectionInCurrentList(selectChina: Boolean): Int {
         val currentFiltered = filteredApps.value
-        var selectedCount = 0
+        val currentPackages = currentFiltered.mapTo(linkedSetOf()) { it.packageName }
+        val targetPackages = currentFiltered
+            .filter { it.isChinaApp == selectChina }
+            .mapTo(linkedSetOf()) { it.packageName }
+
         uiStateFlow.update { state ->
-            val currentPackages = currentFiltered.map { it.packageName }.toSet()
-            val targetPackages = currentFiltered
-                .filter { it.isChinaApp == selectChina }
-                .mapTo(mutableSetOf()) { it.packageName }
-            selectedCount = targetPackages.size
-
-            val newSelectedPackages = state.selectedPackages
-                .minus(currentPackages)
-                .plus(targetPackages)
-
             state.copy(
-                selectedPackages = newSelectedPackages,
-                apps = state.apps.map { app ->
-                    if (app.packageName in currentPackages) {
-                        app.copy(isSelected = app.packageName in targetPackages)
-                    } else {
-                        app
-                    }
-                },
+                selectedPackages = state.selectedPackages
+                    .minus(currentPackages)
+                    .plus(targetPackages),
             )
         }
         persistSelectionAndApply()
-        return selectedCount
+        return targetPackages.size
     }
 
     private fun persistSelectionAndApply() {
-        repository.accessControlPackages.set(uiStateFlow.value.selectedPackages)
-        scheduleApply()
-    }
-
-    private fun scheduleApply() {
-        applyJob?.cancel()
-        applyJob = viewModelScope.launch {
-            PollingTimers.awaitTick(
-                PollingTimerSpecs.dynamic(
-                    name = "lite_access_control_apply",
-                    intervalMillis = 350L,
-                    initialDelayMillis = 350L,
-                ),
-            )
-            if (!proxyFacade.isRunning.value) return@launch
-            val activeMode = RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner)
-            val targetMode = activeMode ?: repository.proxyMode.value
-            if (targetMode == ProxyMode.Http) return@launch
-            if (repository.accessControlMode.value == AccessControlMode.ALLOW_ALL) return@launch
-
-            try {
-                if (targetMode == ProxyMode.Tun) {
-                    tunProfileSync.syncActiveProfile()
-                }
-                proxyFacade.startProxy(targetMode)
-            } catch (error: Exception) {
-                if (error is CancellationException) throw error
-            }
-        }
+        controller.applyPackages(uiStateFlow.value.selectedPackages)
     }
 
     private fun isChinaPackage(packageName: String): Boolean {
@@ -416,6 +351,10 @@ class AccessControlViewModel(
     }
 
     companion object {
+        private fun Set<String>.updatePackage(packageName: String, selected: Boolean): Set<String> {
+            return if (selected) this + packageName else this - packageName
+        }
+
         private val skipPrefixList = listOf(
             "com.google",
             "com.android.chrome",

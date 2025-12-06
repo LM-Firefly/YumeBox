@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.component
 
 import androidx.compose.foundation.layout.*
@@ -31,6 +29,7 @@ import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeE
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -58,7 +57,7 @@ fun CodeEditorDialog(
             onDismissRequest = onDismiss,
         ) {
             Column(
-                modifier = Modifier.padding(20.dp)
+                modifier = Modifier.padding(UiDp.dp20)
             ) {
 
                 subtitle?.let { text ->
@@ -67,18 +66,18 @@ fun CodeEditorDialog(
                         style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.outline,
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(UiDp.dp12))
                 }
 
                 CodeEditor(
                     state = editorState,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 280.dp, max = 400.dp),
-                    onTextChange = { }
+                        .heightIn(min = UiDp.dp280, max = UiDp.dp400),
+                    onTextChange = {},
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(UiDp.dp24))
 
                 DialogButtonRow(
                     onCancel = onDismiss,
@@ -87,7 +86,7 @@ fun CodeEditorDialog(
                         onDismiss()
                     },
                     cancelText = "取消",
-                    confirmText = "确定"
+                    confirmText = "确定",
                 )
             }
         }

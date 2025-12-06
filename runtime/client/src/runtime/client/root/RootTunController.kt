@@ -206,7 +206,7 @@ object RootTunController {
 
     suspend fun requestStop(context: Context) {
         if (!isRuntimeActive(context)) return
-        remoteCall(context = context, onBinderFailure = { Unit }) { service ->
+        remoteCall(context = context, onBinderFailure = { }) { service ->
             service.requestStop()
         }
         disconnect()

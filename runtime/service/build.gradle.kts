@@ -34,8 +34,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":platform"))
     implementation(project(":locale"))
-    implementation(project(":data:log"))
-    implementation(project(":data:settings"))
+    implementation(project(":data"))
     implementation(project(":runtime:api"))
 
     implementation("androidx.core:core-ktx:${gropify.dep.version.coreKtx}")

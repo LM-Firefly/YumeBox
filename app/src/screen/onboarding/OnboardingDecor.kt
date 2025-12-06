@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.onboarding
 
+package com.github.yumelira.yumebox.screen.onboarding
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -46,17 +47,18 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.AppConstants
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.delay
 
 internal val PagePadding = AppConstants.UI.DEFAULT_HORIZONTAL_PADDING
-internal val DetailWidth = 560.dp
-internal val SectionShape = RoundedCornerShape(36.dp)
+internal val DetailWidth = UiDp.dp560
+internal val SectionShape = RoundedCornerShape(UiDp.dp36)
 internal const val RevealDurationMs = 420
 internal const val LinkTermsTag = "terms"
 internal const val LinkPolicyTag = "policy"
-internal val DetailPreviewBadgeSize = 108.dp
-internal val DetailPreviewIconSize = 68.dp
+internal val DetailPreviewBadgeSize = UiDp.dp108
+internal val DetailPreviewIconSize = UiDp.dp68
 internal val StartupTypewriterPhrases = listOf(
     "YumeBox",
     "Hello Word",
@@ -67,6 +69,8 @@ internal fun DreamBackdrop(
     modifier: Modifier = Modifier,
     boosted: Boolean = true,
 ) {
+    val opacity = AppTheme.opacity
+
     val surface = MiuixTheme.colorScheme.surface
     val primary = MiuixTheme.colorScheme.primary
     val baseTint = remember(surface, boosted) {
@@ -87,9 +91,9 @@ internal fun DreamBackdrop(
         drawRect(
             brush = Brush.verticalGradient(
                 colors = listOf(
-                    Color.White.copy(alpha = 0.05f),
+                    Color.White.copy(alpha = opacity.ambientLight),
                     Color.Transparent,
-                    Color.Black.copy(alpha = 0.015f),
+                    Color.Black.copy(alpha = opacity.ambientShadow),
                 ),
             ),
         )
@@ -98,6 +102,8 @@ internal fun DreamBackdrop(
 
 @Composable
 internal fun DetailBackdrop(modifier: Modifier = Modifier) {
+    val opacity = AppTheme.opacity
+
     val surface = MiuixTheme.colorScheme.surface
     val primary = MiuixTheme.colorScheme.primary
     val accent = remember(surface) {
@@ -113,7 +119,7 @@ internal fun DetailBackdrop(modifier: Modifier = Modifier) {
             drawRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        accent.copy(alpha = 0.12f),
+                        accent.copy(alpha = opacity.subtleStrong),
                         Color.Transparent,
                     ),
                     startY = 0f,

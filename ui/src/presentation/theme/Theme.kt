@@ -38,6 +38,9 @@ fun YumeTheme(
     themeSeedColorArgb: Long = DEFAULT_THEME_SEED_ARGB,
     spacing: Spacing = Spacing(),
     radii: Radii = Radii(),
+    sizes: Sizes = Sizes(),
+    opacity: Opacity = Opacity(),
+    appColors: AppColors = AppColors(),
     content: @Composable () -> Unit,
 ) {
     LocalPlatformSystemUiEffect.current()
@@ -47,16 +50,19 @@ fun YumeTheme(
         ThemeMode.Light -> false
         ThemeMode.Dark -> true
     }
-    val colors = remember(isDark, themeSeedColorArgb) {
+    val colorScheme = remember(isDark, themeSeedColorArgb) {
         colorSchemeFromSeed(colorFromArgb(themeSeedColorArgb), isDark)
     }
 
     CompositionLocalProvider(
         LocalSpacing provides spacing,
         LocalRadii provides radii,
+        LocalSizes provides sizes,
+        LocalOpacity provides opacity,
+        LocalAppColors provides appColors,
     ) {
         MiuixTheme(
-            colors = colors,
+            colors = colorScheme,
         ) {
             content()
         }

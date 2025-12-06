@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.settings
 
 import android.content.ClipData
@@ -109,7 +129,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val spacing = LocalSpacing.current
     val mainLikePadding = rememberStandalonePageMainPadding()
-    val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.md
+    val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.space12
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val filteredApps by viewModel.filteredApps.collectAsState()
@@ -231,11 +251,15 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                         ) { app ->
                             AppCard(
                                 app = app,
+                                selected = app.packageName in uiState.selectedPackages,
                                 onSelectionChange = { checked ->
                                     viewModel.onAppSelectionChange(app.packageName, checked)
                                 },
                                 onClick = {
-                                    viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
+                                    viewModel.onAppSelectionChange(
+                                        app.packageName,
+                                        app.packageName !in uiState.selectedPackages,
+                                    )
                                 },
                             )
                         }
@@ -294,11 +318,15 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 ) { app ->
                     AppCard(
                         app = app,
+                        selected = app.packageName in uiState.selectedPackages,
                         onSelectionChange = { checked ->
                             viewModel.onAppSelectionChange(app.packageName, checked)
                         },
                         onClick = {
-                            viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
+                            viewModel.onAppSelectionChange(
+                                app.packageName,
+                                app.packageName !in uiState.selectedPackages,
+                            )
                         },
                     )
                 }
@@ -443,6 +471,7 @@ private fun AccessControlSettingsSheet(
 @Composable
 private fun AppCard(
     app: AccessControlViewModel.AppInfo,
+    selected: Boolean,
     onSelectionChange: (Boolean) -> Unit,
     onClick: () -> Unit,
 ) {
@@ -464,8 +493,8 @@ private fun AppCard(
             },
             endActions = {
                 Checkbox(
-                    state = ToggleableState(app.isSelected),
-                    onClick = { onSelectionChange(!app.isSelected) },
+                    state = ToggleableState(selected),
+                    onClick = { onSelectionChange(!selected) },
                 )
             },
             onClick = onClick,
@@ -477,7 +506,7 @@ private fun AppCard(
 private fun AppIcon(
     packageName: String,
     contentDescription: String,
-    imageSize: androidx.compose.ui.unit.Dp,
+    imageSize: Dp,
     bitmapSize: Int,
     modifier: Modifier = Modifier,
 ) {

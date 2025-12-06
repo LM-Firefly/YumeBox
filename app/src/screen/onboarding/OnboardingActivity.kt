@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.common.util.openUrl
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Palette
 import com.github.yumelira.yumebox.presentation.icon.yume.ShieldCheck
@@ -55,7 +55,7 @@ import org.koin.androidx.compose.koinViewModel
 
 internal class OnboardingActivity : OnboardingBaseActivity() {
 
-    private val appSettingsStorage: AppSettingsStorage by inject()
+    private val appSettingsStorage: AppSettingsStore by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +77,7 @@ internal class OnboardingActivity : OnboardingBaseActivity() {
                     openUrl(this, "https://github.com/YumeLira/YumeBox")
                 },
                 onCommunityClick = {
-                    openUrl(this, "https://t.me/YumeBox")
+                    openUrl(this, "https://t.me/YumeLira")
                 },
             )
         }

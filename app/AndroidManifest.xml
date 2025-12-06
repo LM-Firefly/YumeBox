@@ -71,6 +71,7 @@
         <activity
                 android:name=".screen.onboarding.OnboardingActivity"
                 android:exported="false"
+                android:windowSoftInputMode="adjustResize"
                 android:theme="@style/Theme.YumeBox"/>
 
         <activity

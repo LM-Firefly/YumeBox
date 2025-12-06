@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -62,7 +63,7 @@ fun AppTextFieldDialog(
             TextField(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = if (supportingContent == null) 0.dp else 8.dp),
+                    .padding(bottom = if (supportingContent == null) UiDp.dp0 else UiDp.dp8),
                 value = value,
                 onValueChange = onValueChange,
                 label = label,

@@ -26,9 +26,9 @@ import android.content.Context
 import android.net.VpnService
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.service.StatusProvider
@@ -48,8 +48,8 @@ object ProxyAutoStartHelper {
         featureStore: FeatureStore,
         proxyFacade: ProxyFacade,
         profilesRepository: ProfilesRepository,
-        appSettingsStorage: AppSettingsStorage,
-        networkSettingsStorage: NetworkSettingsStorage,
+        appSettingsStorage: AppSettingsStore,
+        networkSettingsStorage: NetworkSettingsStore,
         serviceCache: MMKV,
     ) {
         if (AutoStartSessionGate.shouldSkipAutoStart()) {
@@ -110,7 +110,7 @@ object ProxyAutoStartHelper {
     }
 
     private suspend fun tryUpdateActiveProfileOnStart(
-        appSettingsStorage: AppSettingsStorage,
+        appSettingsStorage: AppSettingsStore,
         profilesRepository: ProfilesRepository,
         activeProfile: Profile?,
     ) {

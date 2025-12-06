@@ -45,6 +45,7 @@ import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
@@ -71,17 +72,21 @@ private fun CircularIcon(
     modifier: Modifier = Modifier,
     iconSize: Float = 1f,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val componentSizes = AppTheme.sizes
+
     Box(
         modifier = modifier
-            .padding(start = 4.dp, end = 16.dp)
-            .requiredSize(24.dp),
+            .padding(start = spacing.space4, end = spacing.space16)
+            .requiredSize(componentSizes.settingsIconSlotSize),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .layout { measurable, _ ->
-                    val containerSize = 36.dp.roundToPx()
-                    val parentSize = 24.dp.roundToPx()
+                    val containerSize = componentSizes.settingsIconContainerSize.roundToPx()
+                    val parentSize = componentSizes.settingsIconSlotSize.roundToPx()
                     val offset = (containerSize - parentSize) / 2
 
                     val placeable = measurable.measure(
@@ -91,8 +96,8 @@ private fun CircularIcon(
                         placeable.place(-offset, -offset)
                     }
                 }
-                .size(36.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(componentSizes.settingsIconContainerSize)
+                .clip(RoundedCornerShape(radii.radius16))
                 .background(MiuixTheme.colorScheme.primary),
             contentAlignment = Alignment.Center) {
             Icon(
@@ -100,7 +105,7 @@ private fun CircularIcon(
                 contentDescription = contentDescription,
                 tint = MiuixTheme.colorScheme.onPrimary,
                 modifier = Modifier
-                    .size(22.dp)
+                    .size(componentSizes.settingsIconGlyphSize)
                     .graphicsLayer(
                         scaleX = iconSize,
                         scaleY = iconSize,
@@ -243,17 +248,21 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
 private fun VersionBadge(
     versionInfo: String?
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
+
     Surface(
-        color = MiuixTheme.colorScheme.primary.copy(alpha = 0.1f),
+        color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
         modifier = Modifier
-            .height(22.dp)
-            .padding(end = 12.dp)
+            .height(componentSizes.versionBadgeHeight)
+            .padding(end = spacing.space12)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(horizontal = spacing.space12),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space8)
         ) {
             Text(
                 text = versionInfo ?: "Unknown", style = MiuixTheme.textStyles.footnote1.copy(

@@ -30,14 +30,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
-import com.github.yumelira.yumebox.domain.model.OverrideConfig
-import com.github.yumelira.yumebox.domain.model.ProfileBinding
+import com.github.yumelira.yumebox.data.model.OverrideConfig
+import com.github.yumelira.yumebox.data.model.ProfileBinding
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
@@ -47,7 +48,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val PROFILE_SETTINGS_MIN_HEIGHT_FRACTION = 0.5f
 private const val PROFILE_SETTINGS_MAX_HEIGHT_FRACTION = 0.7f
-private val PROFILE_SETTINGS_LIST_MAX_HEIGHT = 420.dp
 private const val SYSTEM_OVERRIDE_PREFIX = "preset-"
 
 @Composable
@@ -112,6 +112,8 @@ internal fun ShareOptionsDialog(
     onShareFile: (Profile) -> Unit,
     onShareLink: (Profile) -> Unit
 ) {
+    val spacing = AppTheme.spacing
+
     AppDialog(
         show = show,
         modifier = Modifier,
@@ -128,7 +130,7 @@ internal fun ShareOptionsDialog(
         defaultWindowInsetsPadding = true,
         content = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(spacing.space12)
             ) {
                 if (profile.type == Profile.Type.Url) {
                     Button(
@@ -172,6 +174,10 @@ internal fun ProfileSettingsDialog(
     onSaveProfileMeta: (String, String) -> Unit,
     onSaveOverrideSettings: (Boolean, List<String>) -> Unit,
 ) {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+    val componentSizes = AppTheme.sizes
+
     val initialSystemPresetEnabled = binding?.enabled ?: false
     val initialCustomRoutingEnabled = binding?.overrideIds
         ?.contains(OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID) == true
@@ -256,8 +262,8 @@ internal fun ProfileSettingsDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = minimumSheetHeight, max = maximumSheetHeight)
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(bottom = spacing.space16),
+                verticalArrangement = Arrangement.spacedBy(spacing.space16),
             ) {
                 TextField(
                     value = editName,
@@ -288,9 +294,9 @@ internal fun ProfileSettingsDialog(
                             },
                         )
                         HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            thickness = 0.5.dp,
-                            color = MiuixTheme.colorScheme.outline.copy(alpha = 0.3f),
+                            modifier = Modifier.padding(horizontal = spacing.space16),
+                            thickness = componentSizes.thinDividerThickness,
+                            color = MiuixTheme.colorScheme.outline.copy(alpha = opacity.outline),
                         )
                         SwitchPreference(
                             title = MLang.ProfilesPage.SettingsDialog.CustomRouting,
@@ -309,7 +315,7 @@ internal fun ProfileSettingsDialog(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(max = PROFILE_SETTINGS_LIST_MAX_HEIGHT),
+                                .heightIn(max = componentSizes.profileSettingsListMaxHeight),
                         ) {
                             itemsIndexed(userConfigs, key = { _, config -> config.id }) { index, config ->
                                 val isSelected = config.id in pendingSelectedUserOverrideIds
@@ -330,9 +336,9 @@ internal fun ProfileSettingsDialog(
                                 )
                                 if (index < userConfigs.lastIndex) {
                                     HorizontalDivider(
-                                        modifier = Modifier.padding(horizontal = 16.dp),
-                                        thickness = 0.5.dp,
-                                        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                        modifier = Modifier.padding(horizontal = spacing.space16),
+                                        thickness = componentSizes.thinDividerThickness,
+                                        color = MiuixTheme.colorScheme.outline.copy(alpha = opacity.outline),
                                     )
                                 }
                             }

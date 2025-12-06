@@ -1,5 +1,27 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.presentation.screen
 
+
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -9,8 +31,6 @@ import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 
-internal val OverrideTopBarActionSpacing = 12.dp
-
 @Composable
 internal fun RowScope.OverrideTopBarAction(
     icon: ImageVector,
@@ -19,7 +39,7 @@ internal fun RowScope.OverrideTopBarAction(
     onClick: () -> Unit,
 ) {
     IconButton(
-        modifier = if (spacedFromNext) Modifier.padding(end = OverrideTopBarActionSpacing) else Modifier,
+        modifier = if (spacedFromNext) Modifier.padding(end = UiDp.dp12) else Modifier,
         onClick = onClick,
     ) {
         Icon(

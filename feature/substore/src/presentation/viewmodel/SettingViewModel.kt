@@ -24,7 +24,7 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
+import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.substore.SubStoreServiceController
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -32,11 +32,11 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class SettingViewModel(
-    private val repository: FeatureSettingsRepository,
+    private val store: FeatureStore,
 ) : ViewModel() {
 
-    val backendPort = repository.backendPort
-    val frontendPort = repository.frontendPort
+    val backendPort = store.backendPort
+    val frontendPort = store.frontendPort
 
     private val _events = MutableSharedFlow<SettingEvent>()
     val events: SharedFlow<SettingEvent> = _events.asSharedFlow()

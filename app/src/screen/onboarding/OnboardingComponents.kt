@@ -1,31 +1,33 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.onboarding
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,9 +35,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -48,6 +51,9 @@ internal fun StartupTypewriterWord(
     phrases: List<String>,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+
     var phraseIndex by remember(phrases) { mutableStateOf(0) }
     var visibleLength by remember(phrases) { mutableStateOf(0) }
     var deleting by remember(phrases) { mutableStateOf(false) }
@@ -101,11 +107,11 @@ internal fun StartupTypewriterWord(
         if (showCursor) {
             Box(
                 modifier = Modifier
-                    .padding(start = 4.dp, top = 3.dp)
-                    .width(1.2.dp)
-                    .height(46.dp)
+                    .padding(start = spacing.space4, top = AppTheme.sizes.textLineCompactSpacing)
+                    .width(UiDp.dp1_2)
+                    .height(UiDp.dp46)
                     .background(
-                        color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.92f),
+                        color = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.high),
                         shape = RoundedCornerShape(50),
                     ),
             )
@@ -119,6 +125,8 @@ internal fun HeroStartButton(
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val componentSizes = AppTheme.sizes
+
     val pulseTransition = rememberInfiniteTransition(label = "startup_button_pulse")
     val pulseScale by pulseTransition.animateFloat(
         initialValue = 1f,
@@ -135,7 +143,7 @@ internal fun HeroStartButton(
 
     Box(
         modifier = modifier
-            .size(72.dp)
+            .size(componentSizes.heroStartButtonSize)
             .clip(CircleShape)
             .clickable(enabled = enabled, onClick = onStart)
             .graphicsLayer(
@@ -145,7 +153,7 @@ internal fun HeroStartButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Box(
+        Spacer(
             modifier = Modifier
                 .matchParentSize()
                 .clip(CircleShape)
@@ -155,7 +163,7 @@ internal fun HeroStartButton(
             imageVector = ShellIcons.NavigateForward,
             contentDescription = "Start",
             tint = MiuixTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(componentSizes.settingsIconGlyphSize),
         )
     }
 }
@@ -180,21 +188,27 @@ internal fun DetailGroup(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val opacity = AppTheme.opacity
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(SectionShape)
-            .background(MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f)),
+            .background(MiuixTheme.colorScheme.surfaceVariant.copy(alpha = opacity.surfaceVariant)),
         content = content,
     )
 }
 
 @Composable
 internal fun DetailDivider() {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+    val componentSizes = AppTheme.sizes
+
     HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 18.dp),
-        thickness = 0.5.dp,
-        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.24f),
+        modifier = Modifier.padding(horizontal = spacing.space18),
+        thickness = componentSizes.thinDividerThickness,
+        color = MiuixTheme.colorScheme.outline.copy(alpha = opacity.surfaceSoft),
     )
 }
 
@@ -206,32 +220,37 @@ internal fun PermissionRow(
     granted: Boolean,
     onClick: () -> Unit,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val opacity = AppTheme.opacity
+    val componentSizes = AppTheme.sizes
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+            .padding(horizontal = spacing.space18, vertical = spacing.space16),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space14),
     ) {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                .size(componentSizes.iconBadgeMedium)
+                .clip(RoundedCornerShape(radii.radius18))
+                .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MiuixTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(spacing.space20),
             )
         }
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
             Text(
                 text = title,
@@ -256,7 +275,7 @@ internal fun PermissionRow(
                 imageVector = ShellIcons.NavigateForward,
                 contentDescription = null,
                 tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(spacing.space18),
             )
         }
     }
@@ -269,24 +288,27 @@ internal fun ProjectLinkRow(
     summary: String,
     onClick: () -> Unit,
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+            .padding(horizontal = spacing.space18, vertical = spacing.space16),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space14),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = MiuixTheme.colorScheme.primary,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(componentSizes.settingsIconGlyphSize),
         )
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
             Text(
                 text = title,
@@ -304,7 +326,7 @@ internal fun ProjectLinkRow(
             imageVector = ShellIcons.NavigateForward,
             contentDescription = null,
             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(spacing.space18),
         )
     }
 }
@@ -316,13 +338,17 @@ internal fun PrimaryFooterAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val opacity = AppTheme.opacity
+
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(radii.radius24))
             .background(MiuixTheme.colorScheme.primary)
-            .graphicsLayer(alpha = if (enabled) 1f else 0.45f)
+            .graphicsLayer(alpha = if (enabled) 1f else opacity.disabledStrong)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = spacing.space20, vertical = spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -339,12 +365,16 @@ internal fun SecondaryFooterAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val opacity = AppTheme.opacity
+
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(MiuixTheme.colorScheme.surfaceVariant.copy(alpha = 0.84f))
+            .clip(RoundedCornerShape(radii.radius24))
+            .background(MiuixTheme.colorScheme.surfaceVariant.copy(alpha = opacity.surfaceVariantStrong))
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = spacing.space20, vertical = spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -360,11 +390,14 @@ internal fun SecondaryLinkAction(
     text: String,
     onClick: () -> Unit,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(radii.radius18))
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = spacing.space10, vertical = spacing.space6),
         contentAlignment = Alignment.Center,
     ) {
         Text(

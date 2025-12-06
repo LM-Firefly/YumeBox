@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.profiles
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.foundation.layout.*
@@ -36,9 +35,9 @@ import androidx.core.content.FileProvider
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.data.repository.OverrideService
-import com.github.yumelira.yumebox.data.repository.ProfileBindingProvider
-import com.github.yumelira.yumebox.domain.model.ProfileBinding
+import com.github.yumelira.yumebox.data.controller.OverrideService
+import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
+import com.github.yumelira.yumebox.data.model.ProfileBinding
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
@@ -117,7 +116,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(
-                        modifier = Modifier.padding(end = 12.dp),
+                        modifier = Modifier.padding(end = UiDp.dp12),
                         onClick = {
                             if (!isDownloading && urlProfiles.isNotEmpty()) {
                                 isDownloading = true
@@ -167,7 +166,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 lazyListState = lazyListState,
                 scrollBehavior = scrollBehavior,
                 innerPadding = combinePaddingValues(innerPadding, mainInnerPadding),
-                topPadding = 20.dp,
+                topPadding = UiDp.dp20,
             ) {
                 items(
                     items = profiles,

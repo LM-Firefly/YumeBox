@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -35,7 +34,7 @@ import top.yukonga.miuix.kmp.basic.CardDefaults
 fun Card(
     modifier: Modifier = Modifier,
     cornerRadius: Int = 20,
-    insideMargin: PaddingValues = PaddingValues(0.dp),
+    insideMargin: PaddingValues = PaddingValues(UiDp.dp0),
     applyHorizontalPadding: Boolean = true,
     colors: CardColors = CardDefaults.defaultColors(),
     content: @Composable () -> Unit,

@@ -1,10 +1,29 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.log
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.data.repository.LogRepository
+import com.github.yumelira.yumebox.data.store.LogStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,13 +33,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class LogViewModel(
-    private val repository: LogRepository,
+    private val repository: LogStore,
 ) : ViewModel() {
     private val recordingFlow = MutableStateFlow(repository.isRecording())
-    private val logEntriesFlow = MutableStateFlow<List<LogEntry>>(emptyList())
+    private val logEntriesFlow = MutableStateFlow<List<LogStore.LogEntry>>(emptyList())
 
     val isRecording: StateFlow<Boolean> = recordingFlow.asStateFlow()
-    val tempLogEntries: StateFlow<List<LogEntry>> = logEntriesFlow.asStateFlow()
+    val tempLogEntries: StateFlow<List<LogStore.LogEntry>> = logEntriesFlow.asStateFlow()
 
     fun startRecording() {
         repository.startRecording()
@@ -36,13 +55,7 @@ class LogViewModel(
     fun refreshTempLogEntries() {
         if (!recordingFlow.value) return
         viewModelScope.launch(Dispatchers.IO) {
-            logEntriesFlow.value = repository.readTempLogEntries().map {
-                LogEntry(
-                    time = it.time,
-                    level = it.level,
-                    message = it.message,
-                )
-            }
+            logEntriesFlow.value = repository.readTempLogEntries()
         }
     }
 
@@ -52,23 +65,11 @@ class LogViewModel(
         try {
             repository.writeLogEntries(
                 targetUri = targetUri,
-                entries = entries.map {
-                    LogRepository.LogEntry(
-                        time = it.time,
-                        level = it.level,
-                        message = it.message,
-                    )
-                },
+                entries = entries,
             )
         } catch (error: Exception) {
             if (error is CancellationException) throw error
             false
         }
     }
-
-    data class LogEntry(
-        val time: String,
-        val level: LogMessage.Level,
-        val message: String,
-    )
 }

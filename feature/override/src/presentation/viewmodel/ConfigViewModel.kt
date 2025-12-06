@@ -25,12 +25,12 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
-import com.github.yumelira.yumebox.data.repository.ActiveProfileOverrideReloader
-import com.github.yumelira.yumebox.data.repository.OverrideConfigRepository
-import com.github.yumelira.yumebox.data.repository.OverrideResolver
-import com.github.yumelira.yumebox.data.repository.ProfileBindingProvider
-import com.github.yumelira.yumebox.domain.model.OverrideConfig
-import com.github.yumelira.yumebox.domain.model.OverrideMetadata
+import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
+import com.github.yumelira.yumebox.data.store.OverrideConfigStore
+import com.github.yumelira.yumebox.data.controller.OverrideResolver
+import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
+import com.github.yumelira.yumebox.data.model.OverrideConfig
+import com.github.yumelira.yumebox.data.model.OverrideMetadata
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveEvent
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveState
 import kotlinx.coroutines.flow.*
@@ -68,7 +68,7 @@ data class OverrideEditSession(
 }
 
 class OverrideConfigViewModel(
-    private val configRepo: OverrideConfigRepository,
+    private val configRepo: OverrideConfigStore,
     private val resolver: OverrideResolver,
     private val bindingProvider: ProfileBindingProvider,
     private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
@@ -99,6 +99,8 @@ class OverrideConfigViewModel(
 
     private val _usageCountMap = MutableStateFlow<Map<String, Int>>(emptyMap())
     val usageCountMap: StateFlow<Map<String, Int>> = _usageCountMap.asStateFlow()
+    private val _pendingRevealConfigId = MutableStateFlow<String?>(null)
+    val pendingRevealConfigId: StateFlow<String?> = _pendingRevealConfigId.asStateFlow()
     private var bindingObserverJob: kotlinx.coroutines.Job? = null
     private val editCoordinator = OverrideEditSessionCoordinator(
         scope = viewModelScope,
@@ -189,6 +191,7 @@ class OverrideConfigViewModel(
                     updatedAt = now,
                 )
                 configRepo.save(config)
+                _pendingRevealConfigId.value = config.id
                 loadConfigs()
                 Timber.tag(TAG).i("Created config: ${config.id}")
             } catch (e: Exception) {
@@ -203,13 +206,6 @@ class OverrideConfigViewModel(
 
     fun saveConfig(config: OverrideConfig) {
         editCoordinator.saveConfig(config)
-    }
-
-    fun saveConfigSilently(
-        config: OverrideConfig,
-        onSaved: ((OverrideConfig) -> Unit)? = null,
-    ) {
-        editCoordinator.saveConfigSilently(config, onSaved)
     }
 
     private fun updateLocalCacheAfterSave(config: OverrideConfig) {
@@ -250,6 +246,7 @@ class OverrideConfigViewModel(
             try {
                 val duplicated = configRepo.duplicate(id)
                 if (duplicated != null) {
+                    _pendingRevealConfigId.value = duplicated.id
                     loadConfigs()
                     Timber.tag(TAG).i("Duplicated config: $id -> ${duplicated.id}")
                 }
@@ -291,10 +288,6 @@ class OverrideConfigViewModel(
         }
     }
 
-    fun clearSelectedConfig() {
-        editCoordinator.clearSelectedConfig()
-    }
-
     fun startEditSession(configId: String) {
         editCoordinator.startEditSession(configId)
     }
@@ -321,10 +314,6 @@ class OverrideConfigViewModel(
         editCoordinator.mutateDraftConfig(saveImmediately, transform)
     }
 
-    fun saveDraftNow(onSaved: (() -> Unit)? = null) {
-        editCoordinator.saveDraftNow(onSaved)
-    }
-
     fun flushDraftSave(onSaved: (() -> Unit)? = null) {
         editCoordinator.flushDraftSave(onSaved)
     }
@@ -344,6 +333,7 @@ class OverrideConfigViewModel(
                 sourceName = sourceName,
             )
             viewModelScope.launch {
+                _pendingRevealConfigId.value = importedConfigs.lastOrNull()?.id
                 for (importedConfig in importedConfigs) {
                     configRepo.save(importedConfig)
                 }
@@ -353,20 +343,6 @@ class OverrideConfigViewModel(
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to import config")
             Result.failure(e)
-        }
-    }
-
-    fun exportAllConfigs(): String {
-        return try {
-            val configs = _userConfigs.value
-            if (configs.isEmpty()) {
-                "[]"
-            } else {
-                json.encodeToString(configs)
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to export configs")
-            "[]"
         }
     }
 
@@ -380,20 +356,14 @@ class OverrideConfigViewModel(
         }
     }
 
-    fun getUsageCount(id: String): Int {
-        return usageCountMap.value[id] ?: 0
-    }
-
     suspend fun isConfigInUse(id: String): Boolean {
         return resolver.isOverrideInUse(id)
     }
 
-    suspend fun getProfilesUsingConfig(id: String): List<String> {
-        return resolver.getProfilesUsingOverride(id)
-    }
-
-    fun isSystemPreset(id: String): Boolean {
-        return configRepo.isSystemPreset(id)
+    fun consumePendingRevealConfig(configId: String) {
+        if (_pendingRevealConfigId.value == configId) {
+            _pendingRevealConfigId.value = null
+        }
     }
 }
 
@@ -417,8 +387,7 @@ internal fun parseImportedOverrideConfigs(
     val normalizedJsonString = jsonString.trim()
     require(normalizedJsonString.isNotEmpty()) { MLang.Override.Save.ImportEmpty }
 
-    val rootElement = json.parseToJsonElement(normalizedJsonString)
-    val importedElements = when (rootElement) {
+    val importedElements = when (val rootElement = json.parseToJsonElement(normalizedJsonString)) {
         is JsonArray -> rootElement
         else -> JsonArray(listOf(rootElement))
     }

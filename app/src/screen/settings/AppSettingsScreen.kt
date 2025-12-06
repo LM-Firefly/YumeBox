@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.settings
 
+package com.github.yumelira.yumebox.screen.settings
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
@@ -212,96 +213,30 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
 @Composable
 private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
     val context = LocalContext.current
-    val biometricUnlockEnabled by viewModel.biometricUnlockEnabled.state.collectAsState()
-    val screenshotProtectionEnabled by viewModel.screenshotProtectionEnabled.state.collectAsState()
-    val hideAppIcon by viewModel.hideAppIcon.state.collectAsState()
     val excludeFromRecents by viewModel.excludeFromRecents.state.collectAsState()
-    val showHideIconDialogState = remember { mutableStateOf(false) }
-    val showBiometricUnavailableDialogState = remember { mutableStateOf(false) }
-    var biometricUnavailableMessage by remember { mutableStateOf("") }
-
-    fun requestBiometricConfirmation(
-        title: String,
-        allowBypassWhenUnavailable: Boolean = false,
-        onSuccess: () -> Unit,
-    ) {
-        val activity = BiometricHelper.findFragmentActivity(context)
-        if (activity == null) {
-            if (allowBypassWhenUnavailable) {
-                onSuccess()
-            } else {
-                biometricUnavailableMessage = MLang.AppSettings.Privacy.BiometricUnavailableMessage
-                showBiometricUnavailableDialogState.value = true
-            }
-            return
-        }
-
-        val canAuthenticate = BiometricHelper.canAuthenticate(activity)
-        if (!canAuthenticate) {
-            if (allowBypassWhenUnavailable) {
-                onSuccess()
-                return
-            }
-            biometricUnavailableMessage = BiometricHelper.getAuthenticationStatusMessage(activity)
-            showBiometricUnavailableDialogState.value = true
-            return
-        }
-
-        BiometricHelper.authenticate(
-            activity = activity,
-            title = title,
-            onSuccess = onSuccess,
-        )
-    }
 
     Title(MLang.AppSettings.Section.Privacy)
     Card {
-        PreferenceSwitchItem(
+        BiometricProtectedPreferenceSwitch(
+            checkedFlow = viewModel.biometricUnlockEnabled.state,
             title = MLang.AppSettings.Privacy.BiometricUnlockTitle,
             summary = MLang.AppSettings.Privacy.BiometricUnlockSummary,
-            checked = biometricUnlockEnabled,
-            onCheckedChange = { targetState ->
-                requestBiometricConfirmation(
-                    title = if (targetState) {
-                        MLang.AppSettings.Privacy.BiometricDialogTitleEnable
-                    } else {
-                        MLang.AppSettings.Privacy.BiometricDialogTitleDisable
-                    },
-                    allowBypassWhenUnavailable = !targetState,
-                ) {
-                    viewModel.onBiometricUnlockEnabledChange(targetState)
-                }
-            },
+            enableTitle = MLang.AppSettings.Privacy.BiometricDialogTitleEnable,
+            disableTitle = MLang.AppSettings.Privacy.BiometricDialogTitleDisable,
+            onConfirmedChange = viewModel::onBiometricUnlockEnabledChange,
         )
-        PreferenceSwitchItem(
+        BiometricProtectedPreferenceSwitch(
+            checkedFlow = viewModel.screenshotProtectionEnabled.state,
             title = MLang.AppSettings.Privacy.ScreenshotProtectionTitle,
             summary = MLang.AppSettings.Privacy.ScreenshotProtectionSummary,
-            checked = screenshotProtectionEnabled,
-            onCheckedChange = { targetState ->
-                requestBiometricConfirmation(
-                    title = if (targetState) {
-                        MLang.AppSettings.Privacy.ScreenshotDialogTitleEnable
-                    } else {
-                        MLang.AppSettings.Privacy.ScreenshotDialogTitleDisable
-                    },
-                    allowBypassWhenUnavailable = !targetState,
-                ) {
-                    viewModel.onScreenshotProtectionEnabledChange(targetState)
-                }
-            },
+            enableTitle = MLang.AppSettings.Privacy.ScreenshotDialogTitleEnable,
+            disableTitle = MLang.AppSettings.Privacy.ScreenshotDialogTitleDisable,
+            onConfirmedChange = viewModel::onScreenshotProtectionEnabledChange,
         )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Privacy.HideIconTitle,
-            summary = MLang.AppSettings.Privacy.HideIconSummary,
-            checked = hideAppIcon,
-            onCheckedChange = { checked ->
-                if (checked) {
-                    showHideIconDialogState.value = true
-                } else {
-                    viewModel.onHideAppIconChange(false)
-                    AppIconHelper.toggleIcon(context, false)
-                }
-            },
+        HideAppIconPreferenceItem(
+            hideAppIconFlow = viewModel.hideAppIcon.state,
+            onHideAppIconChange = viewModel::onHideAppIconChange,
+            context = context,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Privacy.HideFromRecentsTitle,
@@ -310,30 +245,6 @@ private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
             onCheckedChange = viewModel::onExcludeFromRecentsChange,
         )
     }
-
-    WarningBottomSheet(
-        show = showHideIconDialogState,
-        title = MLang.AppSettings.WarningDialog.Title,
-        messages = listOf(
-            MLang.AppSettings.WarningDialog.HideIconMsg1,
-            MLang.AppSettings.WarningDialog.HideIconMsg2,
-        ),
-        onConfirm = {
-            viewModel.onHideAppIconChange(true)
-            AppIconHelper.toggleIcon(context, true)
-        },
-    )
-
-    WarningBottomSheet(
-        show = showBiometricUnavailableDialogState,
-        title = MLang.AppSettings.Privacy.BiometricUnavailableTitle,
-        messages = listOf(
-            biometricUnavailableMessage.ifBlank {
-                MLang.AppSettings.Privacy.BiometricUnavailableMessage
-            },
-        ),
-        onConfirm = { showBiometricUnavailableDialogState.value = false },
-    )
 }
 
 @Composable
@@ -417,7 +328,6 @@ private fun AppExperimentalSettingsSection(
     viewModel: AppSettingsViewModel,
     navigator: DestinationsNavigator,
 ) {
-    val context = LocalContext.current
     val acgMainUiEnabled by viewModel.acgMainUiEnabled.state.collectAsState()
     val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsState()
     val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsState()
@@ -428,36 +338,6 @@ private fun AppExperimentalSettingsSection(
     val acgQuoteAuthorSummary = remember(acgHomeQuoteAuthor) {
         acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault }
     }
-    val showEditAcgQuoteDialogState = remember { mutableStateOf(false) }
-    val showEditAcgQuoteAuthorDialogState = remember { mutableStateOf(false) }
-    val acgQuoteTextFieldState = remember { mutableStateOf(TextFieldValue()) }
-    val acgQuoteAuthorTextFieldState = remember { mutableStateOf(TextFieldValue()) }
-    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri ->
-        if (uri != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            }
-            val wallpaperZoom = viewModel.acgWallpaperZoom.value
-            val wallpaperBiasX = viewModel.acgWallpaperBiasX.value
-            val wallpaperBiasY = viewModel.acgWallpaperBiasY.value
-            navigator.navigate(
-                AcgWallpaperCropScreenDestination(
-                    wallpaperUri = uri.toString(),
-                    initialZoom = wallpaperZoom,
-                    initialBiasX = wallpaperBiasX,
-                    initialBiasY = wallpaperBiasY,
-                ),
-            ) {
-                launchSingleTop = true
-            }
-        }
-    }
-
     Title(MLang.AppSettings.Section.Experimental)
     Card {
         PreferenceSwitchItem(
@@ -472,45 +352,209 @@ private fun AppExperimentalSettingsSection(
             checked = acgSidebarExpanded,
             onCheckedChange = viewModel::onAcgSidebarExpandedChange,
         )
-        PreferenceValueItem(
+        AcgQuotePreferenceItem(
             title = MLang.AppSettings.Experimental.AcgQuoteTitle,
             summary = acgQuoteSummary,
-            onClick = {
-                acgQuoteTextFieldState.value = TextFieldValue(acgHomeQuote)
-                showEditAcgQuoteDialogState.value = true
-            },
+            dialogTitle = MLang.AppSettings.Experimental.EditAcgQuoteTitle,
+            currentValue = acgHomeQuote,
+            onConfirm = viewModel::onAcgHomeQuoteChange,
         )
-        PreferenceValueItem(
+        AcgQuotePreferenceItem(
             title = MLang.AppSettings.Experimental.AcgQuoteAuthorTitle,
             summary = acgQuoteAuthorSummary,
-            onClick = {
-                acgQuoteAuthorTextFieldState.value = TextFieldValue(acgHomeQuoteAuthor)
-                showEditAcgQuoteAuthorDialogState.value = true
-            },
+            dialogTitle = MLang.AppSettings.Experimental.EditAcgQuoteAuthorTitle,
+            currentValue = acgHomeQuoteAuthor,
+            onConfirm = viewModel::onAcgHomeQuoteAuthorChange,
         )
-        PreferenceArrowItem(
-            title = MLang.AppSettings.Experimental.WallpaperTitle,
-            summary = MLang.AppSettings.Experimental.WallpaperSummary,
-            onClick = {
-                wallpaperPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                )
-            },
+        AcgWallpaperPreferenceItem(
+            navigator = navigator,
+            wallpaperZoom = viewModel.acgWallpaperZoom.value,
+            wallpaperBiasX = viewModel.acgWallpaperBiasX.value,
+            wallpaperBiasY = viewModel.acgWallpaperBiasY.value,
         )
     }
+}
 
-    TextEditBottomSheet(
-        show = showEditAcgQuoteDialogState,
-        title = MLang.AppSettings.Experimental.EditAcgQuoteTitle,
-        textFieldValue = acgQuoteTextFieldState,
-        onConfirm = viewModel::onAcgHomeQuoteChange,
+@Composable
+private fun BiometricProtectedPreferenceSwitch(
+    checkedFlow: kotlinx.coroutines.flow.StateFlow<Boolean>,
+    title: String,
+    summary: String,
+    enableTitle: String,
+    disableTitle: String,
+    onConfirmedChange: (Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+    val checked by checkedFlow.collectAsState()
+    val showUnavailableDialogState = remember { mutableStateOf(false) }
+    var unavailableMessage by remember { mutableStateOf("") }
+
+    PreferenceSwitchItem(
+        title = title,
+        summary = summary,
+        checked = checked,
+        onCheckedChange = { targetState ->
+            requestBiometricConfirmation(
+                context = context,
+                title = if (targetState) enableTitle else disableTitle,
+                allowBypassWhenUnavailable = !targetState,
+                onUnavailable = { message ->
+                    unavailableMessage = message
+                    showUnavailableDialogState.value = true
+                },
+                onSuccess = { onConfirmedChange(targetState) },
+            )
+        },
+    )
+
+    WarningBottomSheet(
+        show = showUnavailableDialogState,
+        title = MLang.AppSettings.Privacy.BiometricUnavailableTitle,
+        messages = listOf(
+            unavailableMessage.ifBlank {
+                MLang.AppSettings.Privacy.BiometricUnavailableMessage
+            },
+        ),
+        onConfirm = { showUnavailableDialogState.value = false },
+    )
+}
+
+@Composable
+private fun HideAppIconPreferenceItem(
+    hideAppIconFlow: kotlinx.coroutines.flow.StateFlow<Boolean>,
+    onHideAppIconChange: (Boolean) -> Unit,
+    context: android.content.Context,
+) {
+    val hideAppIcon by hideAppIconFlow.collectAsState()
+    val showHideIconDialogState = remember { mutableStateOf(false) }
+
+    PreferenceSwitchItem(
+        title = MLang.AppSettings.Privacy.HideIconTitle,
+        summary = MLang.AppSettings.Privacy.HideIconSummary,
+        checked = hideAppIcon,
+        onCheckedChange = { checked ->
+            if (checked) {
+                showHideIconDialogState.value = true
+            } else {
+                onHideAppIconChange(false)
+                AppIconHelper.toggleIcon(context, false)
+            }
+        },
+    )
+
+    WarningBottomSheet(
+        show = showHideIconDialogState,
+        title = MLang.AppSettings.WarningDialog.Title,
+        messages = listOf(
+            MLang.AppSettings.WarningDialog.HideIconMsg1,
+            MLang.AppSettings.WarningDialog.HideIconMsg2,
+        ),
+        onConfirm = {
+            onHideAppIconChange(true)
+            AppIconHelper.toggleIcon(context, true)
+        },
+    )
+}
+
+@Composable
+private fun AcgQuotePreferenceItem(
+    title: String,
+    summary: String,
+    dialogTitle: String,
+    currentValue: String,
+    onConfirm: (String) -> Unit,
+) {
+    val showEditDialogState = remember { mutableStateOf(false) }
+    val textFieldState = remember { mutableStateOf(TextFieldValue()) }
+
+    PreferenceValueItem(
+        title = title,
+        summary = summary,
+        onClick = {
+            textFieldState.value = TextFieldValue(currentValue)
+            showEditDialogState.value = true
+        },
     )
 
     TextEditBottomSheet(
-        show = showEditAcgQuoteAuthorDialogState,
-        title = MLang.AppSettings.Experimental.EditAcgQuoteAuthorTitle,
-        textFieldValue = acgQuoteAuthorTextFieldState,
-        onConfirm = viewModel::onAcgHomeQuoteAuthorChange,
+        show = showEditDialogState,
+        title = dialogTitle,
+        textFieldValue = textFieldState,
+        onConfirm = onConfirm,
+    )
+}
+
+@Composable
+private fun AcgWallpaperPreferenceItem(
+    navigator: DestinationsNavigator,
+    wallpaperZoom: Float,
+    wallpaperBiasX: Float,
+    wallpaperBiasY: Float,
+) {
+    val context = LocalContext.current
+    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+        }
+        navigator.navigate(
+            AcgWallpaperCropScreenDestination(
+                wallpaperUri = uri.toString(),
+                initialZoom = wallpaperZoom,
+                initialBiasX = wallpaperBiasX,
+                initialBiasY = wallpaperBiasY,
+            ),
+        ) {
+            launchSingleTop = true
+        }
+    }
+
+    PreferenceArrowItem(
+        title = MLang.AppSettings.Experimental.WallpaperTitle,
+        summary = MLang.AppSettings.Experimental.WallpaperSummary,
+        onClick = {
+            wallpaperPickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+            )
+        },
+    )
+}
+
+private fun requestBiometricConfirmation(
+    context: android.content.Context,
+    title: String,
+    allowBypassWhenUnavailable: Boolean = false,
+    onUnavailable: (String) -> Unit,
+    onSuccess: () -> Unit,
+) {
+    val activity = BiometricHelper.findFragmentActivity(context)
+    if (activity == null) {
+        if (allowBypassWhenUnavailable) {
+            onSuccess()
+        } else {
+            onUnavailable(MLang.AppSettings.Privacy.BiometricUnavailableMessage)
+        }
+        return
+    }
+
+    if (!BiometricHelper.canAuthenticate(activity)) {
+        if (allowBypassWhenUnavailable) {
+            onSuccess()
+        } else {
+            onUnavailable(BiometricHelper.getAuthenticationStatusMessage(activity))
+        }
+        return
+    }
+
+    BiometricHelper.authenticate(
+        activity = activity,
+        title = title,
+        onSuccess = onSuccess,
     )
 }
 
@@ -659,7 +703,7 @@ private fun PageScaleDialog(
         trailingIcon = {
             Text(
                 text = "%",
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = UiDp.dp16),
                 color = MiuixTheme.colorScheme.onSurfaceVariantActions,
             )
         },

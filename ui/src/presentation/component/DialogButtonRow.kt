@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -30,8 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun DialogButtonRow(
@@ -44,7 +46,7 @@ fun DialogButtonRow(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(UiDp.dp16),
     ) {
         TextButton(
             text = cancelText,
@@ -58,5 +60,40 @@ fun DialogButtonRow(
             enabled = confirmEnabled,
             colors = ButtonDefaults.textButtonColorsPrimary(),
         )
+    }
+}
+
+@Composable
+fun DialogFilledButtonRow(
+    onSecondary: () -> Unit,
+    onPrimary: () -> Unit,
+    secondaryText: String = MLang.Component.Button.Clear,
+    primaryText: String = MLang.Component.Button.Confirm,
+    secondaryEnabled: Boolean = true,
+    primaryEnabled: Boolean = true,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
+    ) {
+        Button(
+            onClick = onSecondary,
+            enabled = secondaryEnabled,
+            modifier = Modifier.weight(1f),
+        ) {
+            Text(secondaryText)
+        }
+        Button(
+            onClick = onPrimary,
+            enabled = primaryEnabled,
+            modifier = Modifier.weight(1f),
+            colors = ButtonDefaults.buttonColorsPrimary(),
+        ) {
+            Text(
+                text = primaryText,
+                color = MiuixTheme.colorScheme.onPrimary,
+            )
+        }
     }
 }

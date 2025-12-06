@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -100,25 +101,25 @@ fun EditorListItem(
     deleteIcon: ImageVector,
     deleteContentDescription: String,
 ) {
-    Card(modifier = modifier.padding(vertical = 4.dp)) {
+    Card(modifier = modifier.padding(vertical = UiDp.dp4)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "$index.",
                 style = MiuixTheme.textStyles.body1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.width(40.dp),
+                modifier = Modifier.width(UiDp.dp40),
             )
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(horizontal = UiDp.dp8),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp4),
             ) {
                 Text(
                     text = title,
@@ -137,7 +138,7 @@ fun EditorListItem(
                     text = it,
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier.padding(end = UiDp.dp8),
                 )
             }
             IconButton(

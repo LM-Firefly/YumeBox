@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -242,27 +241,27 @@ private fun StringListEntryCard(
     onDelete: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.padding(top = 12.dp),
+        modifier = Modifier.padding(top = UiDp.dp12),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onEdit)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp14),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "$index.",
                 style = MiuixTheme.textStyles.body1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.width(40.dp),
+                modifier = Modifier.width(UiDp.dp40),
             )
             Text(
                 text = value,
                 style = MiuixTheme.textStyles.body1,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 8.dp),
+                    .padding(end = UiDp.dp8),
             )
             OverrideCardActionIconButton(
                 imageVector = Yume.Delete,
@@ -295,7 +294,7 @@ private fun StringListEntryDialog(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             TextField(
                 value = draftValue,
@@ -304,7 +303,7 @@ private fun StringListEntryDialog(
                 modifier = Modifier.fillMaxWidth(),
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
             ) {
                 Button(
                     onClick = onDismiss,

@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -176,7 +175,7 @@ fun OverrideExtraFieldDialog(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = if (selectedType == OverrideExtraFieldValueType.JsonFragment) 140.dp else 0.dp),
+                    .heightIn(min = if (selectedType == OverrideExtraFieldValueType.JsonFragment) UiDp.dp140 else UiDp.dp0),
                 maxLines = if (selectedType == OverrideExtraFieldValueType.JsonFragment) 12 else 1,
             )
         }

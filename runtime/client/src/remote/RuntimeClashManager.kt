@@ -51,7 +51,7 @@ class RuntimeClashManager(
 
     override fun queryTunnelState(): TunnelState {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.queryTunnelState(appContext) } },
+            rootCall = { runBlocking { RootTunController.queryTunnelState(appContext) } },
             localCall = { local.queryTunnelState() },
             fallbackOnRootFailure = false,
         )
@@ -59,7 +59,7 @@ class RuntimeClashManager(
 
     override fun queryTrafficNow(): Long {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.queryTrafficNow(appContext) } },
+            rootCall = { runBlocking { RootTunController.queryTrafficNow(appContext) } },
             localCall = { local.queryTrafficNow() },
             fallbackOnRootFailure = false,
         )
@@ -67,7 +67,7 @@ class RuntimeClashManager(
 
     override fun queryTrafficTotal(): Long {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.queryTrafficTotal(appContext) } },
+            rootCall = { runBlocking { RootTunController.queryTrafficTotal(appContext) } },
             localCall = { local.queryTrafficTotal() },
             fallbackOnRootFailure = false,
         )
@@ -75,7 +75,7 @@ class RuntimeClashManager(
 
     override fun queryConnections(): ConnectionSnapshot {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.queryConnections(appContext) } },
+            rootCall = { runBlocking { RootTunController.queryConnections(appContext) } },
             localCall = { local.queryConnections() },
             fallbackOnRootFailure = false,
         )
@@ -92,7 +92,7 @@ class RuntimeClashManager(
     override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         return queryWithRuntime(
             rootCall = {
-                kotlinx.coroutines.runBlocking {
+                runBlocking {
                     RootTunController.queryAllProxyGroups(appContext, excludeNotSelectable)
                 }
             },
@@ -104,7 +104,7 @@ class RuntimeClashManager(
     override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         return queryWithRuntime(
             rootCall = {
-                kotlinx.coroutines.runBlocking {
+                runBlocking {
                     RootTunController.queryProxyGroupNames(appContext, excludeNotSelectable)
                 }
             },
@@ -116,7 +116,7 @@ class RuntimeClashManager(
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
         return queryWithRuntime(
             rootCall = {
-                kotlinx.coroutines.runBlocking {
+                runBlocking {
                     RootTunController.queryProxyGroup(appContext, name, proxySort)
                 }
             },
@@ -127,7 +127,7 @@ class RuntimeClashManager(
 
     override fun queryConfiguration(): UiConfiguration {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.queryConfiguration(appContext) } },
+            rootCall = { runBlocking { RootTunController.queryConfiguration(appContext) } },
             localCall = { local.queryConfiguration() },
             fallbackOnRootFailure = false,
         )
@@ -135,7 +135,7 @@ class RuntimeClashManager(
 
     override fun queryProviders(): ProviderList {
         val providers = queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.queryProviders(appContext) } },
+            rootCall = { runBlocking { RootTunController.queryProviders(appContext) } },
             localCall = { local.queryProviders().toList() },
             fallbackOnRootFailure = false,
         )
@@ -144,7 +144,7 @@ class RuntimeClashManager(
 
     override fun patchSelector(group: String, name: String): Boolean {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.patchSelector(appContext, group, name) } },
+            rootCall = { runBlocking { RootTunController.patchSelector(appContext, group, name) } },
             localCall = { local.patchSelector(group, name) },
             fallbackOnRootFailure = false,
         )
@@ -152,7 +152,7 @@ class RuntimeClashManager(
 
     override fun closeConnection(id: String): Boolean {
         return queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.closeConnection(appContext, id) } },
+            rootCall = { runBlocking { RootTunController.closeConnection(appContext, id) } },
             localCall = { local.closeConnection(id) },
             fallbackOnRootFailure = false,
         )
@@ -160,7 +160,7 @@ class RuntimeClashManager(
 
     override fun closeAllConnections() {
         queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.closeAllConnections(appContext) } },
+            rootCall = { runBlocking { RootTunController.closeAllConnections(appContext) } },
             localCall = { local.closeAllConnections() },
             fallbackOnRootFailure = false,
         )
@@ -196,7 +196,7 @@ class RuntimeClashManager(
 
     override fun requestStop() {
         queryWithRuntime(
-            rootCall = { kotlinx.coroutines.runBlocking { RootTunController.requestStop(appContext) } },
+            rootCall = { runBlocking { RootTunController.requestStop(appContext) } },
             localCall = { local.requestStop() },
             fallbackOnRootFailure = false,
         )

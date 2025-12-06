@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,12 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.LocaleUtil
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.panpf.sketch.rememberAsyncImagePainter
 import com.github.panpf.sketch.request.ImageRequest
 import dev.oom_wg.purejoy.mlang.MLang
@@ -46,8 +45,9 @@ import dev.oom_wg.purejoy.mlang.MLang
 fun CountryFlagCircle(
     countryCode: String,
     modifier: Modifier = Modifier,
-    size: Dp = 18.dp,
+    size: Dp = UiDp.dp18,
 ) {
+    val semanticColors = AppTheme.colors
     val flagUrl = remember(countryCode) { LocaleUtil.normalizeFlagUrl(countryCode) }
     val context = LocalContext.current
 
@@ -55,7 +55,7 @@ fun CountryFlagCircle(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(Color(0xFFE0E0E0)),
+            .background(semanticColors.neutralPlaceholderBackground),
         contentAlignment = Alignment.Center
     ) {
         Image(

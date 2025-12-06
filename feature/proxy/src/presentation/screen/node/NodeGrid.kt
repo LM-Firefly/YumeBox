@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen.node
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,8 +45,8 @@ internal fun LazyListScope.nodeGridItems(
     isDelayTesting: Boolean = false,
     testingProxyNames: Set<String> = emptySet(),
     onSingleNodeTestClick: ((String) -> Unit)? = null,
-    outerHorizontalPadding: Dp = 0.dp,
-    itemVerticalPadding: Dp = 0.dp,
+    outerHorizontalPadding: Dp = UiDp.dp0,
+    itemVerticalPadding: Dp = UiDp.dp0,
     singleNodeTestEnabled: Boolean = true,
 ) {
     items(items = proxies, key = { it.name }, contentType = { "NodeCard1" }) { proxy ->
@@ -79,7 +78,7 @@ internal fun NodeGrid(
     onSingleNodeTestClick: ((String) -> Unit)? = null,
     listStateKey: String? = null,
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
+    contentPadding: PaddingValues = PaddingValues(UiDp.dp0),
     singleNodeTestEnabled: Boolean = true,
 ) {
     val listState = rememberSaveable(listStateKey, saver = LazyListState.Saver) {
@@ -91,7 +90,7 @@ internal fun NodeGrid(
             .overScrollVertical(),
         state = listState,
         contentPadding = contentPadding,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         overscrollEffect = null,
     ) {
         nodeGridItems(

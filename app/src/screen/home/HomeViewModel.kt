@@ -31,10 +31,9 @@ import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.data.repository.IpMonitoringState
-import com.github.yumelira.yumebox.data.repository.NetworkInfoService
-import com.github.yumelira.yumebox.data.store.MMKVProvider
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
+import com.github.yumelira.yumebox.data.gateway.NetworkInfoService
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
@@ -71,14 +70,11 @@ class HomeViewModel(
     private val proxyFacade: ProxyFacade,
     private val profilesRepository: ProfilesRepository,
     private val networkInfoService: NetworkInfoService,
+    private val networkSettingsStore: NetworkSettingsStore,
 ) : AndroidContractStateViewModel<HomeViewModel.HomeUiState, HomeViewModel.HomeUiEffect>(
     application,
     HomeUiState(),
 ) {
-    private val networkSettingsStorage by lazy {
-        NetworkSettingsStorage(MMKVProvider().getMMKV("network_settings"))
-    }
-
     private val _profiles = MutableStateFlow<List<Profile>>(emptyList())
     val profiles: StateFlow<List<Profile>> = _profiles.asStateFlow()
 
@@ -252,7 +248,7 @@ class HomeViewModel(
     private fun syncProxyModeState() {
         viewModelScope.launch {
             runtimeSnapshot
-                .map { RuntimeStateMapper.resolveDisplayMode(it, networkSettingsStorage.proxyMode.value) }
+                .map { RuntimeStateMapper.resolveDisplayMode(it, networkSettingsStore.proxyMode.value) }
                 .distinctUntilChanged()
                 .collect {
                 refreshProxyMode()
@@ -275,7 +271,7 @@ class HomeViewModel(
     }
 
     fun refreshProxyMode() {
-        val configuredMode = networkSettingsStorage.proxyMode.value
+        val configuredMode = networkSettingsStore.proxyMode.value
         _proxyMode.value = RuntimeStateMapper.resolveDisplayMode(runtimeSnapshot.value, configuredMode)
     }
 
@@ -332,7 +328,7 @@ class HomeViewModel(
 
         val request = PendingStartRequest(
             profileId = profileId,
-            mode = mode ?: networkSettingsStorage.proxyMode.value,
+            mode = mode ?: networkSettingsStore.proxyMode.value,
         )
         pendingStartRequest = request
         _pendingTransition.value = PendingTransition.Starting

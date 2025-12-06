@@ -29,7 +29,7 @@ import com.github.yumelira.yumebox.common.util.DeviceUtil
 import com.github.yumelira.yumebox.common.util.showToastDialog
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
+import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.substore.SubStorePaths
@@ -49,16 +49,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class FeatureViewModel(
-    repository: FeatureSettingsRepository,
+    store: FeatureStore,
     private val application: Application,
     private val downloadClient: SubStoreDownloadClient,
 ) : ViewModel() {
-    val allowLanAccess: Preference<Boolean> = repository.allowLanAccess
-    val backendPort: Preference<Int> = repository.backendPort
-    val frontendPort: Preference<Int> = repository.frontendPort
-    val selectedPanelType: Preference<Int> = repository.selectedPanelType
-    val panelOpenMode: Preference<LinkOpenMode> = repository.panelOpenMode
-    val exitUiWhenBackground: Preference<Boolean> = repository.exitUiWhenBackground
+    val allowLanAccess: Preference<Boolean> = store.allowLanAccess
+    val backendPort: Preference<Int> = store.backendPort
+    val frontendPort: Preference<Int> = store.frontendPort
+    val selectedPanelType: Preference<Int> = store.selectedPanelType
+    val panelOpenMode: Preference<LinkOpenMode> = store.panelOpenMode
+    val exitUiWhenBackground: Preference<Boolean> = store.exitUiWhenBackground
 
     private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
     val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()

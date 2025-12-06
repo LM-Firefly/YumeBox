@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,7 +61,7 @@ fun AppFormDialog(
             .let {
                 if (scrollable) {
                     it
-                        .heightIn(max = 420.dp)
+                        .heightIn(max = UiDp.dp420)
                         .verticalScroll(rememberScrollState())
                 } else {
                     it
@@ -70,7 +71,7 @@ fun AppFormDialog(
         AppDialogColumn {
             Column(
                 modifier = contentModifier,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
             ) {
                 content()
             }

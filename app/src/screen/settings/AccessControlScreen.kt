@@ -39,14 +39,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
-import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.AppTheme.spacing
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -59,18 +58,15 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private object AccessControlPageSpacing {
-    val ContentHorizontal = 12.dp
-}
-
 @Composable
 @Destination<RootGraph>
 fun AccessControlScreen(navigator: DestinationsNavigator) {
     val layoutDirection = LocalLayoutDirection.current
     val scrollBehavior = MiuixScrollBehavior()
-    val spacing = LocalSpacing.current
+    val spacing = spacing
+    val componentSizes = AppTheme.sizes
     val mainLikePadding = rememberStandalonePageMainPadding()
-    val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.md
+    val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.space12
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val filteredApps by viewModel.filteredApps.collectAsState()
@@ -85,10 +81,10 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
         )
     }
     val dynamicTopPadding by remember {
-        derivedStateOf { 12.dp * (1f - scrollBehavior.state.collapsedFraction) }
+        derivedStateOf { spacing.space12 * (1f - scrollBehavior.state.collapsedFraction) }
     }
-    val listStartPadding = AccessControlPageSpacing.ContentHorizontal
-    val listEndPadding = AccessControlPageSpacing.ContentHorizontal
+    val listStartPadding = spacing.screenHorizontal
+    val listEndPadding = spacing.screenHorizontal
     val currentSearchStatus = remember(searchStatus, filteredApps) {
         searchStatus.copy(
             resultStatus = when {
@@ -157,16 +153,17 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 ),
             ) { boxHeight ->
                 if (uiState.isLoading) {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(
-                                top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
+                                top = boxHeight + spacing.space6,
                                 start = listStartPadding,
                                 end = listEndPadding,
                                 bottom = combinedBottomPadding,
                             ),
-                        contentAlignment = Alignment.Center,
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
                     }
@@ -175,7 +172,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                         scrollBehavior = scrollBehavior,
                         innerPadding = combinedInnerPadding,
                         contentPadding = PaddingValues(
-                            top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
+                            top = boxHeight + spacing.space6,
                             bottom = combinedBottomPadding,
                             start = listStartPadding,
                             end = listEndPadding,
@@ -191,11 +188,15 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                         ) { app ->
                             AppCard(
                                 app = app,
+                                selected = app.packageName in uiState.selectedPackages,
                                 onSelectionChange = { checked ->
                                     viewModel.onAppSelectionChange(app.packageName, checked)
                                 },
                                 onClick = {
-                                    viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
+                                    viewModel.onAppSelectionChange(
+                                        app.packageName,
+                                        app.packageName !in uiState.selectedPackages,
+                                    )
                                 }
                             )
                         }
@@ -244,7 +245,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 contentPadding = PaddingValues(
                     start = listStartPadding,
                     end = listEndPadding,
-                    top = 6.dp,
+                    top = spacing.space6,
                     bottom = combinedBottomPadding,
                 ),
             ) {
@@ -254,11 +255,15 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 ) { app ->
                     AppCard(
                         app = app,
+                        selected = app.packageName in uiState.selectedPackages,
                         onSelectionChange = { checked ->
                             viewModel.onAppSelectionChange(app.packageName, checked)
                         },
                         onClick = {
-                            viewModel.onAppSelectionChange(app.packageName, !app.isSelected)
+                            viewModel.onAppSelectionChange(
+                                app.packageName,
+                                app.packageName !in uiState.selectedPackages,
+                            )
                         }
                     )
                 }
@@ -389,9 +394,9 @@ private fun AccessControlSettingsSheet(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(spacing.space24))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space12)) {
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
@@ -412,11 +417,15 @@ private fun AccessControlSettingsSheet(
 @Composable
 private fun AppCard(
     app: AccessControlViewModel.AppInfo,
+    selected: Boolean,
     onSelectionChange: (Boolean) -> Unit,
     onClick: () -> Unit
 ) {
+    val spacing = spacing
+    val componentSizes = AppTheme.sizes
+
     Card(
-        modifier = Modifier.padding(vertical = 4.dp),
+        modifier = Modifier.padding(vertical = spacing.space4),
         applyHorizontalPadding = false,
     ) {
         BasicComponent(
@@ -426,15 +435,15 @@ private fun AppCard(
                 AppIcon(
                     packageName = app.packageName,
                     contentDescription = app.label,
-                    imageSize = 45.dp,
+                    imageSize = componentSizes.iconBadgeLarge,
                     bitmapSize = 80,
-                    modifier = Modifier.padding(end = 12.dp)
+                    modifier = Modifier.padding(end = spacing.space12)
                 )
             },
             endActions = {
                 Checkbox(
-                    state = ToggleableState(app.isSelected),
-                    onClick = { onSelectionChange(!app.isSelected) }
+                    state = ToggleableState(selected),
+                    onClick = { onSelectionChange(!selected) }
                 )
             },
             onClick = onClick

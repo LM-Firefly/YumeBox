@@ -34,7 +34,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.MMKVProvider
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
@@ -58,7 +58,7 @@ class ProxyTileService : TileService() {
     private val profileManager by lazy { ProfileManager(applicationContext) }
     private val clashManager by lazy { ClashManager(applicationContext) }
     private val networkSettingsStorage by lazy {
-        NetworkSettingsStorage(MMKVProvider().getMMKV("network_settings"))
+        NetworkSettingsStore(MMKVProvider().getMMKV("network_settings"))
     }
     private val rootTunStateStore by lazy { RootTunStateStore(applicationContext) }
     private val tileLabelText: String by lazy {
@@ -241,13 +241,13 @@ class ProxyTileService : TileService() {
         }
     }
 
-    private fun com.github.yumelira.yumebox.service.LocalRuntimePhase.toRuntimePhase(): RuntimePhase {
+    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase {
         return when (this) {
-            com.github.yumelira.yumebox.service.LocalRuntimePhase.Idle -> RuntimePhase.Idle
-            com.github.yumelira.yumebox.service.LocalRuntimePhase.Starting -> RuntimePhase.Starting
-            com.github.yumelira.yumebox.service.LocalRuntimePhase.Running -> RuntimePhase.Running
-            com.github.yumelira.yumebox.service.LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
-            com.github.yumelira.yumebox.service.LocalRuntimePhase.Failed -> RuntimePhase.Failed
+            LocalRuntimePhase.Idle -> RuntimePhase.Idle
+            LocalRuntimePhase.Starting -> RuntimePhase.Starting
+            LocalRuntimePhase.Running -> RuntimePhase.Running
+            LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
+            LocalRuntimePhase.Failed -> RuntimePhase.Failed
         }
     }
 

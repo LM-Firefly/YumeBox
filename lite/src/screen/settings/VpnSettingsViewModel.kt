@@ -1,43 +1,56 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.config.TunProfileSync
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.data.controller.AppSettingsController
+import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.data.model.TunStack
-import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
-import com.github.yumelira.yumebox.data.repository.NetworkSettingsRepository
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.store.Preference
-import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class VpnSettingsViewModel(
-    private val appSettingsRepository: AppSettingsRepository,
-    private val networkSettingsRepository: NetworkSettingsRepository,
+    private val appSettingsStore: AppSettingsStore,
+    private val networkSettingsStore: NetworkSettingsStore,
+    private val appSettingsController: AppSettingsController,
+    private val networkSettingsController: NetworkSettingsController,
     private val proxyFacade: ProxyFacade,
-    private val tunProfileSync: TunProfileSync,
 ) : ViewModel() {
-    private var restartJob: Job? = null
-
-    val themeMode: Preference<ThemeMode> = appSettingsRepository.themeMode
-    val appLanguage: Preference<AppLanguage> = appSettingsRepository.appLanguage
-    val dnsHijack: Preference<Boolean> = networkSettingsRepository.dnsHijack
-    val allowBypass: Preference<Boolean> = networkSettingsRepository.allowBypass
-    val enableIPv6: Preference<Boolean> = networkSettingsRepository.enableIPv6
-    val systemProxy: Preference<Boolean> = networkSettingsRepository.systemProxy
-    val tunStack: Preference<TunStack> = networkSettingsRepository.tunStack
+    val themeMode: Preference<ThemeMode> = appSettingsStore.themeMode
+    val appLanguage: Preference<AppLanguage> = appSettingsStore.appLanguage
+    val dnsHijack: Preference<Boolean> = networkSettingsStore.dnsHijack
+    val allowBypass: Preference<Boolean> = networkSettingsStore.allowBypass
+    val enableIPv6: Preference<Boolean> = networkSettingsStore.enableIPv6
+    val systemProxy: Preference<Boolean> = networkSettingsStore.systemProxy
+    val tunStack: Preference<TunStack> = networkSettingsStore.tunStack
     val isRunning: StateFlow<Boolean> = proxyFacade.runtimeSnapshot
         .map(RuntimeStateMapper::isActuallyRunning)
         .stateIn(
@@ -47,7 +60,7 @@ class VpnSettingsViewModel(
         )
 
     fun onDnsHijackChange(enabled: Boolean) {
-        updatePreference(dnsHijack, enabled)
+        networkSettingsController.setAndRestartIfNeeded(dnsHijack, enabled)
     }
 
     fun onThemeModeChange(mode: ThemeMode) {
@@ -55,53 +68,22 @@ class VpnSettingsViewModel(
     }
 
     fun onAppLanguageChange(language: AppLanguage) {
-        appLanguage.set(language)
-        AppLanguageManager.apply(language)
+        appSettingsController.applyAppLanguage(language)
     }
 
     fun onAllowBypassChange(enabled: Boolean) {
-        updatePreference(allowBypass, enabled)
+        networkSettingsController.setAndRestartIfNeeded(allowBypass, enabled)
     }
 
     fun onEnableIPv6Change(enabled: Boolean) {
-        updatePreference(enableIPv6, enabled)
+        networkSettingsController.setAndRestartIfNeeded(enableIPv6, enabled)
     }
 
     fun onSystemProxyChange(enabled: Boolean) {
-        updatePreference(systemProxy, enabled)
+        networkSettingsController.setAndRestartIfNeeded(systemProxy, enabled)
     }
 
     fun onTunStackChange(stack: TunStack) {
-        updatePreference(tunStack, stack)
-    }
-
-    private fun <T> updatePreference(
-        preference: Preference<T>,
-        value: T,
-    ) {
-        if (preference.value == value) return
-        preference.set(value)
-        scheduleRestart()
-    }
-
-    private fun scheduleRestart() {
-        restartJob?.cancel()
-        restartJob = viewModelScope.launch {
-            PollingTimers.awaitTick(
-                PollingTimerSpecs.dynamic(
-                    name = "lite_vpn_settings_restart",
-                    intervalMillis = 300L,
-                    initialDelayMillis = 300L,
-                ),
-            )
-            if (proxyFacade.isRunning.value) {
-                try {
-                    tunProfileSync.syncActiveProfile()
-                    proxyFacade.startProxy(ProxyMode.Tun)
-                } catch (error: Exception) {
-                    if (error is CancellationException) throw error
-                }
-            }
-        }
+        networkSettingsController.setAndRestartIfNeeded(tunStack, stack)
     }
 }

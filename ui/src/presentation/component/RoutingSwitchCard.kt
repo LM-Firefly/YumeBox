@@ -8,18 +8,19 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -35,6 +36,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.state.IntColorDrawableStateImage
 import top.yukonga.miuix.kmp.basic.Switch
@@ -51,11 +53,13 @@ fun <T> RoutingSwitchCard(
     itemTitle: (T) -> String,
     isChecked: (T) -> Boolean,
     onCheckedChange: (T, Boolean) -> Unit,
-    iconSize: Dp = 40.dp,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+    iconSize: Dp = UiDp.dp40,
+    contentPadding: PaddingValues = PaddingValues(horizontal = UiDp.dp16, vertical = UiDp.dp12),
     applyHorizontalPadding: Boolean = true,
     titleContent: @Composable (String) -> Unit = { Title(it) },
 ) {
+    val spacing = AppTheme.spacing
+
     val rowsPerCard = when {
         items.size > 32 -> 12
         items.size > 20 -> 16
@@ -67,7 +71,7 @@ fun <T> RoutingSwitchCard(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.space6),
     ) {
         titleContent(title)
         itemChunks.forEach { chunk ->
@@ -102,6 +106,8 @@ private fun RoutingSwitchRow(
     iconSize: Dp,
     contentPadding: PaddingValues,
 ) {
+    val spacing = AppTheme.spacing
+
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier
@@ -113,7 +119,7 @@ private fun RoutingSwitchRow(
                 onClick = { onCheckedChange(!checked) },
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space16),
     ) {
         if (!iconUrl.isNullOrBlank()) {
             RoutingIcon(
@@ -139,8 +145,11 @@ private fun RoutingIcon(
     iconUrl: String?,
     size: Dp,
 ) {
+    val opacity = AppTheme.opacity
+    val spacing = AppTheme.spacing
+
     val context = LocalContext.current
-    val placeholderColorInt = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.1f).toArgb()
+    val placeholderColorInt = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.subtle).toArgb()
     val request = remember(iconUrl, placeholderColorInt, context) {
         iconUrl?.takeIf(String::isNotBlank)?.let { url ->
             ImageRequest(context, url) {
@@ -159,6 +168,6 @@ private fun RoutingIcon(
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .size(size)
-            .clip(RoundedCornerShape(14.dp)),
+            .clip(RoundedCornerShape(spacing.space14)),
     )
 }

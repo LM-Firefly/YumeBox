@@ -27,16 +27,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @Composable
 fun Modifier.screenPadding(): Modifier {
     val s = AppTheme.spacing
     return this.padding(
-        start = s.screenH,
-        end = s.screenH,
-        top = s.screenV,
-        bottom = s.screenV,
+        start = s.screenHorizontal,
+        end = s.screenHorizontal,
+        top = s.screenVertical,
+        bottom = s.screenVertical,
     )
 }
 
@@ -49,8 +48,8 @@ fun Modifier.sectionVSpacing(
     val s = AppTheme.spacing
     return this.then(
         Modifier.padding(
-            top = if (top) s.lg else 0.dp,
-            bottom = if (bottom) s.lg else 0.dp,
+            top = if (top) s.space16 else UiDp.dp0,
+            bottom = if (bottom) s.space16 else UiDp.dp0,
         ),
     )
 }
@@ -64,23 +63,23 @@ fun Modifier.sectionHPadding(
     val s = AppTheme.spacing
     return this.then(
         Modifier.padding(
-            start = if (start) s.gutter else 0.dp,
-            end = if (end) s.gutter else 0.dp,
+            start = if (start) s.contentHorizontal else UiDp.dp0,
+            end = if (end) s.contentHorizontal else UiDp.dp0,
         ),
     )
 }
 
 @Composable
 fun Modifier.topPadding(
-    amount: Dp = AppTheme.spacing.sm,
+    amount: Dp = AppTheme.spacing.space8,
 ): Modifier {
     return this.padding(top = amount)
 }
 
 @Composable
 fun Modifier.horizontalPadding(
-    left: Dp = AppTheme.spacing.screenH,
-    right: Dp = AppTheme.spacing.screenH,
+    left: Dp = AppTheme.spacing.screenHorizontal,
+    right: Dp = AppTheme.spacing.screenHorizontal,
 ): Modifier {
     return this.padding(start = left, end = right)
 }
