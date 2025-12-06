@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -52,7 +51,7 @@ private fun Modifier.topBarHazeEffect(
 
     return hazeEffect(state) {
         this.style = style
-        blurRadius = 20.dp
+        blurRadius = UiDp.dp20
         inputScale = HazeInputScale.Fixed(0.35f)
         noiseFactor = 0f
         forceInvalidateOnPreDraw = false
@@ -65,8 +64,8 @@ fun TopBar(
     scrollBehavior: ScrollBehavior,
     modifier: Modifier = Modifier,
     titlePadding: Dp = TopAppBarDefaults.TitlePadding,
-    navigationIconPadding: Dp = 24.dp,
-    actionIconPadding: Dp = 24.dp,
+    navigationIconPadding: Dp = UiDp.dp24,
+    actionIconPadding: Dp = UiDp.dp24,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -93,8 +92,8 @@ fun SmallTopBar(
     scrollBehavior: ScrollBehavior,
     modifier: Modifier = Modifier,
     titlePadding: Dp = TopAppBarDefaults.TitlePadding,
-    navigationIconPadding: Dp = 24.dp,
-    actionIconPadding: Dp = 24.dp,
+    navigationIconPadding: Dp = UiDp.dp24,
+    actionIconPadding: Dp = UiDp.dp24,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {

@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,7 +35,7 @@ import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val SelectionSheetListMaxHeight = 420.dp
+private val SelectionSheetListMaxHeight = UiDp.dp420
 
 data class OverrideSelectionGroup(
     val title: String,
@@ -87,8 +86,8 @@ fun OverrideSingleValueSelectionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(bottom = UiDp.dp16),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         ) {
             if (allowCustomValue) {
                 SelectionAddCustomCard(
@@ -184,8 +183,8 @@ fun OverrideMultiValueSelectionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(bottom = UiDp.dp16),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         ) {
             SelectionAddCustomCard(
                 title = MLang.Override.Editor.AddCustom,

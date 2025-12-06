@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,9 +40,9 @@ import androidx.compose.ui.unit.dp
 fun LoadingDotsWave(
     color: Color,
     modifier: Modifier = Modifier,
-    dotSize: Dp = 3.dp,
-    dotSpacing: Dp = 3.dp,
-    amplitude: Dp = 2.dp,
+    dotSize: Dp = UiDp.dp3,
+    dotSpacing: Dp = UiDp.dp3,
+    amplitude: Dp = UiDp.dp2,
 ) {
     val transition = rememberInfiniteTransition(label = "LoadingDotsWave")
 

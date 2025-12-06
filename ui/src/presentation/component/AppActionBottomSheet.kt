@@ -21,7 +21,7 @@
 
 
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Check
 import com.github.yumelira.yumebox.presentation.icon.yume.Close
@@ -40,7 +41,7 @@ import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 object AppBottomSheetDefaults {
-    val insideMargin = DpSize(32.dp, 16.dp)
+    val insideMargin = DpSize(UiDp.dp32, UiDp.dp16)
 
     @Composable
     fun backgroundColor(): Color = MiuixTheme.colorScheme.surface
@@ -52,7 +53,7 @@ object AppBottomSheetDefaults {
     fun actionIconTint(enabled: Boolean): Color = if (enabled) {
         MiuixTheme.colorScheme.onSurface
     } else {
-        MiuixTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        MiuixTheme.colorScheme.onSurface.copy(alpha = AppTheme.opacity.disabled)
     }
 }
 
@@ -73,7 +74,7 @@ fun AppBottomSheetIconAction(
         onClick = action.onClick,
     ) {
         Icon(
-            modifier = Modifier.alpha(if (action.enabled) 1f else 0.5f),
+            modifier = Modifier.alpha(if (action.enabled) 1f else AppTheme.opacity.medium),
             imageVector = action.icon,
             contentDescription = action.contentDescription,
             tint = if (action.tint == Color.Unspecified) {
@@ -136,6 +137,7 @@ fun AppActionBottomSheet(
     dragHandleColor: Color = Color.Unspecified,
     allowDismiss: Boolean = true,
     enableNestedScroll: Boolean = true,
+    renderInRootScaffold: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val resolvedBackgroundColor = if (backgroundColor == Color.Unspecified) {
@@ -167,6 +169,7 @@ fun AppActionBottomSheet(
         dragHandleColor = resolvedDragHandleColor,
         allowDismiss = allowDismiss,
         enableNestedScroll = enableNestedScroll,
+        renderInRootScaffold = renderInRootScaffold,
         content = content,
     )
 }

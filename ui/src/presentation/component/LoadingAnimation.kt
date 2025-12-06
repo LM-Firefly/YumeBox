@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -37,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
@@ -47,6 +47,7 @@ fun PulseRippleLoadingAnimation(
     modifier: Modifier = Modifier,
     color: Color = MiuixTheme.colorScheme.primary
 ) {
+    val opacity = AppTheme.opacity
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
 
     val ripple1 by infiniteTransition.animateFloat(
@@ -79,40 +80,40 @@ fun PulseRippleLoadingAnimation(
         label = "breathe"
     )
 
-    Canvas(modifier = modifier.size(180.dp)) {
+    Canvas(modifier = modifier.size(UiDp.dp180)) {
         val centerX = size.width / 2
         val centerY = size.height / 2
         val maxRadius = size.minDimension / 2
 
         listOf(ripple1, ripple2).forEach { progress ->
             val radius = maxRadius * progress
-            val alpha = (1f - progress) * 0.5f
+            val alpha = (1f - progress) * opacity.medium
             drawCircle(
                 color = color.copy(alpha = alpha),
                 radius = radius,
                 center = Offset(centerX, centerY),
-                style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+                style = Stroke(width = UiDp.dp2_5.toPx(), cap = StrokeCap.Round)
             )
         }
 
         val gradient = Brush.radialGradient(
             colors = listOf(
-                color.copy(alpha = breathe * 0.6f),
-                color.copy(alpha = breathe * 0.2f),
-                color.copy(alpha = 0f)
+                color.copy(alpha = breathe * opacity.secondaryText),
+                color.copy(alpha = breathe * opacity.mediumOverlay),
+                color.copy(alpha = opacity.none)
             ),
             center = Offset(centerX, centerY),
-            radius = 35.dp.toPx()
+            radius = UiDp.dp35.toPx()
         )
         drawCircle(
             brush = gradient,
-            radius = 35.dp.toPx(),
+            radius = UiDp.dp35.toPx(),
             center = Offset(centerX, centerY)
         )
 
         drawCircle(
-            color = color.copy(alpha = 0.9f),
-            radius = 10.dp.toPx(),
+            color = color.copy(alpha = opacity.prominentText),
+            radius = UiDp.dp10.toPx(),
             center = Offset(centerX, centerY)
         )
     }
@@ -140,13 +141,13 @@ fun StartupLoadingOverlay(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 60.dp),
+                .padding(vertical = UiDp.dp60),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             PulseRippleLoadingAnimation()
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp32))
 
             AnimatedContent(
                 targetState = loadingText ?: MLang.Component.Loading.Starting,

@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -37,6 +38,9 @@ fun CenteredText(
     secondLine: String,
     modifier: Modifier = Modifier
 ) {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -53,11 +57,11 @@ fun CenteredText(
                 color = MiuixTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Medium
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(spacing.space8))
             Text(
                 text = secondLine,
                 style = MiuixTheme.textStyles.body1,
-                color = MiuixTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                color = MiuixTheme.colorScheme.onBackground.copy(alpha = opacity.subtleText)
             )
         }
     }

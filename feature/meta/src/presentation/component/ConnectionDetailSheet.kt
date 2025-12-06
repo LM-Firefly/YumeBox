@@ -19,16 +19,15 @@
  */
 
 
-
 package com.github.yumelira.yumebox.feature.meta.presentation.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
@@ -48,6 +48,8 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private const val CONNECTION_LEADING_ICON_BITMAP_SIZE = 96
 
 @Composable
 fun ConnectionDetailSheet(
@@ -58,69 +60,29 @@ fun ConnectionDetailSheet(
     onDismiss: () -> Unit,
     onDismissFinished: () -> Unit = {},
 ) {
+    val spacing = AppTheme.spacing
     val scope = rememberCoroutineScope()
     var isInterrupting by remember(connectionInfo?.id, show) { mutableStateOf(false) }
-
-    val host = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("host")?.jsonPrimitive?.content ?: ""
-    }
-    val network = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("network")?.jsonPrimitive?.content ?: "TCP"
-    }
-    val process = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("process")?.jsonPrimitive?.content ?: ""
-    }
-    val destinationPort = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("destinationPort")?.jsonPrimitive?.content ?: ""
-    }
-    val sourceIP = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("sourceIP")?.jsonPrimitive?.content ?: ""
-    }
-    val sourcePort = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("sourcePort")?.jsonPrimitive?.content ?: ""
-    }
-    val destinationIP = remember(connectionInfo) {
-        connectionInfo?.metadata?.get("destinationIP")?.jsonPrimitive?.content ?: ""
-    }
-
-    val displayHost = remember(host, destinationPort, sourceIP, sourcePort) {
-        if (host.isNotEmpty() && destinationPort.isNotEmpty()) {
-            "$host:$destinationPort"
-        } else if (host.isNotEmpty()) {
-            host
-        } else if (sourceIP.isNotEmpty()) {
-            "$sourceIP:$sourcePort"
-        } else {
-            ""
-        }
-    }
-
-    val durationText = remember(connectionInfo?.start) {
-        connectionInfo?.start?.let { calculateDuration(it) } ?: "00:00:00"
+    val detailState = remember(connectionInfo) {
+        connectionInfo?.toDetailState()
     }
 
     AppActionBottomSheet(
         show = show,
-        title = displayHost,
+        title = detailState?.displayHost.orEmpty(),
         onDismissRequest = onDismiss,
         onDismissFinished = onDismissFinished,
     ) {
-        connectionInfo?.let { info ->
+        val info = connectionInfo
+        val state = detailState
+        if (info != null && state != null) {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(spacing.space16),
             ) {
-
                 item {
                     ConnectionInfoSection(
-                        metadata = info.metadata,
-                        network = network,
-                        process = process,
-                        sourceIP = sourceIP,
-                        sourcePort = sourcePort,
-                        destinationIP = destinationIP,
-                        destinationPort = destinationPort,
-                        duration = durationText,
+                        state = state,
                         upload = info.upload,
                         download = info.download,
                         chains = info.chains,
@@ -138,9 +100,10 @@ fun ConnectionDetailSheet(
 
                 if (canInterrupt) {
                     item {
-                        Button(
-                            onClick = {
-                                if (isInterrupting) return@Button
+                        InterruptConnectionButton(
+                            isInterrupting = isInterrupting,
+                            onInterrupt = {
+                                if (isInterrupting) return@InterruptConnectionButton
                                 isInterrupting = true
                                 scope.launch {
                                     val closed = runCatching {
@@ -152,24 +115,12 @@ fun ConnectionDetailSheet(
                                     }
                                 }
                             },
-                            enabled = !isInterrupting,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(),
-                        ) {
-                            Text(
-                                text = if (isInterrupting) {
-                                    MLang.Connection.Detail.Action.Interrupting
-                                } else {
-                                    MLang.Connection.Detail.Action.Interrupt
-                                },
-                                color = MiuixTheme.colorScheme.error,
-                            )
-                        }
+                        )
                     }
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(spacing.space16))
                 }
             }
         }
@@ -178,58 +129,54 @@ fun ConnectionDetailSheet(
 
 @Composable
 private fun ConnectionInfoSection(
-    metadata: JsonObject,
-    network: String,
-    process: String,
-    sourceIP: String,
-    sourcePort: String,
-    destinationIP: String,
-    destinationPort: String,
-    duration: String,
+    state: ConnectionDetailState,
     upload: Long,
     download: Long,
     chains: List<String>,
 ) {
+    val spacing = AppTheme.spacing
+    val sizes = AppTheme.sizes
+    val appColors = AppTheme.colors
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.space12),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space12),
         ) {
             ConnectionLeadingIcon(
-                metadata = metadata,
-                network = network,
-                size = 48.dp,
-                bitmapSize = 96,
+                metadata = state.metadata,
+                network = state.network,
+                size = sizes.connectionLeadingIconSize,
+                bitmapSize = CONNECTION_LEADING_ICON_BITMAP_SIZE,
             )
             SectionTitle(MLang.Connection.Detail.Section.Info)
         }
 
-        InfoRow(label = MLang.Connection.Detail.Label.Protocol, value = network.uppercase())
-        if (process.isNotEmpty()) {
-            InfoRow(label = MLang.Connection.Detail.Label.Process, value = process)
+        InfoRow(label = MLang.Connection.Detail.Label.Protocol, value = state.network.uppercase())
+        if (state.process.isNotEmpty()) {
+            InfoRow(label = MLang.Connection.Detail.Label.Process, value = state.process)
         }
-        InfoRow(label = MLang.Connection.Detail.Label.SourceAddress, value = "$sourceIP:$sourcePort")
-        if (destinationIP.isNotEmpty()) {
-            InfoRow(label = MLang.Connection.Detail.Label.DestinationAddress, value = "$destinationIP:$destinationPort")
+        InfoRow(label = MLang.Connection.Detail.Label.SourceAddress, value = state.sourceAddress)
+        if (state.destinationAddress.isNotEmpty()) {
+            InfoRow(label = MLang.Connection.Detail.Label.DestinationAddress, value = state.destinationAddress)
         }
-        InfoRow(label = MLang.Connection.Detail.Label.Duration, value = duration)
+        InfoRow(label = MLang.Connection.Detail.Label.Duration, value = state.duration)
 
         InfoRow(
             label = MLang.Connection.Detail.Label.Upload,
             value = formatBytes(upload),
-            valueColor = Color(0xFF2196F3),
+            valueColor = appColors.protocol.tcp,
         )
         InfoRow(
             label = MLang.Connection.Detail.Label.Download,
             value = formatBytes(download),
-            valueColor = Color(0xFF4CAF50),
+            valueColor = appColors.protocol.udp,
         )
 
         if (chains.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(spacing.space4))
             ProxyChainRow(chains = chains)
         }
     }
@@ -237,19 +184,18 @@ private fun ConnectionInfoSection(
 
 @Composable
 private fun ProxyChainRow(chains: List<String>) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val spacing = AppTheme.spacing
+    val appColors = AppTheme.colors
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+        verticalArrangement = Arrangement.spacedBy(spacing.space2),
     ) {
-        itemsIndexed(
-            items = chains,
-            key = { index, chain -> "$index:$chain" },
-        ) { index, chain ->
+        chains.forEachIndexed { index, chain ->
             val isLast = index == chains.lastIndex
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space2),
             ) {
                 ChainNode(
                     name = chain,
@@ -260,8 +206,8 @@ private fun ProxyChainRow(chains: List<String>) {
                     Text(
                         text = "→",
                         style = MiuixTheme.textStyles.footnote1,
-                        color = Color(0xFF6B7280),
-                        modifier = Modifier.padding(horizontal = 2.dp),
+                        color = appColors.connection.chainArrow,
+                        modifier = Modifier.padding(horizontal = spacing.space2),
                     )
                 }
             }
@@ -270,35 +216,65 @@ private fun ProxyChainRow(chains: List<String>) {
 }
 
 @Composable
+private fun InterruptConnectionButton(
+    isInterrupting: Boolean,
+    onInterrupt: () -> Unit,
+) {
+    Button(
+        onClick = onInterrupt,
+        enabled = !isInterrupting,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(),
+    ) {
+        Text(
+            text = if (isInterrupting) {
+                MLang.Connection.Detail.Action.Interrupting
+            } else {
+                MLang.Connection.Detail.Action.Interrupt
+            },
+            color = MiuixTheme.colorScheme.error,
+        )
+    }
+}
+
+@Composable
 private fun ChainNode(
     name: String,
     isActive: Boolean,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val opacity = AppTheme.opacity
+    val sizes = AppTheme.sizes
+    val appColors = AppTheme.colors
     val backgroundColor = if (isActive) {
-        Color(0xFF00BFA5).copy(alpha = 0.12f)
+        appColors.connection.chainActive.copy(alpha = opacity.subtleStrong)
     } else {
         MiuixTheme.colorScheme.surfaceVariant
     }
     val textColor = if (isActive) {
-        Color(0xFF00BFA5)
+        appColors.connection.chainActive
     } else {
-        Color(0xFF6B7280)
+        appColors.connection.chainInactiveText
     }
 
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(radii.radius8))
             .background(backgroundColor)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(
+                horizontal = sizes.nodeChainNodeHorizontalPadding,
+                vertical = sizes.nodeChainNodeVerticalPadding,
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         if (isActive) {
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(sizes.nodeChainIndicatorSize)
                     .clip(CircleShape)
-                    .background(Color(0xFF00BFA5)),
+                    .background(appColors.connection.chainActive),
             )
         }
 
@@ -316,9 +292,10 @@ private fun RuleInfoSection(
     rule: String,
     rulePayload: String,
 ) {
+    val spacing = AppTheme.spacing
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.space12),
     ) {
         SectionTitle(MLang.Connection.Detail.Section.Rule)
 
@@ -346,15 +323,17 @@ private fun InfoRow(
     value: String,
     valueColor: Color = MiuixTheme.colorScheme.onSurface,
 ) {
+    val spacing = AppTheme.spacing
+    val sizes = AppTheme.sizes
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space16),
     ) {
         Text(
             text = label,
             style = MiuixTheme.textStyles.footnote1,
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-            modifier = Modifier.width(64.dp),
+            modifier = Modifier.width(sizes.connectionDetailLabelWidth),
         )
         Text(
             text = value,
@@ -381,4 +360,47 @@ private fun calculateDuration(start: String): String {
     } catch (e: Exception) {
         "00:00:00"
     }
+}
+
+private data class ConnectionDetailState(
+    val metadata: JsonObject,
+    val displayHost: String,
+    val network: String,
+    val process: String,
+    val sourceAddress: String,
+    val destinationAddress: String,
+    val duration: String,
+)
+
+private fun ConnectionInfo.toDetailState(): ConnectionDetailState {
+    val host = metadata.stringOrEmpty("host")
+    val network = metadata.stringOrEmpty("network").ifEmpty { "TCP" }
+    val process = metadata.stringOrEmpty("process")
+    val destinationPort = metadata.stringOrEmpty("destinationPort")
+    val sourceIP = metadata.stringOrEmpty("sourceIP")
+    val sourcePort = metadata.stringOrEmpty("sourcePort")
+    val destinationIP = metadata.stringOrEmpty("destinationIP")
+
+    val displayHost = when {
+        host.isNotEmpty() && destinationPort.isNotEmpty() -> "$host:$destinationPort"
+        host.isNotEmpty() -> host
+        sourceIP.isNotEmpty() -> "$sourceIP:$sourcePort"
+        else -> ""
+    }
+
+    return ConnectionDetailState(
+        metadata = metadata,
+        displayHost = displayHost,
+        network = network,
+        process = process,
+        sourceAddress = "$sourceIP:$sourcePort",
+        destinationAddress = destinationIP.takeIf(String::isNotEmpty)
+            ?.let { "$it:$destinationPort" }
+            .orEmpty(),
+        duration = start.takeIf(String::isNotEmpty)?.let(::calculateDuration) ?: "00:00:00",
+    )
+}
+
+private fun JsonObject.stringOrEmpty(key: String): String {
+    return get(key)?.jsonPrimitive?.content.orEmpty()
 }

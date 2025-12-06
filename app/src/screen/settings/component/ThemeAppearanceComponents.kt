@@ -19,9 +19,9 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.settings.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -128,7 +128,7 @@ internal fun ThemeColorPickerItem(
                 Yume.Palette,
                 tint = previewColor,
                 contentDescription = null,
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = UiDp.dp12),
             )
         },
     )
@@ -169,6 +169,7 @@ internal fun ThemeColorPickerSheet(
     onEditingThemeSeedColorChange: (Color) -> Unit,
     onEditingThemeSeedHexChange: (String) -> Unit,
     onConfirm: () -> Unit,
+    renderInRootScaffold: Boolean = true,
 ) {
     AppActionBottomSheet(
         show = show,
@@ -176,6 +177,8 @@ internal fun ThemeColorPickerSheet(
         title = MLang.AppSettings.Interface.ColorThemePickerTitle,
         onDismissRequest = onDismissRequest,
         enableNestedScroll = true,
+        renderInRootScaffold = renderInRootScaffold,
+        defaultWindowInsetsPadding = false,
         startAction = {
             AppBottomSheetCloseAction(
                 onClick = onDismissRequest,
@@ -187,19 +190,26 @@ internal fun ThemeColorPickerSheet(
             )
         },
         content = {
-            ColorPicker(
-                color = editingThemeSeedColor,
-                onColorChanged = onEditingThemeSeedColorChange,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            TextField(
-                value = editingThemeSeedHex,
-                onValueChange = onEditingThemeSeedHexChange,
-                label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
-            )
+                    .navigationBarsPadding()
+                    .imePadding(),
+            ) {
+                ColorPicker(
+                    color = editingThemeSeedColor,
+                    onColorChanged = onEditingThemeSeedColorChange,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                TextField(
+                    value = editingThemeSeedHex,
+                    onValueChange = onEditingThemeSeedHexChange,
+                    label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = UiDp.dp8),
+                )
+            }
         })
 }
 

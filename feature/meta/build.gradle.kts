@@ -38,10 +38,9 @@ dependencies {
     implementation(project(":platform"))
     implementation(project(":locale"))
     implementation(project(":ui"))
-    implementation(project(":data:settings"))
+    implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":data:proxy"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
@@ -61,5 +60,4 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
 }
-
 

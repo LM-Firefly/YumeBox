@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.profiles
 
+package com.github.yumelira.yumebox.screen.profiles
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
@@ -380,14 +381,14 @@ internal fun AddProfileSheet(
         onDismissRequest = dismissSheet,
     ) {
         val stableSheetHeight = remember(stableSheetHeightPx, density) {
-            if (stableSheetHeightPx <= 0) 0.dp else with(density) { stableSheetHeightPx.toDp() }
+            if (stableSheetHeightPx <= 0) UiDp.dp0 else with(density) { stableSheetHeightPx.toDp() }
         }
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .animateContentSize(animationSpec = tween(300, easing = FastOutSlowInEasing))
-                .padding(bottom = 16.dp),
+                .padding(bottom = UiDp.dp16),
         ) {
             AnimatedContent(
                 targetState = isDownloading,
@@ -409,208 +410,299 @@ internal fun AddProfileSheet(
                 label = "ProfileImportContentSwitch",
             ) { downloading ->
                 if (downloading) {
-                    val isCompleted = downloadProgress?.isCompleted == true
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(
-                                if (isCompleted) {
-                                    downloadCompleteSheetContentHeight
-                                } else if (stableSheetHeightPx > 0) {
-                                    stableSheetHeight
-                                } else {
-                                    downloadSheetContentHeight
-                                }
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-                        ) {
-                            Box(
-                                modifier = Modifier.size(48.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                AnimatedContent(
-                                    targetState = downloadProgress?.isCompleted == true,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center,
-                                    transitionSpec = {
-                                        fadeIn(animationSpec = tween(300)) togetherWith fadeOut(
-                                            animationSpec = tween(300)
-                                        )
-                                    },
-                                    label = "ProgressIcon"
-                                ) { complete ->
-                                    if (complete) {
-                                        Icon(
-                                            imageVector = Yume.`Package-check`,
-                                            contentDescription = "Complete",
-                                            tint = MiuixTheme.colorScheme.onPrimary,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clip(RoundedCornerShape(16.dp))
-                                                .background(MiuixTheme.colorScheme.primary)
-                                                .padding(10.dp)
-                                        )
-                                    } else {
-                                        InfiniteProgressIndicator(
-                                            modifier = Modifier.size(32.dp),
-                                        )
-                                    }
-                                }
-                            }
-
-                            downloadProgress?.message?.let { message ->
-                                Text(
-                                    text = message,
-                                    style = MiuixTheme.textStyles.body1,
-                                    color = MiuixTheme.colorScheme.onSurface,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
+                    DownloadProgressContent(
+                        downloadProgress = downloadProgress,
+                        stableSheetHeightPx = stableSheetHeightPx,
+                        stableSheetHeight = stableSheetHeight,
+                        downloadSheetContentHeight = downloadSheetContentHeight,
+                        downloadCompleteSheetContentHeight = downloadCompleteSheetContentHeight,
+                    )
                 } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onSizeChanged { stableSheetHeightPx = max(stableSheetHeightPx, it.height) },
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        top.yukonga.miuix.kmp.basic.Card {
-                            Box(modifier = Modifier.alpha(if (profileToEdit != null) 0.5f else 1f)) {
-                                WindowSpinnerPreference(
-                                    title = MLang.ProfilesPage.Type.Title, items = listOf(
-                                        SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
-                                        SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
-                                        SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan)
-                                    ), selectedIndex = selectedTypeIndex, onSelectedIndexChange = {
-                                        if (profileToEdit == null) {
-                                            selectedTypeIndex = it
-                                            clearCurrentTypeState()
-                                        }
-                                    })
-
-                                if (profileToEdit != null) {
-                                    Box(
-                                        modifier = Modifier
-                                            .matchParentSize()
-                                            .clickable(
-                                                indication = null,
-                                                interactionSource = remember { MutableInteractionSource() },
-                                                onClick = {})
-                                    )
-                                }
-                            }
-                        }
-
-                        AnimatedContent(
-                            targetState = selectedTypeIndex, transitionSpec = {
-                                fadeIn(animationSpec = tween(200)) togetherWith fadeOut(
-                                    animationSpec = tween(
-                                        150
-                                    )
-                                )
-                            }, label = "ProfileTypeContent"
-                        ) { typeIndex ->
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                when (typeIndex) {
-                                    2 -> {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(200.dp)
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .background(MiuixTheme.colorScheme.surfaceVariant),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (showCameraPreview) {
-                                                key("qr_scanner_stable") {
-                                                    StableQrScanner(
-                                                        onScanned = { scannedUrl ->
-                                                            url = scannedUrl
-                                                            selectedTypeIndex = 0
-                                                        })
-                                                }
-                                            } else if (!hasCameraPermission) {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.Center
-                                                ) {
-                                                    Text(MLang.ProfilesPage.QrScanner.NeedPermission)
-                                                }
-                                            } else {
-                                                CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                                            }
-                                        }
-
-                                        TextButton(
-                                            text = MLang.ProfilesPage.QrScanner.SelectFromAlbum,
-                                            onClick = { qrImageLauncher.launch("image/*") },
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-
-                                    else -> {
-                                        TextField(
-                                            value = name,
-                                            onValueChange = { name = it; error = "" },
-                                            label = MLang.ProfilesPage.Input.ProfileName,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-
-                                        if (typeIndex == 0) {
-                                            TextField(
-                                                value = url,
-                                                onValueChange = { url = it; error = "" },
-                                                label = MLang.ProfilesPage.Input.SubscriptionUrl,
-                                                maxLines = 2,
-                                                readOnly = profileToEdit != null,
-                                                enabled = profileToEdit == null,
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                        } else {
-                                            TextField(
-                                                value = fileName.ifEmpty { "" },
-                                                onValueChange = { },
-                                                label = MLang.ProfilesPage.Input.SelectFile,
-                                                readOnly = true,
-                                                enabled = false,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .clickable(
-                                                        indication = null,
-                                                        interactionSource = remember { MutableInteractionSource() }) {
-                                                        launcher.launch(
-                                                            "*/*"
-                                                        )
-                                                    })
-                                        }
-
-                                        if (error.isNotEmpty()) {
-                                            Text(
-                                                text = error,
-                                                color = MiuixTheme.colorScheme.error,
-                                                style = MiuixTheme.textStyles.body2
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    ProfileFormContent(
+                        selectedTypeIndex = selectedTypeIndex,
+                        profileLocked = profileToEdit != null,
+                        name = name,
+                        url = url,
+                        fileName = fileName,
+                        error = error,
+                        hasCameraPermission = hasCameraPermission,
+                        showCameraPreview = showCameraPreview,
+                        onContainerMeasured = { stableSheetHeightPx = max(stableSheetHeightPx, it.height) },
+                        onTypeSelected = {
+                            selectedTypeIndex = it
+                            clearCurrentTypeState()
+                        },
+                        onNameChange = {
+                            name = it
+                            error = ""
+                        },
+                        onUrlChange = {
+                            url = it
+                            error = ""
+                        },
+                        onPickFile = { launcher.launch("*/*") },
+                        onSelectQrImage = { qrImageLauncher.launch("image/*") },
+                        onQrScanned = { scannedUrl ->
+                            url = scannedUrl
+                            selectedTypeIndex = 0
+                        },
+                    )
                 }
             }
         }
     }
 }
 
+@Composable
+private fun DownloadProgressContent(
+    downloadProgress: DownloadProgress?,
+    stableSheetHeightPx: Int,
+    stableSheetHeight: androidx.compose.ui.unit.Dp,
+    downloadSheetContentHeight: androidx.compose.ui.unit.Dp,
+    downloadCompleteSheetContentHeight: androidx.compose.ui.unit.Dp,
+) {
+    val isCompleted = downloadProgress?.isCompleted == true
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(
+                if (isCompleted) {
+                    downloadCompleteSheetContentHeight
+                } else if (stableSheetHeightPx > 0) {
+                    stableSheetHeight
+                } else {
+                    downloadSheetContentHeight
+                }
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16, Alignment.CenterVertically),
+    ) {
+        AnimatedContent(
+            targetState = isCompleted,
+            modifier = Modifier.size(UiDp.dp48),
+            contentAlignment = Alignment.Center,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+            },
+            label = "ProgressIcon",
+        ) { complete ->
+            if (complete) {
+                Icon(
+                    imageVector = Yume.`Package-check`,
+                    contentDescription = "Complete",
+                    tint = MiuixTheme.colorScheme.onPrimary,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(UiDp.dp16))
+                        .background(MiuixTheme.colorScheme.primary)
+                        .padding(UiDp.dp10),
+                )
+            } else {
+                InfiniteProgressIndicator(
+                    modifier = Modifier.size(UiDp.dp32),
+                )
+            }
+        }
+
+        downloadProgress?.message?.let { message ->
+            Text(
+                text = message,
+                style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileFormContent(
+    selectedTypeIndex: Int,
+    profileLocked: Boolean,
+    name: String,
+    url: String,
+    fileName: String,
+    error: String,
+    hasCameraPermission: Boolean,
+    showCameraPreview: Boolean,
+    onContainerMeasured: (androidx.compose.ui.unit.IntSize) -> Unit,
+    onTypeSelected: (Int) -> Unit,
+    onNameChange: (String) -> Unit,
+    onUrlChange: (String) -> Unit,
+    onPickFile: () -> Unit,
+    onSelectQrImage: () -> Unit,
+    onQrScanned: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onSizeChanged(onContainerMeasured),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
+    ) {
+        ProfileTypeSelectorCard(
+            selectedTypeIndex = selectedTypeIndex,
+            profileLocked = profileLocked,
+            onTypeSelected = onTypeSelected,
+        )
+
+        Crossfade(
+            targetState = selectedTypeIndex,
+            animationSpec = tween(200),
+            label = "ProfileTypeContent",
+        ) { typeIndex ->
+            when (typeIndex) {
+                2 -> QrScannerContent(
+                    hasCameraPermission = hasCameraPermission,
+                    showCameraPreview = showCameraPreview,
+                    onSelectQrImage = onSelectQrImage,
+                    onQrScanned = onQrScanned,
+                )
+
+                else -> ManualProfileContent(
+                    typeIndex = typeIndex,
+                    profileLocked = profileLocked,
+                    name = name,
+                    url = url,
+                    fileName = fileName,
+                    error = error,
+                    onNameChange = onNameChange,
+                    onUrlChange = onUrlChange,
+                    onPickFile = onPickFile,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileTypeSelectorCard(
+    selectedTypeIndex: Int,
+    profileLocked: Boolean,
+    onTypeSelected: (Int) -> Unit,
+) {
+    top.yukonga.miuix.kmp.basic.Card {
+        Box(
+            modifier = Modifier
+                .alpha(if (profileLocked) 0.5f else 1f)
+                .clickable(
+                    enabled = profileLocked,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                    onClick = {},
+                ),
+        ) {
+            WindowSpinnerPreference(
+                title = MLang.ProfilesPage.Type.Title,
+                items = listOf(
+                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
+                    SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
+                    SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan),
+                ),
+                selectedIndex = selectedTypeIndex,
+                onSelectedIndexChange = onTypeSelected,
+            )
+        }
+    }
+}
+
+@Composable
+private fun QrScannerContent(
+    hasCameraPermission: Boolean,
+    showCameraPreview: Boolean,
+    onSelectQrImage: () -> Unit,
+    onQrScanned: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(UiDp.dp200)
+                .clip(RoundedCornerShape(UiDp.dp12))
+                .background(MiuixTheme.colorScheme.surfaceVariant),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (showCameraPreview) {
+                key("qr_scanner_stable") {
+                    StableQrScanner(onScanned = onQrScanned)
+                }
+            } else if (!hasCameraPermission) {
+                Text(MLang.ProfilesPage.QrScanner.NeedPermission)
+            } else {
+                CircularProgressIndicator(modifier = Modifier.size(UiDp.dp32))
+            }
+        }
+
+        TextButton(
+            text = MLang.ProfilesPage.QrScanner.SelectFromAlbum,
+            onClick = onSelectQrImage,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun ManualProfileContent(
+    typeIndex: Int,
+    profileLocked: Boolean,
+    name: String,
+    url: String,
+    fileName: String,
+    error: String,
+    onNameChange: (String) -> Unit,
+    onUrlChange: (String) -> Unit,
+    onPickFile: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
+    ) {
+        TextField(
+            value = name,
+            onValueChange = onNameChange,
+            label = MLang.ProfilesPage.Input.ProfileName,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        if (typeIndex == 0) {
+            TextField(
+                value = url,
+                onValueChange = onUrlChange,
+                label = MLang.ProfilesPage.Input.SubscriptionUrl,
+                maxLines = 2,
+                readOnly = profileLocked,
+                enabled = !profileLocked,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            TextField(
+                value = fileName,
+                onValueChange = {},
+                label = MLang.ProfilesPage.Input.SelectFile,
+                readOnly = true,
+                enabled = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = onPickFile,
+                    ),
+            )
+        }
+
+        if (error.isNotEmpty()) {
+            Text(
+                text = error,
+                color = MiuixTheme.colorScheme.error,
+                style = MiuixTheme.textStyles.body2,
+            )
+        }
+    }
+}

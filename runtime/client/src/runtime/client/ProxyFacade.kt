@@ -29,16 +29,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.VpnService
 import android.os.Build
-import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.core.model.ProxyGroup
-import com.github.yumelira.yumebox.core.model.ProxySort
-import com.github.yumelira.yumebox.core.model.Traffic
-import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.core.model.*
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.MMKVProvider
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
@@ -83,7 +80,7 @@ class ProxyFacade(
     private val appContext: Context = context.appContextOrSelf
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val networkSettingsStorage by lazy {
-        NetworkSettingsStorage(MMKVProvider().getMMKV("network_settings"))
+        NetworkSettingsStore(MMKVProvider().getMMKV("network_settings"))
     }
     private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
     private val runtimeControl = ProxyRuntimeControl(appContext) { actionClashRequestStop }
@@ -389,6 +386,22 @@ class ProxyFacade(
         scheduleRuntimeProxyGroupsRefresh(PollingTimerSpecs.ProxyHealthcheckRefresh.intervalMillis)
     }
 
+    suspend fun healthCheckAll() {
+        Timber.d("Health check all request")
+        if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
+            RootTunController.queryAllProxyGroups(appContext, excludeNotSelectable = false)
+                .map { it.name }
+                .forEach { groupName ->
+                    RootTunController.healthCheck(appContext, groupName)
+                    scheduleRuntimeGroupRefresh(groupName, PollingTimerSpecs.ProxyHealthcheckRefresh.intervalMillis)
+                }
+        } else {
+            connectCurrentBackend()
+            Clash.healthCheckAll()
+        }
+        scheduleRuntimeProxyGroupsRefresh(PollingTimerSpecs.ProxyHealthcheckRefresh.intervalMillis)
+    }
+
     suspend fun healthCheckProxy(group: String, proxyName: String): Int {
         Timber.d("Health check proxy request: group=%s proxy=%s", group, proxyName)
         val delay = if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
@@ -409,6 +422,18 @@ class ProxyFacade(
         }
         connectCurrentBackend()
         return ServiceClient.clash().queryTunnelState()
+    }
+
+    suspend fun queryConnections(): ConnectionSnapshot {
+        if (!_runtimeSnapshot.value.running) {
+            return ConnectionSnapshot()
+        }
+        return if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
+            RootTunController.queryConnections(appContext)
+        } else {
+            connectCurrentBackend()
+            ServiceClient.clash().queryConnections()
+        }
     }
 
     suspend fun queryTrafficTotal(): Long {
@@ -633,7 +658,6 @@ class ProxyFacade(
                 }
 
                 runCatching {
-                    connectCurrentBackend()
                     queryTrafficNow()
                     if (tick % TRAFFIC_TOTAL_POLL_TICKS == 0) {
                         queryTrafficTotal()

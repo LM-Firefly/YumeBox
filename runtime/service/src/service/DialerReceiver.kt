@@ -44,7 +44,7 @@ class DialerReceiver : BroadcastReceiver() {
             ACTION_NEW_OUTGOING_CALL -> {
                 val phoneNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER)
                 if (SECRET_CODE == phoneNumber) {
-                    setResultData(null)
+                    resultData = null
                     startMainActivity(context)
                 }
             }

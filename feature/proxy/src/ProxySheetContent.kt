@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -152,7 +151,7 @@ fun ProxySheetContent(
                         ),
                     )
                     NodeSortPopup(
-                        show = showSortPopup,
+                        show = showSortPopup.value,
                         onDismiss = { showSortPopup.value = false },
                         sortMode = sortMode,
                         alignment = PopupPositionProvider.Align.BottomStart,
@@ -180,7 +179,7 @@ fun ProxySheetContent(
             dismissSheet()
         },
         enableWindowDim = true,
-        insideMargin = DpSize(16.dp, 16.dp),
+        insideMargin = DpSize(UiDp.dp16, UiDp.dp16),
         enableNestedScroll = false
     ) {
         AnimatedContent(

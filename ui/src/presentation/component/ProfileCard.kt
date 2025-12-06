@@ -39,6 +39,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-u
 import com.github.yumelira.yumebox.presentation.icon.yume.Delete
 import com.github.yumelira.yumebox.presentation.icon.yume.Edit
 import com.github.yumelira.yumebox.presentation.icon.yume.Share
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.util.*
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
@@ -59,35 +60,41 @@ fun ProfileCard(
     onOverrideSettings: ((Profile) -> Unit)? = null,
     @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+    val componentSizes = AppTheme.sizes
+
     val colorScheme = MiuixTheme.colorScheme
 
     val isDark = isSystemInDarkTheme()
-    val secondaryContainer = colorScheme.secondaryContainer.copy(alpha = 0.8f)
+    val secondaryContainer = colorScheme.secondaryContainer.copy(alpha = opacity.strong)
     val actionIconTint =
-        remember(isDark) { colorScheme.onSurface.copy(alpha = if (isDark) 0.7f else 0.9f) }
+        remember(isDark, opacity) {
+            colorScheme.onSurface.copy(alpha = if (isDark) opacity.subtleText else opacity.prominentText)
+        }
 
     val isConfigSaved = remember(profile.uuid, profile.updatedAt) {
         profile.isConfigSaved(workDir)
     }
 
-    val updateBg = remember(colorScheme) { colorScheme.primary.copy(alpha = 0.1f) }
+    val updateBg = remember(colorScheme, opacity) { colorScheme.primary.copy(alpha = opacity.subtle) }
     val updateTint = remember(colorScheme) { colorScheme.primary }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp),
-        insideMargin = PaddingValues(16.dp)
+            .padding(bottom = spacing.space12),
+        insideMargin = PaddingValues(spacing.space16)
     ) {
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space8),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 4.dp)
+                    .padding(end = spacing.space4)
             ) {
 
                 Text(
@@ -102,7 +109,7 @@ fun ProfileCard(
                 Text(
                     text = profile.getDisplayProvider(),
                     fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = spacing.space2),
                     fontWeight = FontWeight(550),
                     color = colorScheme.onSurfaceVariantSummary,
                     maxLines = 1,
@@ -120,7 +127,7 @@ fun ProfileCard(
             profile.getInfoText()
         }
 
-        Column(modifier = Modifier.padding(top = 8.dp)) {
+        Column(modifier = Modifier.padding(top = spacing.space8)) {
 
             val lines = infoText.split('\n')
 
@@ -151,10 +158,10 @@ fun ProfileCard(
                                 Text(
                                     text = timeText,
                                     fontSize = 12.sp,
-                                    color = colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
+                                    color = colorScheme.onTertiaryContainer.copy(alpha = opacity.strong),
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
-                                    modifier = Modifier.padding(end = 13.dp)
+                                    modifier = Modifier.padding(end = componentSizes.profileMetaTrailingInset)
                                 )
                             }
                         }
@@ -175,70 +182,69 @@ fun ProfileCard(
         }
 
         HorizontalDivider(
-            modifier = Modifier.padding(vertical = 12.dp),
-            thickness = 0.5.dp,
-            color = colorScheme.outline.copy(alpha = 0.5f)
+            modifier = Modifier.padding(vertical = spacing.space12),
+            thickness = componentSizes.thinDividerThickness,
+            color = colorScheme.outline.copy(alpha = opacity.medium)
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IconButton(
+                backgroundColor = secondaryContainer,
+                minHeight = componentSizes.compactActionButtonSize,
+                minWidth = componentSizes.compactActionButtonSize,
+                enabled = isConfigSaved && !isDownloading,
+                onClick = { if (isConfigSaved && !isDownloading) onExport(profile) }) {
+                Icon(
+                    modifier = Modifier
+                        .size(spacing.space20)
+                        .alpha(if (isConfigSaved) 1f else opacity.disabledSecondary),
+                    imageVector = Yume.Share,
+                    tint = actionIconTint.copy(alpha = if (isConfigSaved) 1f else opacity.disabledSecondary),
+                    contentDescription = "Export"
+                )
+            }
 
-                IconButton(
-                    backgroundColor = secondaryContainer,
-                    minHeight = 35.dp,
-                    minWidth = 35.dp,
-                    enabled = isConfigSaved && !isDownloading,
-                    onClick = { if (isConfigSaved && !isDownloading) onExport(profile) }) {
-                    Icon(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .alpha(if (isConfigSaved) 1f else 0.4f),
-                        imageVector = Yume.Share,
-                        tint = actionIconTint.copy(alpha = if (isConfigSaved) 1f else 0.4f),
-                        contentDescription = "Export"
-                    )
-                }
+            Spacer(Modifier.width(spacing.space8))
 
-                IconButton(
-                    backgroundColor = secondaryContainer,
-                    minHeight = 35.dp,
-                    minWidth = 35.dp,
-                    enabled = !isDownloading,
-                    onClick = { if (!isDownloading) onEdit(profile) }) {
-                    Icon(
-                        modifier = Modifier.size(20.dp),
-                        imageVector = Yume.Edit,
-                        tint = actionIconTint,
-                        contentDescription = "Edit"
-                    )
-                }
+            IconButton(
+                backgroundColor = secondaryContainer,
+                minHeight = componentSizes.compactActionButtonSize,
+                minWidth = componentSizes.compactActionButtonSize,
+                enabled = !isDownloading,
+                onClick = { if (!isDownloading) onEdit(profile) }) {
+                Icon(
+                    modifier = Modifier.size(spacing.space20),
+                    imageVector = Yume.Edit,
+                    tint = actionIconTint,
+                    contentDescription = "Edit"
+                )
             }
 
             Spacer(Modifier.weight(1f))
 
             if (profile.shouldShowUpdateButton()) {
                 IconButton(
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier.padding(end = spacing.space8),
                     backgroundColor = updateBg,
-                    minHeight = 35.dp,
-                    minWidth = 35.dp,
+                    minHeight = componentSizes.compactActionButtonSize,
+                    minWidth = componentSizes.compactActionButtonSize,
                     enabled = !isDownloading,
                     onClick = { if (!isDownloading) onUpdate(profile) },
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = spacing.space10),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(spacing.space2),
                     ) {
                         Icon(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(spacing.space20),
                             imageVector = Yume.`Circle-fading-arrow-up`,
                             tint = updateTint,
                             contentDescription = "Update",
                         )
                         Text(
-                            modifier = Modifier.padding(end = 3.dp),
+                            modifier = Modifier.padding(end = componentSizes.textLineCompactSpacing),
                             text = MLang.Component.ProfileCard.Update,
                             color = updateTint,
                             fontWeight = FontWeight.Medium,
@@ -249,24 +255,24 @@ fun ProfileCard(
             }
 
             IconButton(
-                minHeight = 35.dp,
-                minWidth = 35.dp,
+                minHeight = componentSizes.compactActionButtonSize,
+                minWidth = componentSizes.compactActionButtonSize,
                 enabled = !isDownloading,
                 onClick = { if (!isDownloading) onDelete(profile) },
                 backgroundColor = secondaryContainer,
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp),
+                    modifier = Modifier.padding(horizontal = spacing.space10),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(spacing.space20),
                         imageVector = Yume.Delete,
                         tint = actionIconTint,
                         contentDescription = "Delete"
                     )
                     Text(
-                        modifier = Modifier.padding(start = 4.dp, end = 3.dp),
+                        modifier = Modifier.padding(start = spacing.space4, end = componentSizes.textLineCompactSpacing),
                         text = MLang.Component.ProfileCard.Delete,
                         color = actionIconTint,
                         fontWeight = FontWeight.Medium,

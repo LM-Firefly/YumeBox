@@ -1,5 +1,27 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.acg
 
+
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -22,10 +44,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -72,6 +96,7 @@ fun AcgHomePage(
     val homeViewModel = koinViewModel<HomeViewModel>()
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -189,9 +214,11 @@ fun AcgHomePage(
             context.toast(MLang.ProfilesVM.Error.ProfileNotExist, Toast.LENGTH_SHORT)
         } else if (visualControlState == HomeProxyControlState.Idle) {
             recommendedProfile?.let { profile ->
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
                 homeViewModel.startProxy(profileId = profile.uuid.toString(), mode = null)
             }
         } else if (visualControlState == HomeProxyControlState.Running) {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
             scope.launch {
                 homeViewModel.stopProxy()
             }
@@ -200,7 +227,7 @@ fun AcgHomePage(
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val sidebarWidth = maxWidth * AcgUi.Sidebar.fraction
-        val contentStart = (sidebarWidth - AcgUi.Sidebar.contentOverlap).coerceAtLeast(0.dp)
+        val contentStart = (sidebarWidth - AcgUi.Sidebar.contentOverlap).coerceAtLeast(UiDp.dp0)
         val collapsedVisibleWidth = AcgUi.Sidebar.collapsedVisibleWidth
         val heroHeight = maxHeight * 0.66f
         val clampedPageProgress = pageProgress.coerceIn(0f, 1f)
@@ -209,10 +236,10 @@ fun AcgHomePage(
         val swipePressProgress = FastOutSlowInEasing.transform(1f - clampedPageProgress)
         val sidebarVisibleWidth =
             lerpDp(collapsedVisibleWidth, contentStart, effectiveSidebarProgress)
-        val contentPanelStart = lerpDp(0.dp, contentStart, effectiveSidebarProgress)
-        val sidebarOffset = lerpDp((-56).dp, 0.dp, effectiveSidebarProgress)
+        val contentPanelStart = lerpDp(UiDp.dp0, contentStart, effectiveSidebarProgress)
+        val sidebarOffset = lerpDp((-56).dp, UiDp.dp0, effectiveSidebarProgress)
         val sidebarAlpha = lerpFloat(0.78f, 1f, effectiveSidebarProgress) * clampedPageProgress
-        val contentCorner = lerpDp(0.dp, 30.dp, effectiveSidebarProgress)
+        val contentCorner = lerpDp(UiDp.dp0, UiDp.dp30, effectiveSidebarProgress)
         // 仅在页面横向滑动时缩放，避免侧栏展开/收起过程出现尺寸变化感
         val heroImageScale = if (clampedPageProgress >= 0.999f) {
             1f
@@ -306,7 +333,7 @@ fun AcgHomePage(
                     qualityMode = AcgWallpaperQualityMode.Foreground,
                     modifier = Modifier.matchParentSize(),
                 )
-                Box(
+                Spacer(
                     modifier = Modifier
                         .matchParentSize()
                         .background(
@@ -369,11 +396,11 @@ fun AcgHomePage(
                 )
             }
 
-            Box(
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(
-                        end = 12.dp,
+                        end = UiDp.dp12,
                         bottom = mainInnerPadding.calculateBottomPadding() + AcgUi.Button.bottomInset,
                     ),
             ) {

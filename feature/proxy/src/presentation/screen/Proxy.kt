@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -33,8 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.data.model.ProxySortMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
@@ -60,12 +59,6 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private object ProxyPageSpacing {
-    val ContentTop = 20.dp
-    val ContentHorizontal = 12.dp
-    val ItemVertical = 6.dp
-}
-
 private fun LazyListState.isScrolledFromTop(): Boolean {
     return firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 0
 }
@@ -87,7 +80,7 @@ fun ProxyPager(
     val groupScrollBehavior = MiuixScrollBehavior(snapAnimationSpec = null)
     val topBarHazeState = LocalTopBarHazeState.current
 
-    val showSortPopup = rememberSaveable { mutableStateOf(false) }
+    var showSortPopup by rememberSaveable { mutableStateOf(false) }
     val onTestDelay = remember { { proxyViewModel.testDelay() } }
     val groupSelection = rememberProxyGroupSelectionState(
         proxyGroups = proxyGroups,
@@ -115,7 +108,7 @@ fun ProxyPager(
             val groupName = selectedGroupName ?: return@remember
             coroutineScope.launch {
                 if (nodeListState.isScrolledFromTop()) {
-                    nodeListState.animateScrollToItem(0)
+                    nodeListState.scrollToItem(0)
                 }
                 proxyViewModel.testDelay(groupName)
             }
@@ -167,7 +160,7 @@ fun ProxyPager(
                 label = "proxy_test_fab_visibility",
             ) {
                 FloatingActionButton(
-                    modifier = Modifier.padding(end = 20.dp, bottom = 85.dp),
+                    modifier = Modifier.padding(end = UiDp.dp20, bottom = UiDp.dp85),
                     onClick = {
                         if (fabGroup == null) return@FloatingActionButton
                         requestSelectedGroupDelayTest()
@@ -191,6 +184,7 @@ fun ProxyPager(
                 onOpenPanel = onOpenPanel,
                 onTestDelay = if (selectedGroupName == null) onTestDelay else null,
                 showSortPopup = showSortPopup,
+                onShowSortPopupChange = { showSortPopup = it },
                 sortMode = sortMode,
                 onSortSelected = proxyViewModel::setSortMode,
             )
@@ -206,22 +200,22 @@ fun ProxyPager(
                 transitionSpec = {
                     if (targetState != null) {
                         (slideInHorizontally(
-                            animationSpec = tween(durationMillis = 260, easing = AnimationSpecs.Legacy),
+                            animationSpec = tween(durationMillis = 340, easing = AnimationSpecs.Legacy),
                             initialOffsetX = { it },
-                        ) + fadeIn(animationSpec = tween(durationMillis = 220))) togetherWith
+                        ) + fadeIn(animationSpec = tween(durationMillis = 140))) togetherWith
                             (slideOutHorizontally(
-                                animationSpec = tween(durationMillis = 220, easing = AnimationSpecs.Legacy),
+                                animationSpec = tween(durationMillis = 300, easing = AnimationSpecs.Legacy),
                                 targetOffsetX = { -it / 3 },
-                            ) + fadeOut(animationSpec = tween(durationMillis = 180)))
+                            ) + fadeOut(animationSpec = tween(durationMillis = 140)))
                     } else {
                         (slideInHorizontally(
-                            animationSpec = tween(durationMillis = 220, easing = AnimationSpecs.Legacy),
+                            animationSpec = tween(durationMillis = 300, easing = AnimationSpecs.Legacy),
                             initialOffsetX = { -it / 3 },
-                        ) + fadeIn(animationSpec = tween(durationMillis = 200))) togetherWith
+                        ) + fadeIn(animationSpec = tween(durationMillis = 140))) togetherWith
                             (slideOutHorizontally(
-                                animationSpec = tween(durationMillis = 240, easing = AnimationSpecs.Legacy),
+                                animationSpec = tween(durationMillis = 340, easing = AnimationSpecs.Legacy),
                                 targetOffsetX = { it },
-                            ) + fadeOut(animationSpec = tween(durationMillis = 180)))
+                            ) + fadeOut(animationSpec = tween(durationMillis = 140)))
                     }
                 },
                 label = "proxy_content_slide",
@@ -280,17 +274,18 @@ private fun ProxyTopBar(
     onNavigateToProviders: (() -> Unit)?,
     onOpenPanel: (() -> Unit)?,
     onTestDelay: (() -> Unit)?,
-    showSortPopup: MutableState<Boolean>,
+    showSortPopup: Boolean,
+    onShowSortPopupChange: (Boolean) -> Unit,
     sortMode: ProxySortMode,
     onSortSelected: (ProxySortMode) -> Unit,
 ) {
     TopBar(
         title = title,
         scrollBehavior = scrollBehavior,
-        navigationIconPadding = 24.dp,
-        actionIconPadding = 24.dp,
+        navigationIconPadding = UiDp.dp24,
+        actionIconPadding = UiDp.dp24,
         navigationIcon = {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
             if (showBack) {
                 IconButton(
                     onClick = onBack,
@@ -320,7 +315,7 @@ private fun ProxyTopBar(
     }, actions = {
         if (onTestDelay != null) {
             IconButton(
-                modifier = Modifier.padding(end = 12.dp),
+                modifier = Modifier.padding(end = UiDp.dp12),
                 onClick = { onTestDelay.invoke() }
             ) {
                 Icon(Yume.Speed, contentDescription = MLang.Proxy.Action.Test)
@@ -328,7 +323,7 @@ private fun ProxyTopBar(
         }
         Box {
             IconButton(
-                onClick = { showSortPopup.value = true },
+                onClick = { onShowSortPopupChange(true) },
             ) {
                 Icon(
                     Yume.`List-chevrons-up-down`,
@@ -337,7 +332,7 @@ private fun ProxyTopBar(
             }
             NodeSortPopup(
                 show = showSortPopup,
-                onDismiss = { showSortPopup.value = false },
+                onDismiss = { onShowSortPopupChange(false) },
                 sortMode = sortMode,
                 alignment = PopupPositionProvider.Align.BottomEnd,
                 onSortSelected = onSortSelected,
@@ -393,10 +388,10 @@ private fun NodeListPage(
         enableGlobalScroll = true,
         onScrollDirectionChanged = onScrollDirectionChanged,
         contentPadding = PaddingValues(
-            start = ProxyPageSpacing.ContentHorizontal,
-            end = ProxyPageSpacing.ContentHorizontal,
-            top = outerInnerPadding.calculateTopPadding() + ProxyPageSpacing.ContentTop,
-            bottom = mainInnerPadding.calculateBottomPadding() + spacing.md,
+                    start = UiDp.dp12,
+                    end = UiDp.dp12,
+                    top = outerInnerPadding.calculateTopPadding() + UiDp.dp20,
+            bottom = mainInnerPadding.calculateBottomPadding() + spacing.space12,
         ),
     ) {
         item(key = "__refresh_indicator__") {
@@ -414,12 +409,12 @@ private fun NodeListPage(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = UiDp.dp12),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(UiDp.dp6),
                 ) {
                     InfiniteProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(UiDp.dp24),
                     )
                     Text(
                         text = MLang.Proxy.Testing.InProgress,
@@ -443,8 +438,8 @@ private fun NodeListPage(
             isDelayTesting = isTesting,
             testingProxyNames = testingProxyNames,
             onSingleNodeTestClick = { onTestProxyDelay(it) },
-            outerHorizontalPadding = 0.dp,
-            itemVerticalPadding = ProxyPageSpacing.ItemVertical,
+            outerHorizontalPadding = UiDp.dp0,
+                            itemVerticalPadding = UiDp.dp6,
             singleNodeTestEnabled = singleNodeTestEnabled,
         )
     }
@@ -465,17 +460,17 @@ private fun ProxyContent(
         innerPadding = innerPadding,
         enableGlobalScroll = true,
         contentPadding = PaddingValues(
-            start = ProxyPageSpacing.ContentHorizontal,
-            end = ProxyPageSpacing.ContentHorizontal,
-            top = innerPadding.calculateTopPadding() + ProxyPageSpacing.ContentTop,
-            bottom = mainInnerPadding.calculateBottomPadding() + spacing.md,
+                    start = UiDp.dp12,
+                    end = UiDp.dp12,
+                    top = innerPadding.calculateTopPadding() + UiDp.dp20,
+            bottom = mainInnerPadding.calculateBottomPadding() + spacing.space12,
         ),
     ) {
         nodeGroupItems(
             groups = proxyGroups,
             onGroupClick = onGroupClick,
             testingGroupNames = testingGroupNames,
-            itemVerticalPadding = ProxyPageSpacing.ItemVertical,
+                            itemVerticalPadding = UiDp.dp6,
         )
     }
 }

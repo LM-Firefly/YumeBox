@@ -23,10 +23,10 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.repository.ActiveProfileOverrideReloader
-import com.github.yumelira.yumebox.data.repository.OverrideConfigRepository
-import com.github.yumelira.yumebox.domain.model.OverrideConfig
-import com.github.yumelira.yumebox.domain.model.OverrideMetadata
+import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
+import com.github.yumelira.yumebox.data.store.OverrideConfigStore
+import com.github.yumelira.yumebox.data.model.OverrideConfig
+import com.github.yumelira.yumebox.data.model.OverrideMetadata
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveEvent
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveState
 import com.github.yumelira.yumebox.presentation.util.encodeOverrideConfigForDiff
@@ -45,7 +45,7 @@ import timber.log.Timber
 
 internal class OverrideEditSessionCoordinator(
     private val scope: CoroutineScope,
-    private val configRepo: OverrideConfigRepository,
+    private val configRepo: OverrideConfigStore,
     private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
     private val reloadConfigs: suspend () -> Unit,
     private val updateLocalCacheAfterSave: (OverrideConfig) -> Unit,

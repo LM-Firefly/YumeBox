@@ -31,8 +31,8 @@ import com.ramcosta.composedestinations.animations.NavHostAnimatedDestinationSty
 
 object NavigationTransitions {
 
-    private const val DURATION = 420
-    private const val FADE_DURATION = 180
+    private const val DURATION = 340
+    private const val FADE_DURATION = 140
 
     private val enterEasing = CubicBezierEasing(0.25f, 0.10f, 0.25f, 1.0f)
     private val exitEasing = CubicBezierEasing(0.25f, 0.10f, 0.25f, 1.0f)

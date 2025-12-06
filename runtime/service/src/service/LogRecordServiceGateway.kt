@@ -24,7 +24,7 @@ package com.github.yumelira.yumebox.service
 
 import android.app.Application
 import com.github.yumelira.yumebox.core.util.PollingTimerSpec
-import com.github.yumelira.yumebox.data.repository.LogRecordGateway
+import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
 import java.io.File
 
 class LogRecordServiceGateway : LogRecordGateway {

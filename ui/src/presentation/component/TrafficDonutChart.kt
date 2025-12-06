@@ -1,5 +1,27 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.presentation.component
 
+
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.tween
@@ -24,6 +46,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.min
@@ -45,11 +68,14 @@ fun TrafficDonutChart(
     onSliceClick: (String?) -> Unit,
     modifier: Modifier = Modifier,
     animationKey: Any? = Unit,
-    strokeWidth: Dp = 22.dp,
+    strokeWidth: Dp = UiDp.dp22,
     segmentGapAngle: Float = 3.6f,
-    selectedExpansion: Dp = 8.dp,
+    selectedExpansion: Dp = UiDp.dp8,
     centerContent: @Composable BoxScope.() -> Unit = {},
 ) {
+    val semanticColors = AppTheme.colors
+    val opacity = AppTheme.opacity
+
     val safeTotal = total.coerceAtLeast(0L)
     val interactiveSlices = remember(slices, safeTotal) {
         if (safeTotal <= 0L) emptyList() else buildInteractiveSlices(slices, safeTotal, segmentGapAngle)
@@ -121,7 +147,7 @@ fun TrafficDonutChart(
 
             if (interactiveSlices.isEmpty()) {
                 drawArc(
-                    color = Color(0x1F8A94A6),
+                    color = semanticColors.traffic.donutTrackForeground,
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter = false,
@@ -132,7 +158,7 @@ fun TrafficDonutChart(
             }
 
             drawArc(
-                color = Color(0x148A94A6),
+                color = semanticColors.traffic.donutTrackBackground,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -160,7 +186,11 @@ fun TrafficDonutChart(
                 }
 
                 drawArc(
-                    color = if (selectedKey == null || isSelected) slice.color else slice.color.copy(alpha = 0.48f),
+                    color = if (selectedKey == null || isSelected) {
+                        slice.color
+                    } else {
+                        slice.color.copy(alpha = opacity.emphasizedTrack)
+                    },
                     startAngle = slice.startAngle - 90f,
                     sweepAngle = animatedSweep,
                     useCenter = false,

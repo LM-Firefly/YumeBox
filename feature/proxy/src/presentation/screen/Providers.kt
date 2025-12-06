@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -203,11 +202,11 @@ private fun ProviderCard(
         uri?.let { onUpload(it) }
     }
 
-    Card(modifier = Modifier.padding(vertical = 4.dp)) {
+    Card(modifier = Modifier.padding(vertical = UiDp.dp4)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -217,9 +216,9 @@ private fun ProviderCard(
                     style = MiuixTheme.textStyles.body1,
                     color = MiuixTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.size(4.dp))
+                Spacer(modifier = Modifier.size(UiDp.dp4))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -242,30 +241,30 @@ private fun ProviderCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(UiDp.dp8))
 
             if (provider.path.isNotBlank()) {
                 Box {
                     IconButton(
                         backgroundColor = updateBg,
-                        minHeight = 35.dp,
-                        minWidth = 35.dp,
+                        minHeight = UiDp.dp35,
+                        minWidth = UiDp.dp35,
                         enabled = !isUpdating,
                         onClick = { showPopup.value = true }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
+                            modifier = Modifier.padding(horizontal = UiDp.dp10),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            horizontalArrangement = Arrangement.spacedBy(UiDp.dp2),
                         ) {
                             Icon(
-                                modifier = Modifier.size(20.dp),
+                                modifier = Modifier.size(UiDp.dp20),
                                 imageVector = MiuixIcons.Edit,
                                 tint = updateTint,
                                 contentDescription = MLang.Providers.Action.Operation,
                             )
                             Text(
-                                modifier = Modifier.padding(end = 3.dp),
+                                modifier = Modifier.padding(end = UiDp.dp3),
                                 text = MLang.Providers.Action.Operation,
                                 color = updateTint,
                                 fontWeight = FontWeight.Medium,

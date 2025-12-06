@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen.node
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.annotation.SuppressLint
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -45,8 +44,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.data.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import dev.chrisbanes.haze.HazeProgressive
@@ -61,10 +60,10 @@ import top.yukonga.miuix.kmp.utils.overScrollHorizontal
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 val NodeSheetContentPadding = PaddingValues(
-    start = 0.dp,
-    end = 0.dp,
-    top = 8.dp,
-    bottom = 16.dp,
+    start = UiDp.dp0,
+    end = UiDp.dp0,
+    top = UiDp.dp8,
+    bottom = UiDp.dp16,
 )
 
 private fun LazyListState.isScrolledFromTop(): Boolean {
@@ -75,7 +74,7 @@ private fun Modifier.nodeTabHaze(state: HazeState?, style: HazeStyle?): Modifier
     if (state == null || style == null) return this
     return hazeEffect(state) {
         this.style = style
-        blurRadius = 30.dp
+        blurRadius = UiDp.dp30
         noiseFactor = 0f
         progressive = HazeProgressive.verticalGradient(
             startIntensity = 1f,
@@ -110,8 +109,8 @@ internal fun NodeTabs(
             .nodeTabHaze(hazeState, hazeStyle)
             .background(MiuixTheme.colorScheme.surface)
             .overScrollHorizontal(),
-        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(start = UiDp.dp14, end = UiDp.dp14, top = UiDp.dp10, bottom = UiDp.dp10),
+        horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
         overscrollEffect = null,
     ) {
         itemsIndexed(groups, key = { _, group -> group.name }) { index, group ->
@@ -129,14 +128,14 @@ internal fun NodeTabs(
 
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
+                    .clip(RoundedCornerShape(UiDp.dp999))
                     .background(background)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = { onSelect(index) },
                     )
-                    .padding(horizontal = 11.dp, vertical = 6.dp),
+                    .padding(horizontal = UiDp.dp11, vertical = UiDp.dp6),
             ) {
                 Text(
                     text = group.name,
@@ -178,7 +177,7 @@ internal fun NodeGroupSheetContent(
             .height(sheetHeight)
             .overScrollVertical(),
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         contentPadding = NodeSheetContentPadding,
         overscrollEffect = null,
     ) {
@@ -186,7 +185,7 @@ internal fun NodeGroupSheetContent(
             groups = groups,
             onGroupClick = onGroupClick,
             testingGroupNames = testingGroupNames,
-            itemVerticalPadding = 0.dp,
+            itemVerticalPadding = UiDp.dp0,
         )
     }
 }
@@ -217,7 +216,7 @@ fun NodeSheetContent(
             .height(sheetHeight)
             .overScrollVertical(),
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         contentPadding = NodeSheetContentPadding,
         overscrollEffect = null,
     ) {
@@ -236,12 +235,12 @@ fun NodeSheetContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = UiDp.dp12),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(UiDp.dp6),
                 ) {
                     InfiniteProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(UiDp.dp24),
                     )
                     Text(
                         text = MLang.Proxy.Testing.InProgress,

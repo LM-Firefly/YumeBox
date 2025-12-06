@@ -1,3 +1,4 @@
+
 /*
  * This file is part of YumeBox.
  *
@@ -20,6 +21,7 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -49,7 +51,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
@@ -60,6 +62,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +71,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.`Arrow-down-up`
 import com.github.yumelira.yumebox.presentation.icon.yume.Bolt
 import com.github.yumelira.yumebox.presentation.icon.yume.House
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.kyant.shapes.Capsule
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -78,9 +82,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.shapes.SmoothUnevenRoundedCornerShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 class MainPagerState(
     val pagerState: PagerState,
@@ -150,34 +156,29 @@ val LocalBottomBarHazeStyle = compositionLocalOf<HazeStyle?> { null }
 val LocalBottomBarUseLegacyStyle = compositionLocalOf { false }
 
 object MainBottomBarDefaults {
-    val CornerRadius = 28.dp
+    val CornerRadius = UiDp.dp28
     val Shape = SmoothUnevenRoundedCornerShape(
         topStart = CornerRadius,
         topEnd = CornerRadius,
     )
-    val BorderWidth = 0.26.dp
-    val OutlineHorizontalInset = 0.dp
-    val ItemHeight = 60.dp
-    val IconSize = 26.dp
+    val BorderWidth = UiDp.dp0_26
+    val OutlineHorizontalInset = UiDp.dp0
+    val ItemHeight = UiDp.dp60
+    val IconSize = UiDp.dp26
     val LabelFontSize = 11.5.sp
-    val IconLabelSpacing = 3.dp
-    val HorizontalPadding = 48.dp
-    val TopPadding = 6.dp
-    val FloatingBottomPadding = 12.dp
-    val EnterOffset = 68.dp
-    val ExitOffset = 84.dp
-    val BackgroundAlpha = 0.68f
-    val BackgroundAlphaNoBlur = 1f
-    val ModernReservedHeight = 64.dp
-    val LegacyReservedHeight = 68.dp
+    val IconLabelSpacing = UiDp.dp3
+    val HorizontalPadding = UiDp.dp48
+    val TopPadding = UiDp.dp6
+    val FloatingBottomPadding = UiDp.dp12
+    val EnterOffset = UiDp.dp68
+    val ExitOffset = UiDp.dp84
+    val ModernReservedHeight = UiDp.dp64
+    val LegacyReservedHeight = UiDp.dp68
     val PagerAnimationSpec: AnimationSpec<Float> =
         spring(
             stiffness = Spring.StiffnessMediumLow,
             visibilityThreshold = Int.VisibilityThreshold.toFloat(),
         )
-    const val SelectedPressedAlpha = 0.5f
-    const val UnselectedPressedAlpha = 0.6f
-    const val UnselectedAlpha = 0.46f
 }
 
 @Composable
@@ -219,7 +220,7 @@ private fun Modifier.bottomBarHazeEffect(
 
     return hazeEffect(state) {
         this.style = style
-        blurRadius = 26.dp
+        blurRadius = UiDp.dp26
         inputScale = HazeInputScale.Fixed(0.24f)
         noiseFactor = 0f
         forceInvalidateOnPreDraw = false
@@ -229,6 +230,8 @@ private fun Modifier.bottomBarHazeEffect(
 private fun Modifier.bottomBarOutline(
     shape: Shape,
     color: Color,
+    edgeFadeAlpha: Float,
+    middleFadeAlpha: Float,
 ): Modifier = graphicsLayer(
     compositingStrategy = CompositingStrategy.Offscreen,
 ).drawWithCache {
@@ -238,12 +241,12 @@ private fun Modifier.bottomBarOutline(
     val fadeMaskBrush = Brush.horizontalGradient(
         colorStops = arrayOf(
             0f to Color.Transparent,
-            0.01f to Color.Black.copy(alpha = 0.18f),
-            0.025f to Color.Black.copy(alpha = 0.58f),
-            0.045f to Color.Black,
-            0.955f to Color.Black,
-            0.975f to Color.Black.copy(alpha = 0.58f),
-            0.99f to Color.Black.copy(alpha = 0.18f),
+            0.01f to Black.copy(alpha = edgeFadeAlpha),
+            0.025f to Black.copy(alpha = middleFadeAlpha),
+            0.045f to Black,
+            0.955f to Black,
+            0.975f to Black.copy(alpha = middleFadeAlpha),
+            0.99f to Black.copy(alpha = edgeFadeAlpha),
             1f to Color.Transparent,
         )
     )
@@ -298,20 +301,21 @@ private fun ModernBottomBarContent(
     }
     val bottomBarVisible = isVisible && (bottomBarScrollBehavior?.isBottomBarVisible ?: true)
     val hazeEnabled = hazeState != null && hazeStyle != null
+    val opacity = AppTheme.opacity
     val colorScheme = MiuixTheme.colorScheme
     val isDarkSurface = colorScheme.background.luminance() < 0.5f
     val outlineColor = if (isDarkSurface) {
-        White.copy(alpha = 0.72f)
+        White.copy(alpha = opacity.brightOutline)
     } else {
-        Black.copy(alpha = 0.56f)
+        Black.copy(alpha = opacity.mutedStrong)
     }
     val selectedColor = colorScheme.primary
-    val unselectedColor = colorScheme.onSurface.copy(alpha = 0.6f)
+    val unselectedColor = colorScheme.onSurface.copy(alpha = opacity.secondaryText)
     val barSurfaceColor = colorScheme.background
     val barSurfaceAlpha = if (hazeEnabled) {
-        MainBottomBarDefaults.BackgroundAlpha
+        opacity.elevatedSurface
     } else {
-        MainBottomBarDefaults.BackgroundAlphaNoBlur
+        1f
     }
 
     val handlePageChange = LocalHandlePageChange.current
@@ -363,6 +367,8 @@ private fun ModernBottomBarContent(
             .bottomBarOutline(
                 shape = barShape,
                 color = outlineColor,
+                edgeFadeAlpha = opacity.lightOverlay,
+                middleFadeAlpha = opacity.accent,
             )
 
         BottomBarLayout(
@@ -388,8 +394,10 @@ private fun BottomBarLayout(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val captionBarPaddings = WindowInsets.captionBar.only(WindowInsetsSides.Bottom).asPaddingValues()
-    val captionBarBottomPaddingValue = captionBarPaddings.calculateBottomPadding()
+    val captionBarBottomPadding = WindowInsets.captionBar
+        .only(WindowInsetsSides.Bottom)
+        .asPaddingValues()
+        .calculateBottomPadding()
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -407,16 +415,7 @@ private fun BottomBarLayout(
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
-                .layout { measurable, constraints ->
-                    val totalHeight =
-                        (navigationBarsPadding.calculateBottomPadding() + captionBarBottomPaddingValue).roundToPx()
-                    val placeable = measurable.measure(
-                        constraints.copy(minHeight = totalHeight, maxHeight = totalHeight)
-                    )
-                    layout(placeable.width, totalHeight) {
-                        placeable.placeRelative(0, 0)
-                    }
-                }
+                .height(navigationBarsPadding.calculateBottomPadding() + captionBarBottomPadding)
                 .pointerInput(Unit) {
                     detectTapGestures { }
                 },
@@ -434,13 +433,14 @@ private fun RowScope.BottomBarItem(
     selectedColor: Color,
     unselectedColor: Color,
 ) {
+    val opacity = AppTheme.opacity
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val tint = when {
         isPressed -> if (selected) {
-            selectedColor.copy(alpha = MainBottomBarDefaults.SelectedPressedAlpha)
+            selectedColor.copy(alpha = opacity.medium)
         } else {
-            unselectedColor.copy(alpha = MainBottomBarDefaults.UnselectedPressedAlpha)
+            unselectedColor.copy(alpha = opacity.secondaryText)
         }
 
         selected -> selectedColor
@@ -504,6 +504,7 @@ private fun LegacyBottomBarContent(
     }
     val bottomBarVisible = isVisible && (bottomBarScrollBehavior?.isBottomBarVisible ?: true)
     val density = LocalDensity.current
+    val opacity = AppTheme.opacity
     val enterOffsetPx = remember(density) { with(density) { MainBottomBarDefaults.EnterOffset.toPx() } }
     val exitOffsetPx = remember(density) { with(density) { MainBottomBarDefaults.ExitOffset.toPx() } }
     val animatedTranslationY = remember { Animatable(if (bottomBarVisible) 0f else exitOffsetPx) }
@@ -566,9 +567,9 @@ private fun LegacyBottomBarContent(
         max(navigationBottom, gestureBottom).toDp()
     }
     val selectedColor = MiuixTheme.colorScheme.primary
-    val unselectedColor = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val unselectedColor = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.secondaryText)
     val containerColor = MiuixTheme.colorScheme.background
-    val indicatorContainerColor = selectedColor.copy(alpha = 0.1f)
+    val indicatorContainerColor = selectedColor.copy(alpha = opacity.subtle)
 
     LegacyBottomNavigationBar(
         selectedIndex = page,
@@ -599,7 +600,7 @@ private fun LegacyBottomBarContent(
                 onClick = { onItemClick(index) },
             ) {
                 Box(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(UiDp.dp20),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -631,29 +632,37 @@ private fun LegacyBottomNavigationBar(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val opacity = AppTheme.opacity
+    val density = LocalDensity.current
     val isLightTheme = !isSystemInDarkTheme()
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-    val density = LocalDensity.current
-    val borderShadowColor = if (isLightTheme) {
-        Black.copy(alpha = 0.10f)
-    } else {
-        Black.copy(alpha = 0.24f)
-    }
-    val outerBorderColor = if (isLightTheme) {
-        White.copy(alpha = 0.4f)
-    } else {
-        Black.copy(alpha = 0.2f)
-    }
-    val innerBorderColor = if (isLightTheme) {
-        Black.copy(alpha = 0.045f)
-    } else {
-        White.copy(alpha = 0.08f)
-    }
+    val surfaceWidthPx = remember { mutableIntStateOf(0) }
     val safeSelectedIndex = selectedIndex.coerceIn(0, tabsCount - 1)
     val safeIndicatorProgress = indicatorProgress.coerceIn(0f, (tabsCount - 1).toFloat())
-    val contentInset = 4.dp
-    val contentInsetPx = with(density) { (contentInset * 2).toPx() }
+    val contentInsetPx = with(density) { (UiDp.dp4 * 2).toPx() }
+    val innerWidthPx = (surfaceWidthPx.intValue - contentInsetPx).coerceAtLeast(0f)
+    val tabWidthPx = if (tabsCount > 0) innerWidthPx / tabsCount else 0f
+    val indicatorOffsetPx = if (isLtr) {
+        safeIndicatorProgress * tabWidthPx
+    } else {
+        innerWidthPx - (safeIndicatorProgress + 1f) * tabWidthPx
+    }
     val indicatorScale = remember { Animatable(1f) }
+    val borderShadowColor = if (isLightTheme) {
+        Black.copy(alpha = opacity.subtle)
+    } else {
+        Black.copy(alpha = opacity.surfaceSoft)
+    }
+    val outerBorderColor = if (isLightTheme) {
+        White.copy(alpha = opacity.disabledSecondary)
+    } else {
+        Black.copy(alpha = opacity.mediumOverlay)
+    }
+    val innerBorderColor = if (isLightTheme) {
+        Black.copy(alpha = opacity.ultraSubtle)
+    } else {
+        White.copy(alpha = opacity.verySubtle)
+    }
 
     LaunchedEffect(safeSelectedIndex) {
         launch {
@@ -662,75 +671,97 @@ private fun LegacyBottomNavigationBar(
         }
     }
 
-    BoxWithConstraints(
+    Box(
         modifier = modifier
+            .onSizeChanged { surfaceWidthPx.intValue = it.width }
             .graphicsLayer {
                 shape = Capsule()
                 clip = false
-                shadowElevation = with(density) { 7.dp.toPx() }
+                shadowElevation = with(density) { UiDp.dp7.toPx() }
                 ambientShadowColor = borderShadowColor
                 spotShadowColor = borderShadowColor
             }
-            .height(56.dp)
+            .height(UiDp.dp56)
             .clip(Capsule())
             .background(containerColor, Capsule()),
         contentAlignment = Alignment.CenterStart,
     ) {
-        val tabWidth = (constraints.maxWidth.toFloat() - contentInsetPx) / tabsCount
-
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(contentInset),
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            Box(
+        if (tabWidthPx > 0f) {
+            LegacyBottomNavigationIndicator(
                 modifier = Modifier
-                    .graphicsLayer {
-                        translationX =
-                            if (isLtr) {
-                                safeIndicatorProgress * tabWidth
-                            } else {
-                                size.width - (safeIndicatorProgress + 1f) * tabWidth
-                            }
-                        scaleX = indicatorScale.value
-                        scaleY = indicatorScale.value
-                    }
-                    .height(48.dp)
-                    .fillMaxWidth(1f / tabsCount)
-                    .background(indicatorContainerColor, Capsule()),
-            )
-
-            Row(
-                modifier = Modifier
-                    .height(48.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                content = content,
+                    .padding(UiDp.dp4)
+                    .align(Alignment.CenterStart),
+                indicatorOffsetPx = indicatorOffsetPx,
+                indicatorWidthPx = tabWidthPx,
+                indicatorScale = indicatorScale.value,
+                indicatorContainerColor = indicatorContainerColor,
             )
         }
 
-        Box(
+        Row(
             modifier = Modifier
-                .matchParentSize()
-                .border(
-                    width = 0.3.dp,
-                    color = outerBorderColor,
-                    shape = Capsule(),
-                ),
+                .padding(UiDp.dp4)
+                .height(UiDp.dp48)
+                .fillMaxWidth()
+                .align(Alignment.CenterStart),
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
         )
 
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(1.dp)
-                .border(
-                    width = 0.2.dp,
-                    color = innerBorderColor,
-                    shape = Capsule(),
-                ),
+        LegacyBottomNavigationBorders(
+            outerBorderColor = outerBorderColor,
+            innerBorderColor = innerBorderColor,
         )
     }
+}
+
+@Composable
+private fun LegacyBottomNavigationIndicator(
+    modifier: Modifier = Modifier,
+    indicatorOffsetPx: Float,
+    indicatorWidthPx: Float,
+    indicatorScale: Float,
+    indicatorContainerColor: Color,
+) {
+    val density = LocalDensity.current
+    Box(
+        modifier = modifier
+            .offset { IntOffset(indicatorOffsetPx.roundToInt(), 0) }
+            .width(with(density) { indicatorWidthPx.toDp() })
+            .height(UiDp.dp48)
+            .graphicsLayer {
+                scaleX = indicatorScale
+                scaleY = indicatorScale
+            }
+            .background(indicatorContainerColor, Capsule()),
+    )
+}
+
+@Composable
+private fun BoxScope.LegacyBottomNavigationBorders(
+    outerBorderColor: Color,
+    innerBorderColor: Color,
+) {
+    Box(
+        modifier = Modifier
+            .matchParentSize()
+            .border(
+                width = UiDp.dp0_3,
+                color = outerBorderColor,
+                shape = Capsule(),
+            ),
+    )
+
+    Box(
+        modifier = Modifier
+            .matchParentSize()
+            .padding(UiDp.dp1)
+            .border(
+                width = UiDp.dp0_2,
+                color = innerBorderColor,
+                shape = Capsule(),
+            ),
+    )
 }
 
 @Composable
@@ -752,7 +783,7 @@ private fun RowScope.LegacyBottomNavigationTabItem(
             )
             .fillMaxHeight()
             .weight(1f),
-        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp2, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
         content = content,
     )

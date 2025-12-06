@@ -35,12 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.data.store.LogStore
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
@@ -51,6 +51,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Play
 import com.github.yumelira.yumebox.presentation.icon.yume.PowerOff
 import com.github.yumelira.yumebox.presentation.icon.yume.Share
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -71,6 +72,8 @@ fun LogScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
 
     val isRecording by viewModel.isRecording.collectAsState()
     val logEntries by viewModel.tempLogEntries.collectAsState()
@@ -158,7 +161,10 @@ fun LogScreen(navigator: DestinationsNavigator) {
                 label = "log_record_fab_visibility",
             ) {
                 FloatingActionButton(
-                    modifier = Modifier.padding(end = 20.dp, bottom = 85.dp),
+                    modifier = Modifier.padding(
+                        end = spacing.space20,
+                        bottom = componentSizes.floatingActionButtonBottomInset,
+                    ),
                     onClick = {
                         if (isRecording) {
                             viewModel.stopRecording()
@@ -210,25 +216,28 @@ fun LogScreen(navigator: DestinationsNavigator) {
 }
 
 @Composable
-private fun LogEntryRow(entry: LogViewModel.LogEntry) {
+private fun LogEntryRow(entry: LogStore.LogEntry) {
+    val spacing = AppTheme.spacing
+    val semanticColors = AppTheme.colors
+
     val levelColor = when (entry.level) {
-        LogMessage.Level.Debug -> Color(0xFF9E9E9E)
+        LogMessage.Level.Debug -> semanticColors.logLevel.debug
         LogMessage.Level.Info -> MiuixTheme.colorScheme.primary
-        LogMessage.Level.Warning -> Color(0xFFFF9800)
-        LogMessage.Level.Error -> Color(0xFFF44336)
-        LogMessage.Level.Silent -> Color(0xFF9E9E9E)
-        LogMessage.Level.Unknown -> Color(0xFF9E9E9E)
+        LogMessage.Level.Warning -> semanticColors.logLevel.warning
+        LogMessage.Level.Error -> semanticColors.logLevel.error
+        LogMessage.Level.Silent -> semanticColors.logLevel.neutral
+        LogMessage.Level.Unknown -> semanticColors.logLevel.neutral
     }
 
-    Card(modifier = Modifier.padding(vertical = 4.dp)) {
+    Card(modifier = Modifier.padding(vertical = spacing.space4)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .padding(horizontal = spacing.space12, vertical = spacing.space10)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space8),
             ) {
                 Text(
                     text = entry.time,
@@ -247,7 +256,7 @@ private fun LogEntryRow(entry: LogViewModel.LogEntry) {
                     color = levelColor,
                 )
             }
-            Spacer(modifier = Modifier.size(6.dp))
+            Spacer(modifier = Modifier.size(spacing.space6))
             Text(
                 text = entry.message,
                 style = MiuixTheme.textStyles.body2.copy(

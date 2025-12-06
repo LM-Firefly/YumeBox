@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -132,9 +133,9 @@ fun StartupBiometricContent(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = UiDp.dp24),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             Text(
                 text = MLang.AppSettings.Privacy.BiometricPromptTitle,
@@ -151,7 +152,7 @@ fun StartupBiometricContent(
             if (!isAuthenticating && biometricErrorMessage != null) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),

@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.home
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,15 +46,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.LocaleUtil
-import com.github.yumelira.yumebox.data.repository.IpMonitoringState
+import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val INFO_VALUE_CORNER_RADIUS = RoundedCornerShape(10.dp)
-private val INFO_VALUE_MAX_WIDTH = 220.dp
-internal val INFO_TEXT_HEIGHT = 24.dp
+private val INFO_VALUE_CORNER_RADIUS = RoundedCornerShape(UiDp.dp10)
+private val INFO_VALUE_MAX_WIDTH = UiDp.dp220
+internal val INFO_TEXT_HEIGHT = UiDp.dp24
 
 @Composable
 fun IpInfoDisplay(
@@ -114,14 +113,14 @@ private fun IpInfoRow(
             horizontalAlignment = Alignment.Start,
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp)
+                .padding(end = UiDp.dp16)
         ) {
             Text(
                 text = label,
                 style = MiuixTheme.textStyles.footnote1.copy(fontSize = 12.sp),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp4))
             Text(
                 text = value,
                 style = MiuixTheme.textStyles.body1.copy(lineHeight = 20.sp),
@@ -151,12 +150,12 @@ private fun CountryBadge(countryCode: String?) {
         val displayCountryCode = LocaleUtil.normalizeRegionCode(countryCode) ?: countryCode
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
             verticalAlignment = Alignment.CenterVertically
         ) {
             CountryFlagCircle(
                 countryCode = countryCode,
-                size = 20.dp
+                size = UiDp.dp20
             )
             Text(
                 text = displayCountryCode,
@@ -165,7 +164,7 @@ private fun CountryBadge(countryCode: String?) {
                 color = MiuixTheme.colorScheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 40.dp)
+                modifier = Modifier.widthIn(max = UiDp.dp40)
             )
         }
     }

@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.about
 
+package com.github.yumelira.yumebox.screen.about
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -79,22 +80,22 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(UiDp.dp24))
 
                     Icon(
                         painter = painterResource(id = R.drawable.yume),
                         contentDescription = "App Icon",
                         modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(24.dp)),
+                            .size(UiDp.dp120)
+                            .clip(RoundedCornerShape(UiDp.dp24)),
                         tint = Color.Unspecified,
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(UiDp.dp24))
 
                     Text(text = "YumeBox", style = MiuixTheme.textStyles.title1)
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(UiDp.dp8))
 
                     Text(
                         text = "${BuildConfig.VERSION_NAME} ($coreVersion)",
@@ -102,7 +103,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(UiDp.dp32))
                 }
 
                 Card {
@@ -162,7 +163,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 32.dp),
+                        .padding(top = UiDp.dp32),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
@@ -170,7 +171,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                         style = MiuixTheme.textStyles.footnote1,
                     )
                 }
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(UiDp.dp32))
             }
         }
     }

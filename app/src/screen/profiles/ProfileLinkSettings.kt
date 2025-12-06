@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.profiles
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -36,6 +35,7 @@ import com.github.yumelira.yumebox.presentation.component.AppFormDialog
 import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
 import com.github.yumelira.yumebox.presentation.component.SectionCard
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -54,6 +54,10 @@ internal fun LinkSettingsDialog(
     onDeleteLink: (String) -> Unit,
     onOpenLink: (ProfileLink) -> Unit
 ) {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+    val componentSizes = AppTheme.sizes
+
     val openModeOptions = listOf(
         MLang.ProfilesPage.LinkSettings.OpenModeInApp,
         MLang.ProfilesPage.LinkSettings.OpenModeExternal
@@ -81,8 +85,8 @@ internal fun LinkSettingsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(bottom = spacing.space16),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp12)
             ) {
                 SectionCard(title = MLang.ProfilesPage.LinkSettings.OpenMode) {
                     PreferenceEnumItem(
@@ -115,7 +119,7 @@ internal fun LinkSettingsDialog(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { onOpenLink(link) }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                        .padding(horizontal = spacing.space16, vertical = spacing.space12),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically) {
                                     Column(modifier = Modifier.weight(1f)) {
@@ -125,7 +129,7 @@ internal fun LinkSettingsDialog(
                                         Text(
                                             text = link.url,
                                             style = MiuixTheme.textStyles.body2,
-                                            color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            color = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.secondaryText),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -143,9 +147,9 @@ internal fun LinkSettingsDialog(
 
                                 if (index < links.size - 1) {
                                     HorizontalDivider(
-                                        modifier = Modifier.padding(horizontal = 16.dp),
-                                        thickness = 0.5.dp,
-                                        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                        modifier = Modifier.padding(horizontal = spacing.space16),
+                                        thickness = componentSizes.thinDividerThickness,
+                                        color = MiuixTheme.colorScheme.outline.copy(alpha = opacity.outline)
                                     )
                                 }
                             }
@@ -155,7 +159,7 @@ internal fun LinkSettingsDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(spacing.space12)
                 ) {
                     TextButton(
                         text = MLang.ProfilesPage.LinkSettings.Close,

@@ -27,17 +27,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-
-private val NODE_DELAY_WIDTH = 72.dp
 
 @Composable
 fun NodeInfoDisplay(
@@ -45,6 +42,9 @@ fun NodeInfoDisplay(
     serverPing: Int?,
     modifier: Modifier = Modifier
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+
     val flagged = remember(serverName) {
         serverName?.let(::extractFlaggedName)
     }
@@ -59,14 +59,14 @@ fun NodeInfoDisplay(
             horizontalAlignment = Alignment.Start,
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 16.dp)
+                .padding(end = spacing.space16)
         ) {
             Text(
                 text = MLang.Home.NodeInfo.Node,
                 style = MiuixTheme.textStyles.footnote1.copy(fontSize = 12.sp),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(spacing.space4))
             if (hasKnownNode) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -76,8 +76,8 @@ fun NodeInfoDisplay(
                 ) {
                     val countryCode = flagged?.countryCode
                     if (countryCode != null) {
-                        CountryFlagCircle(countryCode = countryCode, size = 18.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        CountryFlagCircle(countryCode = countryCode, size = spacing.space18)
+                        Spacer(modifier = Modifier.width(spacing.space8))
                     }
                     Text(
                         text = flagged?.displayName ?: serverName.orEmpty(),
@@ -99,14 +99,14 @@ fun NodeInfoDisplay(
 
         Column(
             horizontalAlignment = Alignment.End,
-            modifier = Modifier.width(NODE_DELAY_WIDTH)
+            modifier = Modifier.width(componentSizes.nodeDelayColumnWidth)
         ) {
             Text(
                 text = MLang.Home.NodeInfo.Delay,
                 style = MiuixTheme.textStyles.footnote1.copy(fontSize = 12.sp),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(spacing.space4))
             PingValue(ping = serverPing)
         }
     }
@@ -114,11 +114,13 @@ fun NodeInfoDisplay(
 
 @Composable
 private fun PingValue(ping: Int?) {
+    val semanticColors = AppTheme.colors
+
     if (ping != null && ping <= 1000) {
         val color = if (ping < 500) {
-            Color(0xFF007906)
+            semanticColors.latency.fast
         } else {
-            Color(0xFFFFB300)
+            semanticColors.latency.moderate
         }
         Text(
             text = MLang.Home.NodeInfo.DelayValue.format(ping),

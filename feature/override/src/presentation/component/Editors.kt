@@ -18,11 +18,11 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -33,9 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 
 typealias OpenStringListEditor = (
@@ -102,8 +99,8 @@ internal fun OverrideIntInputContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(vertical = UiDp.dp8),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             TextField(
                 value = textValue,
@@ -113,27 +110,16 @@ internal fun OverrideIntInputContent(
                 label = placeholder,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = {
-                        onValueChange(null)
-                        showDialog.value = false
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Clear)
-                }
-                Button(
-                    onClick = {
-                        onValueChange(textValue.takeIf(String::isNotBlank)?.toIntOrNull())
-                        showDialog.value = false
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
-                    Text(MLang.Component.Button.Confirm)
-                }
-            }
+            DialogFilledButtonRow(
+                onSecondary = {
+                    onValueChange(null)
+                    showDialog.value = false
+                },
+                onPrimary = {
+                    onValueChange(textValue.takeIf(String::isNotBlank)?.toIntOrNull())
+                    showDialog.value = false
+                },
+            )
         }
     }
 }

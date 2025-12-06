@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.screen.node
 
 import androidx.compose.foundation.background
@@ -41,7 +39,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.state.IntColorDrawableStateImage
@@ -50,6 +47,8 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.chevron
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -68,7 +67,7 @@ internal fun LazyListScope.nodeGroupItems(
     groups: List<ProxyGroupInfo>,
     onGroupClick: (ProxyGroupInfo) -> Unit,
     testingGroupNames: Set<String> = emptySet(),
-    itemVerticalPadding: Dp = 6.dp,
+    itemVerticalPadding: Dp = UiDp.dp6,
 ) {
     items(
         items = groups,
@@ -93,7 +92,7 @@ internal fun NodeGroupCard(
     onClick: (ProxyGroupInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val cardShape = RoundedCornerShape(NodeCardDefaults.GroupCornerRadius)
+    val cardShape = RoundedCornerShape(AppTheme.radii.radius24)
     val interactionSource = remember { MutableInteractionSource() }
 
     val proxiesByName = remember(group.proxies) {
@@ -109,21 +108,19 @@ internal fun NodeGroupCard(
         )
     }
     val currentNodeName = remember(currentNode.displayName, group.now) {
-        currentNode.displayName
-            .ifBlank { group.now.trim() }
-            .ifBlank { MLang.Proxy.Mode.Direct }
+        currentNode.displayName.ifBlank { group.now.trim() }.ifBlank { MLang.Proxy.Mode.Direct }
     }
     val iconUri = remember(group.icon) {
         group.icon?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeNodeGroupIconUri)
     }
     val currentDelay = remember(currentProxy) { currentProxy?.delay }
     val badge = remember(group.type) { groupBadge(group.type) }
-    val delayLabel = remember(currentDelay) { nodeLatencyLabel(currentDelay) }
+    val delayLabel = nodeLatencyLabel(currentDelay)
 
     Column(
         modifier = modifier
             .shadow(
-                elevation = 4.dp,
+                elevation = UiDp.dp4,
                 shape = cardShape,
                 ambientColor = Color.Black.copy(alpha = 0.05f),
                 spotColor = Color.Black.copy(alpha = 0.05f),
@@ -136,27 +133,27 @@ internal fun NodeGroupCard(
                 indication = null,
                 onClick = { onClick(group) },
             )
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = UiDp.dp16, vertical = UiDp.dp14),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp10),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
 
             if (iconUri != null) {
                 NodeGroupIcon(
                     iconUri = iconUri,
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp)),
+                        .size(UiDp.dp44)
+                        .clip(RoundedCornerShape(UiDp.dp14)),
                 )
             }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp10),
             ) {
 
                 Row(
@@ -166,7 +163,7 @@ internal fun NodeGroupCard(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                         modifier = Modifier.weight(1f),
                     ) {
 
@@ -180,26 +177,22 @@ internal fun NodeGroupCard(
                         )
 
                         val primary = MiuixTheme.colorScheme.primary
-                        Row(
+                        Text(
+                            text = badge.label,
+                            style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
+                            color = primary,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(100.dp))
+                                .clip(RoundedCornerShape(UiDp.dp100))
                                 .background(primary.copy(alpha = 0.1f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = badge.label,
-                                style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
-                                color = primary,
-                            )
-                        }
+                                .padding(horizontal = UiDp.dp8, vertical = UiDp.dp3),
+                        )
                     }
 
                     Text(
                         text = MLang.Proxy.Node.Count.format(group.proxies.size),
                         style = MiuixTheme.textStyles.footnote1,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        modifier = Modifier.padding(start = 8.dp),
+                        modifier = Modifier.padding(start = UiDp.dp8),
                     )
                 }
 
@@ -210,12 +203,12 @@ internal fun NodeGroupCard(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                         modifier = Modifier.weight(1f),
                     ) {
                         val cc = currentNode.countryCode
                         if (cc != null) {
-                            CountryFlagCircle(countryCode = cc, size = 20.dp)
+                            CountryFlagCircle(countryCode = cc, size = UiDp.dp20)
                         }
                         Text(
                             text = currentNodeName,
@@ -227,7 +220,7 @@ internal fun NodeGroupCard(
                     }
 
                     Box(
-                        modifier = Modifier.padding(start = 8.dp),
+                        modifier = Modifier.padding(start = UiDp.dp8),
                         contentAlignment = Alignment.CenterEnd,
                     ) {
                         when {
@@ -243,7 +236,7 @@ internal fun NodeGroupCard(
                             isDelayTesting -> {
                                 RotatingCircleGauge(
                                     isRotating = true,
-                                    modifier = Modifier.size(14.dp),
+                                    modifier = Modifier.size(UiDp.dp14),
                                     tint = MiuixTheme.colorScheme.primary,
                                     contentDescription = null,
                                 )
@@ -252,8 +245,8 @@ internal fun NodeGroupCard(
                             else -> Icon(
                                 Yume.chevron,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = Color(0xFFC7C7CC),
+                                modifier = Modifier.size(UiDp.dp18),
+                                tint = AppTheme.colors.state.subtleDivider,
                             )
                         }
                     }

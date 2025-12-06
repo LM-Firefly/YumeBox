@@ -75,7 +75,7 @@ object RootPackageShell {
             buildUidQueryCommand(normalizedPackages),
         ).to(stdout).exec()
 
-        if (!result.isSuccess()) return null
+        if (!result.isSuccess) return null
 
         val resolved = stdout
             .asSequence()
@@ -125,7 +125,7 @@ object RootPackageShell {
             "cmd package list packages || pm list packages",
         ).to(stdout).exec()
 
-        if (!result.isSuccess()) return null
+        if (!result.isSuccess) return null
 
         return stdout
             .asSequence()
