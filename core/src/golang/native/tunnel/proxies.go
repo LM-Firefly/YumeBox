@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -32,6 +33,7 @@ type Proxy struct {
 type ProxyGroup struct {
 	Type    string   `json:"type"`
 	Now     string   `json:"now"`
+	Fixed   string   `json:"fixed"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -95,6 +97,16 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	}
 
 	proxies := convertProxies(g.Proxies(), uiSubtitlePattern)
+	// extract `fixed` field from group MarshalJSON if available
+	var fixed string
+	if b, err := json.Marshal(g); err == nil {
+		var m map[string]interface{}
+		if err := json.Unmarshal(b, &m); err == nil {
+			if v, ok := m["fixed"].(string); ok {
+				fixed = v
+			}
+		}
+	}
 	// 	proxies := collectProviders(g.Providers(), uiSubtitlePattern)
 
 	switch sortMode {
@@ -123,6 +135,7 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 	return &ProxyGroup{
 		Type:    g.Type().String(),
 		Now:     g.Now(),
+		Fixed:   fixed,
 		Proxies: proxies,
 	}
 }
@@ -158,6 +171,29 @@ func PatchSelector(selector, name string) bool {
 
 	closeConnByGroup(selector)
 
+	return true
+}
+
+// PatchForceSelector forces a selection (pin/fixed) for compatible groups
+func PatchForceSelector(selector, name string) bool {
+	p := tunnel.Proxies()[selector]
+	if p == nil {
+		log.Warnln("Force patch selector `%s`: not found", selector)
+		return false
+	}
+	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
+	if !ok {
+		log.Warnln("Force patch selector `%s`: invalid type %s", selector, p.Type().String())
+		return false
+	}
+	s, ok := g.(outboundgroup.SelectAble)
+	if !ok {
+		log.Warnln("Force patch selector `%s`: invalid type %s", selector, p.Type().String())
+		return false
+	}
+	s.ForceSet(name)
+	log.Infoln("Force patch selector %s -> %s", selector, name)
+	closeConnByGroup(selector)
 	return true
 }
 

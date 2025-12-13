@@ -43,6 +43,7 @@ import com.github.yumelira.yumebox.data.model.TunStack
 import com.github.yumelira.yumebox.service.NetworkServiceManager
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.EnumSelector
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -88,7 +89,13 @@ fun NetworkSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.NetworkSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(

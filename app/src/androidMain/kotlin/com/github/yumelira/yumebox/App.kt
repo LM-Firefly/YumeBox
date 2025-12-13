@@ -28,10 +28,14 @@ import timber.log.Timber
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
 import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.common.native.NativeLibraryManager.initialize
 import com.github.yumelira.yumebox.common.util.AppUtil
+import com.github.yumelira.yumebox.core.AppLogTree
+import com.github.yumelira.yumebox.core.AppLogBuffer
+import com.github.yumelira.yumebox.core.CrashHandler
 import java.io.File
 
 class App : Application() {
@@ -46,8 +50,10 @@ class App : Application() {
 
         instance = this
         if (Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+            Timber.plant(AppLogTree())
         }
+
+        CrashHandler.init(this)
 
         Global.init(this)
         MMKV.initialize(this)
@@ -60,6 +66,9 @@ class App : Application() {
         extractGeoFiles()
 
         val featureStore: FeatureStore = koinApp.koin.get()
+        val appSettingsStorage: AppSettingsStorage = koinApp.koin.get()
+        AppLogBuffer.minLogLevel = appSettingsStorage.logLevel.value
+
         koinApp.koin.get<TrafficStatisticsCollector>()
 
         if (featureStore.isFirstTimeOpen()) {

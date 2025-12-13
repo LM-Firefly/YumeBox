@@ -31,11 +31,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.github.yumelira.yumebox.core.AppLogBuffer
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.service.LogRecordService
 import kotlinx.coroutines.delay
 import timber.log.Timber
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class LogViewModel(
     application: Application
@@ -52,6 +56,22 @@ class LogViewModel(
 
     init {
         refreshLogFiles()
+    }
+
+    fun saveAppLog() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val logs = AppLogBuffer.getSnapshot()
+            if (logs.isEmpty()) return@launch
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "app_log_$timestamp.log"
+            val file = File(logDir, fileName)
+            try {
+                file.writeText(logs.joinToString("\n"))
+                refreshLogFiles()
+            } catch (e: Exception) {
+                Timber.e(e, "保存App日志失败")
+            }
+        }
     }
 
     fun startRecording() {

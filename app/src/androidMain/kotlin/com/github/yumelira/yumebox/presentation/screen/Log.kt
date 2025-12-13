@@ -50,6 +50,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.useful.Cancel
 import top.yukonga.miuix.kmp.icon.icons.useful.Delete
 import top.yukonga.miuix.kmp.icon.icons.useful.Play
+import top.yukonga.miuix.kmp.icon.icons.useful.Save
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -80,6 +81,15 @@ fun LogScreen(navigator: DestinationsNavigator) {
                     NavigationBackIcon(navigator = navigator)
                 },
                 actions = {
+                    IconButton(
+                        onClick = { viewModel.saveAppLog() },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Useful.Save,
+                            contentDescription = "Save App Log",
+                        )
+                    }
                     IconButton(
                         onClick = {
                             if (isRecording) {

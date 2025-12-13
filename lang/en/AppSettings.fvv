@@ -11,10 +11,8 @@ AppSettings = {
     }
     
     Behavior = {
-        AutoStartTitle = "Auto Start"
-        AutoStartSummary = "Automatically start proxy service on app launch and boot"
-        OneChinaTitle = "One-China Policy"
-        OneChinaSummary = "Automatically display HK/MO/TW region flags and codes as China"
+        AutoStartTitle = "Auto Restart"
+        AutoStartSummary = "Automatically restart proxy on boot, app launch, and unexpected termination"
     }
     
     Home = {
@@ -58,6 +56,8 @@ AppSettings = {
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
+        LogLevelTitle = "Log Level"
+        LogLevelSummary = "Set the minimum log level"
     }
     
     WarningDialog = {

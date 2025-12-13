@@ -46,6 +46,8 @@ Proxy = {
         Switched = "Switched to: %s"
         Failed = "Switch failed"
         Error = "Switch failed: %s"
+        Pinned = "Pinned: %s"
+        Unpinned = "Unpinned"
     }
     
     Settings = {

@@ -95,7 +95,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
 
                 nodeRuntime!!.getExecutor(codeFile).executeVoid()
                 while (shouldAwait) {
-                    nodeRuntime!!.await(V8AwaitMode.RunNoWait)
+                    nodeRuntime!!.await(V8AwaitMode.RunOnce)
                 }
             } catch (e: InterruptedException) {
                 Timber.d("CaseEngine 线程被中断")

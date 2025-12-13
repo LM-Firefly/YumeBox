@@ -90,6 +90,51 @@ fun PortInput(
 }
 
 @Composable
+fun IntInput(
+    title: String,
+    value: Int?,
+    label: String = "",
+    onValueChange: (Int?) -> Unit,
+) {
+    var textValue by remember(value) { mutableStateOf(value?.toString() ?: "") }
+    var showDialog by remember { mutableStateOf(false) }
+    SuperArrow(
+        title = title,
+        summary = if (value != null) "$value" else MLang.Component.Selector.NotModify,
+        onClick = { showDialog = true },
+    )
+    if (showDialog) {
+        SuperBottomSheet(
+            show = remember { mutableStateOf(true) },
+            title = title,
+            onDismissRequest = { showDialog = false },
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                TextField(
+                    value = textValue,
+                    onValueChange = { textValue = it.filter { c -> c.isDigit() } },
+                    label = label,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                DialogButtonRow(
+                    onCancel = {
+                        onValueChange(null)
+                        showDialog = false
+                    },
+                    onConfirm = {
+                        val intVal = textValue.toIntOrNull()
+                        onValueChange(intVal)
+                        showDialog = false
+                    },
+                    cancelText = MLang.Component.Button.Clear,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun StringInput(
     title: String,
     value: String?,

@@ -23,8 +23,10 @@ package com.github.yumelira.yumebox.clash.config
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.model.TunnelState
+import timber.log.Timber
 
 object ClashConfiguration {
+    private const val TAG = "ClashConfiguration"
     object Defaults {
         const val MIXED_PORT = 7890
         const val HTTP_ADDRESS = "127.0.0.1"
@@ -34,6 +36,7 @@ object ClashConfiguration {
         const val TUN_DNS = "172.19.0.2"
         const val TUN_STACK = "gvisor"
     }
+    val API_SECRET = java.util.UUID.randomUUID().toString()
 
     sealed class ProxyMode {
         object Tun : ProxyMode()
@@ -44,18 +47,27 @@ object ClashConfiguration {
         mode: ProxyMode,
         slot: Clash.OverrideSlot = Clash.OverrideSlot.Session
     ) {
+        val persist = Clash.queryOverride(Clash.OverrideSlot.Persist)
+        val controller = persist.externalController ?: "127.0.0.1:9090"
+        val secret = persist.secret ?: API_SECRET
+        Timber.tag(TAG).d("Applying override. Mode: $mode. Persist Controller: ${persist.externalController}, Secret: ${if (persist.secret != null) "***" else "null"}")
+        Timber.tag(TAG).d("Resolved Controller: $controller, Secret: ${if (secret.isNotEmpty()) "***" else "empty"}")
         val override = when (mode) {
             is ProxyMode.Tun -> ConfigurationOverride(
                 mode = TunnelState.Mode.Rule,
-                mixedPort = null
+                mixedPort = null,
+                externalController = controller,
+                secret = secret
             )
             is ProxyMode.Http -> ConfigurationOverride(
                 mode = TunnelState.Mode.Rule,
-                mixedPort = mode.port
+                mixedPort = mode.port,
+                externalController = controller,
+                secret = secret
             )
         }
-
         Clash.patchOverride(slot, override)
+        Timber.tag(TAG).d("Override patched to slot $slot")
     }
 
     fun clearOverride(slot: Clash.OverrideSlot = Clash.OverrideSlot.Session) {

@@ -6,6 +6,7 @@ Providers = {
         UpdateAll = "更新全部"
         Update = "更新"
         Upload = "上传"
+        View = "查看"
         Operation = "操作"
     }
     
@@ -19,6 +20,13 @@ Providers = {
     Type = {
         ProxyProviders = "代理提供者 (%d)"
         RuleProviders = "规则提供者 (%d)"
+    }
+
+    Info = {
+        ExpireDays = "剩余 %d 天"
+        Expired = "已过期"
+        RemainingTraffic = "剩余流量: %s"
+        UsedTraffic = "已使用: %s / %s"
     }
     
     Message = {

@@ -238,10 +238,22 @@ class FeatureViewModel(
         }
     }
 
-    private fun checkExtensionInstalled(): Boolean = runCatching {
-        application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
-        true
-    }.getOrDefault(false)
+    private fun checkExtensionInstalled(): Boolean {
+        // 1. Check if extension APK is installed
+        val isPkgInstalled = runCatching {
+            application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
+            true
+        }.getOrDefault(false)
+        if (isPkgInstalled) return true
+        // 2. Check if we are in a merged build (library available in system)
+        if (runCatching { System.loadLibrary("javet-node-android"); true }.getOrDefault(false)) {
+            return true
+        }
+        // 3. Check if library can be extracted from Main APK (Merged build with versioned libs)
+        NativeLibraryManager.initialize(application)
+        val results = NativeLibraryManager.extractAllLibraries()
+        return results[JAVET_LIB_NAME] == true
+    }
 
     private fun initializeJavetStatus() {
         if (!_isExtensionInstalled.value) { _isJavetLoaded.value = false; return }

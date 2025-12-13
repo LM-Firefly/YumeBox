@@ -55,6 +55,7 @@ class ClashManager(
     private val profileManager = ProfileManager(workDir)
     private val serviceManager = ServiceManager(context, scope, stateManager, proxyGroupManager)
     private val proxyTestManager = ProxyTestManager(scope, maxConcurrentTests = 5)
+    private val appListCacheManager = AppListCacheManager(context, scope)
 
     private val loadProfileUseCase by lazy { LoadProfileUseCase(profileManager, stateManager, proxyGroupManager) }
     private val downloadProfileUseCase by lazy { DownloadProfileUseCase(profileManager) }
@@ -91,6 +92,7 @@ class ClashManager(
         _healthStatus.value = HealthStatus(isHealthy = true, message = "Service ready")
         observeTestResults()
         subscribeToLogs()
+        appListCacheManager.start()
     }
 
     private fun observeTestResults() {
@@ -144,6 +146,9 @@ class ClashManager(
 
     suspend fun selectProxy(groupName: String, proxyName: String): Boolean = 
         selectProxyUseCase(groupName, proxyName)
+
+    suspend fun forceSelectProxy(groupName: String, proxyName: String): Boolean =
+        proxyGroupManager.forceSelectProxy(groupName, proxyName, stateManager.currentProfile.value)
 
     suspend fun refreshProxyGroups(skipCacheClear: Boolean = false): Result<Unit> = 
         refreshProxyGroupsUseCase(skipCacheClear)
@@ -221,6 +226,10 @@ class ClashManager(
         }
     }
 
+    fun setProxyScreenActive(active: Boolean) {
+        serviceManager.setProxyScreenActive(active)
+    }
+
     fun getCachedDelay(nodeName: String): Int? {
         return proxyGroups.value.flatMap { it.proxies }.find { it.name == nodeName }?.delay
     }
@@ -228,6 +237,7 @@ class ClashManager(
     override fun close() {
         scope.cancel("ClashManager closed")
         proxyGroupManager.clearGroupStates()
+        appListCacheManager.stop()
         stateManager.reset()
     }
 }

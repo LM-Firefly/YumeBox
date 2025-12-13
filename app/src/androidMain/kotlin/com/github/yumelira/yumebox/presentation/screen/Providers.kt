@@ -22,6 +22,9 @@ package com.github.yumelira.yumebox.presentation.screen
 
 import android.widget.Toast
 import android.net.Uri
+import android.content.Intent
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -38,6 +41,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -61,6 +68,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.*
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlin.math.roundToInt
 import top.yukonga.miuix.kmp.icon.icons.useful.Edit
 
 @Composable
@@ -178,6 +186,7 @@ private fun ProviderCard(
     onUpdate: () -> Unit,
     onUpload: (Uri) -> Unit
 ) {
+    val context = LocalContext.current
     val showPopup = remember { mutableStateOf(false) }
     val colorScheme = MiuixTheme.colorScheme
     val updateBg = remember(colorScheme) { colorScheme.tertiaryContainer.copy(alpha = 0.6f) }
@@ -190,20 +199,115 @@ private fun ProviderCard(
     }
 
     Card(modifier = Modifier.padding(vertical = 4.dp)) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = provider.name,
                     style = MiuixTheme.textStyles.body1,
                     color = MiuixTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.size(4.dp))
+
+                if (provider.path.isNotBlank()) {
+                    Box {
+                        IconButton(
+                            backgroundColor = updateBg,
+                            minHeight = 35.dp,
+                            minWidth = 35.dp,
+                            enabled = !isUpdating,
+                            onClick = { showPopup.value = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(20.dp),
+                                    imageVector = MiuixIcons.Useful.Edit,
+                                    tint = updateTint,
+                                    contentDescription = MLang.Providers.Action.Operation,
+                                )
+                                Text(
+                                    modifier = Modifier.padding(end = 3.dp),
+                                    text = MLang.Providers.Action.Operation,
+                                    color = updateTint,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
+
+                        val items = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload, MLang.Providers.Action.View)
+                        var selectedIndex by remember { mutableStateOf(0) }
+
+                        ListPopup(
+                            show = showPopup,
+                            popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
+                            alignment = PopupPositionProvider.Align.Right,
+                            onDismissRequest = { showPopup.value = false }
+                        ) {
+                            ListPopupColumn {
+                                items.forEachIndexed { index, item ->
+                                    DropdownImpl(
+                                        text = item,
+                                        optionSize = items.size,
+                                        isSelected = selectedIndex == index,
+                                        onSelectedIndexChange = {
+                                            selectedIndex = index
+                                            showPopup.value = false
+                                            when (index) {
+                                                0 -> onUpdate()
+                                                1 -> filePicker.launch("*/*")
+                                                2 -> {
+                                                    try {
+                                                        val file = File(provider.path)
+                                                        val uri = FileProvider.getUriForFile(
+                                                            context,
+                                                            "${context.packageName}.fileprovider",
+                                                            file
+                                                        )
+                                                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                            setDataAndType(uri, "text/plain")
+                                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        }
+                                                        val chooser = Intent.createChooser(intent, MLang.Providers.Action.View)
+                                                        context.startActivity(chooser)
+                                                    } catch (e: Exception) {
+                                                        Toast.makeText(context, "Failed to open file: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        index = index
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            val subInfo = provider.subscriptionInfo
+            val percentageText = if (subInfo != null && subInfo.total > 0) {
+                val used = subInfo.upload.toULong() + subInfo.download.toULong()
+                val total = subInfo.total.toULong()
+                val fraction = if (total > 0uL) used.toDouble() / total.toDouble() else 0.0
+                String.format(Locale.getDefault(), "%.2f%%", fraction * 100.0)
+            } else null
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -226,68 +330,79 @@ private fun ProviderCard(
                         )
                     }
                 }
+                if (percentageText != null) {
+                    Text(
+                        text = percentageText,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            if (provider.path.isNotBlank()) {
-                Box {
-                    IconButton(
-                        backgroundColor = updateBg,
-                        minHeight = 35.dp,
-                        minWidth = 35.dp,
-                        enabled = !isUpdating,
-                        onClick = { showPopup.value = true }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(20.dp),
-                                imageVector = MiuixIcons.Useful.Edit,
-                                tint = updateTint,
-                                contentDescription = MLang.Providers.Action.Operation,
-                            )
-                            Text(
-                                modifier = Modifier.padding(end = 3.dp),
-                                text = MLang.Providers.Action.Operation,
-                                color = updateTint,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 15.sp
-                            )
-                        }
+            
+            provider.subscriptionInfo?.let { info ->
+                val total = info.total.toULong()
+                if (total > 0uL) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val upload = info.upload.toULong()
+                    val download = info.download.toULong()
+                    val used = upload + download
+                    val remaining = if (total > used) total - used else 0uL
+                    val fraction = if (total > 0uL) used.toDouble() / total.toDouble() else 0.0
+                    val percentageInt = (fraction * 100.0).roundToInt()
+                    val progressColor = when {
+                        percentageInt >= 90 -> MiuixTheme.colorScheme.error
+                        percentageInt >= 70 -> Color(0xFFFFC107)
+                        else -> Color(0xFF4CAF50)
                     }
-
-                    val items = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
-                    var selectedIndex by remember { mutableStateOf(0) }
-
-                    ListPopup(
-                        show = showPopup,
-                        popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
-                        alignment = PopupPositionProvider.Align.Right,
-                        onDismissRequest = { showPopup.value = false }
+                    val overlayColor = progressColor.copy(alpha = 0.12f)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(overlayColor)
                     ) {
-                        ListPopupColumn {
-                            items.forEachIndexed { index, item ->
-                                DropdownImpl(
-                                    text = item,
-                                    optionSize = items.size,
-                                    isSelected = selectedIndex == index,
-                                    onSelectedIndexChange = {
-                                        selectedIndex = index
-                                        showPopup.value = false
-                                        when (index) {
-                                            0 -> onUpdate()
-                                            1 -> filePicker.launch("*/*")
-                                        }
-                                    },
-                                    index = index
-                                )
-                            }
-                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(fraction.toFloat().coerceIn(0f, 1f))
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(progressColor)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = MLang.Providers.Info.RemainingTraffic.format(formatBytes(remaining)),
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        )
+                        Text(
+                            text = MLang.Providers.Info.UsedTraffic.format(formatBytes(used), formatBytes(total)),
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        )
+                    }
+                }
+                if (info.expire > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val expireDate = Date(info.expire * 1000)
+                    val now = Date()
+                    val diff = info.expire * 1000 - now.time
+                    val days = diff / (1000 * 60 * 60 * 24)
+                    val expireText = if (diff > 0) {
+                        MLang.Providers.Info.ExpireDays.format(days)
+                    } else {
+                        MLang.Providers.Info.Expired
+                    }
+                    Text(
+                        text = "${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(expireDate)} ($expireText)",
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = if (diff > 0) MiuixTheme.colorScheme.onSurfaceVariantSummary else MiuixTheme.colorScheme.error
+                    )
                 }
             }
         }
@@ -296,4 +411,12 @@ private fun ProviderCard(
 
 private fun formatTimestamp(ts: Long): String {
     return SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(ts))
+}
+
+private fun formatBytes(bytes: ULong): String {
+    if (bytes <= 0uL) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB", "EB")
+    val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.0)).toInt()
+    val index = digitGroups.coerceIn(0, units.lastIndex)
+    return String.format(Locale.getDefault(), "%.2f %s", bytes.toDouble() / Math.pow(1024.0, index.toDouble()), units[index])
 }

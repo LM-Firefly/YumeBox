@@ -37,6 +37,7 @@ import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.ConfirmDialog
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.NullableBooleanSelector
 import com.github.yumelira.yumebox.presentation.component.NullableEnumSelector
 import com.github.yumelira.yumebox.presentation.component.PortInput
@@ -69,6 +70,9 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.Override.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {

@@ -52,7 +52,8 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@android:style/Theme.Material.Light.NoActionBar"
-            android:usesCleartextTraffic="true">
+            android:usesCleartextTraffic="true"
+            tools:replace="android:label,android:icon,android:name,android:allowBackup,android:supportsRtl,android:theme,android:usesCleartextTraffic">
         <activity
                 android:name=".MainActivity"
                 android:exported="true"

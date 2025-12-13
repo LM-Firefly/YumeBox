@@ -121,6 +121,9 @@ class RefreshProxyGroupsUseCase(
     suspend operator fun invoke(skipCacheClear: Boolean = false): Result<Unit> {
         return proxyGroupManager.refreshProxyGroups(skipCacheClear, stateManager.currentProfile.value)
     }
+    suspend fun refreshGroup(groupName: String): Result<Unit> {
+        return proxyGroupManager.refreshGroup(groupName, stateManager.currentProfile.value)
+    }
 }
 
 class TestProxyDelayUseCase(
@@ -141,8 +144,7 @@ class HealthCheckUseCase(
     suspend operator fun invoke(groupName: String): Result<Unit> {
         return try {
             Clash.healthCheck(groupName).await()
-            delay(500)
-            refreshProxyGroupsUseCase()
+            refreshProxyGroupsUseCase.refreshGroup(groupName)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

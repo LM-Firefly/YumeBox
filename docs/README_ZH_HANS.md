@@ -39,6 +39,68 @@
 
 如果您希望将 YumeBox 翻译为更多语言，或改进现有翻译，请 Fork 本项目，并在 `lang` 目录下创建或更新对应的翻译文件。
 
+## 构建
+
+1. **同步 core 源码**
+
+   如果仓库使用了 mihomo 子模块，请运行以下命令更新：
+
+   ```bash
+   git submodule update --init --remote --depth=1 core/src/foss/golang/mihomo
+   ```
+
+   切换分支示例（例如 Alpha）：
+
+   ```bash
+   git -C core/src/foss/golang/mihomo fetch origin Alpha && git -C core/src/foss/golang/mihomo checkout Alpha
+   ```
+
+2. **安装依赖**
+   请确保已安装 OpenJDK 24、Android SDK、CMake 与 Golang。
+
+3. **在项目根目录创建 `local.properties`**
+
+   ```properties
+   sdk.dir=/path/to/android-sdk
+   ```
+
+4. **（可选）自定义包名：修改 `gradle.properties`**
+
+   ```properties
+   project.namespace.base=com.github.yumelira.yumebox
+   project.namespace.core=${project.namespace.base}.core
+   project.namespace.extension=${project.namespace.base}.extension
+   project.namespace.buildlogic=${project.namespace.base}.buildlogic
+   ```
+
+5. **在项目根目录创建 `signing.properties`**
+
+   ```properties
+   keystore.path=/path/to/keystore/file
+   keystore.password=<key store password>
+   key.alias=<key alias>
+   key.password=<key password>
+   ```
+
+6. **构建应用**
+
+   本体:
+
+   ```bash
+   ./gradlew app:assembleRelease
+   ```
+
+   SubStore 拓展:
+
+   ```bash
+   ./gradlew extension:assembleRelease
+   ```
+
+   带SubStore 拓展的本体:
+
+   ```bash
+   ./gradlew assembleReleaseWithExtension
+   ```
 
 ## 特别
 

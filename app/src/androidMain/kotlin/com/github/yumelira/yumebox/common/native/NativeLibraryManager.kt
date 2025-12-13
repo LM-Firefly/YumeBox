@@ -121,6 +121,7 @@ object NativeLibraryManager {
 
         val abi = getSupportedAbi()
         ZipFile(apkPath).use { zip ->
+            // Try exact match first
             var libEntry = zip.getEntry("lib/$abi/${info.name}")
             if (libEntry == null) {
                 val supportedAbis = Build.SUPPORTED_ABIS
@@ -130,19 +131,53 @@ object NativeLibraryManager {
                 }
             }
 
+            // If not found, try regex match (for versioned libs like libjavet)
+            if (libEntry == null) {
+                val pattern = Regex("lib/($abi|${Build.SUPPORTED_ABIS.joinToString("|")})/${info.name}\\.v\\.\\d+\\.\\d+\\.\\d+\\.so")
+                libEntry = zip.entries().asSequence().firstOrNull { e ->
+                    pattern.matches(e.name)
+                }
+                if (libEntry != null) {
+                    Timber.d("Found library via regex match in Main APK: ${libEntry.name}")
+                    // Update actual name mapping if needed
+                    val actualFileName = libEntry.name.substringAfterLast("/")
+                    actualLibraryNames[info.name] = actualFileName
+                    // Update target file to use actual name
+                    // Note: The caller passed 'targetFile' based on 'info.name'.
+                    // If we change the filename, we should write to the new name.
+                    // But 'targetFile' is final.
+                    // However, extractFromExtensionApk does:
+                    // val actualTargetFile = File(targetFile.parentFile, actualFileName)
+                    // We should do the same here.
+                }
+            }
+
             if (libEntry == null) {
                 throw RuntimeException("Library not found in APK: ${info.name}")
             }
 
+            val actualFileName = libEntry.name.substringAfterLast("/")
+            // Force rename to standard name if it's a javet lib to ensure compatibility
+            val targetFileName = if (actualFileName.startsWith("libjavet-node-android")) {
+                "libjavet-node-android.so"
+            } else {
+                actualFileName
+            }
+            
+            val actualTargetFile = File(targetFile.parentFile, targetFileName)
+            if (targetFileName != info.name) {
+                 actualLibraryNames[info.name] = targetFileName
+            }
+
             zip.getInputStream(libEntry).use { input ->
-                FileOutputStream(targetFile).use { output ->
+                FileOutputStream(actualTargetFile).use { output ->
                     input.copyTo(output)
                 }
             }
 
-            targetFile.setReadable(true, false)
+            actualTargetFile.setReadable(true, false)
             if (info.type == LibraryType.PROCESS_EXEC) {
-                targetFile.setExecutable(true, false)
+                actualTargetFile.setExecutable(true, false)
             }
 
             return true
@@ -156,8 +191,8 @@ object NativeLibraryManager {
 
         val extensionApk = getExtensionApk(info.packageName)
         if (extensionApk == null) {
-            Timber.w("Extension APK not installed: ${info.packageName}, skipping ${info.name}")
-            return false
+            Timber.w("Extension APK not installed: ${info.packageName}, trying Main APK (Merged build?) for ${info.name}")
+            return extractFromMainApk(info, targetFile)
         }
 
         val abi = getSupportedAbi()

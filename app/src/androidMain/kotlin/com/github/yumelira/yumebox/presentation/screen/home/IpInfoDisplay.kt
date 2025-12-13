@@ -21,19 +21,15 @@
 package com.github.yumelira.yumebox.presentation.screen.home
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.github.yumelira.yumebox.common.util.LocaleUtil
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
 import top.yukonga.miuix.kmp.basic.Text
@@ -126,19 +122,15 @@ private fun IpInfoRow(
 private fun CountryBadge(countryCode: String?) {
     if (countryCode != null) {
         val displayCountryCode = LocaleUtil.normalizeRegionCode(countryCode) ?: countryCode
-        val flagUrl = LocaleUtil.normalizeFlagUrl(countryCode)
+        val flagEmoji = LocaleUtil.getFlagEmoji(countryCode)
         
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = flagUrl,
-                contentDescription = "$displayCountryCode flag",
-                modifier = Modifier
-                    .size(20.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+            Text(
+                text = flagEmoji,
+                style = MiuixTheme.textStyles.body1.copy(fontSize = 20.sp),
             )
             Text(
                 text = displayCountryCode,

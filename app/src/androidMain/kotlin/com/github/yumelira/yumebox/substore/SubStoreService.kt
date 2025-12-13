@@ -103,6 +103,14 @@ class SubStoreService : Service() {
     }
 
     private fun ensureJavetLibraryLoaded(): Boolean {
+        try {
+            System.loadLibrary("javet-node-android")
+            Log.d("SubStoreService", "Javet 库通过系统加载成功")
+            return true
+        } catch (e: Throwable) {
+            Log.w("SubStoreService", "Javet 库系统加载失败: ${e.message}，尝试手动提取加载")
+        }
+
         return try {
             NativeLibraryManager.initialize(applicationContext)
             val javetLibBaseName = "libjavet-node-android"

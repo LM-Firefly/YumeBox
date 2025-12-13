@@ -60,6 +60,7 @@ import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.viewmodel.AccessControlViewModel
@@ -93,6 +94,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 TopBar(
                     title = MLang.AccessControl.Title,
                     scrollBehavior = scrollBehavior,
+                    navigationIcon = { NavigationBackIcon(navigator = navigator) },
                     actions = {
                         IconButton(
                             modifier = Modifier.padding(end = 24.dp),
