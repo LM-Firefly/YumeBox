@@ -145,6 +145,9 @@ class ClashManager(
     suspend fun selectProxy(groupName: String, proxyName: String): Boolean = 
         selectProxyUseCase(groupName, proxyName)
 
+    suspend fun forceSelectProxy(groupName: String, proxyName: String): Boolean =
+        proxyGroupManager.forceSelectProxy(groupName, proxyName, stateManager.currentProfile.value)
+
     suspend fun refreshProxyGroups(skipCacheClear: Boolean = false): Result<Unit> = 
         refreshProxyGroupsUseCase(skipCacheClear)
 

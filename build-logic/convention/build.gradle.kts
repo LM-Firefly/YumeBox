@@ -24,7 +24,7 @@ plugins {
     `kotlin-dsl`
 }
 
-val jvmVersionInt = providers.gradleProperty("project.jvm").orNull?.toIntOrNull() ?: 17
+val jvmVersionInt = providers.gradleProperty("project.jvm").orNull?.toIntOrNull() ?: 24
 val buildLogicGroup = providers.gradleProperty("project.namespace.buildlogic").orNull
     ?: "com.github.yumelira.yumebox.buildlogic"
 
@@ -38,16 +38,17 @@ repositories {
 
 kotlin {
     jvmToolchain(jvmVersionInt)
+    val kotlinJvmTargetInt = if (jvmVersionInt > 21) 21 else jvmVersionInt
     compilerOptions {
-        jvmTarget = JvmTarget.fromTarget(jvmVersionInt.toString())
+        jvmTarget = JvmTarget.fromTarget(kotlinJvmTargetInt.toString())
     }
 }
 
 dependencies {
-    compileOnly("com.android.tools.build:gradle:8.12.3")
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21")
-    compileOnly("org.jetbrains.compose:compose-gradle-plugin:1.9.3")
-    compileOnly("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.3.3")
+    compileOnly(libs.android.gradlePlugin)
+    compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.compose.gradlePlugin)
+    compileOnly(libs.ksp.gradlePlugin)
 }
 
 gradlePlugin {

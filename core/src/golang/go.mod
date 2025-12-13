@@ -84,7 +84,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/saba-futai/sudoku v0.0.1-i // indirect
+	github.com/saba-futai/sudoku v0.0.2-c // indirect
 	github.com/sagernet/cors v1.2.1 // indirect
 	github.com/sagernet/netlink v0.0.0-20240916134442-83396419aa8b // indirect
 	github.com/samber/lo v1.52.0 // indirect

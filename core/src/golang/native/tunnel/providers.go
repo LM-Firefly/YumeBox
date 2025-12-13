@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -13,11 +14,19 @@ import (
 var ErrInvalidType = errors.New("invalid type")
 
 type Provider struct {
-	Name        string `json:"name"`
-	VehicleType string `json:"vehicleType"`
-	Type        string `json:"type"`
-	UpdatedAt   int64  `json:"updatedAt"`
-	Path        string `json:"path"`
+	Name             string            `json:"name"`
+	VehicleType      string            `json:"vehicleType"`
+	Type             string            `json:"type"`
+	UpdatedAt        int64             `json:"updatedAt"`
+	Path             string            `json:"path"`
+	SubscriptionInfo *SubscriptionInfo `json:"subscriptionInfo,omitempty"`
+}
+
+type SubscriptionInfo struct {
+	Upload   int64 `json:"Upload"`
+	Download int64 `json:"Download"`
+	Total    int64 `json:"Total"`
+	Expire   int64 `json:"Expire"`
 }
 
 type UpdatableProvider interface {
@@ -64,13 +73,22 @@ func QueryProviders() []*Provider {
 			path = v.Vehicle().Path()
 		}
 
-		result = append(result, &Provider{
+		item := &Provider{
 			Name:        p.Name(),
 			VehicleType: p.VehicleType().String(),
 			Type:        p.Type().String(),
 			UpdatedAt:   updatedAt.UnixNano() / 1000 / 1000,
 			Path:        path,
-		})
+		}
+		if raw, err := json.Marshal(p); err == nil {
+			var data struct {
+				SubscriptionInfo *SubscriptionInfo `json:"subscriptionInfo,omitempty"`
+			}
+			if err := json.Unmarshal(raw, &data); err == nil {
+				item.SubscriptionInfo = data.SubscriptionInfo
+			}
+		}
+		result = append(result, item)
 	}
 
 	return result

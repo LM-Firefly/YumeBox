@@ -41,6 +41,67 @@ To translate YumeBox into your language or improve existing translations, please
 and create or update translation files in the `lang` directory.
 
 
+1. **Sync core source code**
+
+   If this repository is configured with the mihomo submodule, update it by running:
+
+   ```bash
+   git submodule update --init --remote --depth=1 core/src/foss/golang/mihomo
+   ```
+
+   To switch branch (e.g., Alpha):
+
+   ```bash
+   git -C core/src/foss/golang/mihomo fetch origin Alpha && git -C core/src/foss/golang/mihomo checkout Alpha
+   ```
+
+2. **Install dependencies**
+   Ensure that OpenJDK 24, Android SDK, CMake, and Golang are installed.
+
+3. **Create `local.properties` in the project root**
+
+   ```properties
+   sdk.dir=/path/to/android-sdk
+   ```
+
+4. **(Optional) Customize the package name by editing `gradle.properties`**
+
+   ```properties
+   project.namespace.base=com.github.yumelira.yumebox
+   project.namespace.core=${project.namespace.base}.core
+   project.namespace.extension=${project.namespace.base}.extension
+   project.namespace.buildlogic=${project.namespace.base}.buildlogic
+   ```
+
+5. **Create `signing.properties` in the project root**
+
+   ```properties
+   keystore.path=/path/to/keystore/file
+   keystore.password=<key store password>
+   key.alias=<key alias>
+   key.password=<key password>
+   ```
+
+6. **Build the application**
+
+   Ontology:
+
+   ```bash
+   ./gradlew app:assembleRelease
+   ```
+
+   SubStore Extension:
+
+   ```bash
+   ./gradlew extension:assembleRelease
+   ```
+
+   Ontology With SubStore Extension:
+
+   ```bash
+   ./gradlew assembleReleaseWithExtension
+   ```
+
 ## Note
 
 > [!IMPORTANT]

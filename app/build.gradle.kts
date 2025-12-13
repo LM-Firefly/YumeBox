@@ -38,16 +38,15 @@ abstract class DownloadGeoFilesTask : DefaultTask() {
 
 
 plugins {
-    id("com.android.application")
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
-    kotlin("plugin.compose")
-    id("org.jetbrains.compose")
-    id("com.google.devtools.ksp")
-    id("com.mikepenz.aboutlibraries.plugin")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
-    id("dev.oom-wg.purejoy.mlang")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.jetbrains.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.aboutlibraries)
+    alias(libs.plugins.purejoy.mlang)
+    // Firebase and Google Services plugins removed
 }
 
 
@@ -60,11 +59,10 @@ MLang {
 }
 
 val targetAbi = project.findProperty("android.injected.build.abi") as String?
-val mmkvVersion = when (targetAbi) {
-    "arm64-v8a", "x86_64" -> "2.2.4"
-    else -> "1.3.14"
+val mmkvDependency = when (targetAbi) {
+    "arm64-v8a", "x86_64" -> libs.mmkv
+    else -> libs.mmkv.legacy
 }
-val mmkvDependency = "com.tencent:mmkv:$mmkvVersion"
 
 val appNamespace = gropify.project.namespace.base
 val appName = gropify.project.name
@@ -81,40 +79,26 @@ kotlin {
     }
     sourceSets {
         androidMain.dependencies {
+            if (System.getProperty("isMergeBuild") == "true") {
+                implementation(project(":extension"))
+            }
             implementation(compose.preview)
-            implementation("io.github.kyant0:backdrop:1.0.1")
-            implementation("androidx.activity:activity-compose:1.11.0")
-            implementation("top.yukonga.miuix.kmp:miuix:0.7.2")
-            implementation("dev.chrisbanes.haze:haze-materials:1.6.10")
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.miuix)
+            implementation(libs.haze.materials)
             implementation(mmkvDependency)
-            implementation("io.insert-koin:koin-core:4.1.1")
-            implementation("io.insert-koin:koin-android:4.1.1")
-            implementation("io.insert-koin:koin-androidx-compose:4.1.1")
-            implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
-            implementation("com.squareup.okhttp3:okhttp:5.3.0")
-            implementation("com.jakewharton.timber:timber:5.0.1")
-            implementation("com.caoccao.javet:javet-node-android:5.0.2")
-            implementation("com.highcapable.pangutext:pangutext-android:1.0.4")
-            implementation("org.apache.commons:commons-compress:1.26.1")
-            implementation(project.dependencies.platform("com.google.firebase:firebase-bom:34.6.0"))
-            implementation("com.google.firebase:firebase-crashlytics-ndk")
-            implementation("com.google.firebase:firebase-analytics")
-            implementation("com.google.mlkit:barcode-scanning:17.3.0")
-            implementation("androidx.camera:camera-camera2:1.4.2")
-            implementation("androidx.camera:camera-lifecycle:1.4.2")
-            implementation("androidx.camera:camera-view:1.4.2")
-            implementation("androidx.camera:camera-core:1.4.2")
-            implementation("androidx.camera:camera-video:1.4.2")
-            implementation("io.ktor:ktor-client-core:2.3.8")
-            implementation("io.ktor:ktor-client-android:2.3.8")
-            implementation("io.ktor:ktor-client-content-negotiation:2.3.8")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.8")
-            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
-            implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
-            implementation("io.coil-kt.coil3:coil-svg:3.0.4")
-            implementation("com.mikepenz:aboutlibraries-core:13.1.0")
-            implementation("com.mikepenz:aboutlibraries-compose:13.1.0")
-            implementation("com.mikepenz:aboutlibraries-compose-m3:13.1.0")
+            implementation(libs.bundles.koin)
+            implementation(libs.compose.destinations.core)
+            implementation(libs.okhttp)
+            implementation(libs.timber)
+            implementation(libs.javet.node.android)
+            implementation(libs.pangutext.android)
+            implementation(libs.commons.compress)
+            // Firebase dependencies removed: firebase-bom, firebase-crashlytics-ndk, firebase-analytics
+            implementation(libs.mlkit.barcode.scanning)
+            implementation(libs.bundles.camerax)
+            implementation(libs.bundles.ktor)
+            implementation(libs.bundles.aboutlibraries)
         }
 
         commonMain.dependencies {
@@ -123,14 +107,14 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.ui)
             implementation(compose.components.uiToolingPreview)
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-            implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.0")
-            implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.androidx.lifecycle.runtime.compose)
         }
 
         commonTest.dependencies {
-            implementation("org.jetbrains.kotlin:kotlin-test:2.2.21")
-            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
@@ -214,7 +198,9 @@ android {
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (System.getProperty("isMergeBuild") != "true") {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
         resources {
@@ -234,16 +220,22 @@ android {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
             val abiName = filters.find { it.filterType == "ABI" }?.identifier ?: "universal"
             val buildTypeName = buildType.name
-            output.outputFileName = "${appName}-${abiName}-${buildTypeName}.apk"
+            val isMergeBuild = System.getProperty("isMergeBuild") == "true"
+            val fileName = if (isMergeBuild) {
+                "${appName}_Extension-${abiName}-${buildTypeName}.apk"
+            } else {
+                "${appName}-${abiName}-${buildTypeName}.apk"
+            }
+            output.outputFileName = fileName
         }
     }
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     debugImplementation(compose.uiTooling)
-    ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
+    add("kspAndroid", libs.compose.destinations.ksp)
 }
 
 ksp {

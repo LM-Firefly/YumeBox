@@ -106,18 +106,35 @@ class ClashVpnService : VpnService() {
             delegate.notificationManager.create("正在连接...", "正在建立连接", false)
         )
 
-        when (intent?.action) {
-            ACTION_START -> {
-                val profileId = intent.getStringExtra(EXTRA_PROFILE_ID)
-                if (profileId != null) {
+        val action = intent?.action
+        if (action != null) {
+            when (action) {
+                ACTION_START -> {
+                    val profileId = intent.getStringExtra(EXTRA_PROFILE_ID)
+                    if (profileId != null) {
+                        startVpn(profileId)
+                    } else {
+                        Timber.tag(TAG).e("未提供配置文件 ID")
+                        stopSelf()
+                    }
+                }
+                ACTION_STOP -> stopVpn()
+                else -> stopSelf()
+            }
+        } else {
+            Timber.tag(TAG).d("Service restarted by system (START_STICKY)")
+            if (appSettingsStorage.automaticRestart.value) {
+                val profileId = profilesStore.lastUsedProfileId
+                if (profileId.isNotEmpty()) {
+                    Timber.tag(TAG).d("Recovering profile: $profileId")
                     startVpn(profileId)
                 } else {
-                    Timber.tag(TAG).e("未提供配置文件 ID")
+                    Timber.tag(TAG).w("No last used profile found for recovery")
                     stopSelf()
                 }
+            } else {
+                stopSelf()
             }
-            ACTION_STOP -> stopVpn()
-            else -> stopSelf()
         }
 
         return START_STICKY

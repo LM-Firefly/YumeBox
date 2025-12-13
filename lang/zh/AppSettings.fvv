@@ -11,10 +11,8 @@ AppSettings = {
     }
     
     Behavior = {
-        AutoStartTitle = "自动启动"
-        AutoStartSummary = "应用启动和开机时自动启动代理服务"
-        OneChinaTitle = "坚持一个中国原则"
-        OneChinaSummary = "自动将港澳台地区旗帜及区域码显示为中国"
+        AutoStartTitle = "自动重启"
+        AutoStartSummary = "应用启动、开机及异常终止后自动重启代理服务"
     }
     
     Home = {

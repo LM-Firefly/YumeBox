@@ -86,6 +86,7 @@ fun ProxyPager(
     val displayMode by proxyViewModel.displayMode.collectAsState()
     val uiState by proxyViewModel.uiState.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
+    val globalTimeout by proxyViewModel.globalTimeout.collectAsState()
     val scrollBehavior = MiuixScrollBehavior()
 
     var isRefreshing by rememberSaveable { mutableStateOf(false) }
@@ -153,9 +154,11 @@ fun ProxyPager(
                     mainInnerPadding = mainInnerPadding,
                     isRefreshing = isRefreshing,
                     pullToRefreshState = pullToRefreshState,
+                    globalTimeout = globalTimeout,
                     onRefresh = onRefresh,
                     onTabSelected = proxyViewModel::setSelectedGroup,
-                    onProxySelect = proxyViewModel::selectProxy
+                    onProxySelect = proxyViewModel::selectProxy,
+                    onProxyPin = proxyViewModel::forceSelectProxy
                 )
             }
         }
@@ -275,9 +278,11 @@ private fun ProxyContent(
     mainInnerPadding: PaddingValues,
     isRefreshing: Boolean,
     pullToRefreshState: PullToRefreshState,
+    globalTimeout: Int,
     onRefresh: () -> Unit,
     onTabSelected: (Int) -> Unit,
-    onProxySelect: (String, String) -> Unit
+    onProxySelect: (String, String) -> Unit,
+    onProxyPin: (String, String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -315,7 +320,9 @@ private fun ProxyContent(
                     displayMode = displayMode,
                     scrollBehavior = scrollBehavior,
                     mainInnerPadding = mainInnerPadding,
-                    onProxySelect = onProxySelect
+                    globalTimeout = globalTimeout,
+                    onProxySelect = onProxySelect,
+                    onProxyPin = onProxyPin
                 )
             }
         }
@@ -326,15 +333,29 @@ private fun ProxyContent(
 private fun ProxyGroupPage(
     group: ProxyGroupInfo,
     displayMode: ProxyDisplayMode,
+    globalTimeout: Int,
     scrollBehavior: ScrollBehavior,
     mainInnerPadding: PaddingValues,
-    onProxySelect: (String, String) -> Unit
+    onProxySelect: (String, String) -> Unit,
+    onProxyPin: (String, String) -> Unit
 ) {
     val groupName = group.name
-    val isSelectable = group.type == Proxy.Type.Selector
-
-    val onProxyClick = remember(groupName, isSelectable) {
-        if (isSelectable) { proxyName: String -> onProxySelect(groupName, proxyName) } else null
+    val isSelector = group.type == Proxy.Type.Selector
+    val isSmartGroup = group.type == Proxy.Type.URLTest || group.type == Proxy.Type.Fallback
+    val onProxyClick = remember(groupName, isSelector, isSmartGroup, group.fixed) {
+        if (isSelector) {
+            { proxyName: String -> onProxySelect(groupName, proxyName) }
+        } else if (isSmartGroup) {
+            { proxyName: String ->
+                if (proxyName == group.fixed) {
+                    onProxyPin(groupName, "")
+                } else {
+                    onProxyPin(groupName, proxyName)
+                }
+            }
+        } else {
+            null
+        }
     }
 
     val listState = rememberLazyListState()
@@ -396,6 +417,8 @@ private fun ProxyGroupPage(
             groupName = groupName,
             proxies = group.proxies,
             selectedProxyName = group.now,
+            pinnedProxyName = group.fixed,
+            globalTimeout = globalTimeout,
             displayMode = displayMode,
             onProxyClick = onProxyClick
         )
@@ -491,7 +514,9 @@ fun LazyListScope.proxyNodeGridItems(
     groupName: String,
     proxies: List<Proxy>,
     selectedProxyName: String,
+    pinnedProxyName: String,
     displayMode: ProxyDisplayMode,
+    globalTimeout: Int,
     onProxyClick: ((String) -> Unit)?
 ) {
     val columns = if (displayMode.isSingleColumn) 1 else 2
@@ -500,19 +525,23 @@ fun LazyListScope.proxyNodeGridItems(
     if (columns == 1) {
         items(
             count = proxies.size,
-            key = { index -> "${groupName}_${proxies[index].name}_$index" }
+            key = { index -> "${groupName}_${proxies.getOrNull(index)?.name ?: "null"}_$index" }
         ) { index ->
-            val proxy = proxies[index]
-            ProxyNodeCard(
-                proxy = proxy,
-                isSelected = proxy.name == selectedProxyName,
-                onClick = onProxyClick?.let { { it(proxy.name) } },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                isSingleColumn = true,
-                showDetail = showDetail
-            )
+            val proxy = proxies.getOrNull(index)
+            if (proxy != null) {
+                ProxyNodeCard(
+                    proxy = proxy,
+                    isSelected = proxy.name == selectedProxyName,
+                    onClick = onProxyClick?.let { { it(proxy.name) } },
+                    isPinned = proxy.name == pinnedProxyName,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    isSingleColumn = true,
+                    showDetail = showDetail,
+                    globalTimeout = globalTimeout
+                )
+            }
         }
     } else {
         val rowCount = (proxies.size + 1) / 2
@@ -526,37 +555,43 @@ fun LazyListScope.proxyNodeGridItems(
             }
         ) { rowIndex ->
             val startIndex = rowIndex * 2
-            val firstProxy = proxies[startIndex]
+            val firstProxy = proxies.getOrNull(startIndex)
             val secondProxy = proxies.getOrNull(startIndex + 1)
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    ProxyNodeCard(
-                        proxy = firstProxy,
-                        isSelected = firstProxy.name == selectedProxyName,
-                        onClick = onProxyClick?.let { { it(firstProxy.name) } },
-                        isSingleColumn = false,
-                        showDetail = showDetail
-                    )
-                }
-
-                if (secondProxy != null) {
+            if (firstProxy != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Box(modifier = Modifier.weight(1f)) {
                         ProxyNodeCard(
-                            proxy = secondProxy,
-                            isSelected = secondProxy.name == selectedProxyName,
-                            onClick = onProxyClick?.let { { it(secondProxy.name) } },
+                            proxy = firstProxy,
+                            isSelected = firstProxy.name == selectedProxyName,
+                            onClick = onProxyClick?.let { { it(firstProxy.name) } },
+                            isPinned = firstProxy.name == pinnedProxyName,
                             isSingleColumn = false,
-                            showDetail = showDetail
+                            showDetail = showDetail,
+                            globalTimeout = globalTimeout
                         )
                     }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
+
+                    if (secondProxy != null) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            ProxyNodeCard(
+                                proxy = secondProxy,
+                                isSelected = secondProxy.name == selectedProxyName,
+                                onClick = onProxyClick?.let { { it(secondProxy.name) } },
+                                isPinned = secondProxy.name == pinnedProxyName,
+                                isSingleColumn = false,
+                                showDetail = showDetail,
+                                globalTimeout = globalTimeout
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
