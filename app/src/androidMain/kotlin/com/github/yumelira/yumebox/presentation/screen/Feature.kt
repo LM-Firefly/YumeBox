@@ -31,6 +31,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.androidx.compose.koinViewModel
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.EnumSelector
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -94,7 +95,13 @@ fun FeatureScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.Feature.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.Feature.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(
@@ -197,7 +204,7 @@ fun FeatureScreen(
                         },
                         onClick = {
                             if (!isExtensionInstalled) {
-                                openUrl(context, "https://github.com/YumeYuka/YumeBox/releases/tag/Expand")
+                                openUrl(context, "https://github.com/YumeLira/YumeBox/releases/tag/Expand")
                             } else {
                                 viewModel.refreshExtensionStatus()
                             }

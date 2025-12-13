@@ -148,6 +148,10 @@ class OverrideViewModel : ViewModel() {
     fun setUnifiedDelay(enabled: Boolean?) {
         updateConfig { it.copy(unifiedDelay = enabled) }
     }
+
+    fun setGlobalTimeout(timeout: Int?) {
+        updateConfig { it.copy(globalTimeout = timeout) }
+    }
     
     fun setGeodataMode(enabled: Boolean?) {
         updateConfig { it.copy(geodataMode = enabled) }

@@ -20,7 +20,7 @@
 
 package com.github.yumelira.yumebox.domain.usecase
 
-import com.github.yumelira.yumebox.clash.config.ClashConfiguration
+import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.clash.manager.ProfileManager
 import com.github.yumelira.yumebox.clash.manager.ProxyGroupManager
 import com.github.yumelira.yumebox.clash.manager.ProxyStateManager
@@ -77,7 +77,7 @@ class StartTunModeUseCase(
 ) {
     suspend operator fun invoke(
         fd: Int,
-        config: ClashConfiguration.TunConfig = ClashConfiguration.TunConfig(),
+        config: Configuration.TunConfig = Configuration.TunConfig(),
         markSocket: (Int) -> Boolean,
         querySocketUid: (protocol: Int, source: InetSocketAddress, target: InetSocketAddress) -> Int = { _, _, _ -> -1 }
     ): Result<Unit> {
@@ -89,7 +89,7 @@ class StartHttpModeUseCase(
     private val serviceManager: ServiceManager
 ) {
     suspend operator fun invoke(
-        config: ClashConfiguration.HttpConfig = ClashConfiguration.HttpConfig()
+        config: Configuration.HttpConfig = Configuration.HttpConfig()
     ): Result<String?> {
         return serviceManager.startHttpMode(config)
     }
@@ -121,6 +121,9 @@ class RefreshProxyGroupsUseCase(
     suspend operator fun invoke(skipCacheClear: Boolean = false): Result<Unit> {
         return proxyGroupManager.refreshProxyGroups(skipCacheClear, stateManager.currentProfile.value)
     }
+    suspend fun refreshGroup(groupName: String): Result<Unit> {
+        return proxyGroupManager.refreshGroup(groupName, stateManager.currentProfile.value)
+    }
 }
 
 class TestProxyDelayUseCase(
@@ -141,8 +144,7 @@ class HealthCheckUseCase(
     suspend operator fun invoke(groupName: String): Result<Unit> {
         return try {
             Clash.healthCheck(groupName).await()
-            delay(500)
-            refreshProxyGroupsUseCase()
+            refreshProxyGroupsUseCase.refreshGroup(groupName)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -41,6 +41,7 @@ class AppSettingsViewModel(
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification
     val bottomBarFloating: Preference<Boolean> = storage.bottomBarFloating
     val showDivider: Preference<Boolean> = storage.showDivider
+    val logLevel: Preference<Int> = storage.logLevel
 
     val oneWord: Preference<String> = storage.oneWord
     val oneWordAuthor: Preference<String> = storage.oneWordAuthor
@@ -54,6 +55,10 @@ class AppSettingsViewModel(
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)
     fun onBottomBarFloatingChange(floating: Boolean) = bottomBarFloating.set(floating)
     fun onShowDividerChange(show: Boolean) = showDivider.set(show)
+    fun onLogLevelChange(level: Int) {
+        logLevel.set(level)
+        com.github.yumelira.yumebox.core.AppLogBuffer.minLogLevel = level
+    }
 
     fun onOneWordChange(text: String) = oneWord.set(text)
     fun onOneWordAuthorChange(author: String) = oneWordAuthor.set(author)

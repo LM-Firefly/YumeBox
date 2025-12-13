@@ -27,5 +27,6 @@ data class ProxyGroupInfo(
     val type: Proxy.Type,
     val proxies: List<Proxy>,
     val now: String,
+    val fixed: String = "",
     val chainPath: List<String> = emptyList()
 )

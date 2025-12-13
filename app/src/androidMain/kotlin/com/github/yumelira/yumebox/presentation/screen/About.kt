@@ -44,6 +44,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import com.github.yumelira.yumebox.core.bridge.Bridge
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.LinkItem
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -69,7 +70,13 @@ fun AboutScreen(navigator: DestinationsNavigator) {
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.About.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(

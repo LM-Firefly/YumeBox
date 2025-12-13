@@ -41,8 +41,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalClipboardManager
+import android.content.Context
+import android.content.ClipboardManager
+import android.content.ClipData
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
@@ -60,6 +63,7 @@ import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.viewmodel.AccessControlViewModel
@@ -93,6 +97,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 TopBar(
                     title = MLang.AccessControl.Title,
                     scrollBehavior = scrollBehavior,
+                    navigationIcon = { NavigationBackIcon(navigator = navigator) },
                     actions = {
                         IconButton(
                             modifier = Modifier.padding(end = 24.dp),
@@ -192,9 +197,9 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 onDismissRequest = { showSettingsSheet.value = false },
                 insideMargin = DpSize(32.dp, 16.dp),
             ) {
-                val clipboardManager = LocalClipboardManager.current
                 val context = LocalContext.current
-                
+                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                val coroutineScope = rememberCoroutineScope()
                 Column {
                     top.yukonga.miuix.kmp.basic.Card {
                         SuperSwitch(
@@ -249,18 +254,23 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                             onSelectedIndexChange = { index ->
                                 when (index) {
                                     0 -> {
-                                        val text = clipboardManager.getText()?.text ?: ""
-                                        if (text.isNotEmpty()) {
-                                            val count = viewModel.importPackages(text)
-                                            Toast.makeText(context, MLang.AccessControl.Settings.ImportSuccess.format(count), Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            Toast.makeText(context, MLang.AccessControl.Settings.ImportFailed, Toast.LENGTH_SHORT).show()
+                                        coroutineScope.launch {
+                                            val text = clipboardManager?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString() ?: ""
+                                            if (text.isNotEmpty()) {
+                                                val count = viewModel.importPackages(text)
+                                                Toast.makeText(context, MLang.AccessControl.Settings.ImportSuccess.format(count), Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, MLang.AccessControl.Settings.ImportFailed, Toast.LENGTH_SHORT).show()
+                                            }
                                         }
                                     }
                                     1 -> {
                                         val exportText = viewModel.exportPackages()
-                                        clipboardManager.setText(AnnotatedString(exportText))
-                                        Toast.makeText(context, MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size), Toast.LENGTH_SHORT).show()
+                                        coroutineScope.launch {
+                                            val clip = ClipData.newPlainText("YumeBox Export", exportText)
+                                            clipboardManager?.setPrimaryClip(clip)
+                                            Toast.makeText(context, MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size), Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
                             }

@@ -34,7 +34,7 @@ class DialerLaunchService : Service() {
         try {
             val mainActivityName = ComponentName(
                 this@DialerLaunchService,
-                "plus.yumeyuka.yumebox.MainActivity",
+                "com.github.yumelira.yumebox.MainActivity",
             )
 
             val launchIntent = Intent(Intent.ACTION_MAIN).apply {

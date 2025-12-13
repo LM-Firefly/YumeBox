@@ -130,6 +130,9 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.MetaFeature.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {
@@ -151,6 +154,12 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                         summary = MLang.MetaFeature.Core.UnifiedDelaySummary,
                         value = configuration.unifiedDelay,
                         onValueChange = { viewModel.setUnifiedDelay(it) },
+                    )
+                    IntInput(
+                        title = MLang.MetaFeature.Core.GlobalTimeoutTitle,
+                        value = configuration.globalTimeout,
+                        label = MLang.MetaFeature.Core.GlobalTimeoutLabel,
+                        onValueChange = { viewModel.setGlobalTimeout(it) },
                     )
                     NullableBooleanSelector(
                         title = MLang.MetaFeature.Core.GeodataModeTitle,

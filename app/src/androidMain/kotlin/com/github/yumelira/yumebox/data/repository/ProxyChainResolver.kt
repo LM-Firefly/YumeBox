@@ -56,7 +56,7 @@ class ProxyChainResolver {
             val proxy = group.proxies.find { it.name == proxyName }
             if (proxy != null) {
                 if (proxy.type.group) {
-                    val targetGroup = groups.find { it.name == proxyName }
+                    val targetGroup = groups.find { it.name == proxy.name }
                     if (targetGroup != null && targetGroup.now.isNotBlank()) {
                         return resolveProxyChain(targetGroup.now, groups, visitedNames)
                     }

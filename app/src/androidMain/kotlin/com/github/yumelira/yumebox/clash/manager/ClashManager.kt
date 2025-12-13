@@ -24,7 +24,7 @@ import android.content.Context
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import com.github.yumelira.yumebox.clash.cache.GlobalDelayCache
-import com.github.yumelira.yumebox.clash.config.ClashConfiguration
+import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.clash.testing.ProxyTestManager
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.LogMessage
@@ -55,6 +55,7 @@ class ClashManager(
     private val profileManager = ProfileManager(workDir)
     private val serviceManager = ServiceManager(context, scope, stateManager, proxyGroupManager)
     private val proxyTestManager = ProxyTestManager(scope, maxConcurrentTests = 5)
+    private val appListCacheManager = AppListCacheManager(context, scope)
 
     private val loadProfileUseCase by lazy { LoadProfileUseCase(profileManager, stateManager, proxyGroupManager) }
     private val downloadProfileUseCase by lazy { DownloadProfileUseCase(profileManager) }
@@ -91,6 +92,7 @@ class ClashManager(
         _healthStatus.value = HealthStatus(isHealthy = true, message = "Service ready")
         observeTestResults()
         subscribeToLogs()
+        appListCacheManager.start()
     }
 
     private fun observeTestResults() {
@@ -144,6 +146,9 @@ class ClashManager(
 
     suspend fun selectProxy(groupName: String, proxyName: String): Boolean = 
         selectProxyUseCase(groupName, proxyName)
+
+    suspend fun forceSelectProxy(groupName: String, proxyName: String): Boolean =
+        proxyGroupManager.forceSelectProxy(groupName, proxyName, stateManager.currentProfile.value)
 
     suspend fun refreshProxyGroups(skipCacheClear: Boolean = false): Result<Unit> = 
         refreshProxyGroupsUseCase(skipCacheClear)
@@ -203,15 +208,15 @@ class ClashManager(
 
     suspend fun startTunMode(
         fd: Int,
-        config: ClashConfiguration.TunConfig =
-            ClashConfiguration.TunConfig(),
+        config: Configuration.TunConfig =
+            Configuration.TunConfig(),
         markSocket: (Int) -> Boolean,
         querySocketUid: (protocol: Int, source: InetSocketAddress, target: InetSocketAddress) -> Int = { _, _, _ -> -1 }
     ): Result<Unit> = startTunModeUseCase(fd, config, markSocket, querySocketUid)
 
     suspend fun startHttpMode(
-        config: ClashConfiguration.HttpConfig =
-            ClashConfiguration.HttpConfig()
+        config: Configuration.HttpConfig =
+            Configuration.HttpConfig()
     ): Result<String?> = startHttpModeUseCase(config)
 
     fun stop() {
@@ -221,6 +226,10 @@ class ClashManager(
         }
     }
 
+    fun setProxyScreenActive(active: Boolean) {
+        serviceManager.setProxyScreenActive(active)
+    }
+
     fun getCachedDelay(nodeName: String): Int? {
         return proxyGroups.value.flatMap { it.proxies }.find { it.name == nodeName }?.delay
     }
@@ -228,6 +237,7 @@ class ClashManager(
     override fun close() {
         scope.cancel("ClashManager closed")
         proxyGroupManager.clearGroupStates()
+        appListCacheManager.stop()
         stateManager.reset()
     }
 }

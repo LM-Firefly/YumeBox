@@ -24,8 +24,11 @@ import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.Profile
@@ -34,12 +37,21 @@ import com.github.yumelira.yumebox.data.repository.IpMonitoringState
 import com.github.yumelira.yumebox.data.repository.ProxyChainResolver
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.clash.loader.ConfigAutoLoader
+import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.core.model.Proxy
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
+import com.github.yumelira.yumebox.domain.model.Connection
+import com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot
+import kotlinx.serialization.json.Json
+import java.net.HttpURLConnection
+import java.net.URL
+import timber.log.Timber
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     application: Application,
     private val proxyFacade: ProxyFacade,
@@ -49,6 +61,10 @@ class HomeViewModel(
     private val networkInfoService: NetworkInfoService,
     private val proxyChainResolver: ProxyChainResolver
 ) : AndroidViewModel(application) {
+    companion object {
+        private const val TAG = "HomeViewModel"
+    }
+    private val json = Json { ignoreUnknownKeys = true }
 
     val profiles: StateFlow<List<Profile>> = profilesRepository.profiles
     val recommendedProfile: StateFlow<Profile?> = profilesRepository.recommendedProfile
@@ -62,6 +78,53 @@ class HomeViewModel(
     val trafficTotal = proxyFacade.trafficTotal
     val proxyGroups = proxyFacade.proxyGroups
     val tunnelState = proxyFacade.tunnelState
+    val connections: StateFlow<List<Connection>> = isRunning.flatMapLatest { running ->
+        if (running) {
+            flow {
+                while (currentCoroutineContext().isActive) {
+                    try {
+                        val sessionOverride = Clash.queryOverride(Clash.OverrideSlot.Session)
+                        val config = Clash.queryConfiguration()
+                        val controller = sessionOverride.externalController
+                            ?: config.externalController
+                            ?: "127.0.0.1:9090"
+                        val secret = sessionOverride.secret
+                            ?: config.secret
+                            ?: Configuration.API_SECRET
+                        val url = URL("http://$controller/connections")
+                        val connection = url.openConnection() as HttpURLConnection
+                        connection.requestMethod = "GET"
+                        if (secret.isNotEmpty()) {
+                            connection.setRequestProperty("Authorization", "Bearer $secret")
+                        }
+                        connection.connectTimeout = 1000
+                        connection.readTimeout = 1000
+                        val responseCode = connection.responseCode
+                        if (responseCode == 200) {
+                            val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
+                            val snapshot = json.decodeFromString<ConnectionsSnapshot>(jsonString)
+                            emit(snapshot.connections ?: emptyList())
+                        } else {
+                            Timber.tag(TAG).e("Failed to poll connections: $responseCode")
+                            emit(emptyList())
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "Error polling connections")
+                        emit(emptyList())
+                    }
+                    delay(2000)
+                }
+            }
+        } else {
+            flowOf(emptyList())
+        }
+    }
+    .flowOn(Dispatchers.IO)
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
     val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
@@ -86,8 +149,26 @@ class HomeViewModel(
     )
     val vpnPrepareIntent = _vpnPrepareIntent.asSharedFlow()
 
-    private val _speedHistory = MutableStateFlow<List<Long>>(emptyList())
-    val speedHistory: StateFlow<List<Long>> = _speedHistory.asStateFlow()
+    val speedHistory: StateFlow<List<Long>> = flow {
+        val sampleLimit = 24
+        var history = emptyList<Long>()
+        while (currentCoroutineContext().isActive) {
+            val sample = proxyFacade.trafficNow.value.download.coerceAtLeast(0L)
+            history = buildList(sampleLimit) {
+                repeat((sampleLimit - history.size - 1).coerceAtLeast(0)) { add(0L) }
+                addAll(history.takeLast(sampleLimit - 1))
+                add(sample)
+            }
+            emit(history)
+            delay(1000L)
+        }
+    }
+    .flowOn(Dispatchers.Default)
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val mainProxyNode: StateFlow<Proxy?> =
         combine(isRunning, proxyGroups) { running, groups ->
@@ -130,7 +211,6 @@ class HomeViewModel(
         viewModelScope.launch {
             delay(500)
             subscribeToLogs()
-            startSpeedSampling()
         }
     }
 
@@ -165,15 +245,12 @@ class HomeViewModel(
 
     fun startProxy(profileId: String, useTunMode: Boolean? = null) {
         if (_isToggling.value) return
-        
         viewModelScope.launch {
             try {
                 _isToggling.value = true
                 _displayRunning.value = true
                 _uiState.update { it.copy(isStartingProxy = true, loadingProgress = MLang.Home.Message.Preparing) }
-
                 val result = proxyFacade.startProxy(profileId, useTunMode)
-
                 result.fold(
                     onSuccess = { intent ->
                         if (intent != null) {
@@ -203,7 +280,6 @@ class HomeViewModel(
 
     fun stopProxy() {
         if (_isToggling.value) return
-        
         viewModelScope.launch {
             try {
                 _isToggling.value = true
@@ -232,25 +308,6 @@ class HomeViewModel(
                     buildList {
                         add(log)
                         addAll(currentLogs.take(49))
-                    }
-                }
-            }
-        }
-    }
-
-    private fun startSpeedSampling(sampleLimit: Int = 24) {
-        viewModelScope.launch {
-            flow {
-                while (true) {
-                    emit(proxyFacade.trafficNow.value.download.coerceAtLeast(0L))
-                    delay(1000L)
-                }
-            }.catch { }.collect { sample ->
-                _speedHistory.update { old ->
-                    buildList(sampleLimit) {
-                        repeat((sampleLimit - old.size - 1).coerceAtLeast(0)) { add(0L) }
-                        addAll(old.takeLast(sampleLimit - 1))
-                        add(sample)
                     }
                 }
             }

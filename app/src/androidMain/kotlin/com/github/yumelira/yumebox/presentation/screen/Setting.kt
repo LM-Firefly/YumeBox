@@ -40,7 +40,6 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
-import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.github.yumelira.yumebox.common.util.DeviceUtil.is32BitDevice
 import com.github.yumelira.yumebox.common.util.toast
 import top.yukonga.miuix.kmp.basic.Icon
@@ -68,7 +67,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
             when (event) {
                 is SettingEvent.OpenWebView -> {
                     runCatching {
-                        WebViewActivity.start(context, event.url)
+                        navigator.navigate(WebViewScreenDestination(initialUrl = event.url, title = event.title)) {
+                            launchSingleTop = true
+                        }
                     }.getOrElse { throwable ->
                         context.toast(MLang.Settings.Error.WebviewFailed.format(throwable.message))
                     }
@@ -190,6 +191,18 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         leftAction = {
                             Icon(
                                 imageVector = Yume.`Arrow-down-up`,
+                                tint = MiuixTheme.colorScheme.onBackground,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                            )
+                        },
+                    )
+                    SuperArrow(
+                        title = MLang.Connections.Title,
+                        onClick = { navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true } },
+                        leftAction = {
+                            Icon(
+                                imageVector = Yume.Link,
                                 tint = MiuixTheme.colorScheme.onBackground,
                                 contentDescription = null,
                                 modifier = Modifier.padding(end = 16.dp),

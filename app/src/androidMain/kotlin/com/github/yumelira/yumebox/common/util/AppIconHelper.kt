@@ -35,7 +35,7 @@ object AppIconHelper {
                 return
             }
 
-            val mainActivityComponent = ComponentName(context.packageName, "plus.yumeyuka.yumebox.MainActivity")
+            val mainActivityComponent = ComponentName(context.packageName, "com.github.yumelira.yumebox.MainActivity")
             context.packageManager.setComponentEnabledSetting(
                 mainActivityComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
@@ -59,7 +59,7 @@ object AppIconHelper {
                 return
             }
 
-            val mainActivityComponent = ComponentName(context.packageName, "plus.yumeyuka.yumebox.MainActivity")
+            val mainActivityComponent = ComponentName(context.packageName, "com.github.yumelira.yumebox.MainActivity")
             context.packageManager.setComponentEnabledSetting(
                 mainActivityComponent,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
