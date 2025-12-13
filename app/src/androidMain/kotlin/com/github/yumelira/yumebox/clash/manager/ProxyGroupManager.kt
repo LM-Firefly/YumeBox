@@ -46,7 +46,24 @@ class ProxyGroupManager(
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = _proxyGroupsShared
         .stateIn(scope = scope, started = SharingStarted.Eagerly, initialValue = emptyList())
 
-    data class ProxyGroupState(var now: String = "", var lastUpdate: Long = 0)
+    data class ProxyGroupState(var now: String = "", var fixed: String = "", var lastUpdate: Long = 0)
+
+    private fun resolveRecursiveDelay(
+        name: String,
+        delayMap: Map<String, Int>,
+        visited: MutableSet<String> = mutableSetOf()
+    ): Int? {
+        if (name in visited) return null
+        visited.add(name)
+        val state = proxyGroupStates[name]
+        if (state != null && state.now.isNotEmpty()) {
+            val childDelay = resolveRecursiveDelay(state.now, delayMap, visited)
+            if (childDelay != null && childDelay > 0) {
+                return childDelay
+            }
+        }
+        return delayMap[name]?.takeIf { it > 0 }
+    }
 
     suspend fun refreshProxyGroups(skipCacheClear: Boolean = false, currentProfile: Profile? = null): Result<Unit> = withContext(Dispatchers.IO) {
         try {
@@ -56,15 +73,28 @@ class ProxyGroupManager(
                 val group = Clash.queryGroup(name, ProxySort.Default)
                 val state = proxyGroupStates.getOrPut(name) { ProxyGroupState() }
                 val previousNow = state.now
+                val previousFixed = state.fixed
                 val currentNow = group.now
+                val currentFixed = group.fixed
 
                 if (currentProfile != null && currentNow.isNotBlank() && currentNow != previousNow) {
-                    selectionDao.setSelected(
-                        Selection(currentProfile.id, name, currentNow)
-                    )
+                    if (group.type == Proxy.Type.Selector) {
+                        selectionDao.setSelected(
+                            Selection(currentProfile.id, name, currentNow)
+                        )
+                    }
+                }
+                // persist pin state changes
+                if (currentProfile != null && currentFixed != previousFixed) {
+                    if (currentFixed.isNotBlank()) {
+                        selectionDao.setPinned(currentProfile.id, name, currentFixed)
+                    } else {
+                        selectionDao.removePinned(currentProfile.id, name)
+                    }
                 }
 
                 state.now = currentNow
+                state.fixed = currentFixed
                 state.lastUpdate = System.currentTimeMillis()
                 group
             }
@@ -89,8 +119,11 @@ class ProxyGroupManager(
                     }
 
                     if (proxy.type.group) {
-                        proxyGroupStates[proxy.name]?.takeIf { it.now.isNotEmpty() }?.let {
-                            updatedProxy = updatedProxy.copy(subtitle = "${proxy.type}(${it.now})")
+                        proxyGroupStates[proxy.name]?.takeIf { it.now.isNotEmpty() }?.let { state ->
+                            updatedProxy = updatedProxy.copy(subtitle = "${proxy.type}(${state.now})")
+                            resolveRecursiveDelay(state.now, mergedDelayMap)?.let { childDelay ->
+                                updatedProxy = updatedProxy.copy(delay = childDelay)
+                            }
                         }
                     }
                     updatedProxy
@@ -107,6 +140,7 @@ class ProxyGroupManager(
                     type = group.type,
                     proxies = enrichedProxies,
                     now = group.now,
+                    fixed = group.fixed,
                     chainPath = chainPath
                 )
             }
@@ -119,7 +153,7 @@ class ProxyGroupManager(
         }
     }
 
-    suspend fun refreshSingleGroupSelection(groupName: String, proxyName: String) {
+    suspend fun refreshSingleGroupSelection(groupName: String, proxyName: String, fixedProxyName: String? = null) {
         runCatching {
             val currentGroups = proxyGroups.value.toMutableList()
             val groupIndex = currentGroups.indexOfFirst { it.name == groupName }
@@ -134,20 +168,24 @@ class ProxyGroupManager(
                     }
                 }
 
-                val updatedGroup = currentGroups[groupIndex].copy(
+                val currentGroup = currentGroups[groupIndex]
+                val newFixed = fixedProxyName ?: currentGroup.fixed
+                val updatedGroup = currentGroup.copy(
                     now = proxyName,
+                    fixed = newFixed,
                     proxies = preservedProxies,
-                    chainPath = if (currentGroups[groupIndex].type.group) {
+                    chainPath = if (currentGroup.type.group) {
                         val groupsMap = currentGroups.associate { it.name to
                             ProxyGroup(
                                 type = it.type,
                                 now = if (it.name == groupName) proxyName else it.now,
-                                proxies = it.proxies
+                                proxies = it.proxies,
+                                fixed = newFixed
                             )
                         }
                         buildProxyChain(groupName, proxyName, groupsMap)
                     } else {
-                        currentGroups[groupIndex].chainPath
+                        currentGroup.chainPath
                     }
                 )
 
@@ -203,7 +241,15 @@ class ProxyGroupManager(
             val cachedDelays = delayCache.getAllValidDelays()
             val updatedGroups = currentGroups.map { group ->
                 val enrichedProxies = group.proxies.map { proxy ->
-                    cachedDelays[proxy.name]?.takeIf { it > 0 }?.let { proxy.copy(delay = it) } ?: proxy
+                    var updatedProxy = cachedDelays[proxy.name]?.takeIf { it > 0 }?.let { proxy.copy(delay = it) } ?: proxy
+                    if (updatedProxy.type.group) {
+                        proxyGroupStates[proxy.name]?.now?.takeIf { it.isNotEmpty() }?.let { now ->
+                            resolveRecursiveDelay(now, cachedDelays)?.let { childDelay ->
+                                updatedProxy = updatedProxy.copy(delay = childDelay)
+                            }
+                        }
+                    }
+                    updatedProxy
                 }
                 group.copy(proxies = enrichedProxies)
             }
@@ -219,12 +265,52 @@ class ProxyGroupManager(
             if (selections.isEmpty()) return
             selections.forEach { (groupName, proxyName) ->
                 runCatching {
-                    if (Clash.patchSelector(groupName, proxyName)) {
-                        proxyGroupStates[groupName]?.now = proxyName
+                    val group = Clash.queryGroup(groupName, ProxySort.Default)
+                    if (group.type == Proxy.Type.Selector) {
+                        if (Clash.patchSelector(groupName, proxyName)) {
+                            proxyGroupStates[groupName]?.now = proxyName
+                        }
+                    }
+                }
+            }
+            // restore pinned (fixed) selections if any
+            val pins = selectionDao.getAllPins(profileId)
+            if (pins.isNotEmpty()) {
+                pins.forEach { (groupName, proxyName) ->
+                    runCatching {
+                        if (Clash.patchForceSelector(groupName, proxyName)) {
+                            proxyGroupStates[groupName]?.now = proxyName
+                        }
                     }
                 }
             }
             delay(300)
+        }
+    }
+
+    suspend fun forceSelectProxy(groupName: String, proxyName: String, currentProfile: Profile?): Boolean {
+        return try {
+            val result = Clash.patchForceSelector(groupName, proxyName)
+            if (result) {
+                if (currentProfile != null && proxyName.isNotBlank()) {
+                    selectionDao.setPinned(currentProfile.id, groupName, proxyName)
+                } else if (currentProfile != null && proxyName.isBlank()) {
+                    selectionDao.removePinned(currentProfile.id, groupName)
+                }
+                val state = proxyGroupStates[groupName]
+                state?.fixed = proxyName
+                var newNow = proxyName
+                if (proxyName.isBlank()) {
+                    val group = Clash.queryGroup(groupName, ProxySort.Default)
+                    newNow = group.now
+                }
+                state?.now = newNow
+                delay(50)
+                refreshSingleGroupSelection(groupName, newNow, proxyName)
+            }
+            result
+        } catch (e: Exception) {
+            false
         }
     }
 

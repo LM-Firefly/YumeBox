@@ -51,6 +51,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -206,10 +207,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 topPadding = 20.dp,
                 enableBottomBarAutoHide = true,
             ) {
-                items(profiles.size) { index ->
-                    val profile = profiles[index]
-
-
+                items(items = profiles, key = { it.id }) {profile ->
                     ProfileCard(
                         profile = profile,
                         isDownloading = isDownloading,
@@ -583,7 +581,7 @@ private fun AddProfileSheet(
             }
 
 
-            if (progress != null && progress.progress == 100) {
+            if (progress.progress == 100) {
 
                 val elapsedTime = System.currentTimeMillis() - downloadStartTime
                 val minDisplayTime = 1500L

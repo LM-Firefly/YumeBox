@@ -152,6 +152,12 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                         value = configuration.unifiedDelay,
                         onValueChange = { viewModel.setUnifiedDelay(it) },
                     )
+                    IntInput(
+                        title = MLang.MetaFeature.Core.GlobalTimeoutTitle,
+                        value = configuration.globalTimeout,
+                        label = MLang.MetaFeature.Core.GlobalTimeoutLabel,
+                        onValueChange = { viewModel.setGlobalTimeout(it) },
+                    )
                     NullableBooleanSelector(
                         title = MLang.MetaFeature.Core.GeodataModeTitle,
                         summary = MLang.MetaFeature.Core.GeodataModeSummary,

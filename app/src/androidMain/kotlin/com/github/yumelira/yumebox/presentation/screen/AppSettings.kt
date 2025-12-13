@@ -92,15 +92,6 @@ fun AppSettingsScreen(
                         checked = automaticRestart,
                         onCheckedChange = { viewModel.onAutomaticRestartChange(it) },
                     )
-                    if (LocaleUtil.isChineseLocale()) {
-                        SuperSwitch(
-                            title = MLang.AppSettings.Behavior.OneChinaTitle,
-                            summary = MLang.AppSettings.Behavior.OneChinaSummary,
-                            checked = true,
-                            onCheckedChange = { },
-                            enabled = false,
-                        )
-                    }
                 }
                 SmallTitle(MLang.AppSettings.Section.Home)
                 Card {

@@ -18,7 +18,7 @@ class BaseAndroidPlugin : Plugin<Project> {
         project.extensions.configure<ApplicationExtension> {
             val compileSdk = provider.getInt("android.compileSdk", 34)
             val minSdk = provider.getInt("android.minSdk", 24)
-            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "24"))
 
             this.compileSdk = compileSdk
             defaultConfig { this.minSdk = minSdk }
@@ -92,7 +92,7 @@ class BaseAndroidPlugin : Plugin<Project> {
         project.extensions.configure<LibraryExtension> {
             val compileSdk = provider.getInt("android.compileSdk", 34)
             val minSdk = provider.getInt("android.minSdk", 24)
-            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "24"))
             val ndkVersionStr = provider.getString("android.ndkVersion", "")
 
             this.compileSdk = compileSdk

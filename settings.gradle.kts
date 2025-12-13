@@ -2,6 +2,11 @@
 
 rootProject.name = "YumeBox"
 
+val isMergeBuild = gradle.startParameter.taskNames.any { it.contains("assembleReleaseWithExtension", ignoreCase = true) }
+if (isMergeBuild) {
+    System.setProperty("isMergeBuild", "true")
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
@@ -15,6 +20,13 @@ pluginManagement {
         maven("https://jitpack.io")
         gradlePluginPortal()
     }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "dev.oom-wg.purejoy.mlang") {
+                useModule("dev.oom-wg.PureJoy-MultiLang:plugin:${requested.version}")
+            }
+        }
+    }
 }
 
 dependencyResolutionManagement {
@@ -25,10 +37,6 @@ dependencyResolutionManagement {
         mavenCentral()
         maven("https://jitpack.io")
         maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
-    }
-
-    versionCatalogs {
-        create("libs")
     }
 }
 
