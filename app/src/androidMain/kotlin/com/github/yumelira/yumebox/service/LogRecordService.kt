@@ -36,6 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import com.github.yumelira.yumebox.MainActivity
@@ -92,6 +93,11 @@ class LogRecordService : Service() {
         fun getLogDir(context: Context): File {
             return File(context.filesDir, LOG_DIR).apply { mkdirs() }
         }
+
+        private var instance: LogRecordService? = null
+        fun writeLog(logLine: String) {
+            instance?.writeLogInternal(logLine)
+        }
     }
 
     private val clashManager: ClashManager by inject()
@@ -99,6 +105,8 @@ class LogRecordService : Service() {
     
     private var logWriter: BufferedWriter? = null
     private var logCollectJob: Job? = null
+    private var writerJob: Job? = null
+    private val logChannel = Channel<String>(Channel.UNLIMITED)
     private var logFile: File? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
 
@@ -106,6 +114,7 @@ class LogRecordService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         Timber.tag(TAG).d("日志记录服务创建")
         createNotificationChannel()
     }
@@ -124,9 +133,17 @@ class LogRecordService : Service() {
         serviceScope.cancel()
         isRecording = false
         currentLogFileName = null
+        instance = null
         super.onDestroy()
     }
 
+    private fun writeLogInternal(logLine: String) {
+        if (isRecording) {
+            logChannel.trySend(logLine + "\n")
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun startRecording() {
         if (isRecording) {
             Timber.tag(TAG).d("日志记录已在进行中")
@@ -147,16 +164,30 @@ class LogRecordService : Service() {
 
             Timber.tag(TAG).d("日志记录已开始: $fileName")
 
+            // 启动写入协程
+            writerJob = serviceScope.launch {
+                for (line in logChannel) {
+                    try {
+                        logWriter?.write(line)
+                        // 仅当通道为空时才刷新, 避免频繁IO
+                        if (logChannel.isEmpty) {
+                            logWriter?.flush()
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "写入日志失败")
+                    }
+                }
+            }
+
             logCollectJob = serviceScope.launch {
                 Timber.tag(TAG).d("开始订阅日志流")
                 clashManager.logs.collect { log ->
                     if (isRecording) {
                         try {
                             val line = "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
-                            logWriter?.write(line)
-                            logWriter?.flush()
+                            logChannel.send(line)
                         } catch (e: Exception) {
-                            Timber.tag(TAG).e(e, "写入日志失败")
+                            Timber.tag(TAG).e(e, "发送日志到通道失败")
                         }
                     }
                 }
@@ -175,6 +206,8 @@ class LogRecordService : Service() {
         
         logCollectJob?.cancel()
         logCollectJob = null
+        writerJob?.cancel()
+        writerJob = null
         closeLogWriter()
         
         isRecording = false

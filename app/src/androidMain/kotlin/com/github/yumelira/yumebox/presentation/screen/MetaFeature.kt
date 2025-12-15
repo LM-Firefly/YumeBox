@@ -130,6 +130,9 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.MetaFeature.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {

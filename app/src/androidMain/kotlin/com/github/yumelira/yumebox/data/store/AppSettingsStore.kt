@@ -35,8 +35,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val showTrafficNotification by boolFlow(true)
     val bottomBarFloating by boolFlow(true)
     val showDivider by boolFlow(true)
-
+    val logLevel by intFlow(3) // Log.DEBUG
     val oneWord by strFlow("一个人走 默守一隅清欢")
-
     val oneWordAuthor by strFlow("Firefly")
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import android.util.Log
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -63,6 +64,7 @@ fun AppSettingsScreen(
     val hideAppIcon = viewModel.hideAppIcon.state.collectAsState().value
     val showTrafficNotification = viewModel.showTrafficNotification.state.collectAsState().value
     val showDivider = viewModel.showDivider.state.collectAsState().value
+    val logLevel = viewModel.logLevel.state.collectAsState().value
 
     val oneWord = viewModel.oneWord.state.collectAsState().value
     val oneWordAuthor = viewModel.oneWordAuthor.state.collectAsState().value
@@ -76,7 +78,13 @@ fun AppSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.AppSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(
@@ -165,6 +173,14 @@ EnumSelector(
                         summary = MLang.AppSettings.ServiceSection.TrafficNotificationSummary,
                         checked = showTrafficNotification,
                         onCheckedChange = { viewModel.onShowTrafficNotificationChange(it) },
+                    )
+                    EnumSelector(
+                        title = MLang.AppSettings.ServiceSection.LogLevelTitle,
+                        summary = MLang.AppSettings.ServiceSection.LogLevelSummary,
+                        currentValue = logLevel,
+                        items = listOf("VERBOSE", "DEBUG", "INFO", "WARN", "ERROR", "ASSERT"),
+                        values = listOf(Log.VERBOSE, Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.ASSERT),
+                        onValueChange = { viewModel.onLogLevelChange(it) },
                     )
                 }
                 Spacer(modifier = Modifier.height(32.dp))
