@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.WebViewScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.androidx.compose.koinViewModel
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getLocalBaseUrl
@@ -62,7 +63,6 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Zashboard
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
-import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.SuperBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -132,6 +132,7 @@ fun ProxyPager(
                 context = context,
                 selectedPanelType = selectedPanelType,
                 onNavigateToProviders = { navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true } },
+                onNavigateToPanel = { url, title -> navigator.navigate(WebViewScreenDestination(initialUrl = url, title = title)) { launchSingleTop = true } },
                 onTestDelay = onTestDelay,
                 onShowSettings = { showBottomSheet.value = true }
             )
@@ -215,6 +216,7 @@ private fun ProxyTopBar(
     context: Context,
     selectedPanelType: Int,
     onNavigateToProviders: () -> Unit,
+    onNavigateToPanel: (String, String) -> Unit,
     onTestDelay: (() -> Unit)?,
     onShowSettings: () -> Unit
 ) {
@@ -238,7 +240,7 @@ private fun ProxyTopBar(
                             if (localUrl.isNotEmpty()) localUrl + "index.html" else ""
                         }
                         if (webViewUrl.isNotEmpty()) {
-                            WebViewActivity.start(context, webViewUrl)
+                            onNavigateToPanel(webViewUrl, MLang.Proxy.Action.Panel)
                         }
                     }
                 ) {

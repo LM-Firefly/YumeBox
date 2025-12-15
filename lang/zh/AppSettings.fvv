@@ -56,6 +56,8 @@ AppSettings = {
     ServiceSection = {
         TrafficNotificationTitle = "显示流量通知"
         TrafficNotificationSummary = "在通知栏中显示流量使用情况"
+        LogLevelTitle = "日志级别"
+        LogLevelSummary = "设置最低日志记录级别"
     }
     
     WarningDialog = {
