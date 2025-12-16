@@ -43,6 +43,7 @@ fun InfoRow(
     value: String,
     modifier: Modifier = Modifier,
     valueColor: Color = MiuixTheme.colorScheme.onSurface,
+    maxLines: Int = 1,
     rightContent: @Composable (() -> Unit)? = null,
 ) {
     Row(
@@ -66,7 +67,7 @@ fun InfoRow(
                 text = value,
                 style = MiuixTheme.textStyles.body1,
                 color = valueColor,
-                maxLines = 1,
+                maxLines = maxLines,
                 overflow = TextOverflow.Ellipsis
             )
         }

@@ -224,6 +224,10 @@ class ClashManager(
         }
     }
 
+    fun setProxyScreenActive(active: Boolean) {
+        serviceManager.setProxyScreenActive(active)
+    }
+
     fun getCachedDelay(nodeName: String): Int? {
         return proxyGroups.value.flatMap { it.proxies }.find { it.name == nodeName }?.delay
     }

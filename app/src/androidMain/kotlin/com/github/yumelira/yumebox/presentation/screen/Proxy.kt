@@ -96,6 +96,13 @@ fun ProxyPager(
     val groupCount = proxyGroups.size
     val pagerState = rememberPagerState(initialPage = selectedGroupIndex, pageCount = { groupCount })
 
+    DisposableEffect(Unit) {
+        proxyViewModel.onScreenActive()
+        onDispose {
+            proxyViewModel.onScreenInactive()
+        }
+    }
+
     LaunchedEffect(isRunning) {
         if (isRunning) proxyViewModel.refreshProxyGroups()
     }
