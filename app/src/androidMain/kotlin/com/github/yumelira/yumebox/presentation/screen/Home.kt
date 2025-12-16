@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.ConnectionsScreenDestination
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
@@ -62,6 +63,7 @@ fun HomePager(mainInnerPadding: PaddingValues) {
     val selectedServerName by homeViewModel.selectedServerName.collectAsState()
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val speedHistory by homeViewModel.speedHistory.collectAsState()
+    val connections by homeViewModel.connections.collectAsState()
 
     val displayState = if (displayRunning) HomeDisplayState.Running else HomeDisplayState.Idle
 
@@ -121,8 +123,12 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                                 serverPing = selectedServerPing,
                                 ipMonitoringState = ipMonitoringState,
                                 speedHistory = speedHistory,
+                                connections = connections,
                                 onChartClick = {
                                     navigator.navigate(TrafficStatisticsScreenDestination) { launchSingleTop = true }
+                                },
+                                onTopologyClick = {
+                                    navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true }
                                 }
                             )
                         }

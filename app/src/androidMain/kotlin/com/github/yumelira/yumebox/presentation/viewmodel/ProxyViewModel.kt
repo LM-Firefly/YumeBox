@@ -228,6 +228,15 @@ class ProxyViewModel(
         }
     }
 
+    fun onScreenActive() {
+        clashManager.setProxyScreenActive(true)
+        refreshProxyGroups()
+    }
+
+    fun onScreenInactive() {
+        clashManager.setProxyScreenActive(false)
+    }
+
     private fun setLoading(loading: Boolean) = _uiState.update { it.copy(isLoading = loading) }
     private fun showMessage(message: String) = _uiState.update { it.copy(message = message) }
     private fun showError(error: String) = _uiState.update { it.copy(error = error) }

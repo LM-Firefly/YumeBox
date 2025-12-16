@@ -198,6 +198,18 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         },
                     )
                     SuperArrow(
+                        title = MLang.Connections.Title,
+                        onClick = { navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true } },
+                        leftAction = {
+                            Icon(
+                                imageVector = Yume.Link,
+                                tint = MiuixTheme.colorScheme.onBackground,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 16.dp),
+                            )
+                        },
+                    )
+                    SuperArrow(
                         title = MLang.Settings.More.Logs,
                         onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },
                         leftAction = {

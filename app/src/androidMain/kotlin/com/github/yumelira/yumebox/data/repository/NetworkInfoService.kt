@@ -110,7 +110,7 @@ class NetworkInfoService : Closeable {
             _refreshTrigger,
             flow {
                 while (true) {
-                    delay(10000)
+                    delay(60000) // Check every minute instead of 10s
                     emit(Unit)
                 }
             }

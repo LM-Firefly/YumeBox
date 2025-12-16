@@ -55,6 +55,7 @@ import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.NetworkSettingsViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.AccessControlViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.TrafficStatisticsViewModel
+import com.github.yumelira.yumebox.presentation.viewmodel.ConnectionsViewModel
 import com.github.yumelira.yumebox.clash.loader.ConfigAutoLoader
 
 const val APPLICATION_SCOPE_NAME = "applicationScope"
@@ -108,4 +109,5 @@ val appModule = module {
     viewModel { AccessControlViewModel(androidApplication(), get()) }
     viewModel { OverrideViewModel() }
     viewModel { TrafficStatisticsViewModel(androidApplication(), get()) }
+    viewModel { ConnectionsViewModel() }
 }

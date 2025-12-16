@@ -37,6 +37,18 @@ class ServiceManager(
     private val proxyGroupManager: ProxyGroupManager
 ) {
     private var trafficMonitorJob: Job? = null
+    private var isProxyScreenActive = false
+    private var lastProxyGroupRefreshTime = 0L
+
+    fun setProxyScreenActive(active: Boolean) {
+        isProxyScreenActive = active
+        if (active) {
+            scope.launch {
+                proxyGroupManager.refreshProxyGroups(skipCacheClear = true, currentProfile = stateManager.currentProfile.value)
+                lastProxyGroupRefreshTime = System.currentTimeMillis()
+            }
+        }
+    }
 
     suspend fun startTunMode(
         fd: Int,
@@ -46,7 +58,7 @@ class ServiceManager(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             stateManager.connecting(RunningMode.Tun)
-
+            ClashConfiguration.applyOverride(ClashConfiguration.ProxyMode.Tun)
             Clash.startTun(
                 fd = fd,
                 stack = config.stack,
@@ -56,7 +68,6 @@ class ServiceManager(
                 markSocket = markSocket,
                 querySocketUid = querySocketUid
             )
-
             val profile = stateManager.currentProfile.value
                 ?: throw IllegalStateException("Cannot start TUN mode without loaded profile")
             stateManager.running(profile, RunningMode.Tun)
@@ -76,10 +87,9 @@ class ServiceManager(
                 Timber.e("HTTP 代理启动失败 - 没有已加载的配置")
                 return@withContext Result.failure(IllegalStateException("Cannot start HTTP mode without loaded profile"))
             }
-            
             val httpMode = RunningMode.Http(config.address)
             stateManager.connecting(httpMode)
-            
+            ClashConfiguration.applyOverride(ClashConfiguration.ProxyMode.Http(config.port))
             val address = Clash.startHttp(config.listenAddress) ?: config.address
             stateManager.running(profile, RunningMode.Http(address))
             startMonitoring()
@@ -110,23 +120,20 @@ class ServiceManager(
 
     private fun startMonitoring() {
         stopMonitoring()
-
-        var proxyGroupRefreshCounter = 0
-
         trafficMonitorJob = scope.launch {
             while (isActive) {
                 runCatching {
                     stateManager.updateTrafficNow(TrafficData.from(Clash.queryTrafficNow()))
                     stateManager.updateTrafficTotal(TrafficData.from(Clash.queryTrafficTotal()))
                     stateManager.updateTunnelState(Clash.queryTunnelState())
-
-                    proxyGroupRefreshCounter++
-                    if (proxyGroupRefreshCounter >= 60) {
+                    val currentTime = System.currentTimeMillis()
+                    val interval = if (isProxyScreenActive) 5000L else 60000L
+                    if (currentTime - lastProxyGroupRefreshTime >= interval) {
                         proxyGroupManager.refreshProxyGroups(skipCacheClear = true, currentProfile = stateManager.currentProfile.value)
-                        proxyGroupRefreshCounter = 0
+                        lastProxyGroupRefreshTime = currentTime
                     }
                 }
-                delay(1000)
+                delay(2000)
             }
         }
     }
