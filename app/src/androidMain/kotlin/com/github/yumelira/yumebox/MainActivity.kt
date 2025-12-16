@@ -48,6 +48,24 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.common.AppConstants
+import com.github.yumelira.yumebox.common.util.IntentController
+import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
+import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
+import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.presentation.component.BottomBar
+import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
+import com.github.yumelira.yumebox.presentation.component.LocalNavigator
+import com.github.yumelira.yumebox.presentation.component.LocalPagerState
+import com.github.yumelira.yumebox.presentation.screen.HomePager
+import com.github.yumelira.yumebox.presentation.screen.ProfilesPager
+import com.github.yumelira.yumebox.presentation.screen.ProxyPager
+import com.github.yumelira.yumebox.presentation.screen.SettingPager
+import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
+import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
+import com.github.yumelira.yumebox.presentation.theme.YumeTheme
+import com.github.yumelira.yumebox.presentation.viewmodel.AppSettingsViewModel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -57,31 +75,13 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeSource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
-import com.github.yumelira.yumebox.common.util.IntentController
-import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
-import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
-import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
-import com.github.yumelira.yumebox.presentation.theme.YumeTheme
-import com.github.yumelira.yumebox.presentation.component.BottomBar
-import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
-import com.github.yumelira.yumebox.presentation.component.LocalNavigator
-import com.github.yumelira.yumebox.presentation.component.LocalPagerState
-import com.github.yumelira.yumebox.presentation.screen.HomePager
-import com.github.yumelira.yumebox.presentation.screen.ProfilesPager
-import com.github.yumelira.yumebox.presentation.screen.ProxyPager
-import com.github.yumelira.yumebox.presentation.screen.SettingPager
-import com.github.yumelira.yumebox.presentation.viewmodel.AppSettingsViewModel
-import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -93,7 +93,9 @@ class MainActivity : ComponentActivity() {
         private const val REQUEST_NOTIFICATION_PERMISSION = 1001
         private val _pendingImportUrl = MutableStateFlow<String?>(null)
         val pendingImportUrl: StateFlow<String?> = _pendingImportUrl.asStateFlow()
-        fun clearPendingImportUrl() { _pendingImportUrl.value = null }
+        fun clearPendingImportUrl() {
+            _pendingImportUrl.value = null
+        }
     }
 
     private val appSettingsStorage: AppSettingsStorage by inject()
@@ -147,7 +149,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-            
+
             LaunchedEffect(Unit) {
                 delay(AppConstants.Timing.AUTO_START_DELAY_MS)
                 ProxyAutoStartHelper.checkAndAutoStart(
@@ -161,12 +163,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)
     }
-    
+
     private fun handleIntent(intent: Intent?) {
         intent?.let { safeIntent ->
             safeIntent.data?.let { uri ->
@@ -185,21 +187,6 @@ class MainActivity : ComponentActivity() {
             intentController.handleIntent(safeIntent)
         }
     }
-//
-//
-//    override fun onRequestPermissionsResult(
-//        requestCode: Int,
-//        permissions: Array<String>,
-//        grantResults: IntArray
-//    ) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//
-//        when (requestCode) {
-//            REQUEST_NOTIFICATION_PERMISSION -> {
-//                // 通知权限处理逻辑保持不变
-//            }
-//        }
-//    }
 }
 
 @Composable
@@ -255,7 +242,7 @@ fun MainScreen(navigator: DestinationsNavigator) {
 
                     return Offset.Zero
                 }
-                
+
                 override suspend fun onPreFling(available: Velocity): Velocity {
                     if (abs(available.y) > abs(available.x) * 1.5f) {
                         return Velocity(available.x, 0f)
@@ -264,7 +251,7 @@ fun MainScreen(navigator: DestinationsNavigator) {
                 }
             }
         }
-        
+
         Scaffold(
             bottomBar = {
                 BottomBar(hazeState, hazeStyle)

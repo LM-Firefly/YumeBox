@@ -31,6 +31,16 @@ object DeviceUtil {
         }
     }
 
+    fun is64BitDevice(): Boolean {
+        // Prefer platform-provided 64-bit ABI list when available, otherwise fall back to exact ABI checks
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
+        } else {
+            // For older devices, check known 64-bit ABI names explicitly
+            Build.SUPPORTED_ABIS.any { abi -> abi == "arm64-v8a" || abi == "x86_64" }
+        }
+    }
+
     fun getPreferredAbi(): String {
         return when (Build.SUPPORTED_ABIS.firstOrNull()) {
             "arm64-v8a" -> "arm64-v8a"
