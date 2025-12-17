@@ -55,7 +55,7 @@ class ConnectionsViewModel : ViewModel() {
                 while (currentCoroutineContext().isActive) {
                     pollConnections()
                     emit(Unit)
-                    delay(1000)
+                    delay(2000)
                 }
             }
         } else {
