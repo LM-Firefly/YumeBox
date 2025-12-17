@@ -55,6 +55,7 @@ class ClashManager(
     private val profileManager = ProfileManager(workDir)
     private val serviceManager = ServiceManager(context, scope, stateManager, proxyGroupManager)
     private val proxyTestManager = ProxyTestManager(scope, maxConcurrentTests = 5)
+    private val appListCacheManager = AppListCacheManager(context, scope)
 
     private val loadProfileUseCase by lazy { LoadProfileUseCase(profileManager, stateManager, proxyGroupManager) }
     private val downloadProfileUseCase by lazy { DownloadProfileUseCase(profileManager) }
@@ -91,6 +92,7 @@ class ClashManager(
         _healthStatus.value = HealthStatus(isHealthy = true, message = "Service ready")
         observeTestResults()
         subscribeToLogs()
+        appListCacheManager.start()
     }
 
     private fun observeTestResults() {
@@ -235,6 +237,7 @@ class ClashManager(
     override fun close() {
         scope.cancel("ClashManager closed")
         proxyGroupManager.clearGroupStates()
+        appListCacheManager.stop()
         stateManager.reset()
     }
 }

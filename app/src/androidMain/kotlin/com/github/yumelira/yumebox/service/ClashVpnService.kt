@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.service
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
@@ -183,7 +184,8 @@ class ClashVpnService : VpnService() {
                 clashManager.startTunMode(
                     fd = rawFd,
                     config = tunConfig,
-                    markSocket = { protect(it) }
+                    markSocket = { protect(it) },
+                    querySocketUid = ::querySocketUid
                 )
 
                 val totalTime = System.currentTimeMillis() - startTime
@@ -209,6 +211,13 @@ class ClashVpnService : VpnService() {
         val host = address.substring(0, lastColon)
         val port = address.substring(lastColon + 1).toInt()
         return InetSocketAddress(host, port)
+    }
+    private fun querySocketUid(protocol: Int, source: InetSocketAddress, target: InetSocketAddress): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return -1
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return -1
+        return runCatching {
+            connectivityManager.getConnectionOwnerUid(protocol, source, target)
+        }.getOrElse { -1 }
     }
 
     private fun establishVpnInterface(): ParcelFileDescriptor? = runCatching {
