@@ -55,7 +55,8 @@ private fun DelayIndicator(
 ) {
     val timeoutThreshold = if (globalTimeout > 0) globalTimeout else 65535
     val (text, color) = when {
-        delay < 0 || delay >= timeoutThreshold -> "Timeout" to Color(0xFF9E9E9E)
+        delay < 0 -> "" to Color(0x00000000)
+        delay >= timeoutThreshold -> "Timeout" to Color(0xFF9E9E9E)
         delay == 0 -> "N/A" to Color(0xFFBDBDBD)
         delay in 1..500 -> "${delay}" to Color(0xFF4CAF50)
         delay in 501..1000 -> "${delay}" to Color(0xFFFFC107)

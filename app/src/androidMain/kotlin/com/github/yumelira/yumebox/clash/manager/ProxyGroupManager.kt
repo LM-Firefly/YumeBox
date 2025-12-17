@@ -153,6 +153,100 @@ class ProxyGroupManager(
         }
     }
 
+    suspend fun refreshGroup(groupName: String, currentProfile: Profile? = null): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val group = Clash.queryGroup(groupName, ProxySort.Default)
+            val state = proxyGroupStates.getOrPut(groupName) { ProxyGroupState() }
+            
+            val previousNow = state.now
+            val previousFixed = state.fixed
+            val currentNow = group.now
+            val currentFixed = group.fixed
+
+            if (currentProfile != null && currentNow.isNotBlank() && currentNow != previousNow) {
+                if (group.type == Proxy.Type.Selector) {
+                    selectionDao.setSelected(
+                        Selection(currentProfile.id, groupName, currentNow)
+                    )
+                }
+            }
+            
+            if (currentProfile != null && currentFixed != previousFixed) {
+                if (currentFixed.isNotBlank()) {
+                    selectionDao.setPinned(currentProfile.id, groupName, currentFixed)
+                } else {
+                    selectionDao.removePinned(currentProfile.id, groupName)
+                }
+            }
+
+            state.now = currentNow
+            state.fixed = currentFixed
+            state.lastUpdate = System.currentTimeMillis()
+
+            group.proxies.forEach { proxy ->
+                if (proxy.delay > 0) {
+                    delayCache.updateDelay(proxy.name, proxy.delay)
+                }
+            }
+
+            val currentList = _proxyGroupsShared.replayCache.firstOrNull() ?: emptyList()
+            val cachedDelays = delayCache.getAllValidDelays()
+            val mergedDelayMap = cachedDelays.toMutableMap()
+
+            val updatedList = currentList.map { info ->
+                if (info.name == groupName) {
+                    val enrichedProxies = group.proxies.map { proxy ->
+                        val cachedDelay = mergedDelayMap[proxy.name]
+                        var updatedProxy = if (cachedDelay != null && cachedDelay > 0) {
+                            proxy.copy(delay = cachedDelay)
+                        } else {
+                            proxy
+                        }
+
+                        if (proxy.type.group) {
+                            proxyGroupStates[proxy.name]?.takeIf { it.now.isNotEmpty() }?.let { state ->
+                                updatedProxy = updatedProxy.copy(subtitle = "${proxy.type}(${state.now})")
+                                resolveRecursiveDelay(state.now, mergedDelayMap)?.let { childDelay ->
+                                    updatedProxy = updatedProxy.copy(delay = childDelay)
+                                }
+                            }
+                        }
+                        updatedProxy
+                    }
+                    
+                    info.copy(
+                        proxies = enrichedProxies,
+                        now = group.now,
+                        fixed = group.fixed
+                    )
+                } else {
+                    info
+                }
+            }
+            
+            val groupsMap = updatedList.associate { it.name to ProxyGroup(it.type, it.proxies, it.now, it.fixed) }
+            
+            val finalList = updatedList.map { info ->
+                 if (info.name == groupName) {
+                     val chainPath = if (info.type.group && info.now.isNotBlank()) {
+                        buildProxyChain(info.name, info.now, groupsMap)
+                     } else {
+                        emptyList()
+                     }
+                     info.copy(chainPath = chainPath)
+                 } else {
+                     info
+                 }
+            }
+
+            _proxyGroupsShared.emit(finalList)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Timber.e(e, "刷新单个代理组失败")
+            Result.failure(e)
+        }
+    }
+
     suspend fun refreshSingleGroupSelection(groupName: String, proxyName: String, fixedProxyName: String? = null) {
         runCatching {
             val currentGroups = proxyGroups.value.toMutableList()

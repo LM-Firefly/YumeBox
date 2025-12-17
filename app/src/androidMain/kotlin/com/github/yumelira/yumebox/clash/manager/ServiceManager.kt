@@ -26,6 +26,11 @@ import com.github.yumelira.yumebox.clash.config.ClashConfiguration
 import com.github.yumelira.yumebox.common.util.SystemProxyHelper
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.BroadcastReceiver
+import android.os.PowerManager
+import androidx.core.content.getSystemService
 import com.github.yumelira.yumebox.domain.model.TrafficData
 import timber.log.Timber
 import java.net.InetSocketAddress
@@ -39,6 +44,8 @@ class ServiceManager(
     private var trafficMonitorJob: Job? = null
     private var isProxyScreenActive = false
     private var lastProxyGroupRefreshTime = 0L
+    private var isScreenOn = context.getSystemService<PowerManager>()?.isInteractive ?: true
+    private var screenReceiver: BroadcastReceiver? = null
 
     fun setProxyScreenActive(active: Boolean) {
         isProxyScreenActive = active
@@ -120,26 +127,70 @@ class ServiceManager(
 
     private fun startMonitoring() {
         stopMonitoring()
+        registerScreenReceiver()
         trafficMonitorJob = scope.launch {
             while (isActive) {
                 runCatching {
                     stateManager.updateTrafficNow(TrafficData.from(Clash.queryTrafficNow()))
                     stateManager.updateTrafficTotal(TrafficData.from(Clash.queryTrafficTotal()))
                     stateManager.updateTunnelState(Clash.queryTunnelState())
-                    val currentTime = System.currentTimeMillis()
-                    val interval = if (isProxyScreenActive) 5000L else 60000L
-                    if (currentTime - lastProxyGroupRefreshTime >= interval) {
-                        proxyGroupManager.refreshProxyGroups(skipCacheClear = true, currentProfile = stateManager.currentProfile.value)
-                        lastProxyGroupRefreshTime = currentTime
+                    
+                    // Only refresh proxy groups when screen is on and proxy screen is active
+                    if (isScreenOn && isProxyScreenActive) {
+                        val currentTime = System.currentTimeMillis()
+                        if (currentTime - lastProxyGroupRefreshTime >= 5000L) {
+                            proxyGroupManager.refreshProxyGroups(skipCacheClear = true, currentProfile = stateManager.currentProfile.value)
+                            lastProxyGroupRefreshTime = currentTime
+                        }
                     }
                 }
-                delay(2000)
+                
+                // Adjust polling interval based on screen state
+                val pollInterval = if (isScreenOn) 2000L else 30000L
+                delay(pollInterval)
             }
+        }
+    }
+    
+    private fun registerScreenReceiver() {
+        if (screenReceiver != null) return
+        
+        screenReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Intent.ACTION_SCREEN_ON -> {
+                        isScreenOn = true
+                        Timber.d("Screen ON - increasing polling frequency")
+                    }
+                    Intent.ACTION_SCREEN_OFF -> {
+                        isScreenOn = false
+                        Timber.d("Screen OFF - reducing polling frequency")
+                    }
+                }
+            }
+        }
+        
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        context.registerReceiver(screenReceiver, filter)
+    }
+    
+    private fun unregisterScreenReceiver() {
+        screenReceiver?.let {
+            try {
+                context.unregisterReceiver(it)
+            } catch (e: Exception) {
+                Timber.e(e, "Error unregistering screen receiver")
+            }
+            screenReceiver = null
         }
     }
 
     private fun stopMonitoring() {
         trafficMonitorJob?.cancel()
         trafficMonitorJob = null
+        unregisterScreenReceiver()
     }
 }
