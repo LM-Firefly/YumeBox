@@ -84,7 +84,7 @@ kotlin {
             implementation(compose.preview)
             implementation("io.github.kyant0:backdrop:1.0.1")
             implementation("androidx.activity:activity-compose:1.11.0")
-            implementation("top.yukonga.miuix.kmp:miuix:0.7.1")
+            implementation("top.yukonga.miuix.kmp:miuix:0.7.2")
             implementation("dev.chrisbanes.haze:haze-materials:1.6.10")
             implementation(mmkvDependency)
             implementation("io.insert-koin:koin-core:4.1.1")
