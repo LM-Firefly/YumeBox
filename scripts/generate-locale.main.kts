@@ -1,6 +1,56 @@
-@file:Suppress("PackageDirectoryMismatch", "PackageName", "ClassName", "ObjectPropertyName", "PropertyName", "FunctionName", "NonAsciiCharacters", "RemoveRedundantBackticks", "REDUNDANT_ELSE_IN_WHEN", "UnusedExpression", "unused")
-@file:Repository("https://repo.maven.apache.org/maven2")
-@file:DependsOn("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.9.0")
+/*
+    File to Download Public Resources License (F2DLPRL or F2DLPR License)
+
+    This license applies to source code, distributions, written works, and other original forms of work.
+
+    OFFICIAL WEBSITE: http://license.fileto.download
+    IN CASE OF DISCREPANCIES, THE OFFICIAL WEBSITE SHALL PREVAIL.
+
+
+    Terms and conditions for use, reproduction and redistribution:
+
+    The descriptions provided by the copyright owners in the source code, accompanying documentation, or other materials distributed with the original take precedence over the terms and conditions of this license.
+
+    Use, reproduction, and redistribution of the original document constitutes acceptance of the opinions, values, or other content that may be contained in the original, including, but not limited to, political positions, cultural opinions, or other implied information, as well as additional or implicit content that may be involved.
+
+    Use of the original is prohibited if it would cause damage to the interests of the copyright owners or contributors, except for normal wear and tear caused by normal use.
+
+    Any subject is permitted to use, reproduction, and redistribute source code, textual works, or other forms of work.
+    Distributions may only be used and copied, but may not be redistributed, even if modified.
+    Source code, literary works, or other forms of work may be used for personal purposes, but not for commercial purposes, even if modified, but may be used for commercial purposes when included as dependencies for displaying content on user interface or as non‑core dependencies.
+    Distributions may only be used for personal purposes and not for commercial purposes, even if modified, but the distributions used to display content on user interface may be used for commercial purposes.
+    Only the copyright owners has the right to use the original for commercial purposes.
+    The original cannot be used for exploitative purposes or model training.
+
+    No subject is granted the right to use any copyright, patent, trade name, trademark, service mark, or product license derived from the original, except as reasonably and customarily required to describe the source of the original.
+
+    Redistribution of the original requires retaining this license and the copyright owners' copyright notice, or providing a link to the original source of the original and acknowledging the copyright owners.
+    If the distributions are redistributed in a compressed format that supports multiple files, this license must be included in the archive, otherwise, this license will need to be incorporated into the accompanying documentation or other materials redistributed with the original.
+    Additionally, the copyright owners' copyright notice must be reproduced in the accompanying documentation or other materials redistributed with the original.
+
+    If the modified version or derivative work of the original is redistributed, the changes must be clearly indicated.
+
+
+    THIS ORIGINAL IS PROVIDED BY THE COPYRIGHT OWNERS AND CONTRIBUTORS "AS IS" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+    IN NO EVENT SHALL THE COPYRIGHT OWNERS AND CONTRIBUTORS BE LIABLE FOR ANY NEGATIVE IMPACT, BUT ONLY FOR THE POSITIVE IMPACT, WHETHER OR NOT THE USER, COPIER, OR REDISTRIBUTOR HAS BEEN INFORMED OF THE POSSIBILITY OF CAUSING DAMAGE.
+    IN NO EVENT SHALL THE COPYRIGHT OWNERS AND CONTRIBUTORS GUARANTEE THE SUITABILITY OF THIS ORIGINAL FOR ANY PURPOSE, INCLUDING THE POSSIBILITY OF NORMAL USE OF THIS ORIGINAL.
+
+*/
+
+
+@file:Suppress(
+    "PackageDirectoryMismatch",
+    "PackageName",
+    "ClassName",
+    "ObjectPropertyName",
+    "PropertyName",
+    "FunctionName",
+    "NonAsciiCharacters",
+    "RemoveRedundantBackticks",
+    "REDUNDANT_ELSE_IN_WHEN",
+    "UnusedExpression",
+    "unused"
+) @file:Repository("https://repo.maven.apache.org/maven2") @file:DependsOn("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.9.0")
 
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -76,28 +126,16 @@ open class FVVV(
     }
 
     enum class FormatOpt(val mask: Int) {
-        Common(0),
-        UseWrapper(1 shl 0),
-        Minify(1 shl 1),
-        UseCRLF(1 shl 2),
-        UseCR(1 shl 3),
-        UseSpace2(1 shl 4),
-        UseSpace4(1 shl 5),
-        IntBinary(1 shl 6),
-        IntOctal(1 shl 7),
-        IntHex(1 shl 8),
-        DigitSep3(1 shl 9),
-        DigitSep4(1 shl 10),
-        UseColon(1 shl 11),
-        FullWidth(1 shl 12),
-        KeepListSingle(1 shl 13),
-        ForceUseSeparator(1 shl 14),
-        RawMultilineString(1 shl 15),
-        NoDescs(1 shl 16),
-        NoLinks(1 shl 17),
-        FlattenPaths(1 shl 18),
-        FwwStyle(1 shl 19),
-        ;
+        Common(0), UseWrapper(1 shl 0), Minify(1 shl 1), UseCRLF(1 shl 2), UseCR(1 shl 3), UseSpace2(1 shl 4), UseSpace4(
+            1 shl 5
+        ),
+        IntBinary(1 shl 6), IntOctal(1 shl 7), IntHex(1 shl 8), DigitSep3(1 shl 9), DigitSep4(1 shl 10), UseColon(1 shl 11), FullWidth(
+            1 shl 12
+        ),
+        KeepListSingle(1 shl 13), ForceUseSeparator(1 shl 14), RawMultilineString(1 shl 15), NoDescs(1 shl 16), NoLinks(
+            1 shl 17
+        ),
+        FlattenPaths(1 shl 18), FwwStyle(1 shl 19), ;
 
         companion object {
             infix fun FormatOpt.or(other: FormatOpt) = this.mask or other.mask
@@ -152,8 +190,7 @@ open class FVVV(
     fun isNotEmpty() = !isEmpty()
 
     inline fun <reified T> `is`() = value is T || value?.let {
-        (it::class in floatingPointClasses && T::class in floatingPointClasses) ||
-            (it::class in integerClasses && T::class in integerClasses)
+        (it::class in floatingPointClasses && T::class in floatingPointClasses) || (it::class in integerClasses && T::class in integerClasses)
     } ?: false
 
     inline fun <reified T> isType() = `is`<T>()
@@ -223,8 +260,11 @@ open class FVVV(
     }
 
     override fun toString() = toString(FormatCtx())
-    fun toString(vararg flags: FormatOpt) = toString(FormatCtx(flags.fold(FormatOpt.Common.mask) { target, index -> target or index.mask }))
-    fun toString(vararg flags: Int) = toString(FormatCtx(flags.fold(FormatOpt.Common.mask) { target, index -> target or index }))
+    fun toString(vararg flags: FormatOpt) =
+        toString(FormatCtx(flags.fold(FormatOpt.Common.mask) { target, index -> target or index.mask }))
+
+    fun toString(vararg flags: Int) =
+        toString(FormatCtx(flags.fold(FormatOpt.Common.mask) { target, index -> target or index }))
 
     private fun toString(context: FormatCtx) = buildString {
         if (context.useWrapper) {
@@ -239,7 +279,8 @@ open class FVVV(
     }
 
     inline fun <reified T> to() = FVVVDecoder(this).decodeSerializableValue(serializer<T>())
-    inline fun <reified T> from(data: T) = unlink().also { FVVVEncoder(this).encodeSerializableValue(serializer<T>(), data) }
+    inline fun <reified T> from(data: T) =
+        unlink().also { FVVVEncoder(this).encodeSerializableValue(serializer<T>(), data) }
 
     private class TextCtx(val input: String) {
         var index = 0
@@ -419,7 +460,8 @@ open class FVVV(
         override fun decodeDouble() = targetNode.double
         override fun decodeChar() = targetNode.string.first()
         override fun decodeString() = targetNode.string
-        override fun decodeEnum(enumDescriptor: SerialDescriptor) = enumDescriptor.getElementIndex("${targetNode.value}")
+        override fun decodeEnum(enumDescriptor: SerialDescriptor) =
+            enumDescriptor.getElementIndex("${targetNode.value}")
 
         override fun <T> decodeSerializableElement(
             descriptor: SerialDescriptor,
@@ -442,8 +484,7 @@ open class FVVV(
 
         private fun writeValue(value: Any) {
             if (node.value is MutableList<*>) {
-                @Suppress("UNCHECKED_CAST")
-                (node.value as MutableList<Any>).add(value)
+                @Suppress("UNCHECKED_CAST") (node.value as MutableList<Any>).add(value)
             } else {
                 targetKey?.let { key ->
                     node[key].value = value
@@ -489,8 +530,7 @@ open class FVVV(
             if (descriptor.kind is StructureKind.LIST) {
                 if (serializer.descriptor.kind.run { this is StructureKind.CLASS || this is StructureKind.OBJECT }) {
                     FVVV().apply {
-                        @Suppress("UNCHECKED_CAST")
-                        (node.value as MutableList<FVVV>).add(this)
+                        @Suppress("UNCHECKED_CAST") (node.value as MutableList<FVVV>).add(this)
                         FVVVEncoder(this).encodeSerializableValue(serializer, value)
                     }
                 } else {
@@ -544,9 +584,7 @@ open class FVVV(
                 while (true) when {
                     context.isEof -> throw context.err.whyEOF()
                     context.match('>', skipBlanks = false) -> {
-                        findKey("$description", scopeStack)
-                            ?.takeIf { it.isType<String>() }
-                            ?.also { target ->
+                        findKey("$description", scopeStack)?.takeIf { it.isType<String>() }?.also { target ->
                                 description.clear().append(target.get<String>())
                             }
                         break
@@ -592,8 +630,7 @@ open class FVVV(
                     !isFullWidth && context.match('"', skipBlanks = false) -> text.append('"')
                     else -> {
                         val character = context.next()!!
-                        getEscapedChar(character)?.let { target -> text.append(target) }
-                            ?: text.append('\\', character)
+                        getEscapedChar(character)?.let { target -> text.append(target) } ?: text.append('\\', character)
                     }
                 }
 
@@ -645,9 +682,7 @@ open class FVVV(
         ) {
             while (true) {
                 parseDescription(context, keyDescription, scopeStack, skipBlanks = inList, sameLine = !inList)
-                if (
-                    context.isEof ||
-                    (if (inList) {
+                if (context.isEof || (if (inList) {
                         context.match(',', '，') || context.prematch(']', '］')
                     } else {
                         !context.isSameLine() || context.match(';', '；') || context.prematch('}', '｝')
@@ -669,8 +704,7 @@ open class FVVV(
                     }
                 } else {
                     while (!context.isEof && !context.prematch('<', '+') && !context.prematch('\r', '\n')) {
-                        if (
-                            if (inList) {
+                        if (if (inList) {
                                 context.prematch(',', '，', ']', '］')
                             } else {
                                 context.prematch(';', '；', '}', '｝')
@@ -723,10 +757,7 @@ open class FVVV(
                 }
 
                 parseDescription(context, keyDescription, scopeStack, skipBlanks = false, sameLine = true)
-                if (
-                    context.isEof ||
-                    !context.isSameLine() ||
-                    (if (inList) {
+                if (context.isEof || !context.isSameLine() || (if (inList) {
                         context.match(',', '，') || context.prematch(']', '］')
                     } else {
                         context.match(';', '；') || context.prematch('}', '｝')
@@ -778,8 +809,7 @@ open class FVVV(
                         val targetFvvv = FVVV()
                         parseValue(context, scopeStack, targetFvvv, keyDescription, inList = true)
 
-                        @Suppress("UNCHECKED_CAST")
-                        if (targetFvvv.value is List<*>) {
+                        @Suppress("UNCHECKED_CAST") if (targetFvvv.value is List<*>) {
                             targetList.addAll(targetFvvv.value as List<Any>)
                         } else if (targetFvvv.value != null) {
                             targetList.add(targetFvvv.value!!)
@@ -796,7 +826,8 @@ open class FVVV(
                             when (targetList.last()::class) {
                                 String::class -> listType = String::class
                                 Double::class -> if (listType != String::class) listType = Double::class
-                                Long::class -> if (listType != String::class && listType != Double::class) listType = Long::class
+                                Long::class -> if (listType != String::class && listType != Double::class) listType =
+                                    Long::class
                             }
                         }
                     }
@@ -874,32 +905,34 @@ open class FVVV(
         level: Int,
         isBack: Boolean,
     ) {
-        fun escapeString(text: String, isDescription: Boolean, fullWidth: Boolean = false) = buildString(text.length + 6) {
-            if (isDescription) append('<') else append(if (fullWidth) '“' else '"')
-            text.forEach { character ->
-                when (character) {
-                    '\\' -> "\\\\"
-                    '\b' -> "\\b"
-                    '\u000C' -> "\\f"
-                    '\n' -> "\\n"
-                    '\r' -> "\\r"
-                    '\t' -> "\\t"
-                    '"' -> if (!fullWidth && !isDescription) "\\\"" else character
-                    '”' -> if (fullWidth && !isDescription) "\\”" else character
-                    '>' -> if (isDescription) "\\>" else character
-                    else -> character
-                }.also { append(it) }
+        fun escapeString(text: String, isDescription: Boolean, fullWidth: Boolean = false) =
+            buildString(text.length + 6) {
+                if (isDescription) append('<') else append(if (fullWidth) '“' else '"')
+                text.forEach { character ->
+                    when (character) {
+                        '\\' -> "\\\\"
+                        '\b' -> "\\b"
+                        '\u000C' -> "\\f"
+                        '\n' -> "\\n"
+                        '\r' -> "\\r"
+                        '\t' -> "\\t"
+                        '"' -> if (!fullWidth && !isDescription) "\\\"" else character
+                        '”' -> if (fullWidth && !isDescription) "\\”" else character
+                        '>' -> if (isDescription) "\\>" else character
+                        else -> character
+                    }.also { append(it) }
+                }
+                if (isDescription) append('>') else append(if (fullWidth) '”' else '"')
             }
-            if (isDescription) append('>') else append(if (fullWidth) '”' else '"')
-        }
 
-        fun toStringFwv(context: FormatCtx, targetFvvv: FVVV, result: StringBuilder, indent: String, level: Int) = result.apply {
-            append(context.fwvBegin)
-            if (!context.minify) append(context.newline)
-            targetFvvv.toStringRoot(context, result, level + 1)
-            if (!context.minify) append(context.newline).append(indent)
-            append(context.fwvEnd)
-        }
+        fun toStringFwv(context: FormatCtx, targetFvvv: FVVV, result: StringBuilder, indent: String, level: Int) =
+            result.apply {
+                append(context.fwvBegin)
+                if (!context.minify) append(context.newline)
+                targetFvvv.toStringRoot(context, result, level + 1)
+                if (!context.minify) append(context.newline).append(indent)
+                append(context.fwvEnd)
+            }
 
         fun toStringValue(
             context: FormatCtx,
@@ -970,12 +1003,9 @@ open class FVVV(
                 }
 
                 is String -> result.apply {
-                    if (
-                        !context.minify &&
-                        context.rawMultilineString &&
-                        targetValue.length >= 3 &&
-                        !targetValue.contains('`') &&
-                        targetValue.trim().any { it in "\r\n" }
+                    if (!context.minify && context.rawMultilineString && targetValue.length >= 3 && !targetValue.contains(
+                            '`'
+                        ) && targetValue.trim().any { it in "\r\n" }
                     ) {
                         val stringIndent = indent + context.indentUnit
                         result.ensureCapacity(result.length + targetValue.length + stringIndent.length * 6)
@@ -1014,11 +1044,7 @@ open class FVVV(
         if (context.flattenPaths) {
             currentName = buildString(currentName.length + 6) {
                 append(currentName)
-                while (
-                    targetNode.nodes.size == 1 &&
-                    (context.noDescriptions || targetNode.desc.isEmpty()) &&
-                    (context.noLinks || targetNode.link.isEmpty())
-                ) {
+                while (targetNode.nodes.size == 1 && (context.noDescriptions || targetNode.desc.isEmpty()) && (context.noLinks || targetNode.link.isEmpty())) {
                     val nodePair = targetNode.nodes.entries.first()
                     append('.').append(nodePair.key)
                     targetNode = nodePair.value
@@ -1076,18 +1102,8 @@ open class FVVV(
             result.append(context.listEnd)
         }
 
-        if (
-            !context.noDescriptions &&
-            targetNode.desc.isNotEmpty() &&
-            ((targetNode.nodes.isEmpty() && (!targetNode.`is`<List<FVVV>>())) || targetNode.link.isNotEmpty() || !context.fwwStyle)
-        ) {
-            if (
-                !context.minify &&
-                (!context.fullWidth ||
-                    targetNode.link.isNotEmpty() ||
-                    (targetNode.nodes.isEmpty() && targetNode.value !is List<*> && targetNode.value !is String) ||
-                    (targetNode.value is String && result.last() == '`'))
-            ) {
+        if (!context.noDescriptions && targetNode.desc.isNotEmpty() && ((targetNode.nodes.isEmpty() && (!targetNode.`is`<List<FVVV>>())) || targetNode.link.isNotEmpty() || !context.fwwStyle)) {
+            if (!context.minify && (!context.fullWidth || targetNode.link.isNotEmpty() || (targetNode.nodes.isEmpty() && targetNode.value !is List<*> && targetNode.value !is String) || (targetNode.value is String && result.last() == '`'))) {
                 result.append(' ')
             }
             result.append(escapeString(targetNode.desc, isDescription = true))
@@ -1099,10 +1115,8 @@ open class FVVV(
 }
 
 class LocaleProjectConfig(private val arguments: Array<String>) {
-    val repositoryRoot: File = arguments.firstOrNull { !it.startsWith("--") }
-        ?.let(::File)
-        ?.absoluteFile
-        ?: File(".").absoluteFile
+    val repositoryRoot: File =
+        arguments.firstOrNull { !it.startsWith("--") }?.let(::File)?.absoluteFile ?: File(".").absoluteFile
 
     val localeDirectory: File = File(repositoryRoot, "locale")
     val sourceDirectory: File = File(localeDirectory, "lang")
@@ -1150,8 +1164,7 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
     }
 
     private fun loadLanguageGroup(sourceDirectory: File): Map<String, FVVV> {
-        return sourceDirectory.listFiles { file -> file.isDirectory }
-            ?.sortedBy { it.name }
+        return sourceDirectory.listFiles { file -> file.isDirectory }?.sortedBy { it.name }
             ?.associate { languageDirectory ->
                 languageDirectory.name.uppercase() to FVVV().apply {
                     languageDirectory.walkTopDown()
@@ -1159,8 +1172,7 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
                         .sortedBy { file -> file.relativeTo(languageDirectory).invariantSeparatorsPath }
                         .forEach { file -> parse(file.readText()) }
                 }
-            }
-            .orEmpty()
+            }.orEmpty()
     }
 
     private fun buildGeneratedSource(
@@ -1205,23 +1217,19 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
 
             val totalTexts = countTexts(defaultLanguageRoot).toDouble()
             appendLine(
-                "${visibilityPrefix()}enum class`${config.objectName}Groups`:FYTxtGroup{" +
-                    parsedLanguages.joinToString(",") { (groupName, languageMap) ->
-                        "`$groupName`{override val stats=mapOf(" +
-                            languageMap.map { (tag, node) ->
-                                "`${config.objectName}`.`${config.objectName}Tags`.$tag to ${countTexts(node) / totalTexts}"
-                            }.joinToString(",") +
-                            ")}"
-                    } +
-                    "}"
-            )
+                "${visibilityPrefix()}enum class`${config.objectName}Groups`:FYTxtGroup{" + parsedLanguages.joinToString(
+                    ","
+                ) { (groupName, languageMap) ->
+                    "`$groupName`{override val stats=mapOf(" + languageMap.map { (tag, node) ->
+                        "`${config.objectName}`.`${config.objectName}Tags`.$tag to ${countTexts(node) / totalTexts}"
+                    }.joinToString(",") + ")}"
+                } + "}")
             appendLine(
-                "${visibilityPrefix()}enum class`${config.objectName}Tags`:FYTxtTag{" +
-                    languageTags.joinToString(",") { languageTag ->
-                        "$languageTag{override val pattern=Regex(\"\"\"${buildLanguagePattern(languageTag)}\"\"\",RegexOption.IGNORE_CASE)}"
-                    } +
-                    "}"
-            )
+                "${visibilityPrefix()}enum class`${config.objectName}Tags`:FYTxtTag{" + languageTags.joinToString(
+                    ","
+                ) { languageTag ->
+                    "$languageTag{override val pattern=Regex(\"\"\"${buildLanguagePattern(languageTag)}\"\"\",RegexOption.IGNORE_CASE)}"
+                } + "}")
             appendLine("private val defaultGroup get()=`${config.objectName}Groups`.`${commonLanguageGroup.first}`")
             appendLine("private val defaultTag get()=`${config.objectName}Tags`.$defaultLanguage")
             appendLine("private fun prioritize(primary:`${config.objectName}Tags`,includeFallbacks:Boolean=true): List<`${config.objectName}Tags`> = buildList{")
@@ -1294,9 +1302,7 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
                         val commonTexts = textVariantsByGroup.getValue(commonLanguageGroup.first)
                         val missingTagsByGroup = parsedLanguages.mapNotNull { (groupName, _) ->
                             languageTags.filter { languageTag -> textVariantsByGroup.getValue(groupName)[languageTag] == null }
-                                .joinToString(", ")
-                                .takeIf { it.isNotEmpty() }
-                                ?.let { "$groupName: $it" }
+                                .joinToString(", ").takeIf { it.isNotEmpty() }?.let { "$groupName: $it" }
                         }.joinToString(" | ")
 
                         if (missingTagsByGroup.isNotEmpty()) {
@@ -1319,7 +1325,13 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
                                 appendLine("`${config.objectName}`.`${config.objectName}Groups`.`$groupName`->when(localeTag){")
                                 textVariantsByGroup.getValue(groupName).forEach { (languageTag, textValue) ->
                                     if (textValue != null) {
-                                        appendLine("`${config.objectName}`.`${config.objectName}Tags`.$languageTag->\"\"\"${escapeTripleQuoted(textValue)}\"\"\"")
+                                        appendLine(
+                                            "`${config.objectName}`.`${config.objectName}Tags`.$languageTag->\"\"\"${
+                                                escapeTripleQuoted(
+                                                    textValue
+                                                )
+                                            }\"\"\""
+                                        )
                                     }
                                 }
                                 appendLine("else->null}")
@@ -1329,7 +1341,13 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
                         appendLine("when(localeTag){")
                         commonTexts.forEach { (languageTag, textValue) ->
                             if (textValue != null) {
-                                appendLine("`${config.objectName}`.`${config.objectName}Tags`.$languageTag->\"\"\"${escapeTripleQuoted(textValue)}\"\"\"")
+                                appendLine(
+                                    "`${config.objectName}`.`${config.objectName}Tags`.$languageTag->\"\"\"${
+                                        escapeTripleQuoted(
+                                            textValue
+                                        )
+                                    }\"\"\""
+                                )
                             }
                         }
                         appendLine("else -> null}")
@@ -1357,8 +1375,7 @@ class LocaleGenerator(private val config: LocaleProjectConfig) {
         }
     }
 
-    private fun escapeTripleQuoted(text: String): String =
-        text.replace("\"\"\"", "\\\"\\\"\\\"")
+    private fun escapeTripleQuoted(text: String): String = text.replace("\"\"\"", "\\\"\\\"\\\"")
 
     private fun buildLanguagePattern(languageTag: String): String {
         val segments = languageTag.lowercase().split(Regex("[-_]")).filter { it.isNotBlank() }
