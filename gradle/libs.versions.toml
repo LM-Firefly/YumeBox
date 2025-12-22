@@ -1,7 +1,7 @@
 [versions]
 agp = "8.13.2"
 agp-library = "8.13.1"
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 compose-multiplatform = "1.9.3"
 ksp = "2.3.3"
 aboutlibraries = "13.1.0"
