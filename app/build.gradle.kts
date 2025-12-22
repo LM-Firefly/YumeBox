@@ -45,7 +45,7 @@ plugins {
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.aboutlibraries)
-    alias(libs.plugins.purejoy.mlang)
+    id("dev.oom-wg.purejoy.mlang")
     // Firebase and Google Services plugins removed
 }
 

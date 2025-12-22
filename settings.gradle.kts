@@ -2,6 +2,18 @@
 
 rootProject.name = "YumeBox"
 
+includeBuild("libs/PureJoy-MultiLang") {
+    dependencySubstitution {
+        substitute(module("dev.oom-wg.purejoy.mlang:base")).using(project(":base"))
+        substitute(module("dev.oom-wg.purejoy.mlang:compose")).using(project(":compose"))
+        substitute(module("dev.oom-wg.PureJoy-MultiLang:base")).using(project(":base"))
+        substitute(module("dev.oom-wg.PureJoy-MultiLang:compose")).using(project(":compose"))
+        substitute(module("dev.oom-wg:PureJoy-MultiLang:base")).using(project(":base"))
+        substitute(module("dev.oom-wg:PureJoy-MultiLang:compose")).using(project(":compose"))
+    }
+}
+includeBuild("libs/FVV/kotlin")
+
 val isMergeBuild = gradle.startParameter.taskNames.any { it.contains("assembleReleaseWithExtension", ignoreCase = true) }
 if (isMergeBuild) {
     System.setProperty("isMergeBuild", "true")
@@ -12,7 +24,10 @@ enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
 pluginManagement {
     includeBuild("build-logic")
+    includeBuild("libs/PureJoy-MultiLang")
+    includeBuild("libs/FVV/kotlin")
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
@@ -33,6 +48,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://jitpack.io")

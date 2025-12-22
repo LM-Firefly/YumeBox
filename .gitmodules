@@ -2,3 +2,11 @@
 	path = core/src/foss/golang/mihomo
 	url = https://github.com/MetaCubeX/mihomo.git
 	branch = Alpha
+[submodule "libs/PureJoy-MultiLang"]
+	path = libs/PureJoy-MultiLang
+	url = https://github.com/LM-Firefly/PureJoy-MultiLang
+	branch = purejoy
+[submodule "libs/FVV"]
+	path = libs/FVV
+	url = https://github.com/OOM-WG/FVV
+	branch = fw

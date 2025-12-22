@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -33,7 +33,7 @@ jobs:
         with:
           go-version: "1.25"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -100,6 +100,15 @@ jobs:
           echo "cat signing.properties"
           cat signing.properties
 
+      - name: Publish libs to mavenLocal
+        if: success()
+        run: |
+          chmod +x gradlew
+          # Publish FVV JVM publication only so it doesn't get overwritten by native publications
+          ./gradlew -p libs/FVV/kotlin publishJvmPublicationToMavenLocal --no-daemon --no-configuration-cache --parallel
+          # Then publish PureJoy-MultiLang
+          ./gradlew -p libs/PureJoy-MultiLang publishToMavenLocal --no-daemon --no-configuration-cache --parallel
+
       - name: Build Release APKs
         if: success()
         run: |
@@ -119,13 +128,13 @@ jobs:
           cp app/build/outputs/apk/release/*.apk release_artifacts/
 
       - name: Upload all APKs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: yumebox-apks
           path: release_artifacts/*
 
       - name: Upload mappings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: mappings
           path: app/build/outputs/mapping/release/
