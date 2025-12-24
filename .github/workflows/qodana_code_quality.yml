@@ -4,7 +4,8 @@ on:
   pull_request:
   push:
     branches: # Specify your branches here
-      - main # The 'main' branch
+      - Yume
+      - dev
       - 'releases/*' # The release branches
 
 jobs:
@@ -19,6 +20,19 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
           fetch-depth: 0  # a full history is required for pull request analysis
+
+      - name: Write signing config
+        run: |
+          if [ -n "${{ secrets.SIGNING_STORE_PASSWORD }}" ]; then
+            echo "keystore.password=${{ secrets.SIGNING_STORE_PASSWORD }}" > signing.properties
+            echo "key.alias=${{ secrets.SIGNING_KEY_ALIAS }}" >> signing.properties
+            echo "key.password=${{ secrets.SIGNING_KEY_PASSWORD }}" >> signing.properties
+            echo "keystore.path=release.keystore" >> signing.properties
+          fi
+
+      - name: Inject google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
+
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2025.2
         with:
