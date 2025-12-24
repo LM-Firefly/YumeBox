@@ -11,8 +11,9 @@ on:
   workflow_call:
 
 concurrency:
-  group: docs-deployer
+  group: Build-${{ github.ref }}
   cancel-in-progress: true
+
 
 jobs:
   build:
