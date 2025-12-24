@@ -28,6 +28,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
 
+@SuppressLint("StaticFieldLeak")
 object NativeLibraryManager {
     private const val LIBS_DIR_NAME = "libs"
     private var libsBaseDir: File? = null
@@ -115,6 +116,7 @@ object NativeLibraryManager {
         }
     }
 
+    @SuppressLint("SetWorldReadable")
     private fun extractFromMainApk(info: LibraryInfo, targetFile: File): Boolean {
         val apkPath = context?.applicationInfo?.sourceDir
             ?: throw RuntimeException("Context not initialized")
@@ -149,6 +151,7 @@ object NativeLibraryManager {
         }
     }
 
+    @SuppressLint("SetWorldReadable")
     private fun extractFromExtensionApk(info: LibraryInfo, targetFile: File): Boolean {
         if (info.packageName == null) {
             throw RuntimeException("Package name required for extension APK source")
@@ -214,7 +217,7 @@ object NativeLibraryManager {
             val pm = context?.packageManager ?: return null
             val info = pm.getApplicationInfo(packageName, 0)
             File(info.sourceDir)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -225,10 +228,6 @@ object NativeLibraryManager {
         val actualName = actualLibraryNames[name] ?: name
         val libraryFile = File(libsBaseDir, actualName)
         return if (libraryFile.exists()) libraryFile.absolutePath else null
-    }
-
-    fun getActualLibraryName(baseName: String): String? {
-        return actualLibraryNames[baseName]
     }
 
     fun isLibraryAvailable(name: String): Boolean {
@@ -242,6 +241,7 @@ object NativeLibraryManager {
         }
     }
 
+    @SuppressLint("UnsafeDynamicallyLoadedCode")
     fun loadJniLibrary(name: String): Boolean {
         val info = managedLibraries[name]
         if (info?.type != LibraryType.JNI_LOAD) {
@@ -277,10 +277,6 @@ object NativeLibraryManager {
         }
     }
 
-    fun getAllLibraryStatus(): Map<String, String> {
-        return managedLibraries.keys.associateWith { getLibraryStatus(it) }
-    }
-
     private fun getSupportedAbi(): String {
         val supportedABIs = Build.SUPPORTED_ABIS
         return when {
@@ -291,9 +287,4 @@ object NativeLibraryManager {
             else -> supportedABIs.firstOrNull() ?: "arm64-v8a"
         }
     }
-
-    fun clearCache() {
-    }
-
-    fun getLibsBaseDir(): File? = libsBaseDir
 }
