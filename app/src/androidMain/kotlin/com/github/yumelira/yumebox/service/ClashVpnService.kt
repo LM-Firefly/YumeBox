@@ -8,8 +8,8 @@ import android.net.VpnService
 import android.os.Build
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
-import com.github.yumelira.yumebox.clash.config.ClashConfiguration
-import com.github.yumelira.yumebox.clash.config.VpnRouteConfig
+import com.github.yumelira.yumebox.clash.config.Configuration
+import com.github.yumelira.yumebox.clash.config.RouteConfig
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.data.model.AccessControlMode
@@ -127,7 +127,7 @@ class ClashVpnService : VpnService() {
                 runCatching { pfd.close() }
                 vpnInterface = null
 
-                val config = ClashConfiguration.TunConfig()
+                val config = Configuration.TunConfig()
                 val tunDns = if (networkSettings.dnsHijack.value) config.dns else "0.0.0.0"
                 val tunConfig = config.copy(
                     stack = networkSettings.tunStack.value.name.lowercase(),
@@ -192,7 +192,7 @@ class ClashVpnService : VpnService() {
     }
 
     private fun establishVpnInterface(): ParcelFileDescriptor? = runCatching {
-        val config = ClashConfiguration.TunConfig()
+        val config = Configuration.TunConfig()
         Builder().apply {
             setSession("YumeBox VPN")
             setMtu(config.mtu)
@@ -200,22 +200,22 @@ class ClashVpnService : VpnService() {
             addAddress(config.gateway, 30)
 
             if (networkSettings.enableIPv6.value) {
-                addAddress(VpnRouteConfig.TUN_GATEWAY6, VpnRouteConfig.TUN_SUBNET_PREFIX6)
+                addAddress(RouteConfig.TUN_GATEWAY6, RouteConfig.TUN_SUBNET_PREFIX6)
             }
 
             if (networkSettings.bypassPrivateNetwork.value) {
-                VpnRouteConfig.BYPASS_PRIVATE_ROUTES.forEach { cidr ->
-                    val (addr, prefix) = VpnRouteConfig.parseCidr(cidr)
+                RouteConfig.BYPASS_PRIVATE_ROUTES.forEach { cidr ->
+                    val (addr, prefix) = RouteConfig.parseCidr(cidr)
                     addRoute(addr, prefix)
                 }
                 if (networkSettings.enableIPv6.value) {
-                    VpnRouteConfig.BYPASS_PRIVATE_ROUTES_V6.forEach { cidr ->
-                        val (addr, prefix) = VpnRouteConfig.parseCidr(cidr)
+                    RouteConfig.BYPASS_PRIVATE_ROUTES_V6.forEach { cidr ->
+                        val (addr, prefix) = RouteConfig.parseCidr(cidr)
                         addRoute(addr, prefix)
                     }
                 }
                 addRoute(config.dns, 32)
-                if (networkSettings.enableIPv6.value) addRoute(VpnRouteConfig.TUN_DNS6, 128)
+                if (networkSettings.enableIPv6.value) addRoute(RouteConfig.TUN_DNS6, 128)
             } else {
                 addRoute("0.0.0.0", 0)
                 if (networkSettings.enableIPv6.value) addRoute("::", 0)
@@ -234,7 +234,7 @@ class ClashVpnService : VpnService() {
             }
 
             addDnsServer(config.dns)
-            if (networkSettings.enableIPv6.value) addDnsServer(VpnRouteConfig.TUN_DNS6)
+            if (networkSettings.enableIPv6.value) addDnsServer(RouteConfig.TUN_DNS6)
             if (networkSettings.allowBypass.value) allowBypass()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -244,9 +244,9 @@ class ClashVpnService : VpnService() {
                     listenHttp()?.let { addr ->
                         httpProxyAddress = addr
                         val exclusionList = if (networkSettings.bypassPrivateNetwork.value) {
-                            VpnRouteConfig.HTTP_PROXY_LOCAL_LIST + VpnRouteConfig.HTTP_PROXY_BLACK_LIST
+                            RouteConfig.HTTP_PROXY_LOCAL_LIST + RouteConfig.HTTP_PROXY_BLACK_LIST
                         } else {
-                            VpnRouteConfig.HTTP_PROXY_BLACK_LIST
+                            RouteConfig.HTTP_PROXY_BLACK_LIST
                         }
                         setHttpProxy(
                             ProxyInfo.buildDirectProxy(
