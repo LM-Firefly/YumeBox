@@ -135,6 +135,8 @@ private fun createWebView(
 
             allowFileAccess = true
             allowContentAccess = true
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
 
 
             setSupportZoom(true)
