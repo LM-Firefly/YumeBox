@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.common.util
 
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.substore.SubStorePaths
+import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
 
 object AppUtil {
@@ -37,7 +38,7 @@ object AppUtil {
             val rootJsonFile = File(SubStorePaths.dataDir, "root.json")
             rootJsonFile.parentFile?.mkdirs()
             if (!rootJsonFile.exists()) rootJsonFile.writeText("{}")
-        }.onFailure { e -> timber.log.Timber.e(e, "创建root.json失败") }
+        }.onFailure { e -> timber.log.Timber.e(e, MLang.Feature.SubStore.BackendExtractFailed) }
     }
 
     private fun extractBackendFile() {
@@ -49,7 +50,7 @@ object AppUtil {
                     inputStream.copyTo(outputStream)
                 }
             }
-        }.onFailure { e -> timber.log.Timber.e(e, "提取后端文件失败") }
+        }.onFailure { e -> timber.log.Timber.e(e, MLang.Feature.SubStore.BackendExtractFailed) }
     }
 
     private fun extractFrontendDist() {
@@ -71,7 +72,7 @@ object AppUtil {
 
             val unzipSuccess = ArchiveUtil.unzipZip(zipPath, stagingDir)
             if (!unzipSuccess) {
-                throw IllegalStateException("SubStore 前端资源解压失败")
+                throw IllegalStateException(MLang.Feature.SubStore.FrontendDownloadFailed)
             }
 
             val extractedRoot = File(stagingDir, "dist").takeIf { it.exists() } ?: stagingDir
@@ -84,6 +85,6 @@ object AppUtil {
 
             stagingDir.deleteRecursively()
             zipPath.delete()
-        }.onFailure { e -> timber.log.Timber.e(e, "提取前端资源失败") }
+        }.onFailure { e -> timber.log.Timber.e(e, MLang.Feature.SubStore.FrontendDownloadFailed) }
     }
 }

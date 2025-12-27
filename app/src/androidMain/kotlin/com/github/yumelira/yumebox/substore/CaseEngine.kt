@@ -25,6 +25,7 @@ import com.caoccao.javet.interception.logging.JavetStandardConsoleInterceptor
 import com.caoccao.javet.interop.NodeRuntime
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.options.NodeRuntimeOptions
+import dev.oom_wg.purejoy.mlang.MLang
 import timber.log.Timber
 import java.io.Closeable
 import java.io.File
@@ -77,7 +78,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             nodeRuntime!!.allowEval(true)
             nodeRuntime!!.getExecutor(argv2EnvScript).executeVoid()
         } catch (e: Exception) {
-            Timber.e(e, "CaseEngine 初始化失败")
+            Timber.e(e, MLang.Feature.SubStore.CaseEngineInitFailed)
         }
     }
 
@@ -95,11 +96,11 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
 
                 nodeRuntime!!.getExecutor(codeFile).executeVoid()
                 while (shouldAwait) {
-                    nodeRuntime!!.await(V8AwaitMode.RunNoWait)
+                    nodeRuntime!!.await(V8AwaitMode.RunOnce)
                 }
             } catch (_: InterruptedException) {
             } catch (e: Exception) {
-                Timber.e(e, "CaseEngine 运行出错")
+                Timber.e(e, MLang.Feature.SubStore.CaseEngineStartFailed.format(e.message ?: ""))
             } finally {
                 cleanup()
             }
@@ -127,7 +128,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
                 thread.join(5000)
             }
         } catch (e: Exception) {
-            Timber.e(e, "停止 CaseEngine 失败")
+            Timber.e(e, MLang.Feature.SubStore.CaseEngineStopFailed)
         }
     }
 
@@ -142,7 +143,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             }
             nodeRuntime = null
         }.onFailure { e ->
-            Timber.e(e, "CaseEngine 清理失败")
+            Timber.e(e, MLang.Feature.SubStore.CaseEngineStopFailed.format(e.message ?: ""))
         }
     }
 }

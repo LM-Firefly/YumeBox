@@ -102,7 +102,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
             when (event) {
                 is SettingEvent.OpenWebView -> {
                     runCatching {
-                        WebViewActivity.start(context, event.url)
+                        navigator.navigate(WebViewScreenDestination(initialUrl = event.url, title = event.title)) {
+                            launchSingleTop = true
+                        }
                     }.getOrElse { throwable ->
                         context.toast(MLang.Settings.Error.WebviewFailed.format(throwable.message))
                     }
@@ -197,6 +199,24 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                 SmallTitle(MLang.Settings.Section.More)
 
                 Card {
+                    SuperArrow(
+                        title = MLang.Settings.More.TrafficStatistics,
+                        onClick = { navigator.navigate(TrafficStatisticsScreenDestination) { launchSingleTop = true } },
+                        leftAction = {
+                            CircularIcon(
+                                imageVector = Yume.`Arrow-down-up`, contentDescription = null
+                            )
+                        },
+                    )
+                    SuperArrow(
+                        title = MLang.Connections.Title,
+                        onClick = { navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true } },
+                        leftAction = {
+                            CircularIcon(
+                                imageVector = Yume.Link, contentDescription = null
+                            )
+                        },
+                    )
                     SuperArrow(
                         title = MLang.Settings.More.Logs,
                         onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },

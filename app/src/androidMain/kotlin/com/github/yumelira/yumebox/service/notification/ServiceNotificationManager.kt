@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import dev.oom_wg.purejoy.mlang.MLang
 
 class ServiceNotificationManager(
     private val service: Service,
@@ -47,7 +48,7 @@ class ServiceNotificationManager(
                 config.channelName,
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "显示 Clash 服务运行状态"
+                description = MLang.Service.Notification.ChannelDescription
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(channel)
@@ -81,7 +82,7 @@ class ServiceNotificationManager(
             .setOngoing(isConnected)
             .apply {
                 if (isConnected) {
-                    addAction(android.R.drawable.ic_menu_close_clear_cancel, "断开", stopPendingIntent)
+                    addAction(android.R.drawable.ic_menu_close_clear_cancel, MLang.Service.Notification.ActionDisconnect, stopPendingIntent)
                 }
             }
             .build()
@@ -105,13 +106,13 @@ class ServiceNotificationManager(
             NotificationData(now, total, currentProfile, showTraffic)
         }
             .collect { (now, total, currentProfile, showTraffic) ->
-                val profileName = currentProfile?.name ?: "未知配置"
+                val profileName = currentProfile?.name ?: MLang.ProfilesPage.Message.UnknownProfile
                 if (showTraffic) {
                     val speedStr = "↓ ${formatSpeed(now.download)} ↑ ${formatSpeed(now.upload)}"
-                    val totalStr = "总计: ${formatBytes(total.download + total.upload)}"
-                    update("已连接: $profileName", "$speedStr | $totalStr", true)
+                    val totalStr = MLang.Service.Notification.TrafficFormat.format(formatBytes(total.download + total.upload))
+                    update(MLang.Service.Notification.ConnectedWithProfile.format(profileName), "$speedStr | $totalStr", true)
                 } else {
-                    update("已连接", profileName, true)
+                    update(MLang.Service.Notification.Connected, profileName, true)
                 }
             }
     }

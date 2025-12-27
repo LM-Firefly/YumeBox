@@ -89,7 +89,13 @@ fun FeatureScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.Feature.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.Feature.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(
@@ -97,10 +103,10 @@ fun FeatureScreen(
             innerPadding = innerPadding,
         ) {
             item {
-                val canStartService = isExtensionInstalled && isSubStoreInitialized
+                val canStartService = (isExtensionInstalled || isJavetLoaded) && isSubStoreInitialized
                 when {
                     isServiceRunning -> MLang.Feature.ServiceStatus.Running.format(frontendUrl)
-                    !isExtensionInstalled -> MLang.Feature.ServiceStatus.NeedExtension
+                    !(isExtensionInstalled || isJavetLoaded) -> MLang.Feature.ServiceStatus.NeedExtensionOrJavet
                     !isSubStoreInitialized -> MLang.Feature.ServiceStatus.NeedSubStore
                     else -> MLang.Feature.ServiceStatus.NotRunning
                 }

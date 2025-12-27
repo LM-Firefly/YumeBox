@@ -87,4 +87,5 @@ val appModule = module {
     viewModel { AccessControlViewModel(androidApplication(), get()) }
     viewModel { OverrideViewModel() }
     viewModel { TrafficStatisticsViewModel(androidApplication(), get()) }
+    viewModel { ConnectionsViewModel() }
 }

@@ -200,6 +200,16 @@
 -keep class androidx.compose.material.** { *; }
 -keep interface androidx.compose.material.** { *; }
 
+# --------------------------------
+# App: Preserve presentation classes used by Compose and ViewModels
+# Prevent R8 from removing or renaming classes that Compose may reference reflectively (e.g., composable lambdas, saved state)
+-keep class com.github.yumelira.yumebox.presentation.** { *; }
+-keepclassmembers class com.github.yumelira.yumebox.presentation.** { *; }
+-keep class * extends androidx.lifecycle.ViewModel { *; }
+-keepclassmembers class * extends androidx.lifecycle.ViewModel { *; }
+-keepattributes *Annotation*,EnclosingMethod,InnerClasses,Signature
+
+
 # ========================================
 # Kotlin Null Safety Optimization
 # ========================================
@@ -302,13 +312,10 @@
 -dontwarn org.brotli.dec.**
 
 # --------------------------------
-# Google Play Services & Firebase
+# Google Play Services & Firebase (Firebase removed)
+# Keep ML Kit rules, remove Firebase/Play Services keep/dontwarn rules
 # --------------------------------
--keep class com.google.android.gms.** { *; }
--keep class com.google.firebase.** { *; }
 -keep class com.google.mlkit.** { *; }
--dontwarn com.google.android.gms.**
--dontwarn com.google.firebase.**
 
 # --------------------------------
 # Other Missing Classes

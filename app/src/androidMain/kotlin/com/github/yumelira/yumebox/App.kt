@@ -27,12 +27,14 @@ import com.github.yumelira.yumebox.common.util.AppUtil
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.data.model.AppLogBuffer
 import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.di.appModule
 import com.tencent.mmkv.MMKV
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -56,8 +58,9 @@ class App : Application() {
 
         instance = this
         if (Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+            Timber.plant(com.github.yumelira.yumebox.data.model.AppLogTree())
         }
+        com.github.yumelira.yumebox.data.model.CrashHandler.init(this)
 
         Global.init(this)
         MMKV.initialize(this)
@@ -82,6 +85,7 @@ class App : Application() {
         // 恢复保存的自定义 User-Agent
         val appSettings: AppSettingsStorage = koinApp.koin.get()
         val savedUserAgent = appSettings.customUserAgent.value
+        AppLogBuffer.minLogLevel = appSettings.logLevel.value
         if (savedUserAgent.isNotEmpty()) {
             Clash.setCustomUserAgent(savedUserAgent)
         }
@@ -96,7 +100,7 @@ class App : Application() {
                 val clashWorkDir = File(filesDir, "clash")
                 cleanupOrphanedConfigs(clashWorkDir, profiles)
             } catch (e: Exception) {
-                Timber.e(e, "清理孤儿配置失败")
+                Timber.e(e, MLang.ProfilesPage.Import.Message.CleanupOrphanedFailed.format(e.message ?: ""))
             }
         }
     }

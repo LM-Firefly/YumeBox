@@ -53,6 +53,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.useful.Cancel
 import top.yukonga.miuix.kmp.icon.icons.useful.Delete
 import top.yukonga.miuix.kmp.icon.icons.useful.Play
+import top.yukonga.miuix.kmp.icon.icons.useful.Save
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -82,6 +83,15 @@ fun LogScreen(navigator: DestinationsNavigator) {
                     NavigationBackIcon(navigator = navigator)
                 },
                 actions = {
+                    IconButton(
+                        onClick = { viewModel.saveAppLog() },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Useful.Save,
+                            contentDescription = "Save App Log",
+                        )
+                    }
                     IconButton(
                         onClick = {
                             if (isRecording) {
@@ -153,7 +163,7 @@ private fun LogFileItem(
         visible = true
     }
 
-    rememberInfiniteTransition(label = "recording_pulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "recording_pulse")
 
     val animatedSize by animateFloatAsState(
         targetValue = fileInfo.size.toFloat(),
@@ -180,7 +190,7 @@ private fun LogFileItem(
                         modifier = Modifier.padding(end = 16.dp),
                         style = MiuixTheme.textStyles.body2,
                     )
-                }
+                } else null
             }
         )
     }

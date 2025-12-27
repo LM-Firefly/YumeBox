@@ -28,11 +28,24 @@ import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
+import com.github.yumelira.yumebox.domain.model.Connection
+import java.net.URL
+import java.net.HttpURLConnection
+import kotlinx.serialization.json.Json
+import com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
+import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.data.repository.NetworkInfoService
 import com.github.yumelira.yumebox.data.repository.ProxyChainResolver
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
@@ -48,6 +61,13 @@ class HomeViewModel(
     private val proxyChainResolver: ProxyChainResolver
 ) : AndroidViewModel(application) {
 
+    companion object {
+        private const val TAG = "HomeViewModel"
+        private val SUSPICIOUS_TYPE_LOGGED = AtomicBoolean(false)
+    }
+
+    private val json = Json { ignoreUnknownKeys = true }
+
     val profiles: StateFlow<List<Profile>> = profilesRepository.profiles
     val recommendedProfile: StateFlow<Profile?> = profilesRepository.recommendedProfile
     val hasEnabledProfile: Flow<Boolean> = profiles.map { it.any { profile -> profile.enabled } }
@@ -57,6 +77,77 @@ class HomeViewModel(
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
     val tunnelState = proxyFacade.tunnelState
+    val connections: StateFlow<List<Connection>> = isRunning.flatMapLatest { running ->
+        if (running) {
+            flow {
+                while (true) {
+                    try {
+                        val sessionOverride = Clash.queryOverride(Clash.OverrideSlot.Session)
+                        val config = Clash.queryConfiguration()
+                        val controller = sessionOverride.externalController
+                            ?: config.externalController
+                            ?: "127.0.0.1:9090"
+                        val secret = sessionOverride.secret
+                            ?: config.secret
+                            ?: Configuration.API_SECRET
+
+                        Timber.tag(TAG).d("Polling connections. sessionController=%s, configController=%s, chosen=%s", sessionOverride.externalController, config.externalController, controller)
+
+                        val url = URL("http://$controller/connections")
+                        val connection = url.openConnection() as HttpURLConnection
+                        connection.requestMethod = "GET"
+                        if (secret.isNotEmpty()) {
+                            connection.setRequestProperty("Authorization", "Bearer $secret")
+                        }
+                        connection.connectTimeout = 1000
+                        connection.readTimeout = 1000
+                        val responseCode = connection.responseCode
+                        if (responseCode == 200) {
+                            val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
+                            val snapshot = json.decodeFromString<ConnectionsSnapshot>(jsonString)
+                            val rawConnections = snapshot.connections ?: emptyList()
+                            val suspiciousFound = rawConnections.any { conn ->
+                                conn.metadata.type.matches(Regex("^n\\d+$"))
+                            }
+                            if (suspiciousFound && SUSPICIOUS_TYPE_LOGGED.compareAndSet(false, true)) {
+                                Timber.tag(TAG).w("Suspicious metadata.type detected in connections; dumping JSON for analysis")
+                                Timber.tag(TAG).d(jsonString)
+                            }
+                            val sanitized = rawConnections.map { conn ->
+                                conn.copy(
+                                    metadata = conn.metadata.copy(
+                                        sourceIP = conn.metadata.sourceIP.ifBlank { "<unknown>" },
+                                        destinationIP = conn.metadata.destinationIP.ifBlank { "<unknown>" },
+                                        host = conn.metadata.host.ifBlank { "<unknown>" },
+                                        process = conn.metadata.process.ifBlank { "" }
+                                    ),
+                                    chains = conn.chains.map { it.ifBlank { "<unknown>" } },
+                                    rule = conn.rule.ifBlank { "<unknown>" },
+                                    rulePayload = conn.rulePayload
+                                )
+                            }.take(200) // limit to avoid huge lists
+                            emit(sanitized)
+                        } else {
+                            Timber.tag(TAG).e("Failed to poll connections: $responseCode")
+                            emit(emptyList())
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "Error polling connections")
+                        emit(emptyList())
+                    }
+                    delay(2000)
+                }
+            }
+        } else {
+            flowOf(emptyList())
+        }
+    }
+    .flowOn(Dispatchers.IO)
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
     val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
@@ -134,19 +225,19 @@ class HomeViewModel(
             // 从 ProfilesStore 获取配置
             val profile = profilesRepository.profiles.value.find { it.id == profileId }
             if (profile == null) {
-                showError("配置切换失败: 配置不存在")
+                showError(MLang.Home.Message.ConfigSwitchFailed.format(MLang.ProfilesVM.Error.ProfileNotExist))
                 return
             }
 
             // 重新加载配置
             val result = clashManager.loadProfile(profile)
             if (result.isSuccess) {
-                showMessage("配置已切换")
+                showMessage(MLang.Home.Message.ConfigSwitched)
             } else {
-                showError("配置切换失败: ${result.exceptionOrNull()?.message}")
+                showError(MLang.Home.Message.ConfigSwitchFailed.format(result.exceptionOrNull()?.message))
             }
         } catch (e: Exception) {
-            showError("配置切换失败: ${e.message}")
+            showError(MLang.Home.Message.ConfigSwitchFailed.format(e.message))
         } finally {
             setLoading(false)
         }
@@ -159,7 +250,7 @@ class HomeViewModel(
             try {
                 _isToggling.value = true
                 _displayRunning.value = true
-                _uiState.update { it.copy(isStartingProxy = true, loadingProgress = "正在准备...") }
+                _uiState.update { it.copy(isStartingProxy = true, loadingProgress = MLang.Home.Message.Preparing) }
 
                 val result = proxyFacade.startProxy(profileId, useTunMode)
 
@@ -176,13 +267,13 @@ class HomeViewModel(
                     _displayRunning.value = false
                     _isToggling.value = false
                     _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                    showError("启动失败: ${error.message}")
+                    showError(MLang.Home.Message.StartFailed.format(error.message))
                 })
             } catch (e: Exception) {
                 _displayRunning.value = false
                 _isToggling.value = false
                 _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                showError("启动失败: ${e.message}")
+                showError(MLang.Home.Message.StartFailed.format(e.message))
             }
         }
     }
@@ -196,11 +287,11 @@ class HomeViewModel(
                 _displayRunning.value = false
                 setLoading(true)
                 proxyFacade.stopProxy()
-                showMessage("代理服务已停止")
+                showMessage(MLang.Home.Message.ProxyStopped)
             } catch (e: Exception) {
                 _displayRunning.value = true
                 _isToggling.value = false
-                showError("停止失败: ${e.message}")
+                showError(MLang.Home.Message.StopFailed.format(e.message))
             } finally {
                 setLoading(false)
             }

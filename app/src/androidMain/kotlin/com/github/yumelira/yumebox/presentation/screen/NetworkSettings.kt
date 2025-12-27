@@ -83,7 +83,13 @@ fun NetworkSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.NetworkSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(

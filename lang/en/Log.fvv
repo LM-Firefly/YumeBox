@@ -16,6 +16,14 @@ Log = {
         Hint = "Click top-right to start recording"
     }
     
+    Message = {
+        DeleteFailed = "Delete file failed: %s"
+        ReadFailed = "Read log file failed: %s"
+        SaveFailed = "Save file failed: %s"
+        ShareFailed = "Create share intent failed: %s"
+        Saved = "Saved: %s"
+    }
+    
     Status = {
         Recording = "Recording"
     }

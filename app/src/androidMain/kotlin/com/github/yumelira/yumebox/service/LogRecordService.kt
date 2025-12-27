@@ -25,10 +25,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.R
 import androidx.core.app.NotificationCompat
 import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.clash.manager.ClashManager
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 import java.io.BufferedWriter
@@ -43,7 +46,7 @@ class LogRecordService : Service() {
         private const val TAG = "LogRecordService"
         private const val NOTIFICATION_ID = 2001
         private const val CHANNEL_ID = "log_record_channel"
-        private const val CHANNEL_NAME = "日志记录"
+        private val CHANNEL_NAME = MLang.Service.LogRecord.ChannelName
 
         private const val ACTION_START = "com.github.yumelira.yumebox.LOG_START"
         private const val ACTION_STOP = "com.github.yumelira.yumebox.LOG_STOP"
@@ -81,6 +84,11 @@ class LogRecordService : Service() {
         fun getLogDir(context: Context): File {
             return File(context.filesDir, LOG_DIR).apply { mkdirs() }
         }
+
+        private var instance: LogRecordService? = null
+        fun writeLog(logLine: String) {
+            instance?.writeLogInternal(logLine)
+        }
     }
 
     private val clashManager: ClashManager by inject()
@@ -88,6 +96,8 @@ class LogRecordService : Service() {
 
     private var logWriter: BufferedWriter? = null
     private var logCollectJob: Job? = null
+    private var writerJob: Job? = null
+    private val logChannel = Channel<String>(Channel.UNLIMITED)
     private var logFile: File? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
 
@@ -95,6 +105,8 @@ class LogRecordService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
+        Timber.tag(TAG).d(MLang.Service.LogRecord.Created)
         createNotificationChannel()
     }
 
@@ -107,17 +119,29 @@ class LogRecordService : Service() {
     }
 
     override fun onDestroy() {
+        Timber.tag(TAG).d(MLang.Service.LogRecord.Destroyed)
         closeLogWriter()
         serviceScope.cancel()
         isRecording = false
         currentLogFileName = null
+        instance = null
         super.onDestroy()
     }
 
-    private fun startRecording() {
-        if (isRecording) return
+    private fun writeLogInternal(logLine: String) {
+        if (isRecording) {
+            logChannel.trySend(logLine + "\n")
+        }
+    }
 
-        runCatching {
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun startRecording() {
+        if (isRecording) {
+            Timber.tag(TAG).d(MLang.Service.LogRecord.AlreadyRecording)
+            return
+        }
+
+        try {
             val logDir = getLogDir(applicationContext)
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "$LOG_PREFIX$timestamp$LOG_SUFFIX"
@@ -129,21 +153,39 @@ class LogRecordService : Service() {
 
             startForeground(NOTIFICATION_ID, createNotification())
 
+            Timber.tag(TAG).d(MLang.Service.LogRecord.RecordingStarted.format(fileName))
+
+            // 启动写入协程
+            writerJob = serviceScope.launch {
+                for (line in logChannel) {
+                    try {
+                        logWriter?.write(line)
+                        // 仅当通道为空时才刷新, 避免频繁IO
+                        if (logChannel.isEmpty) {
+                            logWriter?.flush()
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, MLang.Service.LogRecord.RecordingFailed)
+                    }
+                }
+            }
+
             logCollectJob = serviceScope.launch {
+                Timber.tag(TAG).d(MLang.Service.LogRecord.StartSubscribe)
                 clashManager.logs.collect { log ->
                     if (isRecording) {
-                        runCatching {
+                        try {
                             val line = "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
-                            logWriter?.write(line)
-                            logWriter?.flush()
-                        }.onFailure { e ->
-                            Timber.tag(TAG).e(e, "写入日志失败")
+                            logChannel.send(line)
+                        } catch (e: Exception) {
+                            Timber.tag(TAG).e(e, MLang.Service.LogRecord.SendToChannelFailed)
                         }
                     }
                 }
             }
-        }.onFailure { e ->
-            Timber.tag(TAG).e(e, "启动日志记录失败")
+
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, MLang.Service.LogRecord.StartFailed)
             isRecording = false
             currentLogFileName = null
             stopSelf()
@@ -151,8 +193,12 @@ class LogRecordService : Service() {
     }
 
     private fun stopRecording() {
+        Timber.tag(TAG).d(MLang.Service.LogRecord.Stopped)
+        
         logCollectJob?.cancel()
         logCollectJob = null
+        writerJob?.cancel()
+        writerJob = null
         closeLogWriter()
 
         isRecording = false
@@ -163,13 +209,13 @@ class LogRecordService : Service() {
     }
 
     private fun closeLogWriter() {
-        runCatching {
+        try {
             logWriter?.flush()
             logWriter?.close()
             logWriter = null
             logFile = null
-        }.onFailure { e ->
-            Timber.tag(TAG).e(e, "关闭日志写入器失败")
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, MLang.Service.LogRecord.StopFailed)
         }
     }
 
@@ -180,7 +226,7 @@ class LogRecordService : Service() {
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "日志记录服务通知"
+                description = MLang.Service.LogRecord.ChannelDescription
                 setShowBadge(false)
             }
 
@@ -203,15 +249,15 @@ class LogRecordService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("正在记录日志")
-            .setContentText(currentLogFileName ?: "日志记录中...")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(MLang.Service.LogRecord.Recording)
+            .setContentText(currentLogFileName ?: MLang.Service.LogRecord.RecordingFile)
+            .setSmallIcon(R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .addAction(
-                android.R.drawable.ic_menu_close_clear_cancel,
-                "停止",
+                R.drawable.ic_menu_close_clear_cancel,
+                MLang.Service.LogRecord.ActionStop,
                 stopPendingIntent
             )
             .build()

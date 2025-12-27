@@ -21,11 +21,12 @@
 package com.github.yumelira.yumebox.domain.model
 
 import com.github.yumelira.yumebox.data.model.Profile
+import dev.oom_wg.purejoy.mlang.MLang
 
 sealed interface ProxyState {
     data object Idle : ProxyState
 
-    data class Preparing(val message: String = "正在准备...") : ProxyState
+    data class Preparing(val message: String = MLang.Proxy.State.Preparing) : ProxyState
 
     data class Connecting(val mode: RunningMode) : ProxyState
 

@@ -88,4 +88,10 @@ Override = {
         Title = "重置覆写设置"
         Message = "所有的覆写设置将会被擦除，确定要继续吗？"
     }
+
+    Message = {
+        LoadFailed = "加载覆写配置失败: %s"
+        ResetFailed = "重置覆写配置失败: %s"
+        AutoSaveFailed = "自动保存配置失败: %s"
+    }
 }

@@ -91,6 +91,16 @@ func patchSelector(selector, name C.c_string) C.int {
 	return 0
 }
 
+//export patchForceSelector
+func patchForceSelector(selector, name C.c_string) C.int {
+	s := C.GoString(selector)
+	n := C.GoString(name)
+	if tunnel.PatchForceSelector(s, n) {
+		return 1
+	}
+	return 0
+}
+
 //export queryProviders
 func queryProviders() *C.char {
 	return marshalJson(tunnel.QueryProviders())

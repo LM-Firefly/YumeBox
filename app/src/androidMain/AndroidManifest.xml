@@ -48,6 +48,7 @@
     <application
             android:name=".App"
             android:allowBackup="true"
+            tools:replace="android:icon,android:label"
             android:icon="@mipmap/ic_launcher"
             android:label="${appName}"
             android:roundIcon="@mipmap/ic_launcher_round"
