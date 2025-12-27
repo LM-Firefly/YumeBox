@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.service
 
 import android.annotation.SuppressLint
@@ -32,6 +12,7 @@ import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.domain.model.RunningMode
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.combine
 import org.koin.android.ext.android.inject
@@ -87,7 +68,7 @@ class ProxyTileService : TileService() {
         val profile = profilesStore.getRecommendedProfile()
 
         if (profile == null) {
-            Timber.tag(TAG).w("没有可用的配置文件，打开应用")
+            Timber.tag(TAG).w(MLang.Service.Tile.NoProfiles)
             openApp()
             return
         }
@@ -104,11 +85,11 @@ class ProxyTileService : TileService() {
                         openApp()
                     }
                 }, onFailure = { error ->
-                    Timber.tag(TAG).e(error, "启动代理失败")
+                    Timber.tag(TAG).e(error, MLang.Service.Status.StartFailed)
                     updateTileState(TileState.DISCONNECTED)
                 })
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "启动代理异常")
+                Timber.tag(TAG).e(e, MLang.Service.Status.UnknownError)
                 updateTileState(TileState.DISCONNECTED)
             }
             isOperating = false
@@ -124,7 +105,7 @@ class ProxyTileService : TileService() {
                 val currentMode = clashManager.runningMode.value
                 proxyConnectionService.stop(currentMode)
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "停止代理异常")
+                Timber.tag(TAG).e(e, MLang.Service.Status.UnknownError)
             }
             isOperating = false
         }
@@ -172,7 +153,7 @@ class ProxyTileService : TileService() {
         when (state) {
             TileState.CONNECTED -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.label = "已连接"
+                tile.label = MLang.Service.Tile.Connected
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     tile.subtitle = getRunningModeText()
                 }
@@ -181,7 +162,7 @@ class ProxyTileService : TileService() {
 
             TileState.DISCONNECTED -> {
                 tile.state = Tile.STATE_INACTIVE
-                tile.label = "已断开"
+                tile.label = MLang.Service.Tile.Disconnected
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     tile.subtitle = null
                 }
@@ -190,7 +171,7 @@ class ProxyTileService : TileService() {
 
             TileState.CONNECTING -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.label = "连接中..."
+                tile.label = MLang.Service.Tile.Connecting
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     tile.subtitle = null
                 }
@@ -199,7 +180,7 @@ class ProxyTileService : TileService() {
 
             TileState.DISCONNECTING -> {
                 tile.state = Tile.STATE_ACTIVE
-                tile.label = "断开中..."
+                tile.label = MLang.Service.Tile.Disconnecting
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     tile.subtitle = null
                 }
@@ -208,9 +189,9 @@ class ProxyTileService : TileService() {
 
             TileState.UNAVAILABLE -> {
                 tile.state = Tile.STATE_UNAVAILABLE
-                tile.label = "未配置"
+                tile.label = MLang.Service.Tile.Unconfigured
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    tile.subtitle = "点击打开应用"
+                    tile.subtitle = MLang.Service.Tile.ClickToOpen
                 }
                 tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
             }
@@ -221,8 +202,8 @@ class ProxyTileService : TileService() {
 
     private fun getRunningModeText(): String {
         return when (clashManager.runningMode.value) {
-            is RunningMode.Tun -> "VPN 模式"
-            is RunningMode.Http -> "HTTP 模式"
+            is RunningMode.Tun -> MLang.Service.Tile.ModeVpn
+            is RunningMode.Http -> MLang.Service.Tile.ModeHttp
             is RunningMode.None -> ""
         }
     }

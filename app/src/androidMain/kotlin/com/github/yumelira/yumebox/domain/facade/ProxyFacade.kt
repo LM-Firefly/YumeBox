@@ -11,6 +11,7 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxyState
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.StateFlow
 import timber.log.Timber
 
@@ -49,7 +50,7 @@ class ProxyFacade(
     }
 
     suspend fun selectProxy(groupName: String, proxyName: String): Result<Boolean> {
-        val result = clashManager.proxyStateRepository.selectProxy(groupName, proxyName)
+        val result = clashManager.proxyStateRepository.selectProxy(groupName, proxyName, currentProfile.value)
 
         if (result.isSuccess && result.getOrNull() == true) {
             val profile = currentProfile.value
@@ -57,7 +58,7 @@ class ProxyFacade(
                 try {
                     selectionDao.setSelected(Selection(profile.id, groupName, proxyName))
                 } catch (e: Exception) {
-                    Timber.e(e, "保存节点选择失败")
+                    Timber.e(e, MLang.Proxy.Message.SaveSelectionFailed.format(e.message ?: ""))
                 }
             }
         }
@@ -83,10 +84,6 @@ class ProxyFacade(
 
     fun getCurrentSelection(groupName: String): String? {
         return clashManager.proxyStateRepository.getCurrentSelection(groupName)
-    }
-
-    fun isSelectableGroup(groupName: String): Boolean {
-        return clashManager.proxyStateRepository.isSelectableGroup(groupName)
     }
 
 }

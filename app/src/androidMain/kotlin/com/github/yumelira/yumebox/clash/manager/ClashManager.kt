@@ -20,6 +20,7 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxyState
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import timber.log.Timber
@@ -32,6 +33,10 @@ class ClashManager(
     private val workDir: File,
     private val proxyModeProvider: (() -> TunnelState.Mode)? = null
 ) : Closeable {
+    companion object {
+        private const val TAG = "ClashManager"
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val selectionDao = SelectionDao(context)
 
@@ -85,7 +90,7 @@ class ClashManager(
         try {
             val configDir = getConfigDir(profile)
             if (!configDir.exists() || !configDir.isDirectory) {
-                return@withContext Result.failure(IllegalStateException("配置目录不存在: ${profile.name}"))
+                return@withContext Result.failure(IllegalStateException(MLang.Service.Message.ConfigDirMissing.format(profile.name)))
             }
 
             val loadResult = ClashCore.loadConfig(
@@ -95,11 +100,21 @@ class ClashManager(
             )
 
             if (loadResult.isFailure) {
+                val error = loadResult.exceptionOrNull()
+                Timber.e(error, MLang.Service.Status.ConfigLoadFailedWithProfile.format(profile.name))
                 return@withContext loadResult
             }
 
             _currentProfile.value = profile
             currentProfileId.set(profile.id)
+
+            runCatching {
+                val persistOverride = ClashCore.queryOverride(Clash.OverrideSlot.Persist)
+                ClashCore.patchOverride(Clash.OverrideSlot.Session, persistOverride)
+                Timber.tag(TAG).d("Reapplied Persist override to Session after load: externalController=%s", persistOverride.externalController)
+            }.onFailure { e ->
+                Timber.w(e, "Failed to reapply Persist override to Session after load")
+            }
 
             proxyModeProvider?.let { provider ->
                 runCatching {
@@ -112,6 +127,8 @@ class ClashManager(
                     val session = ClashCore.queryOverride(Clash.OverrideSlot.Session)
                     session.mode = mode
                     ClashCore.patchOverride(Clash.OverrideSlot.Session, session)
+                }.onFailure { e ->
+                    Timber.e(e, MLang.Service.Status.UnknownError)
                 }
             }
 
@@ -138,12 +155,31 @@ class ClashManager(
             proxyStateRepository.start()
 
             scope.launch {
-                runCatching { proxyStateRepository.syncOnce() }
+                try {
+                    val selections = selectionDao.getAllSelections(profile.id)
+                    selections.forEach { (groupName, proxyName) ->
+                        runCatching {
+                            ClashCore.selectProxy(groupName, proxyName)
+                        }.onFailure { e ->
+                            Timber.e(e, MLang.Service.Status.UnknownError + ": $groupName -> $proxyName")
+                        }
+                    }
+                    runCatching { proxyStateRepository.restoreSelections(profile.id) }
+                        .onFailure { Timber.w(it, "Restore pinned selections failed") }
+                    proxyStateRepository.syncFromCore()
+                } catch (e: Exception) {
+                    Timber.e(e, MLang.Service.Status.UnknownError)
+                }
             }
-
+            scope.launch {
+                runCatching { proxyStateRepository.syncFromCore() }
+                    .onFailure { Timber.w(it, "Background sync failed") }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e.toConfigImportException())
+            val importException = e.toConfigImportException()
+            Timber.e(importException, MLang.Service.Status.ConfigLoadFailedWithProfile.format(profile.name))
+            Result.failure(importException)
         }
     }
 
@@ -170,7 +206,7 @@ class ClashManager(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val profile =
-                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException("请先加载配置"))
+                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException(MLang.Proxy.Message.LoadProfileFirst))
 
             _proxyState.value = ProxyState.Connecting(RunningMode.Tun)
 
@@ -220,7 +256,8 @@ class ClashManager(
             Result.success(Unit)
         } catch (e: Exception) {
             val importException = e.toConfigImportException()
-            _proxyState.value = ProxyState.Error("TUN启动失败: ${importException.message}", importException)
+            Timber.e(importException, MLang.Service.Status.TunStartFailed.format(importException.message ?: ""))
+            _proxyState.value = ProxyState.Error(MLang.Service.Status.TunStartFailed.format(importException.message ?: ""), importException)
             Result.failure(importException)
         }
     }
@@ -230,7 +267,7 @@ class ClashManager(
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             val profile =
-                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException("请先加载配置"))
+                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException(MLang.Proxy.Message.LoadProfileFirst))
 
             _proxyState.value = ProxyState.Connecting(RunningMode.Http(config.address))
 
@@ -242,7 +279,8 @@ class ClashManager(
             Result.success(address)
         } catch (e: Exception) {
             val importException = e.toConfigImportException()
-            _proxyState.value = ProxyState.Error("HTTP启动失败: ${importException.message}", importException)
+            Timber.e(importException, MLang.Service.Status.HttpStartFailed.format(importException.message ?: ""))
+            _proxyState.value = ProxyState.Error(MLang.Service.Status.HttpStartFailed.format(importException.message ?: ""), importException)
             Result.failure(importException)
         }
     }
@@ -275,6 +313,8 @@ class ClashManager(
                     _trafficNow.value = TrafficData.from(ClashCore.queryTrafficNow())
                     _trafficTotal.value = TrafficData.from(ClashCore.queryTrafficTotal())
                     _tunnelState.value = ClashCore.queryTunnelState()
+                }.onFailure { e ->
+                    Timber.e(e, MLang.Service.Message.MonitorFailed)
                 }
                 delay(1000)
             }
@@ -288,11 +328,27 @@ class ClashManager(
 
     private fun startLogSubscription() {
         logJob = scope.launch {
-            val channel = ClashCore.subscribeLogcat()
-            for (log in channel) {
-                if (!log.message.contains("Request interrupted by user") && !log.message.contains("更新延迟")) {
-                    _logs.emit(log)
+            try {
+                val channel = ClashCore.subscribeLogcat()
+                for (log in channel) {
+                    if (!log.message.contains("Request interrupted by user") && !log.message.contains(MLang.Proxy.PullToRefresh.DelaySuccess)) {
+                        _logs.emit(log)
+                    }
+                    if (log.message.contains("Loading config")) {
+                        launch {
+                            kotlinx.coroutines.delay(1500)
+                            runCatching {
+                                val persist = ClashCore.queryOverride(Clash.OverrideSlot.Persist)
+                                ClashCore.patchOverride(Clash.OverrideSlot.Session, persist)
+                                Timber.tag(TAG).d("Reapplied Persist override to Session after detected Loading config: externalController=%s", persist.externalController)
+                            }.onFailure {
+                                Timber.w(it, "Failed to reapply Persist->Session after Loading config log")
+                            }
+                        }
+                    }
                 }
+            } catch (e: Exception) {
+                Timber.e(e, MLang.Service.Message.LogSubscribeError, e)
             }
         }
     }
@@ -308,7 +364,7 @@ class ClashManager(
 
     suspend fun reloadCurrentProfile(): Result<Unit> = withContext(Dispatchers.IO) {
         val profile = _currentProfile.value
-            ?: return@withContext Result.failure(IllegalStateException("没有加载的配置"))
+            ?: return@withContext Result.failure(IllegalStateException(MLang.Proxy.Message.LoadProfileFirst))
         loadProfile(profile)
     }
 
@@ -316,9 +372,21 @@ class ClashManager(
         return proxyStateRepository.syncFromCore()
     }
 
-    suspend fun selectProxy(groupName: String, proxyName: String): Boolean {
-        return proxyStateRepository.selectProxy(groupName, proxyName).getOrDefault(false)
+    fun setProxyScreenActive(active: Boolean) {
+        if (active) {
+            proxyStateRepository.start()
+        } else {
+            proxyStateRepository.stop()
+        }
     }
+
+    suspend fun selectProxy(groupName: String, proxyName: String): Boolean {
+        val res = proxyStateRepository.selectProxy(groupName, proxyName, _currentProfile.value)
+        return res.getOrNull() ?: false
+    }
+
+    suspend fun forceSelectProxy(groupName: String, proxyName: String): Boolean =
+        proxyStateRepository.forceSelectProxy(groupName, proxyName, _currentProfile.value)
 
     suspend fun healthCheck(groupName: String): Result<Unit> {
         return proxyStateRepository.testGroupDelay(groupName)

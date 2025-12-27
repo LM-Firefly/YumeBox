@@ -18,4 +18,24 @@ Util = {
     State = {
         Preparing = "正在准备..."
     }
+
+    File = {
+        CannotCreateDir = "无法创建目录: %s"
+        TargetNotDirectory = "目标不是目录: %s"
+        PathTraversal = "检测到路径遍历: %s"
+        PathExistsNotDirectory = "路径已存在但不是目录: %s"
+    }
+
+    Download = {
+        Failed = "下载失败: %s"
+    }
+
+    Native = {
+        ExtractFailed = "提取库失败: %s"
+        LoadJniFailed = "加载 JNI 库失败: %s"
+    }
+
+    SystemProxy = {
+        CleanupFailed = "清理系统代理失败: %s"
+    }
 }
