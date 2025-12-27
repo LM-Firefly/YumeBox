@@ -28,11 +28,11 @@ jobs:
           cd core/src/foss/golang/mihomo
           echo "mihomo-ver=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Setup Java (JDK 24)
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: "temurin"
-          java-version: 24
+          java-version: 25
 
       - name: Setup Go
         uses: actions/setup-go@v6
