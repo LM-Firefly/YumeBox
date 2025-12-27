@@ -1,31 +1,13 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.clash.cancel
 import com.github.yumelira.yumebox.clash.downloadProfile
 import com.github.yumelira.yumebox.clash.exception.ConfigImportException
+import com.github.yumelira.yumebox.clash.scheduleNext
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.model.ProfileType
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
@@ -33,15 +15,16 @@ import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.data.store.ProfileLinksStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
+import dev.oom_wg.purejoy.mlang.MLang
+import java.io.IOException
+import java.util.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
-import java.util.*
 
 
 class ProfilesViewModel(
@@ -133,36 +116,36 @@ class ProfilesViewModel(
                 val maxOrder = profilesStore.profiles.value.maxOfOrNull { it.order } ?: -1
                 val profileWithOrder = profile.copy(order = maxOrder + 1)
                 profilesStore.addProfile(profileWithOrder)
-                showMessage("配置已添加: ${profile.name}")
-            }.onFailure { e ->
-                timber.log.Timber.e(e, "addProfile failed")
-                showError("添加配置失败: ${e.message}")
-            }
+                showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(profile.name))
+                if (profile.type == ProfileType.URL && profile.autoUpdateMinutes > 0) {
+                    scheduleNext(profile)
+                }
+            }.onFailure { e -> timber.log.Timber.e(e, "addProfile failed"); showError(MLang.ProfilesVM.Message.AddFailed.format(e.message)) }
         }
     }
 
     suspend fun downloadProfile(profile: Profile, saveToDb: Boolean = true): Profile? {
         if (profile.id in downloadingProfiles) {
-            timber.log.Timber.w("Profile ${profile.id} 正在下载中，跳过重复下载")
+            timber.log.Timber.w(MLang.ProfilesVM.Message.DownloadInProgress.format(profile.id))
             return null
         }
 
         if (profile.type != ProfileType.URL && profile.type != ProfileType.FILE) {
-            showError("只有 URL 或 本地文件 类型的配置才需要下载")
+            showError(MLang.ProfilesVM.Error.OnlyUrlOrFile)
             return null
         }
 
         val isUrl = profile.type == ProfileType.URL
         val remoteUrl = profile.remoteUrl
         if (isUrl && remoteUrl.isNullOrBlank()) {
-            showError("订阅链接为空，无法下载")
+            showError(MLang.ProfilesVM.Error.EmptyUrl)
             return null
         }
 
         downloadingProfiles.add(profile.id)
 
         return try {
-            _downloadProgress.value = DownloadProgress(0, "准备下载...")
+            _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
 
             val subscriptionInfo = if (isUrl) {
                 withContext(Dispatchers.IO) {
@@ -184,7 +167,7 @@ class ProfilesViewModel(
             )
 
             if (result.isSuccess) {
-                _downloadProgress.value = DownloadProgress(100, "下载完成")
+                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.DownloadComplete)
                 val configFilePath = result.getOrThrow()
                 val existingProfile = if (saveToDb) {
                     profilesStore.profiles.value.find { it.id == profile.id }
@@ -200,7 +183,7 @@ class ProfilesViewModel(
                         fileName
                     }
 
-                    val defaultNames = "新配置"
+                    val defaultNames = MLang.ProfilesPage.Input.NewProfile
                     if (updated.name.isBlank() || updated.name in defaultNames || updated.name.startsWith("temp_")) {
                         updated = updated.copy(name = nameWithoutExt)
                     }
@@ -234,17 +217,20 @@ class ProfilesViewModel(
                 val errorMsg = if (error is ConfigImportException) {
                     error.userFriendlyMessage
                 } else {
-                    error?.message ?: "下载失败"
+                    error?.message ?: MLang.ProfilesVM.Progress.DownloadFailed.format("")
                 }
                 showError(errorMsg)
                 null
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Propagate coroutine cancellation
+            throw e
         } catch (e: Exception) {
             _downloadProgress.value = null
             val errorMsg = if (e is ConfigImportException) {
                 e.userFriendlyMessage
             } else {
-                "下载失败: ${e.message}"
+                MLang.ProfilesVM.Progress.DownloadFailed.format(e.message)
             }
             showError(errorMsg)
             null
@@ -253,6 +239,26 @@ class ProfilesViewModel(
         }
     }
 
+    fun downloadProfileInViewModel(profile: Profile, saveToDb: Boolean = true) = viewModelScope.launch {
+        try {
+            downloadProfile(profile, saveToDb)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Ignore cancellation — operation will be continued/stopped by coroutine machinery
+            timber.log.Timber.d("downloadProfileInViewModel cancelled for %s", profile.id)
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "downloadProfileInViewModel failed for %s", profile.id)
+        }
+    }
+
+    fun importProfileFromFileInViewModel(uri: Uri, name: String, saveToDb: Boolean = true) = viewModelScope.launch {
+        try {
+            importProfileFromFile(uri, name, saveToDb)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            timber.log.Timber.d("importProfileFromFileInViewModel cancelled for %s", name)
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "importProfileFromFileInViewModel failed for %s", name)
+        }
+    }
 
     fun clearDownloadProgress() {
         _downloadProgress.value = null
@@ -261,18 +267,18 @@ class ProfilesViewModel(
     suspend fun importProfileFromFile(uri: Uri, name: String, saveToDb: Boolean = true): Profile? {
         return runCatching {
             setLoading(true)
-            _downloadProgress.value = DownloadProgress(0, "准备导入文件...")
+            _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.ImportPreparing)
             val profileId = UUID.randomUUID().toString()
             val profileDir =
                 java.io.File(getApplication<Application>().filesDir, "imported/$profileId").apply { mkdirs() }
-            _downloadProgress.value = DownloadProgress(10, "正在复制文件...")
+            _downloadProgress.value = DownloadProgress(10, MLang.ProfilesVM.Progress.CopyingFile)
 
             val destFile = java.io.File(profileDir, "config.yaml")
             getApplication<Application>().contentResolver.openInputStream(uri)?.use { input ->
                 destFile.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw IOException("无法读取文件")
+            } ?: throw IOException(MLang.ProfilesVM.Error.CannotReadFile)
 
-            _downloadProgress.value = DownloadProgress(30, "正在验证配置...")
+            _downloadProgress.value = DownloadProgress(30, MLang.ProfilesVM.Progress.Verifying)
             // 注意：这里不设置 lastUpdatedAt，等验证成功后再设置
             val profile = Profile(
                 id = profileId, name = name, type = ProfileType.FILE,
@@ -290,7 +296,7 @@ class ProfilesViewModel(
             )
 
             if (result.isSuccess) {
-                _downloadProgress.value = DownloadProgress(100, "导入完成")
+                _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
                 val configPath = result.getOrThrow()
                 val updatedProfile = profile.copy(
                     config = configPath,
@@ -298,7 +304,7 @@ class ProfilesViewModel(
                 )
                 if (saveToDb) {
                     profilesStore.addProfile(updatedProfile)
-                    showMessage("配置已导入: $name")
+                    showMessage(MLang.ProfilesVM.Message.ProfileImported.format(name))
                 }
                 updatedProfile
             } else {
@@ -310,7 +316,7 @@ class ProfilesViewModel(
                 val errorMsg = if (error is ConfigImportException) {
                     error.userFriendlyMessage
                 } else {
-                    "导入失败: ${error?.message}"
+                    MLang.ProfilesVM.Message.ImportFailed.format(error?.message ?: "")
                 }
                 showError(errorMsg)
                 null
@@ -320,7 +326,7 @@ class ProfilesViewModel(
             val errorMsg = if (e is ConfigImportException) {
                 e.userFriendlyMessage
             } else {
-                "导入配置失败: ${e.message}"
+                MLang.ProfilesVM.Message.ImportFailed.format(e.message ?: "")
             }
             showError(errorMsg)
             null
@@ -335,8 +341,9 @@ class ProfilesViewModel(
                     getApplication<Application>().filesDir.resolve("imported/$profileId")
                         .takeIf { it.exists() }?.deleteRecursively()
                 }
-                showMessage("配置已删除")
-            }.onFailure { e -> timber.log.Timber.e(e, "removeProfile failed"); showError("删除配置失败: ${e.message}") }
+                cancel(profileId)
+                showMessage(MLang.ProfilesVM.Message.ProfileDeleted)
+            }.onFailure { e -> timber.log.Timber.e(e, "removeProfile failed"); showError(MLang.ProfilesVM.Message.DeleteFailed.format(e.message)) }
         }
     }
 
@@ -344,10 +351,15 @@ class ProfilesViewModel(
         viewModelScope.launch {
             runCatching {
                 profilesStore.updateProfile(profile)
-                showMessage("配置已更新: ${profile.name}")
+                showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(profile.name))
+                if (profile.type == ProfileType.URL && profile.autoUpdateMinutes > 0) {
+                    scheduleNext(profile)
+                } else {
+                    cancel(profile.id)
+                }
             }.onFailure { e ->
                 timber.log.Timber.e(e, "updateProfile failed")
-                showError("更新配置失败: ${e.message}")
+                showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message))
             }
         }
     }
@@ -368,7 +380,7 @@ class ProfilesViewModel(
                 }
             }.onFailure { e ->
                 timber.log.Timber.e(e, "toggleProfileEnabled failed")
-                showError("切换状态失败: ${e.message}")
+                showError(MLang.ProfilesVM.Message.ToggleFailed.format(e.message))
             }
         }
     }

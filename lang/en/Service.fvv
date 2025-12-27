@@ -36,5 +36,12 @@ Service = {
         Recording = "Recording logs"
         RecordingFile = "Recording logs..."
         ActionStop = "Stop"
+        Created = "Log recording service created"
+        Destroyed = "Log recording service destroyed"
+        AlreadyRecording = "Log recording already in progress"
+        RecordingStarted = "Recording started: %s"
+        StartSubscribe = "Start subscribing log stream"
+        SendToChannelFailed = "Failed to send log to channel"
+        Stopped = "Stopped recording"
     }
 }

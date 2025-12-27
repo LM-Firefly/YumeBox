@@ -1,0 +1,252 @@
+package com.github.yumelira.yumebox.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.clash.config.Configuration
+import com.github.yumelira.yumebox.domain.model.Connection
+import com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import timber.log.Timber
+
+enum class ConnectionSortType {
+    Host, Download, Upload, DownloadSpeed, UploadSpeed, Time
+}
+
+enum class ConnectionTab {
+    Active, Closed
+}
+
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+class ConnectionsViewModel : ViewModel() {
+    companion object {
+        private const val TAG = "ConnectionsViewModel"
+    }
+    private val _activeConnections = MutableStateFlow<List<Connection>>(emptyList())
+    private val _closedConnections = MutableStateFlow<List<Connection>>(emptyList())
+    private val _isPaused = MutableStateFlow(false)
+    val isPaused: StateFlow<Boolean> = _isPaused.asStateFlow()
+    private val pollingFlow = isPaused.flatMapLatest { paused ->
+        if (!paused) {
+            flow<Unit> {
+                while (currentCoroutineContext().isActive) {
+                    pollConnections()
+                    emit(Unit)
+                    delay(2000)
+                }
+            }
+        } else {
+            flow { 
+                emit(Unit)
+                kotlinx.coroutines.delay(Long.MAX_VALUE) 
+            }
+        }
+    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), replay = 1)
+    val activeCount: StateFlow<Int> = combine(_activeConnections, pollingFlow) { list, _ -> list.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val closedCount: StateFlow<Int> = combine(_closedConnections, pollingFlow) { list, _ -> list.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    private val _sortType = MutableStateFlow(ConnectionSortType.DownloadSpeed)
+    val sortType: StateFlow<ConnectionSortType> = _sortType.asStateFlow()
+    private val _isAscending = MutableStateFlow(false)
+    val isAscending: StateFlow<Boolean> = _isAscending.asStateFlow()
+    private val _currentTab = MutableStateFlow(ConnectionTab.Active)
+    val currentTab: StateFlow<ConnectionTab> = _currentTab.asStateFlow()
+    private val sourceListFlow = combine(_activeConnections, _closedConnections, _currentTab) { active, closed, tab ->
+        if (tab == ConnectionTab.Active) active else closed
+    }
+    private val filteredConnections = combine(sourceListFlow, _searchQuery, _sortType, _isAscending) { list, query, sort, ascending ->
+        filterAndSort(list, query, sort, ascending)
+    }
+    val connections: StateFlow<List<Connection>> = combine(filteredConnections, pollingFlow) { list, _ -> list }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val activeConnections: StateFlow<List<Connection>> = combine(
+        combine(_activeConnections, _searchQuery, _sortType, _isAscending) { list, query, sort, ascending ->
+            filterAndSort(list, query, sort, ascending)
+        },
+        pollingFlow
+    ) { list, _ -> list }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val closedConnections: StateFlow<List<Connection>> = combine(
+        combine(_closedConnections, _searchQuery, _sortType, _isAscending) { list, query, sort, ascending ->
+            filterAndSort(list, query, sort, ascending)
+        },
+        pollingFlow
+    ) { list, _ -> list }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val _downloadTotal = MutableStateFlow(0L)
+    val downloadTotal: StateFlow<Long> = _downloadTotal.asStateFlow()
+    private val _uploadTotal = MutableStateFlow(0L)
+    val uploadTotal: StateFlow<Long> = _uploadTotal.asStateFlow()
+    private val json = Json { ignoreUnknownKeys = true }
+    private var previousConnectionsMap = ConcurrentHashMap<String, Connection>()
+    private val SUSPICIOUS_TYPE_LOGGED = java.util.concurrent.atomic.AtomicBoolean(false)
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+    fun updateSortType(type: ConnectionSortType) {
+        if (_sortType.value == type) {
+            _isAscending.value = !_isAscending.value
+        } else {
+            _sortType.value = type
+            _isAscending.value = false
+        }
+    }
+    fun updateTab(tab: ConnectionTab) {
+        _currentTab.value = tab
+    }
+    fun togglePause() {
+        _isPaused.value = !_isPaused.value
+    }
+    private fun filterAndSort(list: List<Connection>, query: String, sort: ConnectionSortType, ascending: Boolean): List<Connection> {
+        val filtered = if (query.isEmpty()) {
+            list
+        } else {
+            list.filter { 
+                it.metadata.host.contains(query, ignoreCase = true) ||
+                it.metadata.destinationIP.contains(query, ignoreCase = true) ||
+                it.rule.contains(query, ignoreCase = true) ||
+                it.chains.any { chain -> chain.contains(query, ignoreCase = true) }
+            }
+        }
+        val sorted = when (sort) {
+            ConnectionSortType.Host -> filtered.sortedBy { it.metadata.host.ifEmpty { it.metadata.destinationIP } }
+            ConnectionSortType.Download -> filtered.sortedBy { it.download }
+            ConnectionSortType.Upload -> filtered.sortedBy { it.upload }
+            ConnectionSortType.DownloadSpeed -> filtered.sortedBy { it.downloadSpeed }
+            ConnectionSortType.UploadSpeed -> filtered.sortedBy { it.uploadSpeed }
+            ConnectionSortType.Time -> filtered.sortedBy { it.start }
+        }
+        return if (ascending) sorted else sorted.reversed()
+    }
+    private suspend fun pollConnections() = withContext(Dispatchers.IO) {
+        try {
+            val (controller, secret) = Configuration.getSmartControllerAndSecret()
+            val url = URL("http://$controller/connections")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            if (secret.isNotEmpty()) {
+                connection.setRequestProperty("Authorization", "Bearer $secret")
+            }
+            connection.connectTimeout = 1000
+            connection.readTimeout = 1000
+            if (connection.responseCode == 200) {
+                val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
+                val snapshot = json.decodeFromString<ConnectionsSnapshot>(jsonString)
+                val currentMap = HashMap<String, Connection>()
+                val newActiveList = (snapshot.connections ?: emptyList()).mapNotNull { connRaw ->
+                    try {
+                        // sanitize fields to avoid malformed data crashing UI
+                        val sanitized = connRaw.copy(
+                            id = connRaw.id.ifBlank { "<unknown-id>" },
+                            chains = connRaw.chains.map { it.ifBlank { "<unknown>" } },
+                            rule = connRaw.rule.ifBlank { "<unknown-rule>" },
+                            rulePayload = connRaw.rulePayload.ifBlank { "" },
+                            start = connRaw.start.ifBlank { "" },
+                            metadata = connRaw.metadata.copy(
+                                network = connRaw.metadata.network.ifBlank { "unknown" },
+                                type = connRaw.metadata.type.ifBlank { "unknown" },
+                                sourceIP = connRaw.metadata.sourceIP.ifBlank { "" },
+                                sourcePort = connRaw.metadata.sourcePort.ifBlank { "" },
+                                destinationIP = connRaw.metadata.destinationIP.ifBlank { "" },
+                                destinationPort = connRaw.metadata.destinationPort.ifBlank { "" },
+                                host = connRaw.metadata.host.ifBlank { "" },
+                                dnsMode = connRaw.metadata.dnsMode.ifBlank { "" },
+                                process = connRaw.metadata.process.ifBlank { "" },
+                                processPath = connRaw.metadata.processPath.ifBlank { "" }
+                            )
+                        )
+                        val prev = previousConnectionsMap[sanitized.id]
+                        if (prev != null) {
+                            sanitized.downloadSpeed = sanitized.download - prev.download
+                            sanitized.uploadSpeed = sanitized.upload - prev.upload
+                        }
+                        currentMap[sanitized.id] = sanitized
+                        // suspicious type detection (e.g., n50, o50)
+                        if (!SUSPICIOUS_TYPE_LOGGED.get() && Regex("^[no]\\d+$").matches(sanitized.metadata.type)) {
+                            Timber.tag(TAG).i("Suspicious metadata.type detected: %s", sanitized.metadata.type)
+                            Timber.tag(TAG).i("Connections JSON snapshot: %s", jsonString)
+                            SUSPICIOUS_TYPE_LOGGED.set(true)
+                        }
+                        sanitized
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "Error processing connection item, skipping")
+                        null
+                    }
+                }.take(200)
+                // Detect closed connections
+                val closed = previousConnectionsMap.keys.filter { !currentMap.containsKey(it) }
+                if (closed.isNotEmpty()) {
+                    val newlyClosed = closed.mapNotNull { previousConnectionsMap[it] }
+                    val currentClosed = _closedConnections.value.toMutableList()
+                    currentClosed.addAll(0, newlyClosed)
+                    if (currentClosed.size > 100) {
+                        _closedConnections.value = currentClosed.take(100)
+                    } else {
+                        _closedConnections.value = currentClosed
+                    }
+                }
+                previousConnectionsMap.clear()
+                previousConnectionsMap.putAll(currentMap)
+                _activeConnections.value = newActiveList
+                _downloadTotal.value = snapshot.downloadTotal
+                _uploadTotal.value = snapshot.uploadTotal
+            }
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error polling connections")
+        }
+    }
+    fun closeConnection(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val (controller, secret) = Configuration.getSmartControllerAndSecret()
+                val url = URL("http://$controller/connections/$id")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "DELETE"
+                if (secret.isNotEmpty()) {
+                    connection.setRequestProperty("Authorization", "Bearer $secret")
+                }
+                connection.connectTimeout = 1000
+                connection.responseCode
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Error closing connection $id")
+            }
+        }
+    }
+    fun closeAllConnections() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val (controller, secret) = Configuration.getSmartControllerAndSecret()
+                val url = URL("http://$controller/connections")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "DELETE"
+                if (secret.isNotEmpty()) {
+                    connection.setRequestProperty("Authorization", "Bearer $secret")
+                }
+                connection.connectTimeout = 1000
+                connection.responseCode
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Error closing all connections")
+            }
+        }
+    }
+}

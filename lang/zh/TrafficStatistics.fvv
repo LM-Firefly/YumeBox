@@ -23,6 +23,11 @@ TrafficStatistics = {
         Section = "配置流量统计"
         Empty = "暂无配置流量数据"
     }
+
+    Message = {
+        CollectionFailed = "流量数据收集失败: %s"
+        RecordTraffic = "记录流量: 上传=%s, 下载=%s, 配置=%s"
+    }
     
     Chart = {
         Hourly = "4小时"

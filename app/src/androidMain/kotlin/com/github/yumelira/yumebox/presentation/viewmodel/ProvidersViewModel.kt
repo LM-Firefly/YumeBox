@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.content.Context
@@ -27,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.Provider
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,7 +30,7 @@ class ProvidersViewModel(
 
     val isRunning: StateFlow<Boolean> = clashManager.isRunning
 
-    fun refreshProviders() {
+    fun refreshProviders(maxRetries: Int = 2) {
         viewModelScope.launch {
             if (!clashManager.isRunning.value) {
                 _providers.value = emptyList()
@@ -61,7 +42,7 @@ class ProvidersViewModel(
                 val providerList = Clash.queryProviders()
                 _providers.value = providerList.sorted()
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "获取外部资源失败: ${e.message ?: "Unknown error"}") }
+                _uiState.update { it.copy(error = MLang.Providers.Message.FetchFailed.format(e.message ?: "Unknown error")) }
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
@@ -75,9 +56,9 @@ class ProvidersViewModel(
                 _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
                 Clash.updateProvider(provider.type, provider.name).await()
                 refreshProviders()
-                _uiState.update { it.copy(message = "${provider.name} 更新成功") }
+                _uiState.update { it.copy(message = MLang.Providers.Message.UpdateSuccess.format(provider.name)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "更新失败: ${e.message ?: "Unknown error"}") }
+                _uiState.update { it.copy(error = MLang.Providers.Message.UpdateFailed.format(e.message ?: "Unknown error")) }
             } finally {
                 _uiState.update { it.copy(updatingProviders = it.updatingProviders - providerKey) }
             }
@@ -106,16 +87,16 @@ class ProvidersViewModel(
 
                 refreshProviders()
                 if (failedProviders.isEmpty()) {
-                    _uiState.update { it.copy(message = "全部更新完成") }
+                    _uiState.update { it.copy(message = MLang.Providers.Message.AllUpdated) }
                 } else {
                     _uiState.update {
                         it.copy(
-                            error = "更新失败: Failed providers: ${failedProviders.joinToString(", ")}"
+                            error = MLang.Providers.Message.UpdateFailed.format("Failed providers: ${failedProviders.joinToString(", ") }")
                         )
                     }
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "更新失败: ${e.message ?: "Unknown error"}") }
+                _uiState.update { it.copy(error = MLang.Providers.Message.UpdateFailed.format(e.message ?: "Unknown error")) }
             } finally {
                 _uiState.update { it.copy(isUpdatingAll = false, updatingProviders = emptySet()) }
             }
@@ -163,9 +144,9 @@ class ProvidersViewModel(
                 }
 
                 refreshProviders()
-                _uiState.update { it.copy(message = "${provider.name} 上传成功") }
+                _uiState.update { it.copy(message = MLang.Providers.Message.UploadSuccess.format(provider.name)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = "上传失败: ${e.message ?: "Unknown error"}") }
+                _uiState.update { it.copy(error = MLang.Providers.Message.UploadFailed.format(e.message ?: "Unknown error")) }
             } finally {
                 _uiState.update { it.copy(updatingProviders = it.updatingProviders - providerKey) }
             }

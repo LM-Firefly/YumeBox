@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.service
 
 import android.app.Service
@@ -29,6 +9,7 @@ import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -81,7 +62,7 @@ class ClashHttpService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(
             ServiceNotificationManager.HTTP_CONFIG.notificationId,
-            notificationManager.create("正在连接...", "正在启动代理", false)
+            notificationManager.create(MLang.Service.Status.Connecting, MLang.Service.Status.StartingProxy, false)
         )
 
         when (intent?.action) {
@@ -90,7 +71,7 @@ class ClashHttpService : Service() {
                 if (profileId != null) {
                     startHttpProxy(profileId)
                 } else {
-                    Timber.tag(TAG).e("未提供配置文件 ID")
+                    Timber.tag(TAG).e(MLang.Service.Message.ProfileIdMissing)
                     stopSelf()
                 }
             }
@@ -109,8 +90,8 @@ class ClashHttpService : Service() {
                 // 1. 获取配置
                 val profile = profilesStore.getAllProfiles().find { it.id == profileId }
                 if (profile == null) {
-                    Timber.tag(TAG).e("未找到配置文件: $profileId")
-                    showErrorNotification("启动失败", "配置文件不存在")
+                    Timber.tag(TAG).e(MLang.Service.Message.ProfileNotFound.format(profileId))
+                    showErrorNotification(MLang.Service.Status.StartFailed, MLang.ProfilesVM.Error.ProfileNotExist)
                     return@launch
                 }
 
@@ -118,20 +99,19 @@ class ClashHttpService : Service() {
                 val loadResult = clashManager.loadProfile(profile)
                 if (loadResult.isFailure) {
                     val error = loadResult.exceptionOrNull()
-                    showErrorNotification("启动失败", error?.message ?: "配置加载失败")
+                    showErrorNotification(MLang.Service.Status.StartFailed, error?.message ?: MLang.Service.Status.ConfigLoadFailed)
                     return@launch
                 }
-
                 // 3. 启动HTTP代理
                 clashManager.startHttp().getOrNull() ?: run {
-                    showErrorNotification("启动失败", "无法启动 HTTP 代理")
+                    showErrorNotification(MLang.Service.Status.StartFailed, MLang.Service.Status.HttpProxyStartFailed)
                     return@launch
                 }
 
                 // 4. 启动通知更新
                 startNotificationUpdate()
             } catch (e: Exception) {
-                showErrorNotification("启动失败", e.message ?: "未知错误")
+                showErrorNotification(MLang.Service.Status.StartFailed, e.message ?: MLang.Service.Status.UnknownError)
             }
         }
     }

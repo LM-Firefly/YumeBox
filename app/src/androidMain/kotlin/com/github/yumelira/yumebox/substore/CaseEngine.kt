@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.substore
 
 import com.caoccao.javet.enums.V8AwaitMode
@@ -25,6 +5,7 @@ import com.caoccao.javet.interception.logging.JavetStandardConsoleInterceptor
 import com.caoccao.javet.interop.NodeRuntime
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.options.NodeRuntimeOptions
+import dev.oom_wg.purejoy.mlang.MLang
 import timber.log.Timber
 import java.io.Closeable
 import java.io.File
@@ -77,7 +58,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             nodeRuntime!!.allowEval(true)
             nodeRuntime!!.getExecutor(argv2EnvScript).executeVoid()
         } catch (e: Exception) {
-            Timber.e(e, "CaseEngine 初始化失败")
+            Timber.e(e, MLang.Feature.SubStore.CaseEngineInitFailed)
         }
     }
 
@@ -95,11 +76,11 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
 
                 nodeRuntime!!.getExecutor(codeFile).executeVoid()
                 while (shouldAwait) {
-                    nodeRuntime!!.await(V8AwaitMode.RunNoWait)
+                    nodeRuntime!!.await(V8AwaitMode.RunOnce)
                 }
             } catch (_: InterruptedException) {
             } catch (e: Exception) {
-                Timber.e(e, "CaseEngine 运行出错")
+                Timber.e(e, MLang.Feature.SubStore.CaseEngineStartFailed.format(e.message ?: ""))
             } finally {
                 cleanup()
             }
@@ -127,7 +108,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
                 thread.join(5000)
             }
         } catch (e: Exception) {
-            Timber.e(e, "停止 CaseEngine 失败")
+            Timber.e(e, MLang.Feature.SubStore.CaseEngineStopFailed)
         }
     }
 
@@ -142,7 +123,7 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             }
             nodeRuntime = null
         }.onFailure { e ->
-            Timber.e(e, "CaseEngine 清理失败")
+            Timber.e(e, MLang.Feature.SubStore.CaseEngineStopFailed.format(e.message ?: ""))
         }
     }
 }

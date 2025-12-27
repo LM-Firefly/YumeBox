@@ -42,7 +42,7 @@ data class ConfigurationOverride(
     var ipv6: Boolean? = null,
 
     @SerialName("external-controller")
-    var externalController: String? = null,
+    var externalController: String? = "127.0.0.1:9090",
 
     @SerialName("external-controller-tls")
     var externalControllerTLS: String? = null,
@@ -58,6 +58,9 @@ data class ConfigurationOverride(
 
     @SerialName("unified-delay")
     var unifiedDelay: Boolean? = null,
+
+    @SerialName("global-timeout")
+    var globalTimeout: Int? = null,
 
     @SerialName("geodata-mode")
     var geodataMode: Boolean? = null,

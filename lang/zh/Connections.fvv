@@ -1,0 +1,61 @@
+<Connections Page>
+Connections = {
+    Title = "连接"
+    
+    Tab = {
+        Active = "活跃"
+        Closed = "已关闭"
+    }
+    
+    Search = {
+        Label = "搜索连接..."
+        Desc = "搜索"
+    }
+    
+    Sort = {
+        Desc = "排序"
+        Host = "主机"
+        Download = "下载"
+        Upload = "上传"
+        DownloadSpeed = "下载速度"
+        UploadSpeed = "上传速度"
+        Time = "时间"
+    }
+    
+    Action = {
+        Pause = "暂停"
+        Resume = "恢复"
+        CloseAll = "关闭所有"
+        Close = "关闭"
+    }
+    
+    Detail = {
+        Down = "下载"
+        Up = "上传"
+        Title = "连接详情"
+        BasicInfo = "基本信息"
+        ID = "ID"
+        StartTime = "开始时间"
+        Duration = "持续时间"
+        TrafficStats = "流量统计"
+        Metadata = "元数据"
+        Network = "网络"
+        Type = "类型"
+        DestIP = "目标 IP"
+        DestPort = "目标端口"
+        SourceIP = "源 IP"
+        SourcePort = "源端口"
+        Process = "进程"
+        ProcessPath = "进程路径"
+        DNSMode = "DNS 模式"
+        RulesAndChains = "规则与链路"
+        Rule = "规则"
+        RulePayload = "规则负载"
+        Chain = "链路"
+    }
+    
+    Time = {
+        JustNow = "刚刚"
+        MinAgo = "分钟前"
+    }
+}
