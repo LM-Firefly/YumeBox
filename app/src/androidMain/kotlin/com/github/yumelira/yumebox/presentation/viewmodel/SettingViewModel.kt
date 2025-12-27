@@ -23,6 +23,7 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.store.FeatureStore
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -44,7 +45,7 @@ class SettingViewModel(
         val host = currentHost()
         val frontendUrl = buildUrl(host, frontendPort.value)
         val backendUrl = buildUrl(host, backendPort.value)
-        emitEvent(SettingEvent.OpenWebView("$frontendUrl/subs?api=$backendUrl"))
+        emitEvent(SettingEvent.OpenWebView("$frontendUrl/subs?api=$backendUrl", MLang.Settings.Function.SubStore))
     }
 
     private fun currentHost(): String = if (allowLanAccess.value) "0.0.0.0" else "127.0.0.1"
@@ -59,5 +60,5 @@ class SettingViewModel(
 }
 
 sealed interface SettingEvent {
-    data class OpenWebView(val url: String) : SettingEvent
+    data class OpenWebView(val url: String, val title: String? = null) : SettingEvent
 }

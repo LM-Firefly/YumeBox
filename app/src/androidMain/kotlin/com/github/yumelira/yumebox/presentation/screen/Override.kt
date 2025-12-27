@@ -55,6 +55,9 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.Override.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {

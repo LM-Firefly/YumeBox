@@ -15,6 +15,14 @@ Log = {
         NoLogs = "暂无日志记录"
         Hint = "点击右上角开始记录日志"
     }
+
+    Message = {
+        DeleteFailed = "删除文件失败: %s"
+        ReadFailed = "读取日志文件失败: %s"
+        SaveFailed = "保存文件失败: %s"
+        ShareFailed = "创建分享Intent失败: %s"
+        Saved = "已保存: %s"
+    }
     
     Status = {
         Recording = "记录中"

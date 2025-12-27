@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.common.util
 
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
@@ -211,7 +212,7 @@ object DownloadUtil : KoinComponent {
 
             success = true
         } catch (e: Exception) {
-            timber.log.Timber.e(e, "下载失败: $url")
+            timber.log.Timber.e(e, MLang.Util.Download.Failed.format(url))
             if (targetFile.exists()) targetFile.delete()
         }
 

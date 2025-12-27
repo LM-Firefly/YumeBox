@@ -36,8 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 
@@ -47,8 +49,10 @@ fun LocalWebView(
     initialUrl: String,
     modifier: Modifier = Modifier,
     enableDebug: Boolean = true,
+    applyStatusBarPadding: Boolean = true,
     onPageFinished: (String) -> Unit = {},
     onPageError: (String, String) -> Unit = { _, _ -> },
+    onShowFileChooser: ((ValueCallback<Array<Uri>>?, Array<String>) -> Unit)? = null,
 ) {
     LocalContext.current
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -97,7 +101,7 @@ fun LocalWebView(
 
     if (initialUrl.isEmpty()) {
         Box(
-            modifier = modifier.statusBarsPadding(), contentAlignment = Alignment.Center
+            modifier = if (applyStatusBarPadding) modifier.statusBarsPadding() else modifier, contentAlignment = Alignment.Center
         ) {
             Text(MLang.Component.WebView.InvalidUrl)
         }
@@ -106,11 +110,11 @@ fun LocalWebView(
 
     AndroidView(
         factory = { ctx ->
-            createWebView(ctx, initialUrl, onPageFinished, onPageError).also {
+            createWebView(ctx, initialUrl, onPageFinished, onPageError, onShowFileChooser).also {
                 webViewRef.value = it
             }
         },
-        modifier = modifier.statusBarsPadding(),
+        modifier = if (applyStatusBarPadding) modifier.statusBarsPadding() else modifier,
     )
 }
 
@@ -120,6 +124,7 @@ private fun createWebView(
     initialUrl: String,
     onPageFinished: (String) -> Unit,
     onPageError: (String, String) -> Unit,
+    onShowFileChooser: ((ValueCallback<Array<Uri>>?, Array<String>) -> Unit)?,
 ): WebView {
     val activity = context as? WebViewActivity
 
@@ -135,7 +140,9 @@ private fun createWebView(
 
             allowFileAccess = true
             allowContentAccess = true
+            @Suppress("DEPRECATION")
             allowFileAccessFromFileURLs = true
+            @Suppress("DEPRECATION")
             allowUniversalAccessFromFileURLs = true
 
 
@@ -194,6 +201,7 @@ private fun createWebView(
                 }
             }
 
+            @Suppress("DEPRECATION")
             @Deprecated("Deprecated in Java")
             override fun onReceivedError(
                 view: WebView?,
@@ -216,11 +224,15 @@ private fun createWebView(
             override fun onShowFileChooser(
                 webView: WebView?, filePathCallback: ValueCallback<Array<Uri>>?, fileChooserParams: FileChooserParams?
             ): Boolean {
+                val mimeTypes = fileChooserParams?.acceptTypes ?: arrayOf("*/*")
+                if (onShowFileChooser != null) {
+                    onShowFileChooser(filePathCallback, mimeTypes)
+                    return true
+                }
                 if (activity == null) {
                     filePathCallback?.onReceiveValue(null)
                     return true
                 }
-                val mimeTypes = fileChooserParams?.acceptTypes ?: arrayOf("*/*")
                 activity.launchFilePicker(filePathCallback, mimeTypes)
                 return true
             }

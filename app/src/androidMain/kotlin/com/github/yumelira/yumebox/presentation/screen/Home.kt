@@ -39,6 +39,7 @@ import com.github.yumelira.yumebox.presentation.screen.home.HomeRunningContent
 import com.github.yumelira.yumebox.presentation.screen.home.ProxyControlButton
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.ConnectionsScreenDestination
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -68,6 +69,7 @@ fun HomePager(mainInnerPadding: PaddingValues) {
     val selectedServerName by homeViewModel.selectedServerName.collectAsState()
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val speedHistory by homeViewModel.speedHistory.collectAsState()
+    val connections by homeViewModel.connections.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -129,10 +131,14 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                                     serverPing = selectedServerPing,
                                     ipMonitoringState = ipMonitoringState,
                                     speedHistory = speedHistory,
+                                    connections = connections,
                                     onChartClick = {
                                         navigator.navigate(TrafficStatisticsScreenDestination) {
                                             launchSingleTop = true
                                         }
+                                    },
+                                    onTopologyClick = {
+                                        navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true }
                                     }
                                 )
                             }

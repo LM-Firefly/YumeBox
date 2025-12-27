@@ -35,6 +35,7 @@ import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 fun ProxyNodeGrid(
     proxies: List<Proxy>,
     selectedProxyName: String,
+    pinnedProxyName: String,
     displayMode: ProxyDisplayMode,
     onProxyClick: (Proxy) -> Unit,
     modifier: Modifier = Modifier,
@@ -59,6 +60,7 @@ fun ProxyNodeGrid(
                 proxy = proxy,
                 isSelected = proxy.name == selectedProxyName,
                 onClick = { onProxyClick(proxy) },
+                isPinned = proxy.name == pinnedProxyName,
                 isSingleColumn = displayMode.isSingleColumn,
                 showDetail = displayMode.showDetail
             )

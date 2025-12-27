@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import dev.oom_wg.purejoy.mlang.MLang
 
 
 class AccessControlViewModel(
@@ -59,10 +60,10 @@ class AccessControlViewModel(
 
         val displayName: String
             get() = when (this) {
-                PACKAGE_NAME -> "包名"
-                LABEL -> "标签"
-                INSTALL_TIME -> "安装时间"
-                UPDATE_TIME -> "更新时间"
+                PACKAGE_NAME -> MLang.AccessControl.SortMode.PackageName
+                LABEL -> MLang.AccessControl.SortMode.Label
+                INSTALL_TIME -> MLang.AccessControl.SortMode.InstallTime
+                UPDATE_TIME -> MLang.AccessControl.SortMode.UpdateTime
             }
     }
 

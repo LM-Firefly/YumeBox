@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.data.repository
 
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import timber.log.Timber
 
@@ -69,7 +70,7 @@ class TrafficStatisticsCollector(
                     delay(COLLECTION_INTERVAL_MS)
                 }.onFailure { e ->
                     if (e is CancellationException) throw e
-                    Timber.tag("TrafficStatisticsCollec").e(e, "流量数据收集失败")
+                    Timber.tag("TrafficStatisticsCollec").e(e, MLang.TrafficStatistics.Message.CollectionFailed.format(e.message ?: ""))
                     delay(COLLECTION_INTERVAL_MS)
                 }
             }
@@ -118,7 +119,7 @@ class TrafficStatisticsCollector(
                 currentProfileName
             )
             Timber.tag("TrafficStatisticsCollec")
-                .v("记录流量: 上传=$uploadDelta, 下载=$downloadDelta, 配置=$currentProfileName")
+                .v(MLang.TrafficStatistics.Message.RecordTraffic.format(uploadDelta, downloadDelta, currentProfileName))
         }
 
         lastTotalUpload = currentUpload

@@ -25,6 +25,7 @@ import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
@@ -52,7 +53,7 @@ object ProxyAutoStartHelper {
 
             val profileId = getProfileToStart(profilesStore)
             if (profileId == null) {
-                Timber.tag(TAG).w("没有可用的配置文件，无法自动启动")
+                Timber.tag(TAG).e(MLang.Service.Message.AutoStartFailed.format(MLang.ProfilesPage.Message.UnknownProfile))
                 return
             }
 
@@ -67,10 +68,10 @@ object ProxyAutoStartHelper {
             )
 
             if (result.isFailure) {
-                Timber.tag(TAG).e("自动启动代理失败: ${result.exceptionOrNull()?.message}")
+                Timber.tag(TAG).e(MLang.Service.Message.AutoStartFailed.format(result.exceptionOrNull()?.message ?: ""))
             }
         }.onFailure { e ->
-            Timber.tag(TAG).e(e, "自动启动代理失败: ${e.message}")
+            Timber.tag(TAG).e(e, MLang.Service.Message.AutoStartFailed.format(e.message ?: ""))
         }
     }
 

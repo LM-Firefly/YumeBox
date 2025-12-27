@@ -17,6 +17,7 @@ import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
 import java.net.InetSocketAddress
@@ -61,6 +62,7 @@ class ClashVpnService : VpnService() {
 
     private var notificationJob: Job? = null
     private var serviceScope: CoroutineScope? = null
+    private var appListModule: com.github.yumelira.yumebox.service.AppListCacheModule? = null
 
     private var vpnInterface: ParcelFileDescriptor? = null
     private var tunFd: Int? = null
@@ -76,7 +78,7 @@ class ClashVpnService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(
             ServiceNotificationManager.VPN_CONFIG.notificationId,
-            notificationManager.create("正在连接...", "正在建立连接", false)
+            notificationManager.create(MLang.Service.Status.Connecting, MLang.Service.Status.Establishing, false)
         )
 
         when (intent?.action) {
@@ -103,7 +105,7 @@ class ClashVpnService : VpnService() {
 
                 val profile = profilesStore.getAllProfiles().find { it.id == profileId }
                 if (profile == null) {
-                    showErrorNotification("启动失败", "配置文件不存在")
+                    showErrorNotification(MLang.Service.Status.StartFailed, MLang.ProfilesVM.Error.ProfileNotExist)
                     return@launch
                 }
 
@@ -111,13 +113,13 @@ class ClashVpnService : VpnService() {
                 val loadResult = clashManager.loadProfile(profile)
                 if (loadResult.isFailure) {
                     val error = loadResult.exceptionOrNull()
-                    showErrorNotification("启动失败", error?.message ?: "配置加载失败")
+                    showErrorNotification(MLang.Service.Status.StartFailed, error?.message ?: MLang.Service.Status.ConfigLoadFailed)
                     return@launch
                 }
 
                 vpnInterface = withContext(Dispatchers.IO) { establishVpnInterface() }
                     ?: run {
-                        showErrorNotification("启动失败", "无法建立 VPN 连接")
+                        showErrorNotification(MLang.Service.Status.StartFailed, MLang.Service.Status.VpnEstablishFailed)
                         return@launch
                     }
 
@@ -141,8 +143,9 @@ class ClashVpnService : VpnService() {
                 )
 
                 startNotificationUpdate()
+                appListModule = com.github.yumelira.yumebox.service.AppListCacheModule(this@ClashVpnService, serviceScope!!).apply { start() }
             } catch (e: Exception) {
-                showErrorNotification("启动失败", e.message ?: "未知错误")
+                showErrorNotification(MLang.Service.Status.StartFailed, e.message ?: MLang.Service.Status.UnknownError)
             }
         }
     }
@@ -262,6 +265,8 @@ class ClashVpnService : VpnService() {
 
     private fun stopVpn() {
         stopNotificationUpdate()
+        appListModule?.stop()
+        appListModule = null
 
         clashManager.stop()
 

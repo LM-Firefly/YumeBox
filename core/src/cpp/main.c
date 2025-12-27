@@ -214,6 +214,17 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativePatchSelector(JNIEnv *
     return (jboolean) patchSelector(_selector, _name);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeForcePatchSelector(JNIEnv *env, jobject thiz,
+                                                                      jstring selector, jstring name) {
+    TRACE_METHOD();
+
+    scoped_string _selector = get_string(selector);
+    scoped_string _name = get_string(name);
+
+    return (jboolean) patchForceSelector(_selector, _name);
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeLoad(JNIEnv *env, jobject thiz,
                                                           jobject completable, jstring path) {

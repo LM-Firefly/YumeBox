@@ -5,6 +5,7 @@ import com.github.yumelira.yumebox.clash.exception.UnknownException
 import com.github.yumelira.yumebox.clash.importer.ImportService
 import com.github.yumelira.yumebox.clash.importer.ImportState
 import com.github.yumelira.yumebox.data.model.Profile
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -33,24 +34,24 @@ suspend fun downloadProfile(
             Result.success(configPath)
         } else {
             val error = result.exceptionOrNull()
-            Timber.e(error, "配置下载失败: ${profile.name}")
+            Timber.e(error, MLang.ProfilesPage.Message.DownloadFailedWithName.format(profile.name))
 
             val friendlyError = when (error) {
                 is ConfigImportException -> error.userFriendlyMessage
-                else -> error?.message ?: "未知错误"
+                else -> error?.message ?: MLang.ProfilesPage.Import.Message.UnknownError
             }
 
             Result.failure(UnknownException(friendlyError, error))
         }
     }.getOrElse { e ->
-        Timber.e(e, "下载配置异常: ${profile.name}")
+        Timber.e(e, MLang.ProfilesPage.Message.DownloadFailedWithName.format(profile.name))
         Result.failure(e)
     }
 }
 
 private fun mapStateToProgress(state: ImportState): Pair<String, Int> {
     return when (state) {
-        is ImportState.Idle -> "空闲" to 0
+        is ImportState.Idle -> MLang.ProfilesPage.Progress.Idle to 0
         is ImportState.Preparing -> state.message to 5
         is ImportState.Downloading -> state.message to (10 + (state.progressPercent * 0.4).toInt())
         is ImportState.Copying -> state.message to (10 + (state.progress * 0.4).toInt())
@@ -73,7 +74,7 @@ fun cleanupOrphanedConfigs(
         val validIds = validProfiles.map { it.id }.toSet()
         importService.cleanupOrphanedConfigs(validIds)
     }.onFailure { e ->
-        Timber.e(e, "孤儿配置清理失败")
+        Timber.e(e, MLang.ProfilesPage.Import.Message.CleanupOrphanedFailed.format(e.message ?: ""))
     }
 }
 

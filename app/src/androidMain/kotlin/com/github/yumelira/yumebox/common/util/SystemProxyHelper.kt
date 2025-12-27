@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.common.util
 
 import android.content.Context
+import dev.oom_wg.purejoy.mlang.MLang
 import timber.log.Timber
 
 object SystemProxyHelper {
@@ -36,7 +37,7 @@ object SystemProxyHelper {
             System.clearProperty("socksProxyHost")
             System.clearProperty("socksProxyPort")
         }.onFailure { e ->
-            Timber.tag(TAG).e(e, "清理系统代理失败: ${e.message}")
+            Timber.tag(TAG).e(e, MLang.Util.SystemProxy.CleanupFailed.format(e.message ?: ""))
         }
     }
 }

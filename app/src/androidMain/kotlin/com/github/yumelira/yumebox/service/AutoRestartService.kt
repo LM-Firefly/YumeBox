@@ -16,6 +16,7 @@ import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -64,7 +65,7 @@ class AutoRestartService : Service() {
                     isBootCompleted = true
                 )
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "自动启动失败: ${e.message}")
+                Timber.tag(TAG).e(e, MLang.Service.Message.AutoStartFailed.format(e.message ?: ""))
             }
             ServiceCompat.stopForeground(this@AutoRestartService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -77,10 +78,10 @@ class AutoRestartService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "自动重启服务",
+                MLang.Service.Notification.AutoRestartName,
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "用于自动重启代理服务"
+                description = MLang.Service.Notification.AutoRestartDescription
                 setShowBadge(false)
             }
 
@@ -92,7 +93,7 @@ class AutoRestartService : Service() {
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("YumeBox")
-            .setContentText("正在检查自动启动...")
+            .setContentText(MLang.Service.Notification.CheckingAutoStart)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .build()
