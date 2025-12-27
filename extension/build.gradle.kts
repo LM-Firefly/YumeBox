@@ -1,53 +1,57 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.android.build.gradle.tasks.PackageAndroidArtifact
-
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c) YumeYuka & YumeLira 2025.
- *
- */
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JvmVendorSpec
 
 plugins {
-    id("com.android.application")
+    val isMergeBuild = System.getProperty("isMergeBuild") == "true"
+    if (isMergeBuild) {
+        alias(libs.plugins.android.library)
+    } else {
+        alias(libs.plugins.android.application)
+    }
     id("yumebox.base.android")
 }
 
 dependencies {
-    implementation("com.caoccao.javet:javet-node-android:5.0.2")
+    implementation(libs.javet.node.android)
 }
 
 val extensionJvmTarget = gropify.project.jvm.toString()
 val extensionAbiList = gropify.abi.extension.list.split(",").map { it.trim() }
+val isMergeBuild = System.getProperty("isMergeBuild") == "true"
 
 android {
     namespace = gropify.project.namespace.extension
     compileSdk = gropify.android.compileSdk
 
     defaultConfig {
-        applicationId = gropify.project.namespace.extension
         minSdk = gropify.android.minSdk
-        targetSdk = gropify.android.targetSdk
-        versionCode = gropify.project.version.code
-        versionName = gropify.project.version.name
     }
 
-    tasks.withType<PackageAndroidArtifact> {
-        doFirst { appMetadata.asFile.orNull?.writeText("") }
+    compileOptions {
+        sourceCompatibility = JavaVersion.toVersion(21)
+        targetCompatibility = JavaVersion.toVersion(21)
+    }
+    if (!isMergeBuild) {
+        configure<com.android.build.api.dsl.ApplicationExtension> {
+            defaultConfig {
+                applicationId = gropify.project.namespace.extension
+                versionCode = gropify.project.version.code
+                versionName = gropify.project.version.name
+                targetSdk = gropify.android.targetSdk
+            }
+            splits {
+                abi {
+                    isEnable = true
+                    reset()
+                    //noinspection ChromeOsAbiSupport
+                    include(*extensionAbiList.toTypedArray())
+                    isUniversalApk = false
+                }
+            }
+        }
     }
     packaging {
         jniLibs {
@@ -57,29 +61,17 @@ android {
             excludes += listOf("META-INF/**")
         }
     }
-    dependenciesInfo {
-        includeInApk = false
-        includeInBundle = false
-    }
     buildTypes {
         debug {
             isMinifyEnabled = false
         }
         release {
             isMinifyEnabled = true
-            isShrinkResources = true
+            if (!isMergeBuild) {
+                isShrinkResources = true
+            }
             vcsInfo.include = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-    }
-
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            //noinspection ChromeOsAbiSupport
-            include(*extensionAbiList.toTypedArray())
-            isUniversalApk = false
         }
     }
 }

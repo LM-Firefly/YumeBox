@@ -5,7 +5,8 @@ Providers = {
     Action = {
         UpdateAll = "Update All"
         Update = "Update"
-        Upload = "Upload"
+        Import = "Import"
+        View = "View"
         Operation = "Operation"
     }
     
@@ -19,6 +20,13 @@ Providers = {
     Type = {
         ProxyProviders = "Proxy Providers (%d)"
         RuleProviders = "Rule Providers (%d)"
+    }
+
+    Info = {
+        ExpireDays = "%d days left"
+        Expired = "Expired"
+        RemainingTraffic = "Remaining: %s"
+        UsedTraffic = "Used: %s / %s"
     }
     
     Message = {

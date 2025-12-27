@@ -1,25 +1,6 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.data.model
 
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.Serializable
 import java.util.*
 
@@ -64,6 +45,7 @@ data class Profile(
     val totalBytes: Long? = null,
     val lastUpdatedAt: Long? = null,
     val order: Int = 0,
+    val autoUpdateMinutes: Int = 0,
 ) {
     fun getDisplayProvider(): String = when (type) {
         ProfileType.URL -> provider ?: "远程订阅"
@@ -74,14 +56,12 @@ data class Profile(
         ProfileType.URL -> {
             buildString {
                 if (totalBytes != null && totalBytes > 0) {
-                    val usedPercent = usedBytes * 100 / totalBytes
-                    append(
-                        "流量: ${com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes)}/${
-                            com.github.yumelira.yumebox.common.util.ByteFormatter.format(
-                                totalBytes
-                            )
-                        } ($usedPercent%)"
-                    )
+                    val usedPercent = (usedBytes * 100 / totalBytes).toInt()
+                    append(MLang.ProfilesPage.Info.TrafficFormat.format(
+                        com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes),
+                        com.github.yumelira.yumebox.common.util.ByteFormatter.format(totalBytes),
+                        usedPercent
+                    ))
                 } else if (usedBytes > 0) {
                     append("已用流量: ${com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes)}")
                 } else {

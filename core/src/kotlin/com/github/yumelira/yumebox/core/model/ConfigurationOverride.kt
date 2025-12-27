@@ -59,6 +59,9 @@ data class ConfigurationOverride(
     @SerialName("unified-delay")
     var unifiedDelay: Boolean? = null,
 
+    @SerialName("global-timeout")
+    var globalTimeout: Int? = null,
+
     @SerialName("geodata-mode")
     var geodataMode: Boolean? = null,
 

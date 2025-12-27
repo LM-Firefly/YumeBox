@@ -1,24 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  ~ This file is part of YumeBox.
-  ~
-  ~ YumeBox is free software: you can redistribute it and/or modify
-  ~ it under the terms of the GNU Affero General Public License as
-  ~ published by the Free Software Foundation, either version 3 of the
-  ~ License.
-  ~
-  ~ This program is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  ~ GNU Affero General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU Affero General Public License
-  ~ along with this program. If not, see <https://www.gnu.org/licenses/>.
-  ~
-  ~ Copyright (c) YumeYuka & YumeLira 2025.
-  ~
-  -->
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
 
@@ -48,6 +28,7 @@
     <application
             android:name=".App"
             android:allowBackup="true"
+            tools:replace="android:icon,android:label"
             android:icon="@mipmap/ic_launcher"
             android:label="${appName}"
             android:roundIcon="@mipmap/ic_launcher_round"
@@ -134,10 +115,6 @@
         </service>
 
         <service
-                android:name=".service.DialerLaunchService"
-                android:exported="false"/>
-
-        <service
                 android:name=".service.LogRecordService"
                 android:exported="false"
                 android:foregroundServiceType="specialUse">
@@ -153,6 +130,15 @@
             <property
                     android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                     android:value="sub_store_service"/>
+        </service>
+
+        <service
+                android:name=".service.ProfileAutoUpdateService"
+                android:exported="false"
+                android:foregroundServiceType="specialUse">
+            <property
+                    android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                    android:value="profile_auto_update_service"/>
         </service>
 
         <service
@@ -207,6 +193,17 @@
             <meta-data
                     android:name="android.support.FILE_PROVIDER_PATHS"
                     android:resource="@xml/file_paths"/>
+        </provider>
+
+        <provider
+                android:name=".service.YumeFilesProvider"
+                android:authorities="${applicationId}.files"
+                android:exported="true"
+                android:grantUriPermissions="true"
+                android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
         </provider>
     </application>
 </manifest>

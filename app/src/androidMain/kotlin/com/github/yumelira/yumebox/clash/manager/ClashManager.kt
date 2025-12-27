@@ -1,6 +1,11 @@
 package com.github.yumelira.yumebox.clash.manager
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.PowerManager
 import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.clash.config.RouteConfig
 import com.github.yumelira.yumebox.clash.core.ClashCore
@@ -20,18 +25,25 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxyState
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import timber.log.Timber
+import dev.oom_wg.purejoy.mlang.MLang
 import java.io.Closeable
 import java.io.File
 import java.net.InetSocketAddress
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
+import timber.log.Timber
 
 class ClashManager(
     private val context: Context,
     private val workDir: File,
     private val proxyModeProvider: (() -> TunnelState.Mode)? = null
 ) : Closeable {
+    companion object {
+        private const val TAG = "ClashManager"
+        private val SUSPICIOUS_TYPE_LOGGED = java.util.concurrent.atomic.AtomicBoolean(false)
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val selectionDao = SelectionDao(context)
 
@@ -59,26 +71,271 @@ class ClashManager(
     private val _currentProfile = MutableStateFlow<Profile?>(null)
     val currentProfile: StateFlow<Profile?> = _currentProfile.asStateFlow()
 
-    private val _trafficNow = MutableStateFlow(TrafficData.ZERO)
-    val trafficNow: StateFlow<TrafficData> = _trafficNow.asStateFlow()
+    public val screenStateFlow = kotlinx.coroutines.flow.callbackFlow {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val isScreenOn = intent.action == Intent.ACTION_SCREEN_ON
+                trySend(isScreenOn)
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            context.registerReceiver(receiver, filter)
+        }
+        trySend(powerManager.isInteractive)
+        awaitClose { 
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to unregister screen state receiver")
+            }
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, true)
 
-    private val _trafficTotal = MutableStateFlow(TrafficData.ZERO)
-    val trafficTotal: StateFlow<TrafficData> = _trafficTotal.asStateFlow()
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val sharedTrafficFlow = screenStateFlow.transformLatest { isScreenOn ->
+        if (isScreenOn) {
+            while (true) {
+                if (_proxyState.value is ProxyState.Running) {
+                    try {
+                        val now = TrafficData.from(ClashCore.queryTrafficNow())
+                        val total = TrafficData.from(ClashCore.queryTrafficTotal())
+                        emit(now to total)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to query traffic data")
+                        emit(TrafficData.ZERO to TrafficData.ZERO)
+                    }
+                } else {
+                    emit(TrafficData.ZERO to TrafficData.ZERO)
+                }
+                delay(1000L)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+        .shareIn(scope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000), replay = 1)
 
-    private val _tunnelState = MutableStateFlow<TunnelState?>(null)
-    val tunnelState: StateFlow<TunnelState?> = _tunnelState.asStateFlow()
+    fun createTrafficFlow() = sharedTrafficFlow
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val sharedConnectionsFlow = screenStateFlow.transformLatest { isScreenOn ->
+        // Poll more frequently when screen is on, and throttle when off to save power.
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val previousMap = java.util.HashMap<String, com.github.yumelira.yumebox.domain.model.Connection>()
+        val pollingIntervalOn = 1000L
+        val pollingIntervalOff = 5000L
+        while (true) {
+            val interval = if (isScreenOn) pollingIntervalOn else pollingIntervalOff
+            if (_proxyState.value is ProxyState.Running) {
+                try {
+                    val jsonString = try {
+                        com.github.yumelira.yumebox.core.Clash.queryConnectionsJson()
+                    } catch (e: Exception) {
+                        ""
+                    }
+                    val snapshot = if (jsonString.isNotBlank()) {
+                        json.decodeFromString(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot.serializer(), jsonString)
+                    } else {
+                        com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot(emptyList(), 0L, 0L)
+                    }
+                    val rawConnections = snapshot.connections ?: emptyList()
+                    val sanitized = rawConnections.map { conn ->
+                        conn.copy(
+                            id = conn.id.ifBlank { "<unknown-id>" },
+                            chains = conn.chains.map { it.ifBlank { "<unknown>" } },
+                            rule = conn.rule.ifBlank { "<unknown-rule>" },
+                            rulePayload = conn.rulePayload.ifBlank { "" },
+                            start = conn.start.ifBlank { "" },
+                            metadata = conn.metadata.copy(
+                                network = conn.metadata.network.ifBlank { "unknown" },
+                                type = conn.metadata.type.ifBlank { "unknown" },
+                                sourceIP = conn.metadata.sourceIP.ifBlank { "" },
+                                sourcePort = conn.metadata.sourcePort.ifBlank { "" },
+                                destinationIP = conn.metadata.destinationIP.ifBlank { "" },
+                                destinationPort = conn.metadata.destinationPort.ifBlank { "" },
+                                host = conn.metadata.host.ifBlank { "" },
+                                dnsMode = conn.metadata.dnsMode.ifBlank { "" },
+                                process = conn.metadata.process.ifBlank { "" },
+                                processPath = conn.metadata.processPath.ifBlank { "" }
+                            )
+                        )
+                    }.take(200)
+                    val currentMap = java.util.HashMap<String, com.github.yumelira.yumebox.domain.model.Connection>()
+                    sanitized.forEach { s ->
+                        val prev = previousMap[s.id]
+                        if (prev != null) {
+                            s.downloadSpeed = s.download - prev.download
+                            s.uploadSpeed = s.upload - prev.upload
+                        }
+                        currentMap[s.id] = s
+                    }
+                    previousMap.clear()
+                    previousMap.putAll(currentMap)
+                    val result = com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot(sanitized, snapshot.downloadTotal, snapshot.uploadTotal)
+                    Timber.tag(TAG).d("Shared connections snapshot sanitized size=%d", sanitized.size)
+                    val suspiciousFound = sanitized.any { it.metadata.type.matches(Regex("^[no]\\d+$")) }
+                    if (suspiciousFound && SUSPICIOUS_TYPE_LOGGED.compareAndSet(false, true)) {
+                        Timber.tag(TAG).w("Suspicious metadata.type detected in connections; dumping snapshot")
+                        try {
+                            Timber.tag(TAG).d(json.encodeToString(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot.serializer(), result))
+                        } catch (t: Throwable) { /* ignore */ }
+                    }
+                    emit(result)
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to query connections data")
+                    emit(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot(emptyList(), 0L, 0L))
+                }
+            } else {
+                emit(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot(emptyList(), 0L, 0L))
+            }
+            delay(interval)
+        }
+    }.flowOn(Dispatchers.IO)
+        .shareIn(scope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000), replay = 1)
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val subscriptionConnectionsFlow = screenStateFlow.transformLatest { isScreenOn ->
+        if (isScreenOn) {
+            val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+            emitAll(channelFlow {
+                // emit initial snapshot (best-effort)
+                try {
+                    val initial = try {
+                        val s = com.github.yumelira.yumebox.core.Clash.queryConnectionsJson()
+                        if (s.isNotBlank()) json.decodeFromString(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot.serializer(), s) else null
+                    } catch (t: Throwable) {
+                        null
+                    }
+                    if (initial != null) {
+                        Timber.tag(TAG).d("Subscription initial snapshot size=%d", initial.connections?.size ?: 0)
+                        trySend(initial)
+                    } else {
+                        Timber.tag(TAG).d("Subscription initial snapshot empty")
+                    }
+                } catch (t: Throwable) {
+                    Timber.e(t, "Failed to emit initial connections snapshot")
+                }
+                // subscribe to native events (receive JSON strings from core and decode)
+                val ch = com.github.yumelira.yumebox.core.Clash.subscribeConnections()
+                try {
+                    for (raw in ch) {
+                        try {
+                            if (raw.isBlank()) {
+                                Timber.tag(TAG).v("Subscription raw payload blank, skipping")
+                                continue
+                            }
+                            val snap = json.decodeFromString(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot.serializer(), raw)
+                            Timber.tag(TAG).v("Subscription payload parsed, snapshot size=%d", snap.connections?.size ?: 0)
+                            trySend(snap)
+                        } catch (t: Throwable) {
+                            Timber.e(t, "Error parsing connections snapshot: %s", raw.take(500))
+                        }
+                    }
+                } catch (t: Throwable) {
+                    Timber.e(t, "Error receiving subscription connections")
+                } finally {
+                    com.github.yumelira.yumebox.core.Clash.unsubscribeConnections()
+                }
+                awaitClose {
+                    // ensure unsubscribe if collector cancelled
+                    try {
+                        com.github.yumelira.yumebox.core.Clash.unsubscribeConnections()
+                    } catch (t: Throwable) { /* ignore */ }
+                }
+            })
+        }
+    }.flowOn(Dispatchers.IO)
+        .shareIn(scope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000), replay = 1)
+    fun createConnectionsFlow(): Flow<com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot> {
+        val jsonEnc = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val merged = merge(subscriptionConnectionsFlow, sharedConnectionsFlow)
+        val previousMap = java.util.HashMap<String, com.github.yumelira.yumebox.domain.model.Connection>()
+        return merged.map { snapshot ->
+            val rawConnections = snapshot.connections ?: emptyList()
+            val sanitized = rawConnections.map { conn ->
+                conn.copy(
+                    id = conn.id.ifBlank { "<unknown-id>" },
+                    chains = conn.chains.map { it.ifBlank { "<unknown>" } },
+                    rule = conn.rule.ifBlank { "<unknown-rule>" },
+                    rulePayload = conn.rulePayload.ifBlank { "" },
+                    start = conn.start.ifBlank { "" },
+                    metadata = conn.metadata.copy(
+                        network = conn.metadata.network.ifBlank { "unknown" },
+                        type = conn.metadata.type.ifBlank { "unknown" },
+                        sourceIP = conn.metadata.sourceIP.ifBlank { "" },
+                        sourcePort = conn.metadata.sourcePort.ifBlank { "" },
+                        destinationIP = conn.metadata.destinationIP.ifBlank { "" },
+                        destinationPort = conn.metadata.destinationPort.ifBlank { "" },
+                        host = conn.metadata.host.ifBlank { "" },
+                        dnsMode = conn.metadata.dnsMode.ifBlank { "" },
+                        process = conn.metadata.process.ifBlank { "" },
+                        processPath = conn.metadata.processPath.ifBlank { "" }
+                    )
+                )
+            }.take(200)
+            val currentMap = java.util.HashMap<String, com.github.yumelira.yumebox.domain.model.Connection>()
+            sanitized.forEach { s ->
+                val prev = previousMap[s.id]
+                if (prev != null) {
+                    s.downloadSpeed = s.download - prev.download
+                    s.uploadSpeed = s.upload - prev.upload
+                }
+                currentMap[s.id] = s
+            }
+            previousMap.clear()
+            previousMap.putAll(currentMap)
+            val result = com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot(sanitized, snapshot.downloadTotal, snapshot.uploadTotal)
+            val suspiciousFound = sanitized.any { it.metadata.type.matches(Regex("^[no]\\d+$")) }
+            if (suspiciousFound && SUSPICIOUS_TYPE_LOGGED.compareAndSet(false, true)) {
+                Timber.tag(TAG).w("Suspicious metadata.type detected in connections; dumping snapshot")
+                try {
+                    Timber.tag(TAG).d(jsonEnc.encodeToString(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot.serializer(), result))
+                } catch (t: Throwable) { /* ignore */ }
+            }
+            result
+        }
+            .distinctUntilChangedBy { jsonEnc.encodeToString(com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot.serializer(), it) }
+            .flowOn(Dispatchers.IO)
+            .shareIn(scope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000), replay = 1)
+    }
+    // Expose subscription-only flow for gradual migration
+    fun createConnectionsSubscriptionFlow(): Flow<com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot> = subscriptionConnectionsFlow
+
+    val trafficNow: StateFlow<TrafficData> = sharedTrafficFlow.map { it.first }
+        .stateIn(scope, SharingStarted.WhileSubscribed(1000), TrafficData.ZERO)
+
+    val trafficTotal: StateFlow<TrafficData> = sharedTrafficFlow.map { it.second }
+        .stateIn(scope, SharingStarted.WhileSubscribed(1000), TrafficData.ZERO)
+
+    suspend fun queryTunnelState(): TunnelState? = withContext(Dispatchers.IO) {
+        if (_proxyState.value is ProxyState.Running) {
+            runCatching { ClashCore.queryTunnelState() }.getOrNull()
+        } else {
+            null
+        }
+    }
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyStateRepository.proxyGroups
 
-    private val _logs = MutableSharedFlow<LogMessage>(replay = 100)
-    val logs: SharedFlow<LogMessage> = _logs.asSharedFlow()
-
-    private var monitorJob: Job? = null
-    private var logJob: Job? = null
+    val logs: SharedFlow<LogMessage> = flow {
+        val channel = ClashCore.subscribeLogcat()
+        try {
+            for (log in channel) {
+                if (!log.message.contains("Request interrupted by user") && !log.message.contains(MLang.Proxy.PullToRefresh.DelaySuccess)) {
+                    emit(log)
+                }
+            }
+        } finally {
+            ClashCore.unsubscribeLogcat()
+        }
+    }.flowOn(Dispatchers.IO).shareIn(scope, SharingStarted.WhileSubscribed(5000), replay = 100)
 
     init {
         workDir.mkdirs()
-        startLogSubscription()
     }
 
     suspend fun loadProfile(profile: Profile): Result<Unit> = withContext(Dispatchers.IO) {
@@ -90,16 +347,26 @@ class ClashManager(
 
             val loadResult = ClashCore.loadConfig(
                 configDir = configDir, options = ClashCore.LoadOptions(
-                    timeoutMs = 30_000L, resetBeforeLoad = true, clearSessionOverride = true
+                    timeoutMs = 60_000L, resetBeforeLoad = true, clearSessionOverride = true
                 )
             )
 
             if (loadResult.isFailure) {
+                val error = loadResult.exceptionOrNull()
+                Timber.e(error, MLang.Service.Status.ConfigLoadFailedWithProfile.format(profile.name))
                 return@withContext loadResult
             }
 
             _currentProfile.value = profile
             currentProfileId.set(profile.id)
+
+            runCatching {
+                val persistOverride = ClashCore.queryOverride(Clash.OverrideSlot.Persist)
+                ClashCore.patchOverride(Clash.OverrideSlot.Session, persistOverride)
+                Timber.tag(TAG).d("Reapplied Persist override to Session after load: externalController=%s", persistOverride.externalController)
+            }.onFailure { e ->
+                Timber.w(e, "Failed to reapply Persist override to Session after load")
+            }
 
             proxyModeProvider?.let { provider ->
                 runCatching {
@@ -112,6 +379,8 @@ class ClashManager(
                     val session = ClashCore.queryOverride(Clash.OverrideSlot.Session)
                     session.mode = mode
                     ClashCore.patchOverride(Clash.OverrideSlot.Session, session)
+                }.onFailure { e ->
+                    Timber.e(e, MLang.Service.Status.UnknownError)
                 }
             }
 
@@ -138,12 +407,31 @@ class ClashManager(
             proxyStateRepository.start()
 
             scope.launch {
-                runCatching { proxyStateRepository.syncOnce() }
+                try {
+                    val selections = selectionDao.getAllSelections(profile.id)
+                    selections.forEach { (groupName, proxyName) ->
+                        runCatching {
+                            ClashCore.selectProxy(groupName, proxyName)
+                        }.onFailure { e ->
+                            Timber.e(e, MLang.Service.Status.UnknownError + ": $groupName -> $proxyName")
+                        }
+                    }
+                    runCatching { proxyStateRepository.restoreSelections(profile.id) }
+                        .onFailure { Timber.w(it, "Restore pinned selections failed") }
+                    proxyStateRepository.syncFromCore()
+                } catch (e: Exception) {
+                    Timber.e(e, MLang.Service.Status.UnknownError)
+                }
             }
-
+            scope.launch {
+                runCatching { proxyStateRepository.syncFromCore() }
+                    .onFailure { Timber.w(it, "Background sync failed") }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e.toConfigImportException())
+            val importException = e.toConfigImportException()
+            Timber.e(importException, MLang.Service.Status.ConfigLoadFailedWithProfile.format(profile.name))
+            Result.failure(importException)
         }
     }
 
@@ -215,12 +503,12 @@ class ClashManager(
             )
 
             _proxyState.value = ProxyState.Running(profile, RunningMode.Tun)
-            startMonitor()
 
             Result.success(Unit)
         } catch (e: Exception) {
             val importException = e.toConfigImportException()
-            _proxyState.value = ProxyState.Error("TUN启动失败: ${importException.message}", importException)
+            Timber.e(importException, MLang.Service.Status.TunStartFailed.format(importException.message ?: ""))
+            _proxyState.value = ProxyState.Error(MLang.Service.Status.TunStartFailed.format(importException.message ?: ""), importException)
             Result.failure(importException)
         }
     }
@@ -237,11 +525,11 @@ class ClashManager(
             val address = ClashCore.startHttp(config.listenAddress) ?: config.address
 
             _proxyState.value = ProxyState.Running(profile, RunningMode.Http(address))
-            startMonitor()
 
             Result.success(address)
         } catch (e: Exception) {
             val importException = e.toConfigImportException()
+            Timber.e(importException, MLang.Service.Status.HttpStartFailed.format(importException.message ?: ""))
             _proxyState.value = ProxyState.Error("HTTP启动失败: ${importException.message}", importException)
             Result.failure(importException)
         }
@@ -255,45 +543,11 @@ class ClashManager(
 
         runCatching {
             proxyStateRepository.stop()
-            stopMonitor()
             resetState()
         }.onFailure {
             runCatching { ClashCore.reset() }
             proxyStateRepository.stop()
-            stopMonitor()
             resetState()
-        }
-    }
-
-
-    private fun startMonitor() {
-        stopMonitor()
-
-        monitorJob = scope.launch {
-            while (isActive) {
-                runCatching {
-                    _trafficNow.value = TrafficData.from(ClashCore.queryTrafficNow())
-                    _trafficTotal.value = TrafficData.from(ClashCore.queryTrafficTotal())
-                    _tunnelState.value = ClashCore.queryTunnelState()
-                }
-                delay(1000)
-            }
-        }
-    }
-
-    private fun stopMonitor() {
-        monitorJob?.cancel()
-        monitorJob = null
-    }
-
-    private fun startLogSubscription() {
-        logJob = scope.launch {
-            val channel = ClashCore.subscribeLogcat()
-            for (log in channel) {
-                if (!log.message.contains("Request interrupted by user") && !log.message.contains("更新延迟")) {
-                    _logs.emit(log)
-                }
-            }
         }
     }
 
@@ -301,9 +555,6 @@ class ClashManager(
         _proxyState.value = ProxyState.Idle
         _currentProfile.value = null
         currentProfileId.set(null)
-        _trafficNow.value = TrafficData.ZERO
-        _trafficTotal.value = TrafficData.ZERO
-        _tunnelState.value = null
     }
 
     suspend fun reloadCurrentProfile(): Result<Unit> = withContext(Dispatchers.IO) {
@@ -316,9 +567,21 @@ class ClashManager(
         return proxyStateRepository.syncFromCore()
     }
 
-    suspend fun selectProxy(groupName: String, proxyName: String): Boolean {
-        return proxyStateRepository.selectProxy(groupName, proxyName).getOrDefault(false)
+    fun setProxyScreenActive(active: Boolean) {
+        if (active) {
+            proxyStateRepository.start()
+        } else {
+            proxyStateRepository.stop()
+        }
     }
+
+    suspend fun selectProxy(groupName: String, proxyName: String): Boolean {
+        val res = proxyStateRepository.selectProxy(groupName, proxyName, _currentProfile.value)
+        return res.getOrNull() ?: false
+    }
+
+    suspend fun forceSelectProxy(groupName: String, proxyName: String): Boolean =
+        proxyStateRepository.forceSelectProxy(groupName, proxyName, _currentProfile.value)
 
     suspend fun healthCheck(groupName: String): Result<Unit> {
         return proxyStateRepository.testGroupDelay(groupName)
@@ -329,8 +592,6 @@ class ClashManager(
     }
 
     override fun close() {
-        logJob?.cancel()
-        monitorJob?.cancel()
         proxyStateRepository.close()
         scope.cancel("ClashManager closed")
         resetState()
