@@ -34,6 +34,7 @@ import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.substore.SubStorePaths
 import com.github.yumelira.yumebox.substore.SubStoreService
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -93,7 +94,7 @@ class FeatureViewModel(
         private const val EXTENSION_PACKAGE_NAME = "com.github.yumelira.yumebox.extension"
         private const val JAVET_LIB_NAME = "libjavet-node-android"
         private val PANEL_NAMES = listOf("zashboard", "metacubexd")
-        private val PANEL_DISPLAY_NAMES = listOf("SubStore Zashboard", "SubStore 官方面板")
+        private val PANEL_DISPLAY_NAMES = listOf(MLang.Feature.SubStore.Zashboard, MLang.Feature.SubStore.OfficialPanel)
         private val PANEL_URLS = listOf(
             "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip",
             "https://github.com/MetaCubeX/metacubexd/releases/latest/download/compressed-dist.tgz"
@@ -103,7 +104,7 @@ class FeatureViewModel(
 
     fun startService() {
         if (DeviceUtil.is32BitDevice()) {
-            showToast("SubStore不支持32位设备")
+            showToast(MLang.Feature.SubStore.Not32Bit)
             return
         }
         if (!checkSubStoreReadiness()) return
@@ -113,23 +114,25 @@ class FeatureViewModel(
                 putExtra("frontendPort", frontendPort.value)
                 putExtra("allowLan", allowLanAccess.value)
             })
-            _serviceRunningState.value = true
-            setupAutoCloseTimer()
+            delay(500)
+            val actuallyRunning = SubStoreService.isRunning
+            _serviceRunningState.value = actuallyRunning
+            if (actuallyRunning) setupAutoCloseTimer()
         }
     }
 
     private fun checkSubStoreReadiness(): Boolean {
         return when {
-            !_isExtensionInstalled.value -> {
-                showToast("请先安装扩展包"); false
+            !(_isExtensionInstalled.value || _isJavetLoaded.value) -> {
+                showToast(MLang.Feature.SubStore.InstallExtensionOrJavet); false
             }
 
             !_isSubStoreInitialized.value -> {
-                showToast("请先下载 SubStore 资源"); false
+                showToast(MLang.Feature.SubStore.DownloadSubStoreFirst); false
             }
 
             !_isJavetLoaded.value -> {
-                showToast("Javet 库未就绪，请确保扩展包已正确安装"); false
+                showToast(MLang.Feature.SubStore.JavetNotReady); false
             }
 
             else -> true
@@ -162,10 +165,19 @@ class FeatureViewModel(
         }
     }
 
-    private fun checkExtensionInstalled(): Boolean = runCatching {
-        application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
-        true
-    }.getOrDefault(false)
+    private fun checkExtensionInstalled(): Boolean {
+        val isPkgInstalled = runCatching {
+            application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
+            true
+        }.getOrDefault(false)
+        if (isPkgInstalled) return true
+        if (runCatching { System.loadLibrary("javet-node-android"); true }.getOrDefault(false)) {
+            return true
+        }
+        NativeLibraryManager.initialize(application)
+        val results = NativeLibraryManager.extractAllLibraries()
+        return results[JAVET_LIB_NAME] == true
+    }
 
     private fun initializeJavetStatus() {
         if (!_isExtensionInstalled.value) {
@@ -230,9 +242,9 @@ class FeatureViewModel(
                     url = "https://github.com/sub-store-org/Sub-Store-Front-End/releases/latest/download/dist.zip",
                     targetDir = SubStorePaths.frontendDir,
                     onProgress = { _subStoreFrontendDownloadProgress.value = it })
-                showToast(if (success) "SubStore 前端下载完成" else "SubStore 前端下载失败")
+                showToast(if (success) MLang.Feature.SubStore.FrontendDownloadSuccess else MLang.Feature.SubStore.FrontendDownloadFailed)
                 if (success) _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
-            }.onFailure { e -> timber.log.Timber.e(e, "下载前端失败"); showToast("下载出错: ${e.message}") }
+            }.onFailure { e -> timber.log.Timber.e(e, MLang.Feature.SubStore.DownloadError.format(e.message ?: "")); showToast(MLang.Feature.SubStore.DownloadError.format(e.message)) }
             _isDownloadingSubStoreFrontend.value = false
             _subStoreFrontendDownloadProgress.value = null
         }
@@ -250,9 +262,9 @@ class FeatureViewModel(
                     url = "https://github.com/sub-store-org/Sub-Store/releases/latest/download/sub-store.bundle.js",
                     targetFile = SubStorePaths.backendBundle,
                     onProgress = { _subStoreBackendDownloadProgress.value = it })
-                showToast(if (success) "SubStore 后端下载完成" else "SubStore 后端下载失败")
+                showToast(if (success) MLang.Feature.SubStore.BackendDownloadSuccess else MLang.Feature.SubStore.BackendDownloadFailed)
                 if (success) _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
-            }.onFailure { e -> timber.log.Timber.e(e, "下载后端失败"); showToast("下载出错: ${e.message}") }
+            }.onFailure { e -> timber.log.Timber.e(e, MLang.Feature.SubStore.DownloadError.format(e.message ?: "")); showToast(MLang.Feature.SubStore.DownloadError.format(e.message)) }
             _isDownloadingSubStoreBackend.value = false
             _subStoreBackendDownloadProgress.value = null
         }
@@ -272,16 +284,16 @@ class FeatureViewModel(
             _isDownloadingPanel.value = true
             runCatching {
                 if (panelType !in PANEL_NAMES.indices) {
-                    showToast("无效的面板类型")
+                    showToast(MLang.Feature.SubStore.InvalidPanelType)
                     return@runCatching
                 }
                 val panelDir = File("${application.filesDir.absolutePath}/panel/${PANEL_NAMES[panelType]}")
                 if (panelDir.exists()) panelDir.deleteRecursively()
                 panelDir.mkdirs()
                 val success = DownloadUtil.downloadAndExtract(url = PANEL_URLS[panelType], targetDir = panelDir)
-                showToast(if (success) "${PANEL_NAMES[panelType]} 下载安装成功" else "${PANEL_NAMES[panelType]} 下载安装失败")
+                showToast(if (success) MLang.Feature.SubStore.PanelInstallSuccess.format(PANEL_DISPLAY_NAMES[panelType]) else MLang.Feature.SubStore.PanelInstallFailed.format(PANEL_DISPLAY_NAMES[panelType]))
                 if (success) updatePanelPaths()
-            }.onFailure { e -> timber.log.Timber.e(e, "下载面板失败"); showToast("下载安装出错: ${e.message}") }
+            }.onFailure { e -> timber.log.Timber.e(e, MLang.Feature.SubStore.PanelInstallError.format(e.message ?: "")); showToast(MLang.Feature.SubStore.PanelInstallError.format(e.message)) }
             _isDownloadingPanel.value = false
         }
     }
@@ -294,7 +306,7 @@ class FeatureViewModel(
         mode.minutes?.let { minutes ->
             autoCloseJob = viewModelScope.launch {
                 delay(minutes * 60 * 1000L)
-                showToast("服务已自动关闭")
+                showToast(MLang.Feature.ServiceStatus.AutoClosed)
                 stopService()
             }
         }

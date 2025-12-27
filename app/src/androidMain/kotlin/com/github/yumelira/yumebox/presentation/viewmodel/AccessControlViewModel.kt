@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
@@ -34,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import dev.oom_wg.purejoy.mlang.MLang
 
 
 class AccessControlViewModel(
@@ -59,10 +40,10 @@ class AccessControlViewModel(
 
         val displayName: String
             get() = when (this) {
-                PACKAGE_NAME -> "包名"
-                LABEL -> "标签"
-                INSTALL_TIME -> "安装时间"
-                UPDATE_TIME -> "更新时间"
+                PACKAGE_NAME -> MLang.AccessControl.SortMode.PackageName
+                LABEL -> MLang.AccessControl.SortMode.Label
+                INSTALL_TIME -> MLang.AccessControl.SortMode.InstallTime
+                UPDATE_TIME -> MLang.AccessControl.SortMode.UpdateTime
             }
     }
 

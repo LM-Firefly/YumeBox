@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
@@ -53,6 +33,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.useful.Cancel
 import top.yukonga.miuix.kmp.icon.icons.useful.Delete
 import top.yukonga.miuix.kmp.icon.icons.useful.Play
+import top.yukonga.miuix.kmp.icon.icons.useful.Save
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.*
@@ -82,6 +63,15 @@ fun LogScreen(navigator: DestinationsNavigator) {
                     NavigationBackIcon(navigator = navigator)
                 },
                 actions = {
+                    IconButton(
+                        onClick = { viewModel.saveAppLog() },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Useful.Save,
+                            contentDescription = "Save App Log",
+                        )
+                    }
                     IconButton(
                         onClick = {
                             if (isRecording) {
@@ -153,7 +143,7 @@ private fun LogFileItem(
         visible = true
     }
 
-    rememberInfiniteTransition(label = "recording_pulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "recording_pulse")
 
     val animatedSize by animateFloatAsState(
         targetValue = fileInfo.size.toFloat(),
@@ -180,7 +170,7 @@ private fun LogFileItem(
                         modifier = Modifier.padding(end = 16.dp),
                         style = MiuixTheme.textStyles.body2,
                     )
-                }
+                } else null
             }
         )
     }

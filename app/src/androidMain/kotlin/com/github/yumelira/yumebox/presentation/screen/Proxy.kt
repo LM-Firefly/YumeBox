@@ -1,31 +1,13 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
+import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -59,6 +41,7 @@ import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.WebViewScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
@@ -75,7 +58,7 @@ fun ProxyPager(
 ) {
     val context = LocalContext.current
     val proxyViewModel = koinViewModel<ProxyViewModel>()
-    koinViewModel<HomeViewModel>()
+
     val featureViewModel = koinViewModel<FeatureViewModel>()
 
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
@@ -83,6 +66,7 @@ fun ProxyPager(
     val displayMode by proxyViewModel.displayMode.collectAsState()
     val uiState by proxyViewModel.uiState.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
+    val globalTimeout by proxyViewModel.globalTimeout.collectAsState()
     val scrollBehavior = MiuixScrollBehavior()
 
     var isRefreshing by rememberSaveable { mutableStateOf(false) }
@@ -129,6 +113,7 @@ fun ProxyPager(
                 context = context,
                 selectedPanelType = selectedPanelType,
                 onNavigateToProviders = { navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true } },
+                onNavigateToPanel = { url, title -> navigator.navigate(WebViewScreenDestination(initialUrl = url, title = title)) { launchSingleTop = true } },
                 onTestDelay = onTestDelay,
                 onShowSettings = { showBottomSheet.value = true }
             )
@@ -151,9 +136,11 @@ fun ProxyPager(
                     mainInnerPadding = mainInnerPadding,
                     isRefreshing = isRefreshing,
                     pullToRefreshState = pullToRefreshState,
+                    globalTimeout = globalTimeout,
                     onRefresh = onRefresh,
                     onTabSelected = proxyViewModel::setSelectedGroup,
-                    onProxySelect = proxyViewModel::selectProxy
+                    onProxySelect = proxyViewModel::selectProxy,
+                    onProxyPin = proxyViewModel::forceSelectProxy
                 )
             }
         }
@@ -221,6 +208,7 @@ private fun ProxyTopBar(
     context: android.content.Context,
     selectedPanelType: Int,
     onNavigateToProviders: () -> Unit,
+    onNavigateToPanel: (String, String) -> Unit,
     onTestDelay: (() -> Unit)?,
     onShowSettings: () -> Unit
 ) {
@@ -244,7 +232,7 @@ private fun ProxyTopBar(
                             if (localUrl.isNotEmpty()) localUrl + "index.html" else ""
                         }
                         if (webViewUrl.isNotEmpty()) {
-                            WebViewActivity.start(context, webViewUrl)
+                            onNavigateToPanel(webViewUrl, MLang.Proxy.Action.Panel)
                         }
                     }
                 ) {
@@ -255,7 +243,10 @@ private fun ProxyTopBar(
         actions = {
             IconButton(
                 modifier = Modifier.padding(end = 16.dp),
-                onClick = { onTestDelay?.invoke() }
+                onClick = {
+                    Toast.makeText(context, MLang.Proxy.PullToRefresh.PullToTest, Toast.LENGTH_SHORT).show()
+                    onTestDelay?.invoke()
+                }
             ) {
                 Icon(Yume.Zap, contentDescription = MLang.Proxy.Action.Test)
             }
@@ -281,9 +272,11 @@ private fun ProxyContent(
     mainInnerPadding: PaddingValues,
     isRefreshing: Boolean,
     pullToRefreshState: PullToRefreshState,
+    globalTimeout: Int,
     onRefresh: () -> Unit,
     onTabSelected: (Int) -> Unit,
-    onProxySelect: (String, String) -> Unit
+    onProxySelect: (String, String) -> Unit,
+    onProxyPin: (String, String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -321,7 +314,9 @@ private fun ProxyContent(
                     displayMode = displayMode,
                     scrollBehavior = scrollBehavior,
                     mainInnerPadding = mainInnerPadding,
-                    onProxySelect = onProxySelect
+                    globalTimeout = globalTimeout,
+                    onProxySelect = onProxySelect,
+                    onProxyPin = onProxyPin
                 )
             }
         }
@@ -332,15 +327,29 @@ private fun ProxyContent(
 private fun ProxyGroupPage(
     group: ProxyGroupInfo,
     displayMode: ProxyDisplayMode,
+    globalTimeout: Int,
     scrollBehavior: ScrollBehavior,
     mainInnerPadding: PaddingValues,
-    onProxySelect: (String, String) -> Unit
+    onProxySelect: (String, String) -> Unit,
+    onProxyPin: (String, String) -> Unit
 ) {
     val groupName = group.name
     val isSelectable = group.type == Proxy.Type.Selector
-
-    val onProxyClick = remember(groupName, isSelectable) {
-        if (isSelectable) { proxyName: String -> onProxySelect(groupName, proxyName) } else null
+    val isSmartGroup = group.type == Proxy.Type.URLTest || group.type == Proxy.Type.Fallback
+    val onProxyClick = remember(groupName, isSelectable, isSmartGroup, group.fixed) {
+        if (isSelectable) {
+            { proxyName: String -> onProxySelect(groupName, proxyName) }
+        } else if (isSmartGroup) {
+            { proxyName: String ->
+                if (proxyName == group.fixed) {
+                    onProxyPin(groupName, "")
+                } else {
+                    onProxyPin(groupName, proxyName)
+                }
+            }
+        } else {
+            null
+        }
     }
 
     LazyColumn(
@@ -392,6 +401,8 @@ private fun ProxyGroupPage(
             groupName = groupName,
             proxies = group.proxies,
             selectedProxyName = group.now,
+            pinnedProxyName = group.fixed,
+            globalTimeout = globalTimeout,
             displayMode = displayMode,
             onProxyClick = onProxyClick
         )
@@ -487,7 +498,9 @@ fun LazyListScope.proxyNodeGridItems(
     groupName: String,
     proxies: List<Proxy>,
     selectedProxyName: String,
+    pinnedProxyName: String,
     displayMode: ProxyDisplayMode,
+    globalTimeout: Int,
     onProxyClick: ((String) -> Unit)?
 ) {
     val columns = if (displayMode.isSingleColumn) 1 else 2
@@ -496,17 +509,19 @@ fun LazyListScope.proxyNodeGridItems(
     if (columns == 1) {
         items(
             count = proxies.size,
-            key = { index -> "${groupName}_${proxies[index].name}_$index" }
+            key = { index -> "${groupName}_${proxies.getOrNull(index)?.name ?: "null"}_$index" }
         ) { index ->
             val proxy = proxies[index]
             ProxyNodeCard(
                 proxy = proxy,
                 isSelected = proxy.name == selectedProxyName,
                 onClick = onProxyClick?.let { { it(proxy.name) } },
+                isPinned = proxy.name == pinnedProxyName,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
                 isSingleColumn = true,
+                globalTimeout = globalTimeout,
                 showDetail = showDetail
             )
         }
@@ -522,7 +537,7 @@ fun LazyListScope.proxyNodeGridItems(
             }
         ) { rowIndex ->
             val startIndex = rowIndex * 2
-            val firstProxy = proxies[startIndex]
+            val firstProxy = proxies.getOrNull(startIndex)
             val secondProxy = proxies.getOrNull(startIndex + 1)
 
             Row(
@@ -532,24 +547,32 @@ fun LazyListScope.proxyNodeGridItems(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    ProxyNodeCard(
-                        proxy = firstProxy,
-                        isSelected = firstProxy.name == selectedProxyName,
-                        onClick = onProxyClick?.let { { it(firstProxy.name) } },
-                        isSingleColumn = false,
-                        showDetail = showDetail
-                    )
+                    firstProxy?.let { firstProxy ->
+                        ProxyNodeCard(
+                            proxy = firstProxy,
+                            isSelected = firstProxy.name == selectedProxyName,
+                            onClick = onProxyClick?.let { { it(firstProxy.name) } },
+                            isPinned = firstProxy.name == pinnedProxyName,
+                            isSingleColumn = false,
+                            globalTimeout = globalTimeout,
+                            showDetail = showDetail
+                        )
+                    } ?: Spacer(modifier = Modifier.fillMaxWidth())
                 }
 
                 if (secondProxy != null) {
                     Box(modifier = Modifier.weight(1f)) {
-                        ProxyNodeCard(
-                            proxy = secondProxy,
-                            isSelected = secondProxy.name == selectedProxyName,
-                            onClick = onProxyClick?.let { { it(secondProxy.name) } },
-                            isSingleColumn = false,
-                            showDetail = showDetail
-                        )
+                        secondProxy?.let { secondProxy ->
+                            ProxyNodeCard(
+                                proxy = secondProxy,
+                                isSelected = secondProxy.name == selectedProxyName,
+                                onClick = onProxyClick?.let { { it(secondProxy.name) } },
+                                isPinned = secondProxy.name == pinnedProxyName,
+                                isSingleColumn = false,
+                                globalTimeout = globalTimeout,
+                                showDetail = showDetail
+                            )
+                        } ?: Spacer(modifier = Modifier.fillMaxWidth())
                     }
                 } else {
                     Spacer(modifier = Modifier.weight(1f))

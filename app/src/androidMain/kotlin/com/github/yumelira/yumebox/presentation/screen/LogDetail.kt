@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,6 +25,7 @@ import com.github.yumelira.yumebox.service.LogRecordService
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -91,7 +72,7 @@ fun LogDetailScreen(
                         }
                     }
                 } catch (e: Exception) {
-                    timber.log.Timber.e(e, "保存文件失败")
+                    timber.log.Timber.e(e, MLang.Log.Message.SaveFailed.format(e.message ?: ""))
                 }
             }
         }
@@ -114,7 +95,7 @@ fun LogDetailScreen(
     Scaffold(
         topBar = {
             TopBar(
-                title = if (isCurrentFileRecording) "实时日志" else file.name,
+                title = if (isCurrentFileRecording) MLang.Log.Detail.RealTimeLog else file.name,
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     NavigationBackIcon(navigator = navigator)
@@ -129,7 +110,7 @@ fun LogDetailScreen(
                         ) {
                             Icon(
                                 imageVector = MiuixIcons.Useful.Cancel,
-                                contentDescription = "暂停记录",
+                                contentDescription = MLang.Log.Action.Pause,
                             )
                         }
                     } else {
@@ -141,7 +122,7 @@ fun LogDetailScreen(
                         ) {
                             Icon(
                                 imageVector = MiuixIcons.Useful.Save,
-                                contentDescription = "保存",
+                                contentDescription = MLang.Log.Action.Save,
                             )
                         }
                         IconButton(
@@ -153,7 +134,7 @@ fun LogDetailScreen(
                         ) {
                             Icon(
                                 imageVector = MiuixIcons.Useful.Delete,
-                                contentDescription = "删除",
+                                contentDescription = MLang.Log.Action.Delete,
                             )
                         }
                     }
@@ -164,15 +145,15 @@ fun LogDetailScreen(
         when {
             isLoading -> {
                 CenteredText(
-                    firstLine = "加载中...",
+                    firstLine = MLang.Log.Detail.Loading,
                     secondLine = ""
                 )
             }
 
             logEntries.isEmpty() -> {
                 CenteredText(
-                    firstLine = if (isCurrentFileRecording) "等待日志..." else "日志为空",
-                    secondLine = if (isCurrentFileRecording) "日志将在产生时显示" else "该文件没有日志内容"
+                    firstLine = if (isCurrentFileRecording) MLang.Log.Detail.WaitingLog else MLang.Log.Detail.LogEmpty,
+                    secondLine = if (isCurrentFileRecording) MLang.Log.Detail.WillShowWhenGenerated else MLang.Log.Detail.NoLogContent
                 )
             }
 

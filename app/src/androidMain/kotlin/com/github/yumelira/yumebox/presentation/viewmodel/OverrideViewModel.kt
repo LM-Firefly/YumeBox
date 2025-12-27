@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -26,6 +6,7 @@ import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.model.TunnelState
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -57,7 +38,7 @@ class OverrideViewModel : ViewModel() {
                 val config = Clash.queryOverride(Clash.OverrideSlot.Persist)
                 _configuration.value = config
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "加载覆写配置失败")
+                Timber.tag(TAG).e(e, MLang.Override.Message.LoadFailed.format(e.message ?: ""))
             }
             _isLoading.value = false
         }
@@ -70,7 +51,7 @@ class OverrideViewModel : ViewModel() {
                 _configuration.value = ConfigurationOverride()
                 _hasChanges.value = false
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "重置覆写配置失败")
+                Timber.tag(TAG).e(e, MLang.Override.Message.ResetFailed.format(e.message ?: ""))
             }
         }
     }
@@ -129,6 +110,9 @@ class OverrideViewModel : ViewModel() {
         updateConfig { it.copy(unifiedDelay = enabled) }
     }
 
+    fun setGlobalTimeout(timeout: Int?) {
+        updateConfig { it.copy(globalTimeout = timeout) }
+    }
     fun setGeodataMode(enabled: Boolean?) {
         updateConfig { it.copy(geodataMode = enabled) }
     }
@@ -365,6 +349,25 @@ class OverrideViewModel : ViewModel() {
     private fun updateConfig(transform: (ConfigurationOverride) -> ConfigurationOverride) {
         _configuration.value = transform(_configuration.value)
         _hasChanges.value = true
+        viewModelScope.launch {
+            runCatching {
+                Clash.patchOverride(Clash.OverrideSlot.Persist, _configuration.value)
+            }.onFailure { e ->
+                Timber.tag(TAG).e(e, MLang.Override.Message.AutoSaveFailed.format(e.message ?: ""))
+            }.also {
+                // Also apply to Session immediately so consumers that read session will see the change
+                runCatching {
+                    Clash.patchOverride(Clash.OverrideSlot.Session, _configuration.value)
+                    Timber.tag(TAG).d("Patched Persist and Session overrides: externalController=%s", _configuration.value.externalController)
+                    // Verify persistence by reading back both slots
+                    val persistRead = Clash.queryOverride(Clash.OverrideSlot.Persist)
+                    val sessionRead = Clash.queryOverride(Clash.OverrideSlot.Session)
+                    Timber.tag(TAG).d("Verify override after patch. Persist.externalController=%s, Session.externalController=%s", persistRead.externalController, sessionRead.externalController)
+                }.onFailure { e ->
+                    Timber.tag(TAG).w(e, "Failed to patch Session override")
+                }
+            }
+        }
     }
 
     override fun onCleared() {
@@ -373,7 +376,7 @@ class OverrideViewModel : ViewModel() {
             runCatching {
                 Clash.patchOverride(Clash.OverrideSlot.Persist, _configuration.value)
             }.onFailure { e ->
-                Timber.tag(TAG).e(e, "自动保存配置失败")
+                Timber.tag(TAG).e(e, MLang.Override.Message.AutoSaveFailed.format(e.message ?: ""))
             }
         }
     }

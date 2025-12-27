@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.common.util
 
 import com.github.yumelira.yumebox.clash.manager.ClashManager
@@ -25,6 +5,7 @@ import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
@@ -52,7 +33,7 @@ object ProxyAutoStartHelper {
 
             val profileId = getProfileToStart(profilesStore)
             if (profileId == null) {
-                Timber.tag(TAG).w("没有可用的配置文件，无法自动启动")
+                Timber.tag(TAG).e(MLang.Service.Message.AutoStartFailed.format(MLang.ProfilesPage.Message.UnknownProfile))
                 return
             }
 
@@ -67,10 +48,10 @@ object ProxyAutoStartHelper {
             )
 
             if (result.isFailure) {
-                Timber.tag(TAG).e("自动启动代理失败: ${result.exceptionOrNull()?.message}")
+                Timber.tag(TAG).e(MLang.Service.Message.AutoStartFailed.format(result.exceptionOrNull()?.message ?: ""))
             }
         }.onFailure { e ->
-            Timber.tag(TAG).e(e, "自动启动代理失败: ${e.message}")
+            Timber.tag(TAG).e(e, MLang.Service.Message.AutoStartFailed.format(e.message ?: ""))
         }
     }
 

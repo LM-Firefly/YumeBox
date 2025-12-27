@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c) YumeYuka & YumeLira 2025.
- *
- */
-
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -36,17 +16,20 @@ repositories {
     gradlePluginPortal()
 }
 
+val maxJvmForCompilation = if (jvmVersionInt > 17) 17 else jvmVersionInt
 kotlin {
+    jvmToolchain(maxJvmForCompilation)
+    val kotlinJvmTargetInt = maxJvmForCompilation
     compilerOptions {
-        jvmTarget = JvmTarget.fromTarget(jvmVersionInt.toString())
+        jvmTarget = JvmTarget.fromTarget(kotlinJvmTargetInt.toString())
     }
 }
 
 dependencies {
-    compileOnly("com.android.tools.build:gradle:8.12.3")
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.21")
-    compileOnly("org.jetbrains.compose:compose-gradle-plugin:1.9.3")
-    compileOnly("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.3.3")
+    compileOnly(libs.android.gradlePlugin)
+    compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.compose.gradlePlugin)
+    compileOnly(libs.ksp.gradlePlugin)
 }
 
 gradlePlugin {

@@ -18,12 +18,14 @@ class BaseAndroidPlugin : Plugin<Project> {
         project.extensions.configure<ApplicationExtension> {
             val compileSdk = provider.getInt("android.compileSdk", 34)
             val minSdk = provider.getInt("android.minSdk", 24)
-            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersionStr = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersionInt = runCatching { jvmVersionStr.toInt() }.getOrDefault(17)
+            val javaVersionInt = minOf(jvmVersionInt, 17)
+            val javaVersion = org.gradle.api.JavaVersion.toVersion(javaVersionInt.toString())
 
             this.compileSdk = compileSdk
             defaultConfig { this.minSdk = minSdk }
             compileOptions {
-                val javaVersion = org.gradle.api.JavaVersion.toVersion(jvmVersion)
                 sourceCompatibility = javaVersion
                 targetCompatibility = javaVersion
             }
@@ -92,7 +94,9 @@ class BaseAndroidPlugin : Plugin<Project> {
         project.extensions.configure<LibraryExtension> {
             val compileSdk = provider.getInt("android.compileSdk", 34)
             val minSdk = provider.getInt("android.minSdk", 24)
-            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersionStr = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersionInt = runCatching { jvmVersionStr.toInt() }.getOrDefault(17)
+            val javaVersionInt = minOf(jvmVersionInt, 17)
             val ndkVersionStr = provider.getString("android.ndkVersion", "")
 
             this.compileSdk = compileSdk
@@ -101,7 +105,7 @@ class BaseAndroidPlugin : Plugin<Project> {
             }
             defaultConfig { this.minSdk = minSdk }
             compileOptions {
-                val javaVersion = org.gradle.api.JavaVersion.toVersion(jvmVersion)
+                val javaVersion = org.gradle.api.JavaVersion.toVersion(javaVersionInt.toString())
                 sourceCompatibility = javaVersion
                 targetCompatibility = javaVersion
             }

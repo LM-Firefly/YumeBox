@@ -33,6 +33,9 @@ class ProxyViewModel(
     val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxySortMode.DEFAULT)
 
+    private val _globalTimeout = MutableStateFlow(0)
+    val globalTimeout: StateFlow<Int> = _globalTimeout.asStateFlow()
+
     private val _selectedGroupIndex = MutableStateFlow(0)
     val selectedGroupIndex: StateFlow<Int> = _selectedGroupIndex.asStateFlow()
 
@@ -49,6 +52,17 @@ class ProxyViewModel(
                 }
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _testRequested = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            runCatching {
+                val config = Clash.queryOverride(Clash.OverrideSlot.Persist)
+                _globalTimeout.value = config.globalTimeout ?: 0
+            }
+        }
+    }
 
     fun patchMode(mode: TunnelState.Mode) {
         proxyDisplaySettingsStore.proxyMode.set(mode)
@@ -73,7 +87,7 @@ class ProxyViewModel(
                 showMessage(MLang.Proxy.Mode.Switched.format(modeName))
                 clashManager.refreshProxyGroups()
             }.onFailure { e ->
-                Timber.e(e, "代理模式切换失败：$mode")
+                Timber.e(e, MLang.Proxy.Mode.SwitchFailed.format(e.message ?: ""))
                 showError(MLang.Proxy.Mode.SwitchFailed.format(e.message))
             }
         }
@@ -82,6 +96,7 @@ class ProxyViewModel(
     fun testDelay(groupName: String? = null) {
         viewModelScope.launch {
             try {
+                _testRequested.value = true
                 setLoading(true)
                 clearError()
 
@@ -101,14 +116,32 @@ class ProxyViewModel(
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "延迟测试异常")
+                Timber.e(e, MLang.Proxy.Testing.Failed.format(e.message ?: ""))
                 showError(MLang.Proxy.Testing.Failed.format(e.message))
             } finally {
+                _testRequested.value = false
                 setLoading(false)
             }
         }
     }
 
+    fun refreshProxyGroups() {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                val result = clashManager.refreshProxyGroups()
+                if (result.isSuccess) {
+                    showMessage(MLang.Proxy.Refresh.Success)
+                } else {
+                    showError(MLang.Proxy.Refresh.Failed.format(result.exceptionOrNull()?.message))
+                }
+            } catch (e: Exception) {
+                showError(MLang.Proxy.Refresh.Failed.format(e.message))
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
 
     fun setSelectedGroup(index: Int) {
         val groups = proxyGroups.value
@@ -137,6 +170,34 @@ class ProxyViewModel(
                 showError(MLang.Proxy.Selection.Error.format(e.message))
             }
         }
+    }
+
+    fun forceSelectProxy(groupName: String, proxyName: String) {
+        viewModelScope.launch {
+            try {
+                val success = clashManager.forceSelectProxy(groupName, proxyName)
+                if (success) {
+                    if (proxyName.isBlank()) {
+                        showMessage(MLang.Proxy.Selection.Unpinned)
+                    } else {
+                        showMessage(MLang.Proxy.Selection.Pinned.format(proxyName))
+                    }
+                } else {
+                    showError(MLang.Proxy.Selection.Failed)
+                }
+            } catch (e: Exception) {
+                showError(MLang.Proxy.Selection.Error.format(e.message))
+            }
+        }
+    }
+
+    fun onScreenActive() {
+        clashManager.setProxyScreenActive(true)
+        refreshProxyGroups()
+    }
+
+    fun onScreenInactive() {
+        clashManager.setProxyScreenActive(false)
     }
 
     private fun sortProxies(proxies: List<Proxy>, sortMode: ProxySortMode): List<Proxy> = when (sortMode) {

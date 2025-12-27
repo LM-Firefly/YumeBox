@@ -7,19 +7,19 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 plugins {
-    id("com.android.library")
-    kotlin("android")
-    kotlin("plugin.serialization")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
     id("yumebox.base.android")
     id("yumebox.golang.config")
     id("yumebox.golang.tasks")
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("androidx.annotation:annotation-jvm:1.9.1")
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.annotation.jvm)
 }
 
 val sixteenKbPageLinkerFlags = listOf("-Wl,-z,max-page-size=16384", "-Wl,-z,common-page-size=16384")
@@ -33,6 +33,7 @@ val pruneStaleGolangOutputs = tasks.register("pruneStaleGolangOutputs") {
     val outputRoot = golangOutputDir.get().asFile
     val golangAbiFolders = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 
+    // Only use inputs/outputs for configuration cache compatibility
     inputs.dir(outputRoot)
         .skipWhenEmpty()
 
@@ -47,6 +48,7 @@ val pruneStaleGolangOutputs = tasks.register("pruneStaleGolangOutputs") {
     }
 }
 
+// 使用 ValueSource 实现配置缓存兼容的 git 信息获取
 abstract class GitCommandValueSource : ValueSource<String, GitCommandValueSource.Parameters> {
     interface Parameters : ValueSourceParameters {
         val workingDir: DirectoryProperty
@@ -69,7 +71,18 @@ abstract class GitCommandValueSource : ValueSource<String, GitCommandValueSource
     }
 }
 
+// 配置缓存兼容的 git 信息 Provider
 val mihomoDir = layout.projectDirectory.dir("src/foss/golang/mihomo")
+
+// 读取 kernel.properties
+val kernelProps = Properties()
+val kernelFile = rootProject.file("kernel.properties")
+if (kernelFile.exists()) {
+    kernelFile.inputStream().use { kernelProps.load(it) }
+}
+val mihomoSuffix = kernelProps.getProperty("external.mihomo.suffix", "")!!
+val includeTimestamp = kernelProps.getProperty("external.mihomo.includeTimestamp", "false").toBoolean()
+val mihomoBranch = kernelProps.getProperty("external.mihomo.branch", "unknown")
 
 val gitCommitProvider: Provider<String> = providers.of(GitCommandValueSource::class) {
     parameters {
@@ -83,19 +96,15 @@ val gitBranchProvider: Provider<String> = providers.of(GitCommandValueSource::cl
         workingDir.set(mihomoDir)
         args.set(listOf("branch", "--show-current"))
     }
+}.map { branch ->
+    if (branch.isBlank() || branch == "unknown") mihomoBranch else branch
 }
 
-val kernelProps = Properties()
-val kernelFile = rootProject.file("kernel.properties")
-if (kernelFile.exists()) {
-    kernelFile.inputStream().use { kernelProps.load(it) }
-}
-val mihomoSuffix = kernelProps.getProperty("external.mihomo.suffix", "")!!
-val includeTimestamp = kernelProps.getProperty("external.mihomo.includeTimestamp", "false").toBoolean()
 val buildTimestampProvider: Provider<String> = providers.provider {
     if (includeTimestamp) SimpleDateFormat("yyMMdd").format(Date()) else ""
 }
 
+// 创建任务来保存 git 信息（使用 abstract class 实现配置缓存兼容）
 abstract class MihomoGitInfoTask : DefaultTask() {
     @get:Input
     abstract val gitCommit: Property<String>
@@ -176,9 +185,11 @@ android {
     }
 }
 
-val moduleJvmTarget = gropify.project.jvm.toString()
+val moduleJvmTargetInt = gropify.project.jvm.toString().toInt()
+val moduleJavaTargetInt = minOf(moduleJvmTargetInt, 17)
+val moduleKotlinJvmTarget = moduleJavaTargetInt.toString()
 tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(moduleJvmTarget))
+    compilerOptions.jvmTarget.set(JvmTarget.fromTarget(moduleKotlinJvmTarget))
 }
 
 val abiTaskSuffixes = listOf("arm64v8a", "armeabiv7a", "x86", "x86_64")

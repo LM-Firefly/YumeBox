@@ -1,28 +1,9 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.common.util
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -93,7 +74,7 @@ object ArchiveUtil {
             prepareDestination(destination)
 
             TarArchiveInputStream(FileInputStream(tarFile)).use { tis ->
-                var entry: TarArchiveEntry? = tis.nextTarEntry
+                var entry: TarArchiveEntry? = tis.nextEntry as? TarArchiveEntry
                 while (entry != null) {
                     val outFile = resolveEntryTarget(destination, entry.name)
 
@@ -103,7 +84,7 @@ object ArchiveUtil {
                         writeEntry(tis, outFile)
                     }
 
-                    entry = tis.nextTarEntry
+                    entry = tis.nextEntry as? TarArchiveEntry
                 }
             }
             true
@@ -132,7 +113,7 @@ object ArchiveUtil {
                                 writeEntry(tis, outFile)
                             }
 
-                            entry = tis.nextTarEntry
+                            entry = tis.nextEntry as? TarArchiveEntry
                         }
                     }
                 }
@@ -143,9 +124,9 @@ object ArchiveUtil {
 
     private fun prepareDestination(destination: File) {
         if (!destination.exists()) {
-            if (!destination.mkdirs()) throw IllegalStateException("无法创建目录: ${destination.absolutePath}")
+            if (!destination.mkdirs()) throw IllegalStateException(MLang.Util.File.CannotCreateDir.format(destination.absolutePath))
         }
-        if (!destination.isDirectory) throw IllegalStateException("目标不是目录: ${destination.absolutePath}")
+        if (!destination.isDirectory) throw IllegalStateException(MLang.Util.File.TargetNotDirectory.format(destination.absolutePath))
     }
 
     private fun resolveEntryTarget(destination: File, entryName: String): File {
@@ -155,7 +136,7 @@ object ArchiveUtil {
 
         val relativePath = getRelativePath(canonicalDestination, canonicalTarget)
         if (relativePath == null || relativePath.startsWith("..")) {
-            throw SecurityException("检测到路径遍历: $entryName")
+            throw SecurityException(MLang.Util.File.PathTraversal.format(entryName))
         }
         return targetFile
     }
@@ -173,9 +154,9 @@ object ArchiveUtil {
 
     private fun ensureDirectory(directory: File) {
         if (directory.exists()) {
-            if (!directory.isDirectory) throw IllegalStateException("路径已存在但不是目录: ${directory.absolutePath}")
+            if (!directory.isDirectory) throw IllegalStateException(MLang.Util.File.PathExistsNotDirectory.format(directory.absolutePath))
         } else if (!directory.mkdirs()) {
-            throw IllegalStateException("无法创建目录: ${directory.absolutePath}")
+            throw IllegalStateException(MLang.Util.File.CannotCreateDir.format(directory.absolutePath))
         }
     }
 

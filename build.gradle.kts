@@ -1,14 +1,22 @@
+val isMergeBuild = System.getProperty("isMergeBuild") == "true"
+extra.set("isMergeBuild", isMergeBuild)
+
+tasks.register("assembleReleaseWithExtension") {
+    group = "build"
+    description = "Builds the app with the extension merged."
+    dependsOn(":app:assembleRelease")
+}
+
 plugins {
-    id("com.android.application") version "8.12.3" apply false
-    id("com.android.library") version "8.12.3" apply false
-    kotlin("android") version "2.3.0" apply false
-    kotlin("multiplatform") version "2.3.0" apply false
-    kotlin("plugin.serialization") version "2.3.0" apply false
-    kotlin("plugin.compose") version "2.3.0" apply false
-    id("org.jetbrains.compose") version "1.9.3" apply false
-    id("com.google.devtools.ksp") version "2.3.3" apply false
-    id("com.mikepenz.aboutlibraries.plugin") version "13.2.1" apply false
-    id("com.google.gms.google-services") version "4.4.4" apply false
-    id("com.google.firebase.crashlytics") version "3.0.6" apply false
-    id("dev.oom-wg.purejoy.mlang") version "+" apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.jetbrains.compose) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.aboutlibraries) apply false
+    alias(libs.plugins.purejoy.mlang) apply false
+    // Firebase plugins removed: com.google.gms.google-services and com.google.firebase.crashlytics
 }

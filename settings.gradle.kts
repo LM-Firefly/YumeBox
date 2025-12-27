@@ -1,5 +1,11 @@
 @file:Suppress("UnstableApiUsage")
+
 rootProject.name = "YumeBox"
+
+val isMergeBuild = gradle.startParameter.taskNames.any { it.contains("assembleReleaseWithExtension", ignoreCase = true) }
+if (isMergeBuild) {
+    System.setProperty("isMergeBuild", "true")
+}
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
@@ -7,6 +13,7 @@ enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 pluginManagement {
     includeBuild("build-logic")
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
@@ -26,6 +33,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://jitpack.io")
@@ -36,10 +44,6 @@ dependencyResolutionManagement {
                 includeGroupByRegex("dev\\.oom-wg.*")
             }
         }
-    }
-
-    versionCatalogs {
-        create("libs")
     }
 }
 
