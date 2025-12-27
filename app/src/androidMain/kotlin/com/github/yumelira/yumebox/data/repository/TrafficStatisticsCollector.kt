@@ -33,7 +33,7 @@ class TrafficStatisticsCollector(
 ) {
     companion object {
         private const val TAG = "TrafficStatisticsCollector"
-        private const val COLLECTION_INTERVAL_MS = 10000L
+        private const val COLLECTION_INTERVAL_MS = 5000L
     }
 
     private var collectionJob: Job? = null

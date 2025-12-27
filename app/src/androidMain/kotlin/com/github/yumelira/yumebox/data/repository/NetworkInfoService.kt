@@ -108,7 +108,7 @@ class NetworkInfoService : Closeable {
             _refreshTrigger,
             flow {
                 while (true) {
-                    kotlinx.coroutines.delay(60000)
+                    kotlinx.coroutines.delay(10000)
                     emit(Unit)
                 }
             }

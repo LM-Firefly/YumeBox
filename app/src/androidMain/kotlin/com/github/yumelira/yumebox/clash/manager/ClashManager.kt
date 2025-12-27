@@ -315,7 +315,7 @@ class ClashManager(
                     Timber.e(e, MLang.Service.Message.MonitorFailed)
                 }
 
-                delay(3000)
+                delay(1000)
             }
         }
     }
