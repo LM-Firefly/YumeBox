@@ -44,7 +44,11 @@ class GolangTasksPlugin : Plugin<Project> {
                     val goArch = golang.architectures.get()[abi] ?: throw GradleException("Unsupported ABI: $abi")
                     val clangPath = GolangUtils.getClangPath(ndkPath, abi)
 
-                    val sixteenKbPageLinkerFlags = listOf("-Wl,-z,max-page-size=16384", "-Wl,-z,common-page-size=16384")
+                    // Ensure 16KB page size for linking; include both flags for compatibility across different linkers/NDK versions.
+                    val sixteenKbPageLinkerFlags = listOf(
+                        "-Wl,-z,max-page-size=16384",
+                        "-Wl,-z,common-page-size=16384"
+                    )
                     val linkerFlags = sixteenKbPageLinkerFlags.joinToString(" ")
 
                     environment("CGO_ENABLED", "1")

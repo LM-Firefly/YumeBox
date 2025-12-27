@@ -9,11 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,7 +26,6 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
-import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.github.yumelira.yumebox.substore.SubStoreService
 import com.ramcosta.composedestinations.generated.destinations.*
 import dev.oom_wg.purejoy.mlang.MLang
@@ -37,8 +36,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.other.GitHub
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -94,7 +92,6 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
     val scrollBehavior = MiuixScrollBehavior()
     val navigator = LocalNavigator.current
     val context = LocalContext.current
-
     val versionInfo = remember { BuildConfig.VERSION_NAME }
 
     LaunchedEffect(viewModel, context) {
@@ -102,7 +99,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
             when (event) {
                 is SettingEvent.OpenWebView -> {
                     runCatching {
-                        WebViewActivity.start(context, event.url)
+                        navigator.navigate(WebViewScreenDestination(initialUrl = event.url, title = event.title)) {
+                            launchSingleTop = true
+                        }
                     }.getOrElse { throwable ->
                         context.toast(MLang.Settings.Error.WebviewFailed.format(throwable.message))
                     }
@@ -127,7 +126,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     SuperArrow(
                         title = MLang.Settings.UiSettings.App,
                         onClick = { navigator.navigate(AppSettingsScreenDestination) { launchSingleTop = true } },
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.`Settings-2`, contentDescription = null
                             )
@@ -136,7 +135,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     SuperArrow(
                         title = MLang.Settings.UiSettings.Network,
                         onClick = { navigator.navigate(NetworkSettingsScreenDestination) { launchSingleTop = true } },
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.`Wifi-cog`, contentDescription = null
                             )
@@ -144,8 +143,8 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     )
                     SuperArrow(
                         title = MLang.Settings.UiSettings.Override,
-                        onClick = { navigator.navigate(OverrideScreenDestination) { launchSingleTop = true } },
-                        leftAction = {
+                        onClick = { navigator.navigate(OverrideScreenDestination(openControllerAddress = false)) { launchSingleTop = true } },
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.`Git-merge`, contentDescription = null
                             )
@@ -158,7 +157,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                                 launchSingleTop = true
                             }
                         },
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.Meta, contentDescription = null
                             )
@@ -173,9 +172,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         title = MLang.Settings.Function.SubStore,
                         onClick = { viewModel.onSubStoreCardClicked(isAllowed = SubStoreService.isRunning) },
                         enabled = !is32BitDevice() && SubStoreService.isRunning,
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
-                                imageVector = Yume.Atom, contentDescription = null
+                                imageVector = Yume.Substore, contentDescription = null, iconSize = 1.4f
                             )
                         },
                     )
@@ -184,7 +183,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         onClick = {
                             navigator.navigate(FeatureScreenDestination) { launchSingleTop = true }
                         },
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.Rocket, contentDescription = null
                             )
@@ -198,9 +197,27 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
 
                 Card {
                     SuperArrow(
+                        title = MLang.Settings.More.TrafficStatistics,
+                        onClick = { navigator.navigate(TrafficStatisticsScreenDestination) { launchSingleTop = true } },
+                        startAction = {
+                            CircularIcon(
+                                imageVector = Yume.`Arrow-down-up`, contentDescription = null
+                            )
+                        },
+                    )
+                    SuperArrow(
+                        title = MLang.Connections.Title,
+                        onClick = { navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true } },
+                        startAction = {
+                            CircularIcon(
+                                imageVector = Yume.Link, contentDescription = null
+                            )
+                        },
+                    )
+                    SuperArrow(
                         title = MLang.Settings.More.Logs,
                         onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.`Chart-column`, contentDescription = null
                             )
@@ -209,12 +226,12 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     SuperArrow(
                         title = MLang.Settings.More.About,
                         onClick = { navigator.navigate(AboutScreenDestination) { launchSingleTop = true } },
-                        leftAction = {
+                        startAction = {
                             CircularIcon(
                                 imageVector = Yume.Github, contentDescription = null
                             )
                         },
-                        rightActions = {
+                        endActions = {
                             VersionBadge(versionInfo)
                         },
                     )

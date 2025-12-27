@@ -19,7 +19,7 @@ import kotlin.coroutines.resumeWithException
 object ClashCore {
 
     data class LoadOptions(
-        val timeoutMs: Long = 30_000L,
+        val timeoutMs: Long = 60_000L,
         val resetBeforeLoad: Boolean = true,
         val clearSessionOverride: Boolean = true
     ) {
@@ -177,4 +177,5 @@ object ClashCore {
 
     fun subscribeLogcat() = Clash.subscribeLogcat()
 
+    fun unsubscribeLogcat() = Clash.unsubscribeLogcat()
 }

@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.data.model.AppLanguage
@@ -36,10 +16,8 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val bottomBarFloating by boolFlow(false)
     val showDivider by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
-
-    val oneWord by strFlow("So 愛のために泣けるのは，君がそこにいるから")
-
-    val oneWordAuthor by strFlow("THERE IS A REASON")
-
+    val oneWord by strFlow("一个人走 默守一隅清欢")
+    val oneWordAuthor by strFlow("Firefly")
     val customUserAgent by strFlow("")
+    val logLevel by intFlow(android.util.Log.DEBUG)
 }

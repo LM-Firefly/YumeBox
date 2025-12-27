@@ -1,0 +1,96 @@
+[versions]
+agp = "8.13.2"
+agp-library = "8.13.2"
+kotlin = "2.3.0"
+compose-multiplatform = "1.9.3"
+ksp = "2.3.4"
+aboutlibraries = "13.2.1"
+purejoy-mlang = "1.+"
+activity-compose = "1.12.2"
+miuix = "0.8.0-rc04"
+haze = "1.7.1"
+mmkv = "2.3.0"
+mmkv-legacy = "1.3.16"
+koin = "4.1.1"
+compose-destinations = "2.3.0"
+okhttp = "5.3.2"
+timber = "5.0.1"
+javet = "5.0.3"
+pangutext = "1.0.5"
+commons-compress = "1.28.0"
+mlkit-barcode = "17.3.0"
+camerax = "1.5.2"
+ktor = "3.3.3"
+kotlinx-serialization = "1.9.0"
+lifecycle = "2.10.0"
+kotlinx-coroutines = "1.10.2"
+work = "2.11.0"
+reorderable = "3.0.0"
+desugar-jdk-libs = "2.1.5"
+annotation-jvm = "1.9.1"
+
+[libraries]
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+miuix = { module = "top.yukonga.miuix.kmp:miuix", version.ref = "miuix" }
+miuix-icons = { module = "top.yukonga.miuix.kmp:miuix-icons", version.ref = "miuix" }
+haze-materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = "haze" }
+mmkv = { module = "com.tencent:mmkv", version.ref = "mmkv" }
+mmkv-legacy = { module = "com.tencent:mmkv", version.ref = "mmkv-legacy" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+compose-destinations-core = { module = "io.github.raamcosta.compose-destinations:core", version.ref = "compose-destinations" }
+compose-destinations-ksp = { module = "io.github.raamcosta.compose-destinations:ksp", version.ref = "compose-destinations" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+javet-node-android = { module = "com.caoccao.javet:javet-node-android", version.ref = "javet" }
+pangutext-android = { module = "com.highcapable.pangutext:pangutext-android", version.ref = "pangutext" }
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "commons-compress" }
+mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutlibraries" }
+aboutlibraries-compose = { module = "com.mikepenz:aboutlibraries-compose", version.ref = "aboutlibraries" }
+aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar-jdk-libs" }
+androidx-annotation-jvm = { module = "androidx.annotation:annotation-jvm", version.ref = "annotation-jvm" }
+
+# Build logic dependencies
+android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-gradlePlugin = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "compose-multiplatform" }
+ksp-gradlePlugin = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+
+[bundles]
+koin = ["koin-core", "koin-android", "koin-androidx-compose"]
+camerax = ["androidx-camera-camera2", "androidx-camera-lifecycle", "androidx-camera-view", "androidx-camera-core", "androidx-camera-video"]
+ktor = ["ktor-client-core", "ktor-client-android", "ktor-client-content-negotiation", "ktor-serialization-kotlinx-json"]
+aboutlibraries = ["aboutlibraries-core", "aboutlibraries-compose", "aboutlibraries-compose-m3"]
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp-library" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
+purejoy-mlang = { id = "dev.oom-wg.purejoy.mlang", version.ref = "purejoy-mlang" }

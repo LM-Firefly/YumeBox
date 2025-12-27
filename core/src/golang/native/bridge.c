@@ -1,9 +1,3 @@
-// Copyright (c) YumeYuka 2025.
-//
-// This work is free. You can redistribute it and/or modify it under the
-// terms of the Do What The Fuck You Want To Public License, Version 2,
-//  as published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
-
 #include "bridge.h"
 #include "trace.h"
 
@@ -18,10 +12,21 @@ void (*fetch_report_func)(void *fetch_callback, const char *status_json);
 void (*fetch_complete_func)(void *fetch_callback, const char *error);
 
 int (*logcat_received_func)(void *logcat_interface, const char *payload);
+int (*connection_received_func)(void *connection_interface, const char *payload);
 
 int (*open_content_func)(const char *url, char *error, int error_length);
 
 void (*release_object_func)(void *obj);
+
+int connection_received(void *connection_interface, char *payload) {
+    TRACE_METHOD();
+
+    int result = connection_received_func(connection_interface, payload);
+
+    free(payload);
+
+    return result;
+}
 
 void mark_socket(void *interface, int fd) {
     TRACE_METHOD();
