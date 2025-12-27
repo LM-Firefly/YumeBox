@@ -1,6 +1,11 @@
 package com.github.yumelira.yumebox.clash.manager
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
+import android.os.PowerManager
 import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.clash.config.RouteConfig
 import com.github.yumelira.yumebox.clash.core.ClashCore
@@ -20,18 +25,24 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxyState
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import timber.log.Timber
+import dev.oom_wg.purejoy.mlang.MLang
 import java.io.Closeable
 import java.io.File
 import java.net.InetSocketAddress
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.*
+import timber.log.Timber
 
 class ClashManager(
     private val context: Context,
     private val workDir: File,
     private val proxyModeProvider: (() -> TunnelState.Mode)? = null
 ) : Closeable {
+    companion object {
+        private const val TAG = "ClashManager"
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val selectionDao = SelectionDao(context)
 
@@ -59,33 +70,96 @@ class ClashManager(
     private val _currentProfile = MutableStateFlow<Profile?>(null)
     val currentProfile: StateFlow<Profile?> = _currentProfile.asStateFlow()
 
-    private val _trafficNow = MutableStateFlow(TrafficData.ZERO)
-    val trafficNow: StateFlow<TrafficData> = _trafficNow.asStateFlow()
+    public val screenStateFlow = kotlinx.coroutines.flow.callbackFlow {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val isScreenOn = intent.action == Intent.ACTION_SCREEN_ON
+                trySend(isScreenOn)
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            context.registerReceiver(receiver, filter)
+        }
+        trySend(powerManager.isInteractive)
+        awaitClose { 
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to unregister screen state receiver")
+            }
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, true)
 
-    private val _trafficTotal = MutableStateFlow(TrafficData.ZERO)
-    val trafficTotal: StateFlow<TrafficData> = _trafficTotal.asStateFlow()
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val sharedTrafficFlow = screenStateFlow.transformLatest { isScreenOn ->
+        if (isScreenOn) {
+            while (true) {
+                if (_proxyState.value is ProxyState.Running) {
+                    try {
+                        val now = TrafficData.from(ClashCore.queryTrafficNow())
+                        val total = TrafficData.from(ClashCore.queryTrafficTotal())
+                        emit(now to total)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to query traffic data")
+                        emit(TrafficData.ZERO to TrafficData.ZERO)
+                    }
+                } else {
+                    emit(TrafficData.ZERO to TrafficData.ZERO)
+                }
+                delay(1000L)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+        .shareIn(scope, SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000), replay = 1)
 
-    private val _tunnelState = MutableStateFlow<TunnelState?>(null)
-    val tunnelState: StateFlow<TunnelState?> = _tunnelState.asStateFlow()
+    fun createTrafficFlow() = sharedTrafficFlow
+
+    val trafficNow: StateFlow<TrafficData> = sharedTrafficFlow.map { it.first }
+        .stateIn(scope, SharingStarted.WhileSubscribed(1000), TrafficData.ZERO)
+
+    val trafficTotal: StateFlow<TrafficData> = sharedTrafficFlow.map { it.second }
+        .stateIn(scope, SharingStarted.WhileSubscribed(1000), TrafficData.ZERO)
+
+    suspend fun queryTunnelState(): TunnelState? = withContext(Dispatchers.IO) {
+        if (_proxyState.value is ProxyState.Running) {
+            runCatching { ClashCore.queryTunnelState() }.getOrNull()
+        } else {
+            null
+        }
+    }
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyStateRepository.proxyGroups
 
-    private val _logs = MutableSharedFlow<LogMessage>(replay = 100)
-    val logs: SharedFlow<LogMessage> = _logs.asSharedFlow()
-
-    private var monitorJob: Job? = null
-    private var logJob: Job? = null
+    val logs: SharedFlow<LogMessage> = flow {
+        val channel = ClashCore.subscribeLogcat()
+        try {
+            for (log in channel) {
+                if (!log.message.contains("Request interrupted by user") && !log.message.contains(MLang.Proxy.PullToRefresh.DelaySuccess)) {
+                    emit(log)
+                }
+            }
+        } finally {
+            ClashCore.unsubscribeLogcat()
+        }
+    }.flowOn(Dispatchers.IO).shareIn(scope, SharingStarted.WhileSubscribed(5000), replay = 100)
 
     init {
         workDir.mkdirs()
-        startLogSubscription()
     }
 
     suspend fun loadProfile(profile: Profile): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val configDir = getConfigDir(profile)
             if (!configDir.exists() || !configDir.isDirectory) {
-                return@withContext Result.failure(IllegalStateException("配置目录不存在: ${profile.name}"))
+                return@withContext Result.failure(IllegalStateException(MLang.Service.Message.ConfigDirMissing.format(profile.name)))
             }
 
             val loadResult = ClashCore.loadConfig(
@@ -95,11 +169,21 @@ class ClashManager(
             )
 
             if (loadResult.isFailure) {
+                val error = loadResult.exceptionOrNull()
+                Timber.e(error, MLang.Service.Status.ConfigLoadFailedWithProfile.format(profile.name))
                 return@withContext loadResult
             }
 
             _currentProfile.value = profile
             currentProfileId.set(profile.id)
+
+            runCatching {
+                val persistOverride = ClashCore.queryOverride(Clash.OverrideSlot.Persist)
+                ClashCore.patchOverride(Clash.OverrideSlot.Session, persistOverride)
+                Timber.tag(TAG).d("Reapplied Persist override to Session after load: externalController=%s", persistOverride.externalController)
+            }.onFailure { e ->
+                Timber.w(e, "Failed to reapply Persist override to Session after load")
+            }
 
             proxyModeProvider?.let { provider ->
                 runCatching {
@@ -112,6 +196,8 @@ class ClashManager(
                     val session = ClashCore.queryOverride(Clash.OverrideSlot.Session)
                     session.mode = mode
                     ClashCore.patchOverride(Clash.OverrideSlot.Session, session)
+                }.onFailure { e ->
+                    Timber.e(e, MLang.Service.Status.UnknownError)
                 }
             }
 
@@ -138,12 +224,31 @@ class ClashManager(
             proxyStateRepository.start()
 
             scope.launch {
-                runCatching { proxyStateRepository.syncOnce() }
+                try {
+                    val selections = selectionDao.getAllSelections(profile.id)
+                    selections.forEach { (groupName, proxyName) ->
+                        runCatching {
+                            ClashCore.selectProxy(groupName, proxyName)
+                        }.onFailure { e ->
+                            Timber.e(e, MLang.Service.Status.UnknownError + ": $groupName -> $proxyName")
+                        }
+                    }
+                    runCatching { proxyStateRepository.restoreSelections(profile.id) }
+                        .onFailure { Timber.w(it, "Restore pinned selections failed") }
+                    proxyStateRepository.syncFromCore()
+                } catch (e: Exception) {
+                    Timber.e(e, MLang.Service.Status.UnknownError)
+                }
             }
-
+            scope.launch {
+                runCatching { proxyStateRepository.syncFromCore() }
+                    .onFailure { Timber.w(it, "Background sync failed") }
+            }
             Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e.toConfigImportException())
+            val importException = e.toConfigImportException()
+            Timber.e(importException, MLang.Service.Status.ConfigLoadFailedWithProfile.format(profile.name))
+            Result.failure(importException)
         }
     }
 
@@ -170,7 +275,7 @@ class ClashManager(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val profile =
-                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException("请先加载配置"))
+                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException(MLang.Proxy.Message.LoadProfileFirst))
 
             _proxyState.value = ProxyState.Connecting(RunningMode.Tun)
 
@@ -215,12 +320,12 @@ class ClashManager(
             )
 
             _proxyState.value = ProxyState.Running(profile, RunningMode.Tun)
-            startMonitor()
 
             Result.success(Unit)
         } catch (e: Exception) {
             val importException = e.toConfigImportException()
-            _proxyState.value = ProxyState.Error("TUN启动失败: ${importException.message}", importException)
+            Timber.e(importException, MLang.Service.Status.TunStartFailed.format(importException.message ?: ""))
+            _proxyState.value = ProxyState.Error(MLang.Service.Status.TunStartFailed.format(importException.message ?: ""), importException)
             Result.failure(importException)
         }
     }
@@ -230,19 +335,19 @@ class ClashManager(
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
             val profile =
-                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException("请先加载配置"))
+                _currentProfile.value ?: return@withContext Result.failure(IllegalStateException(MLang.Proxy.Message.LoadProfileFirst))
 
             _proxyState.value = ProxyState.Connecting(RunningMode.Http(config.address))
 
             val address = ClashCore.startHttp(config.listenAddress) ?: config.address
 
             _proxyState.value = ProxyState.Running(profile, RunningMode.Http(address))
-            startMonitor()
 
             Result.success(address)
         } catch (e: Exception) {
             val importException = e.toConfigImportException()
-            _proxyState.value = ProxyState.Error("HTTP启动失败: ${importException.message}", importException)
+            Timber.e(importException, MLang.Service.Status.HttpStartFailed.format(importException.message ?: ""))
+            _proxyState.value = ProxyState.Error(MLang.Service.Status.HttpStartFailed.format(importException.message ?: ""), importException)
             Result.failure(importException)
         }
     }
@@ -255,45 +360,11 @@ class ClashManager(
 
         runCatching {
             proxyStateRepository.stop()
-            stopMonitor()
             resetState()
         }.onFailure {
             runCatching { ClashCore.reset() }
             proxyStateRepository.stop()
-            stopMonitor()
             resetState()
-        }
-    }
-
-
-    private fun startMonitor() {
-        stopMonitor()
-
-        monitorJob = scope.launch {
-            while (isActive) {
-                runCatching {
-                    _trafficNow.value = TrafficData.from(ClashCore.queryTrafficNow())
-                    _trafficTotal.value = TrafficData.from(ClashCore.queryTrafficTotal())
-                    _tunnelState.value = ClashCore.queryTunnelState()
-                }
-                delay(1000)
-            }
-        }
-    }
-
-    private fun stopMonitor() {
-        monitorJob?.cancel()
-        monitorJob = null
-    }
-
-    private fun startLogSubscription() {
-        logJob = scope.launch {
-            val channel = ClashCore.subscribeLogcat()
-            for (log in channel) {
-                if (!log.message.contains("Request interrupted by user") && !log.message.contains("更新延迟")) {
-                    _logs.emit(log)
-                }
-            }
         }
     }
 
@@ -301,14 +372,11 @@ class ClashManager(
         _proxyState.value = ProxyState.Idle
         _currentProfile.value = null
         currentProfileId.set(null)
-        _trafficNow.value = TrafficData.ZERO
-        _trafficTotal.value = TrafficData.ZERO
-        _tunnelState.value = null
     }
 
     suspend fun reloadCurrentProfile(): Result<Unit> = withContext(Dispatchers.IO) {
         val profile = _currentProfile.value
-            ?: return@withContext Result.failure(IllegalStateException("没有加载的配置"))
+            ?: return@withContext Result.failure(IllegalStateException(MLang.Proxy.Message.LoadProfileFirst))
         loadProfile(profile)
     }
 
@@ -316,9 +384,21 @@ class ClashManager(
         return proxyStateRepository.syncFromCore()
     }
 
-    suspend fun selectProxy(groupName: String, proxyName: String): Boolean {
-        return proxyStateRepository.selectProxy(groupName, proxyName).getOrDefault(false)
+    fun setProxyScreenActive(active: Boolean) {
+        if (active) {
+            proxyStateRepository.start()
+        } else {
+            proxyStateRepository.stop()
+        }
     }
+
+    suspend fun selectProxy(groupName: String, proxyName: String): Boolean {
+        val res = proxyStateRepository.selectProxy(groupName, proxyName, _currentProfile.value)
+        return res.getOrNull() ?: false
+    }
+
+    suspend fun forceSelectProxy(groupName: String, proxyName: String): Boolean =
+        proxyStateRepository.forceSelectProxy(groupName, proxyName, _currentProfile.value)
 
     suspend fun healthCheck(groupName: String): Result<Unit> {
         return proxyStateRepository.testGroupDelay(groupName)
@@ -329,8 +409,6 @@ class ClashManager(
     }
 
     override fun close() {
-        logJob?.cancel()
-        monitorJob?.cancel()
         proxyStateRepository.close()
         scope.cancel("ClashManager closed")
         resetState()

@@ -3,6 +3,7 @@ package com.github.yumelira.yumebox.service
 import android.app.Notification
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
@@ -17,10 +18,12 @@ import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
 import java.net.InetSocketAddress
 import java.security.SecureRandom
+import timber.log.Timber
 
 class ClashVpnService : VpnService() {
 
@@ -30,6 +33,7 @@ class ClashVpnService : VpnService() {
         const val EXTRA_PROFILE_ID = "profile_id"
 
         private val random = SecureRandom()
+        private const val TAG = "ClashVpnService"
 
         fun start(context: Context, profileId: String) {
             val intent = Intent(context, ClashVpnService::class.java).apply {
@@ -61,6 +65,7 @@ class ClashVpnService : VpnService() {
 
     private var notificationJob: Job? = null
     private var serviceScope: CoroutineScope? = null
+    private var appListModule: com.github.yumelira.yumebox.service.AppListCacheModule? = null
 
     private var vpnInterface: ParcelFileDescriptor? = null
     private var tunFd: Int? = null
@@ -76,7 +81,7 @@ class ClashVpnService : VpnService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(
             ServiceNotificationManager.VPN_CONFIG.notificationId,
-            notificationManager.create("正在连接...", "正在建立连接", false)
+            notificationManager.create(MLang.Service.Status.Connecting, MLang.Service.Status.Establishing, false)
         )
 
         when (intent?.action) {
@@ -85,6 +90,7 @@ class ClashVpnService : VpnService() {
                 if (profileId != null) {
                     startVpn(profileId)
                 } else {
+                    Timber.tag(TAG).e(MLang.Service.Message.ProfileIdMissing)
                     stopSelf()
                 }
             }
@@ -97,52 +103,59 @@ class ClashVpnService : VpnService() {
     }
 
     private fun startVpn(profileId: String) {
-        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         serviceScope?.launch {
             try {
-
-                val profile = profilesStore.getAllProfiles().find { it.id == profileId }
-                if (profile == null) {
-                    showErrorNotification("启动失败", "配置文件不存在")
-                    return@launch
-                }
-
-
-                val loadResult = clashManager.loadProfile(profile)
-                if (loadResult.isFailure) {
-                    val error = loadResult.exceptionOrNull()
-                    showErrorNotification("启动失败", error?.message ?: "配置加载失败")
-                    return@launch
-                }
-
-                vpnInterface = withContext(Dispatchers.IO) { establishVpnInterface() }
-                    ?: run {
-                        showErrorNotification("启动失败", "无法建立 VPN 连接")
-                        return@launch
+                withTimeout(15000) {
+                    val profile = profilesStore.getAllProfiles().find { it.id == profileId }
+                    if (profile == null) {
+                        throw IllegalStateException(MLang.ProfilesVM.Error.ProfileNotExist)
                     }
 
-                val pfd = vpnInterface!!
-                val rawFd = pfd.detachFd()
+                    val loadResult = clashManager.loadProfile(profile)
+                    if (loadResult.isFailure) {
+                        val error = loadResult.exceptionOrNull()
+                        throw IllegalStateException(error?.message ?: MLang.Service.Status.ConfigLoadFailed)
+                    }
 
-                runCatching { pfd.close() }
-                vpnInterface = null
+                    vpnInterface = establishVpnInterface()
+                        ?: throw IllegalStateException(MLang.Service.Status.VpnEstablishFailed)
 
-                val config = Configuration.TunConfig()
-                val tunConfig = config.copy(
-                    stack = networkSettings.tunStack.value.name.lowercase(),
-                    dnsHijacking = networkSettings.dnsHijack.value
-                )
+                    val pfd = vpnInterface!!
+                    val rawFd = pfd.detachFd()
 
-                clashManager.startTun(
-                    fd = rawFd,
-                    config = tunConfig,
-                    enableIPv6 = networkSettings.enableIPv6.value,
-                    markSocket = { protect(it) }
-                )
+                    runCatching { pfd.close() }
+                    vpnInterface = null
 
-                startNotificationUpdate()
+                    val config = Configuration.TunConfig()
+                    val tunDns = if (networkSettings.dnsHijack.value) config.dns else "0.0.0.0"
+                    val tunConfig = config.copy(
+                        stack = networkSettings.tunStack.value.name.lowercase(),
+                        dnsHijacking = networkSettings.dnsHijack.value,
+                        dns = tunDns
+                    )
+
+                    val startResult = clashManager.startTun(
+                        fd = rawFd,
+                        config = tunConfig,
+                        enableIPv6 = networkSettings.enableIPv6.value,
+                        markSocket = { protect(it) },
+                        querySocketUid = ::querySocketUid
+                    )
+
+                    if (startResult.isFailure) {
+                        throw IllegalStateException(startResult.exceptionOrNull()?.message ?: "Failed to start TUN")
+                    }
+
+                    startNotificationUpdate()
+                    appListModule = com.github.yumelira.yumebox.service.AppListCacheModule(this@ClashVpnService, serviceScope!!).apply { start() }
+                }
+            } catch (e: TimeoutCancellationException) {
+                Timber.tag(TAG).e(e, "VPN startup timed out")
+                showErrorNotification(MLang.Service.Status.StartFailed, "Connection timeout")
             } catch (e: Exception) {
-                showErrorNotification("启动失败", e.message ?: "未知错误")
+                Timber.tag(TAG).e(e, "VPN startup failed")
+                showErrorNotification(MLang.Service.Status.StartFailed, e.message ?: MLang.Service.Status.UnknownError)
             }
         }
     }
@@ -150,7 +163,7 @@ class ClashVpnService : VpnService() {
     private fun startNotificationUpdate() {
         notificationJob?.cancel()
         notificationJob = notificationManager.startTrafficUpdate(
-            serviceScope!!, clashManager, appSettingsStorage
+            serviceScope!! + Dispatchers.IO, clashManager, appSettingsStorage
         )
     }
 
@@ -189,6 +202,15 @@ class ClashVpnService : VpnService() {
         val port = address.substring(lastColon + 1).toInt()
         return InetSocketAddress(host, port)
     }
+    private fun querySocketUid(protocol: Int, source: InetSocketAddress, target: InetSocketAddress): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return -1
+        val cm = connectivityManager ?: (getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager).also { connectivityManager = it }
+        return runCatching {
+            cm?.getConnectionOwnerUid(protocol, source, target) ?: -1
+        }.getOrElse { -1 }
+    }
+
+    private var connectivityManager: ConnectivityManager? = null
 
     private fun establishVpnInterface(): ParcelFileDescriptor? = runCatching {
         val config = Configuration.TunConfig()
@@ -262,6 +284,8 @@ class ClashVpnService : VpnService() {
 
     private fun stopVpn() {
         stopNotificationUpdate()
+        appListModule?.stop()
+        appListModule = null
 
         clashManager.stop()
 

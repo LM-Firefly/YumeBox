@@ -1,25 +1,6 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.data.model
 
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.Serializable
 import java.util.*
 
@@ -32,8 +13,8 @@ enum class ProfileType {
 @Serializable
 data class Subscription(
     val id: String = UUID.randomUUID().toString(),
-    val name: String = "我的订阅",
-    val provider: String = "未知服务商",
+    val name: String = MLang.ProfilesPage.Message.MySubscription,
+    val provider: String = MLang.ProfilesPage.Provider.Unknown,
     val enabled: Boolean = true,
     val plan: String? = null,
     val expireAt: Long? = null,
@@ -64,28 +45,27 @@ data class Profile(
     val totalBytes: Long? = null,
     val lastUpdatedAt: Long? = null,
     val order: Int = 0,
+    val autoUpdateMinutes: Int = 0,
 ) {
     fun getDisplayProvider(): String = when (type) {
-        ProfileType.URL -> provider ?: "远程订阅"
-        ProfileType.FILE -> "本地文件"
+        ProfileType.URL -> provider ?: MLang.ProfilesPage.Provider.Remote
+        ProfileType.FILE -> MLang.ProfilesPage.Provider.Local
     }
 
     fun getInfoText(): String = when (type) {
         ProfileType.URL -> {
             buildString {
                 if (totalBytes != null && totalBytes > 0) {
-                    val usedPercent = usedBytes * 100 / totalBytes
-                    append(
-                        "流量: ${com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes)}/${
-                            com.github.yumelira.yumebox.common.util.ByteFormatter.format(
-                                totalBytes
-                            )
-                        } ($usedPercent%)"
-                    )
+                    val usedPercent = (usedBytes * 100 / totalBytes).toInt()
+                    append(MLang.ProfilesPage.Info.TrafficFormat.format(
+                        com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes),
+                        com.github.yumelira.yumebox.common.util.ByteFormatter.format(totalBytes),
+                        usedPercent
+                    ))
                 } else if (usedBytes > 0) {
-                    append("已用流量: ${com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes)}")
+                    append(MLang.ProfilesPage.Info.UsedBytes.format(com.github.yumelira.yumebox.common.util.ByteFormatter.format(usedBytes)))
                 } else {
-                    append("点击更新")
+                    append(MLang.ProfilesPage.Info.ClickToUpdate)
                 }
 
                 expireAt?.let { expire ->
@@ -97,21 +77,21 @@ data class Profile(
                     if (isNotEmpty()) append("\n")
 
                     if (daysLeft > 0) {
-                        append("到期于: $expireDate (剩余 ${daysLeft}天)")
+                        append(MLang.ProfilesPage.Info.ExpireAt.format(expireDate, daysLeft))
                     } else if (daysLeft == 0L) {
-                        append("今日到期")
+                        append(MLang.ProfilesPage.Info.ExpiresToday)
                     } else {
-                        append("已过期: $expireDate")
+                        append(MLang.ProfilesPage.Info.Expired.format(expireDate))
                     }
                 }
 
                 lastUpdatedAt?.let { updated ->
-                    append("|${getRelativeTimeString(updated)}")
+                    append(MLang.ProfilesPage.Info.UpdatedSuffix.format(getRelativeTimeString(updated)))
                 }
             }
         }
 
-        ProfileType.FILE -> "本地配置"
+        ProfileType.FILE -> MLang.ProfilesPage.Info.Local
     }
 
     private fun getRelativeTimeString(timestamp: Long): String {
@@ -121,12 +101,12 @@ data class Profile(
         val hours = diff / (1000 * 60 * 60)
 
         return when {
-            diff < 60 * 1000 -> "刚刚"
-            minutes < 60 -> "$minutes 分钟前"
-            hours < 24 -> "$hours 小时前"
+            diff < 60 * 1000 -> MLang.ProfilesPage.Time.JustNow
+            minutes < 60 -> MLang.ProfilesPage.Time.MinutesAgo.format(minutes)
+            hours < 24 -> MLang.ProfilesPage.Time.HoursAgo.format(hours)
             else -> {
                 val days = diff / (1000 * 60 * 60 * 24)
-                "$days 天前"
+                MLang.ProfilesPage.Time.DaysAgo.format(days)
             }
         }
     }

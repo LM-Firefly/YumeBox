@@ -1,17 +1,19 @@
 package com.github.yumelira.yumebox.clash.importer
 
+import dev.oom_wg.purejoy.mlang.MLang
+
 sealed class ImportState {
     object Idle : ImportState()
 
     data class Preparing(
-        val message: String = "准备导入..."
+        val message: String = MLang.ProfilesPage.Import.Preparing
     ) : ImportState()
 
     data class Downloading(
         val progress: Int,
         val currentBytes: Long,
         val totalBytes: Long,
-        val message: String = "下载配置中..."
+        val message: String = MLang.ProfilesPage.Import.Downloading
     ) : ImportState() {
         val progressPercent: Int
             get() = if (totalBytes > 0) {
@@ -21,12 +23,12 @@ sealed class ImportState {
 
     data class Copying(
         val progress: Int,
-        val message: String = "复制文件中..."
+        val message: String = MLang.ProfilesPage.Import.Copying
     ) : ImportState()
 
     data class Validating(
         val progress: Int,
-        val message: String = "验证配置..."
+        val message: String = MLang.ProfilesPage.Import.Validating
     ) : ImportState()
 
     data class LoadingProviders(
@@ -34,7 +36,7 @@ sealed class ImportState {
         val currentProvider: String?,
         val totalProviders: Int,
         val completedProviders: Int,
-        val message: String = "加载资源..."
+        val message: String = MLang.ProfilesPage.Import.DownloadingExternal
     ) : ImportState() {
         val providerProgress: String
             get() = "$completedProviders/$totalProviders"
@@ -47,16 +49,16 @@ sealed class ImportState {
         val nextRetryInSeconds: Int
     ) : ImportState() {
         val retryMessage: String
-            get() = "第 $attempt/$maxAttempts 次重试，原因: $reason"
+            get() = MLang.ProfilesPage.Import.Message.Retrying.format(attempt, maxAttempts, reason)
     }
 
     data class Cleaning(
-        val message: String = "清理临时文件..."
+        val message: String = MLang.ProfilesPage.Import.Message.FileAccessError
     ) : ImportState()
 
     data class Success(
         val configPath: String,
-        val message: String = "导入成功"
+        val message: String = MLang.ProfilesPage.Import.Success
     ) : ImportState()
 
     data class Failed(
@@ -69,7 +71,7 @@ sealed class ImportState {
     }
 
     data class Cancelled(
-        val message: String = "导入已取消"
+        val message: String = MLang.ProfilesPage.Import.Canceled
     ) : ImportState()
 
 }

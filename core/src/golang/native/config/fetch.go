@@ -42,7 +42,7 @@ func GetCustomUserAgent() string {
 	if customUserAgent != "" {
 		return customUserAgent
 	}
-	return "ClashMetaForAndroid/" + app.VersionName()
+	return "clash.meta/" + app.VersionName()
 }
 
 func openUrl(ctx context.Context, url string) (io.ReadCloser, error) {

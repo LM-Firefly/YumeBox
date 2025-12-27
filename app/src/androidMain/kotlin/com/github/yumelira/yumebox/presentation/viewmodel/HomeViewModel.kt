@@ -1,29 +1,10 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.Profile
@@ -33,11 +14,23 @@ import com.github.yumelira.yumebox.data.repository.ProxyChainResolver
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.github.yumelira.yumebox.domain.model.Connection
+import com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot
+import com.github.yumelira.yumebox.domain.model.TrafficData
+import dev.oom_wg.purejoy.mlang.MLang
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import timber.log.Timber
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     application: Application,
     private val proxyFacade: ProxyFacade,
@@ -47,6 +40,12 @@ class HomeViewModel(
     private val networkInfoService: NetworkInfoService,
     private val proxyChainResolver: ProxyChainResolver
 ) : AndroidViewModel(application) {
+    companion object {
+        private const val TAG = "HomeViewModel"
+        private val SUSPICIOUS_TYPE_LOGGED = AtomicBoolean(false)
+    }
+
+    private val json = Json { ignoreUnknownKeys = true }
 
     val profiles: StateFlow<List<Profile>> = profilesRepository.profiles
     val recommendedProfile: StateFlow<Profile?> = profilesRepository.recommendedProfile
@@ -56,7 +55,67 @@ class HomeViewModel(
     val currentProfile = proxyFacade.currentProfile
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
-    val tunnelState = proxyFacade.tunnelState
+    val connections: StateFlow<List<Connection>> = isRunning.flatMapLatest { running ->
+        if (running) {
+            flow {
+                while (true) {
+                    try {
+                        val (controller, secret) = Configuration.getSmartControllerAndSecret()
+                        val url = URL("http://$controller/connections")
+                        val connection = url.openConnection() as HttpURLConnection
+                        connection.requestMethod = "GET"
+                        if (secret.isNotEmpty()) {
+                            connection.setRequestProperty("Authorization", "Bearer $secret")
+                        }
+                        connection.connectTimeout = 1000
+                        connection.readTimeout = 1000
+                        val responseCode = connection.responseCode
+                        if (responseCode == 200) {
+                            val jsonString = connection.inputStream.bufferedReader().use { it.readText() }
+                            val snapshot = json.decodeFromString<ConnectionsSnapshot>(jsonString)
+                            val rawConnections = snapshot.connections ?: emptyList()
+                            val suspiciousFound = rawConnections.any { conn ->
+                                conn.metadata.type.matches(Regex("^n\\d+$"))
+                            }
+                            if (suspiciousFound && SUSPICIOUS_TYPE_LOGGED.compareAndSet(false, true)) {
+                                Timber.tag(TAG).w("Suspicious metadata.type detected in connections; dumping JSON for analysis")
+                                Timber.tag(TAG).d(jsonString)
+                            }
+                            val sanitized = rawConnections.map { conn ->
+                                conn.copy(
+                                    metadata = conn.metadata.copy(
+                                        sourceIP = conn.metadata.sourceIP.ifBlank { "<unknown>" },
+                                        destinationIP = conn.metadata.destinationIP.ifBlank { "<unknown>" },
+                                        host = conn.metadata.host.ifBlank { "<unknown>" },
+                                        process = conn.metadata.process.ifBlank { "" }
+                                    ),
+                                    chains = conn.chains.map { it.ifBlank { "<unknown>" } },
+                                    rule = conn.rule.ifBlank { "<unknown>" },
+                                    rulePayload = conn.rulePayload
+                                )
+                            }.take(200) // limit to avoid huge lists
+                            emit(sanitized)
+                        } else {
+                            Timber.tag(TAG).e("Failed to poll connections: $responseCode")
+                            emit(emptyList())
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).e(e, "Error polling connections")
+                        emit(emptyList())
+                    }
+                    delay(2000)
+                }
+            }
+        } else {
+            flowOf(emptyList())
+        }
+    }
+    .flowOn(Dispatchers.IO)
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
     val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
@@ -75,8 +134,21 @@ class HomeViewModel(
     )
     val vpnPrepareIntent = _vpnPrepareIntent.asSharedFlow()
 
-    private val _speedHistory = MutableStateFlow<List<Long>>(emptyList())
-    val speedHistory: StateFlow<List<Long>> = _speedHistory.asStateFlow()
+    val speedHistory: StateFlow<List<TrafficData>> = flow {
+        val history = java.util.ArrayDeque<TrafficData>(24)
+        repeat(24) { history.add(TrafficData.ZERO) }
+        while (true) {
+            val sample = proxyFacade.trafficNow.value
+            if (history.size >= 24) history.removeFirst()
+            history.add(sample)
+            emit(history.toList())
+            delay(1000)
+        }
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = List(24) { TrafficData.ZERO }
+    )
 
     private val mainProxyNode: StateFlow<com.github.yumelira.yumebox.core.model.Proxy?> =
         combine(isRunning, proxyGroups) { running, groups ->
@@ -107,12 +179,8 @@ class HomeViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IpMonitoringState.Loading)
 
-    private val _recentLogs = MutableStateFlow<List<LogMessage>>(emptyList())
-
     init {
         syncDisplayState()
-        subscribeToLogs()
-        startSpeedSampling()
     }
 
     private fun syncDisplayState() {
@@ -134,19 +202,19 @@ class HomeViewModel(
             // 从 ProfilesStore 获取配置
             val profile = profilesRepository.profiles.value.find { it.id == profileId }
             if (profile == null) {
-                showError("配置切换失败: 配置不存在")
+                showError(MLang.Home.Message.ConfigSwitchFailed.format(MLang.ProfilesVM.Error.ProfileNotExist))
                 return
             }
 
             // 重新加载配置
             val result = clashManager.loadProfile(profile)
             if (result.isSuccess) {
-                showMessage("配置已切换")
+                showMessage(MLang.Home.Message.ConfigSwitched)
             } else {
-                showError("配置切换失败: ${result.exceptionOrNull()?.message}")
+                showError(MLang.Home.Message.ConfigSwitchFailed.format(result.exceptionOrNull()?.message))
             }
         } catch (e: Exception) {
-            showError("配置切换失败: ${e.message}")
+            showError(MLang.Home.Message.ConfigSwitchFailed.format(e.message))
         } finally {
             setLoading(false)
         }
@@ -154,13 +222,11 @@ class HomeViewModel(
 
     fun startProxy(profileId: String, useTunMode: Boolean? = null) {
         if (_isToggling.value) return
-
         viewModelScope.launch {
             try {
                 _isToggling.value = true
                 _displayRunning.value = true
-                _uiState.update { it.copy(isStartingProxy = true, loadingProgress = "正在准备...") }
-
+                _uiState.update { it.copy(isStartingProxy = true, loadingProgress = MLang.Home.Message.Preparing) }
                 val result = proxyFacade.startProxy(profileId, useTunMode)
 
                 result.fold(onSuccess = { intent ->
@@ -176,68 +242,37 @@ class HomeViewModel(
                     _displayRunning.value = false
                     _isToggling.value = false
                     _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                    showError("启动失败: ${error.message}")
+                    showError(MLang.Home.Message.StartFailed.format(error.message))
                 })
             } catch (e: Exception) {
                 _displayRunning.value = false
                 _isToggling.value = false
                 _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }
-                showError("启动失败: ${e.message}")
+                showError(MLang.Home.Message.StartFailed.format(e.message))
             }
         }
     }
 
     fun stopProxy() {
         if (_isToggling.value) return
-
         viewModelScope.launch {
             try {
                 _isToggling.value = true
                 _displayRunning.value = false
                 setLoading(true)
                 proxyFacade.stopProxy()
-                showMessage("代理服务已停止")
+                showMessage(MLang.Home.Message.ProxyStopped)
             } catch (e: Exception) {
                 _displayRunning.value = true
                 _isToggling.value = false
-                showError("停止失败: ${e.message}")
+                showError(MLang.Home.Message.StopFailed.format(e.message))
             } finally {
                 setLoading(false)
             }
         }
     }
 
-    private fun subscribeToLogs() {
-        viewModelScope.launch {
-            proxyFacade.logs.collect { log ->
-                _recentLogs.update { currentLogs ->
-                    buildList {
-                        add(log)
-                        addAll(currentLogs.take(49))
-                    }
-                }
-            }
-        }
-    }
 
-    private fun startSpeedSampling(sampleLimit: Int = 24) {
-        viewModelScope.launch {
-            flow {
-                while (true) {
-                    emit(proxyFacade.trafficNow.value.download.coerceAtLeast(0L))
-                    kotlinx.coroutines.delay(1000L)
-                }
-            }.catch { }.collect { sample ->
-                _speedHistory.update { old ->
-                    buildList(sampleLimit) {
-                        repeat((sampleLimit - old.size - 1).coerceAtLeast(0)) { add(0L) }
-                        addAll(old.takeLast(sampleLimit - 1))
-                        add(sample)
-                    }
-                }
-            }
-        }
-    }
 
     private fun setLoading(loading: Boolean) = _uiState.update { it.copy(isLoading = loading) }
     private fun showMessage(message: String) = _uiState.update { it.copy(message = message) }

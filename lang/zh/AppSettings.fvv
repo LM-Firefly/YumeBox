@@ -8,13 +8,12 @@ AppSettings = {
         Interface = "界面"
         Service = "服务"
         Language = "语言"
+        Network = "网络"
     }
     
     Behavior = {
-        AutoStartTitle = "自动启动"
-        AutoStartSummary = "应用启动和开机时自动启动代理服务"
-        OneChinaTitle = "坚持一个中国原则"
-        OneChinaSummary = "自动将港澳台地区旗帜及区域码显示为中国"
+        AutoStartTitle = "自动重启"
+        AutoStartSummary = "应用启动、开机及异常终止后自动重启代理服务"
     }
     
     Home = {
@@ -41,6 +40,9 @@ AppSettings = {
         
         FloatingNavbarTitle = "浮动导航栏"
         FloatingNavbarSummary = "使用浮动样式的底部导航栏"
+
+        BottomBarAutoHideTitle = "滑动隐藏底栏"
+        BottomBarAutoHideSummary = "向下滑动时自动隐藏底栏，向上滑动时显示"
         
         ShowDividerTitle = "显示分割线"
         ShowDividerSummary = "在列表项之间显示分割线"
@@ -53,11 +55,16 @@ AppSettings = {
         LanguageSystem = "跟随系统"
         LanguageZh = "简体中文"
         LanguageEn = "English"
+
+        CustomUserAgentTitle = "自定义 User-Agent"
+        CustomUserAgentNotSet = "未设置，使用默认值"
     }
     
     ServiceSection = {
         TrafficNotificationTitle = "显示流量通知"
         TrafficNotificationSummary = "在通知栏中显示流量使用情况"
+        LogLevelTitle = "日志级别"
+        LogLevelSummary = "设置最低日志记录级别"
     }
     
     WarningDialog = {
@@ -69,5 +76,6 @@ AppSettings = {
     EditDialog = {
         OneWordTitle = "编辑一言"
         AuthorTitle = "编辑作者"
+        UserAgentTitle = "编辑 User-Agent"
     }
 }

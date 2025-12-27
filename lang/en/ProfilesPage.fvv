@@ -30,6 +30,8 @@ ProfilesPage = {
         SubscriptionUrl = "Subscription URL (HTTP/HTTPS)"
         SelectFile = "Click to select file"
         NewProfile = "New Profile"
+        AutoUpdateMinutes = "Auto-update (minutes)"
+        AutoUpdateHint = "0 means no auto-update"
     }
     
     QrScanner = {
@@ -54,6 +56,7 @@ ProfilesPage = {
         SelectFile = "Please select a file"
         YamlOnly = "Only .yaml or .yml format supported"
         DownloadFailed = "Profile download failed, please retry"
+        AutoUpdateMin = "Minimum is %d minutes"
     }
     
     Progress = {
@@ -72,7 +75,7 @@ ProfilesPage = {
     }
 
     EditDialog = {
-        Title = "Edit Profile Name"
+        Title = "Edit Profile"
     }
 
     LinkSettings = {
