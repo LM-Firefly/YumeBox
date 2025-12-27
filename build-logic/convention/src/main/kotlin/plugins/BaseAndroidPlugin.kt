@@ -5,7 +5,13 @@ import com.android.build.api.dsl.LibraryExtension
 import core.ConfigProvider
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 class BaseAndroidPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -18,14 +24,23 @@ class BaseAndroidPlugin : Plugin<Project> {
         project.extensions.configure<ApplicationExtension> {
             val compileSdk = provider.getInt("android.compileSdk", 34)
             val minSdk = provider.getInt("android.minSdk", 24)
-            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersionStr = provider.getString("android.jvm", provider.getString("project.jvm", ""))
+            val jvmVersionInt = runCatching { jvmVersionStr.toInt() }.getOrDefault(21)
+            val javaVersionInt = minOf(jvmVersionInt, 21)
+            val javaVersion = org.gradle.api.JavaVersion.toVersion(javaVersionInt.toString())
 
             this.compileSdk = compileSdk
             defaultConfig { this.minSdk = minSdk }
             compileOptions {
-                val javaVersion = org.gradle.api.JavaVersion.toVersion(jvmVersion)
                 sourceCompatibility = javaVersion
                 targetCompatibility = javaVersion
+            }
+
+            val toolchainService = project.extensions.getByType(JavaToolchainService::class.java)
+            project.tasks.withType(JavaCompile::class.java).configureEach {
+                javaCompiler.set(toolchainService.compilerFor {
+                    languageVersion.set(JavaLanguageVersion.of(javaVersionInt))
+                })
             }
             packaging {
                 resources {
@@ -84,6 +99,7 @@ class BaseAndroidPlugin : Plugin<Project> {
             } else {
                 project.logger.lifecycle("[signing] signing.properties not found; release builds will be unsigned.")
             }
+            configureKotlinJvm(project, javaVersionInt)
         }
     }
 
@@ -92,7 +108,9 @@ class BaseAndroidPlugin : Plugin<Project> {
         project.extensions.configure<LibraryExtension> {
             val compileSdk = provider.getInt("android.compileSdk", 34)
             val minSdk = provider.getInt("android.minSdk", 24)
-            val jvmVersion = provider.getString("android.jvm", provider.getString("project.jvm", "17"))
+            val jvmVersionStr = provider.getString("android.jvm", provider.getString("project.jvm", ""))
+            val jvmVersionInt = runCatching { jvmVersionStr.toInt() }.getOrDefault(21)
+            val javaVersionInt = minOf(jvmVersionInt, 21)
             val ndkVersionStr = provider.getString("android.ndkVersion", "")
 
             this.compileSdk = compileSdk
@@ -101,9 +119,15 @@ class BaseAndroidPlugin : Plugin<Project> {
             }
             defaultConfig { this.minSdk = minSdk }
             compileOptions {
-                val javaVersion = org.gradle.api.JavaVersion.toVersion(jvmVersion)
+                val javaVersion = org.gradle.api.JavaVersion.toVersion(javaVersionInt.toString())
                 sourceCompatibility = javaVersion
                 targetCompatibility = javaVersion
+            }
+            val toolchainService = project.extensions.getByType(JavaToolchainService::class.java)
+            project.tasks.withType(JavaCompile::class.java).configureEach {
+                javaCompiler.set(toolchainService.compilerFor {
+                    languageVersion.set(JavaLanguageVersion.of(javaVersionInt))
+                })
             }
             packaging {
                 resources {
@@ -114,6 +138,79 @@ class BaseAndroidPlugin : Plugin<Project> {
                     )
                 }
                 jniLibs { useLegacyPackaging = true }
+            }
+            configureKotlinJvm(project, javaVersionInt)
+        }
+    }
+
+    private fun configureKotlinJvm(project: Project, javaVersionInt: Int) {
+        listOf(
+            org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile::class.java,
+            org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java
+        ).forEach { taskClass ->
+            project.tasks.withType(taskClass).configureEach {
+                try {
+                    val method = this::class.java.methods.firstOrNull { it.name == "getCompilerOptions" }
+                    if (method != null) {
+                        val compilerOptions = method.invoke(this)
+                        val setJvmTarget = compilerOptions::class.java.methods.firstOrNull { it.name == "setJvmTarget" && it.parameterTypes.size == 1 && it.parameterTypes[0] == String::class.java }
+                        if (setJvmTarget != null) {
+                            setJvmTarget.invoke(compilerOptions, javaVersionInt.toString())
+                        } else {
+                            try {
+                                (this as? org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile)?.compilerOptions?.jvmTarget?.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(javaVersionInt.toString()))
+                            } catch (_: Throwable) {
+                                // no-op
+                            }
+                        }
+                    } else {
+                        try {
+                            (this as? org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile)?.compilerOptions?.jvmTarget?.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(javaVersionInt.toString()))
+                        } catch (_: Throwable) {
+                            // no-op
+                        }
+                    }
+                } catch (e: Throwable) {
+                    try {
+                        val kotlinOptionsGetter = this::class.java.methods.firstOrNull { it.name == "getKotlinOptions" }
+                            ?: this::class.java.methods.firstOrNull { it.name == "kotlinOptions" }
+                        val kotlinOptions = kotlinOptionsGetter?.invoke(this) ?: return@configureEach
+                        val setJvm = kotlinOptions::class.java.methods.firstOrNull { m ->
+                            m.name == "setJvmTarget" && m.parameterTypes.size == 1 && m.parameterTypes[0] == String::class.java
+                        }
+                        setJvm?.invoke(kotlinOptions, javaVersionInt.toString())
+                    } catch (_: Throwable) {
+                        // no-op: best-effort compatibility
+                    }
+                }
+                doFirst {
+                    try {
+                        val method = this::class.java.methods.firstOrNull { it.name == "getCompilerOptions" }
+                        if (method != null) {
+                            val compilerOptions = method.invoke(this)
+                            val setJvmTarget = compilerOptions::class.java.methods.firstOrNull { it.name == "setJvmTarget" && it.parameterTypes.size == 1 && it.parameterTypes[0] == String::class.java }
+                            setJvmTarget?.invoke(compilerOptions, javaVersionInt.toString())
+                        } else {
+                            try {
+                                (this as? org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile)?.compilerOptions?.jvmTarget?.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(javaVersionInt.toString()))
+                            } catch (_: Throwable) {
+                                // no-op
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        try {
+                            val kotlinOptionsGetter = this::class.java.methods.firstOrNull { it.name == "getKotlinOptions" }
+                                ?: this::class.java.methods.firstOrNull { it.name == "kotlinOptions" }
+                            val kotlinOptions = kotlinOptionsGetter?.invoke(this) ?: return@doFirst
+                            val setJvm = kotlinOptions::class.java.methods.firstOrNull { m ->
+                                m.name == "setJvmTarget" && m.parameterTypes.size == 1 && m.parameterTypes[0] == String::class.java
+                            }
+                            setJvm?.invoke(kotlinOptions, javaVersionInt.toString())
+                        } catch (_: Throwable) {
+                            // no-op
+                        }
+                    }
+                }
             }
         }
     }

@@ -37,8 +37,8 @@ Proxy = {
     }
     
     PullToRefresh = {
-        PullToTest = "Pull to test delay"
-        ReleaseToTest = "Release to test delay"
+        PullToTest = "Pull to test current group"
+        ReleaseToTest = "Release to test current group"
         DelaySuccess = "Delay test successful"
     }
     
@@ -46,6 +46,8 @@ Proxy = {
         Switched = "Switched to: %s"
         Failed = "Switch failed"
         Error = "Switch failed: %s"
+        Pinned = "Pinned: %s"
+        Unpinned = "Unpinned"
     }
     
     Settings = {

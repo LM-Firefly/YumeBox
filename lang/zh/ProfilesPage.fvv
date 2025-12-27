@@ -30,6 +30,8 @@ ProfilesPage = {
         SubscriptionUrl = "订阅链接 (HTTP/HTTPS)"
         SelectFile = "点击选择文件"
         NewProfile = "新配置"
+        AutoUpdateMinutes = "自动更新（分钟）"
+        AutoUpdateHint = "0 表示不自动更新"
     }
     
     QrScanner = {
@@ -47,6 +49,8 @@ ProfilesPage = {
         UrlImported = "已从链接导入配置"
         ClipboardRead = "已从剪贴板读取链接"
         UnknownFile = "未知文件"
+        DownloadFailedWithName = "配置下载失败: %s"
+        MySubscription = "我的订阅"
     }
     
     Validation = {
@@ -54,12 +58,58 @@ ProfilesPage = {
         SelectFile = "请选择文件"
         YamlOnly = "仅支持 .yaml 或 .yml 格式的配置文件"
         DownloadFailed = "配置下载失败，请重试"
+        AutoUpdateMin = "最小值为 %d 分钟"
     }
     
     Progress = {
         Downloading = "下载中..."
+        Idle = "空闲"
     }
-    
+
+    Import = {
+        Preparing = "准备导入配置..."
+        Downloading = "正在下载配置..."
+        DownloadingFile = "下载配置文件..."
+        DownloadingExternal = "下载外部资源..."
+        Validating = "验证配置..."
+        Copying = "复制配置文件..."
+        CopyingDone = "复制完成"
+        FileReady = "文件已就位"
+        Success = "导入成功"
+        Canceled = "导入已取消"
+        ImportFailed = "导入失败: %s"
+
+        Message = {
+            AlreadyImporting = "配置正在导入中: %s"
+            URLEmpty = "URL 地址为空"
+            NetworkHttpFailed = "网络请求失败 (HTTP %s): %s"
+            Retrying = "第 %d/%d 次重试，原因: %s"
+            UnableToConnect = "无法连接到服务器: %s"
+            NetworkConnFailed = "网络连接失败: %s"
+            NetworkRequest = "网络请求"
+            FormatValidationErrors = "配置文件格式错误:\n%s"
+            FormatValidationError = "配置文件格式错误: %s"
+            FileNotFound = "文件不存在: %s"
+            NoReadPermission = "没有读取权限: %s"
+            NoWritePermission = "没有写入权限: %s"
+            InsufficientSpace = "存储空间不足"
+            InvalidPath = "无效的文件路径: %s"
+            FileAccessError = "文件访问错误: %s"
+            OperationTimeout = "操作超时%s"
+            ImportCancelled = "导入已被取消"
+            PathCompareFallback = "无法比较文件路径，使用绝对路径比较"
+            CannotDetermineImportDir = "无法确定导入目录"
+            CannotCreateImportDir = "无法创建导入目录: %s"
+            CannotCreateConfigDir = "无法创建配置目录: %s"
+            CannotDetermineImportDirPath = "无法确定导入目录路径: %s"
+            ImportFailedLog = "配置导入失败: %s - %s"
+            CleanupFailed = "清理失败的导入出错: %s"
+            CleanupOrphanedSuccess = "已清理 %s 个孤儿配置"
+            CleanupOrphanedFailed = "清理孤儿配置出错"
+            UnknownError = "未知错误"
+        }
+    }
+
     Button = {
         Cancel = "取消"
         Confirm = "确定"
@@ -72,6 +122,36 @@ ProfilesPage = {
     }
 
     EditDialog = {
-        Title = "编辑配置名称"
+        Title = "编辑配置"
     }
-}
+
+    Provider = {
+        Remote = "远程订阅"
+        Local = "本地文件"
+        Unknown = "未知服务商"
+    }
+
+    Info = {
+        TrafficFormat = "流量: %s/%s (%d%%)"
+        UsedBytes = "已用流量: %s"
+        ClickToUpdate = "点击更新"
+        ExpireAt = "到期于: %s (剩余 %s天)"
+        ExpiresToday = "今日到期"
+        Expired = "已过期: %s"
+        UpdatedSuffix = "|%s"
+        Local = "本地配置"
+    }
+
+    Time = {
+        JustNow = "刚刚"
+        MinutesAgo = "%d 分钟前"
+        HoursAgo = "%d 小时前"
+        DaysAgo = "%d 天前"
+    }
+
+    Message = {
+        UnknownFile = "未知文件"
+        UnknownProfile = "未知配置"
+        DownloadFailedWithName = "配置下载失败: %s"
+    }
+} 

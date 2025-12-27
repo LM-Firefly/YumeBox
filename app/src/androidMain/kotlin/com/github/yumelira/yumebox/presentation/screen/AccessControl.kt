@@ -1,55 +1,40 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
-import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ClipData
 import android.content.Context
+import android.graphics.Bitmap
+import android.util.LruCache
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -59,12 +44,18 @@ import com.github.yumelira.yumebox.presentation.viewmodel.AccessControlViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SuperBottomSheet
+import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private val iconCache = LruCache<String, Bitmap>(100)
 
 @Composable
 @Destination<RootGraph>
@@ -85,14 +76,15 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
         Scaffold(
             topBar = {
                 TopBar(
-                    title = "访问控制",
+                    title = MLang.AccessControl.Title,
                     scrollBehavior = scrollBehavior,
+                    navigationIcon = { NavigationBackIcon(navigator = navigator) },
                     actions = {
                         IconButton(
                             modifier = Modifier.padding(end = 24.dp),
                             onClick = { showSettingsSheet.value = true }
                         ) {
-                            Icon(Yume.`Settings-2`, contentDescription = "访问控制设置")
+                            Icon(Yume.`Settings-2`, contentDescription = MLang.AccessControl.Settings.Title)
                         }
                     }
                 )
@@ -103,7 +95,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("loading...", color = MiuixTheme.colorScheme.onSurface)
+                    Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
                 }
             } else {
                 ScreenLazyColumn(
@@ -125,7 +117,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                                     onSearch = { expanded = false },
                                     expanded = expanded,
                                     onExpandedChange = { expanded = it },
-                                    label = "搜索应用..."
+                                    label = MLang.AccessControl.Search.Placeholder
                                 )
                             },
                             expanded = expanded,
@@ -135,7 +127,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     }
 
                     item {
-                        SmallTitle("应用列表 (${uiState.selectedPackages.size} 已选择)")
+                        SmallTitle(MLang.AccessControl.AppList.Title.format(uiState.selectedPackages.size))
                     }
 
                     items(
@@ -155,29 +147,27 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 }
             }
 
-            SuperBottomSheet(
+            SuperDialog(
                 show = showSettingsSheet,
-                title = "访问控制设置",
-                onDismissRequest = { showSettingsSheet.value = false },
-                insideMargin = DpSize(32.dp, 16.dp),
+                title = MLang.AccessControl.Settings.Title,
+                onDismissRequest = { showSettingsSheet.value = false }
             ) {
                 val context = LocalContext.current
-                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
+                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 Column {
                     top.yukonga.miuix.kmp.basic.Card {
                         SuperSwitch(
-                            title = "显示系统应用",
+                            title = MLang.AccessControl.Settings.ShowSystemApps,
                             checked = uiState.showSystemApps,
                             onCheckedChange = { viewModel.onShowSystemAppsChange(it) }
                         )
                         SuperSwitch(
-                            title = "倒序排列",
+                            title = MLang.AccessControl.Settings.DescendingOrder,
                             checked = uiState.descending,
                             onCheckedChange = { viewModel.onDescendingChange(it) }
                         )
                         SuperSwitch(
-                            title = "已选应用优先",
+                            title = MLang.AccessControl.Settings.SelectedFirst,
                             checked = uiState.selectedFirst,
                             onCheckedChange = { viewModel.onSelectedFirstChange(it) }
                         )
@@ -188,8 +178,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
 
                     top.yukonga.miuix.kmp.basic.Card {
                         SuperDropdown(
-                            title = "排序方式",
-                            summary = "当前：${uiState.sortMode.displayName}",
+                            title = MLang.AccessControl.Settings.SortMode,
+                            summary = MLang.AccessControl.Settings.SortModeCurrent.format(uiState.sortMode.displayName),
                             items = AccessControlViewModel.SortMode.entries.map { it.displayName },
                             selectedIndex = AccessControlViewModel.SortMode.entries
                                 .indexOf(uiState.sortMode)
@@ -200,8 +190,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                             }
                         )
                         SuperDropdown(
-                            title = "批量操作",
-                            items = listOf("全选", "全不选", "反选"),
+                            title = MLang.AccessControl.Settings.BatchOperation,
+                            items = listOf(MLang.AccessControl.Settings.SelectAll, MLang.AccessControl.Settings.DeselectAll, MLang.AccessControl.Settings.Invert),
                             selectedIndex = 0,
                             onSelectedIndexChange = { index ->
                                 when (index) {
@@ -212,13 +202,13 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                             }
                         )
                         SuperDropdown(
-                            title = "导入/导出",
-                            items = listOf("从剪贴板导入", "导出到剪贴板"),
+                            title = MLang.AccessControl.Settings.ImportExport,
+                            items = listOf(MLang.AccessControl.Settings.Import, MLang.AccessControl.Settings.Export),
                             selectedIndex = 0,
                             onSelectedIndexChange = { index ->
                                 when (index) {
                                     0 -> {
-                                        val clipData = clipboardManager.primaryClip
+                                        val clipData = clipboardManager?.primaryClip
                                         val text = if (clipData != null && clipData.itemCount > 0) {
                                             clipData.getItemAt(0)?.text?.toString() ?: ""
                                         } else {
@@ -226,19 +216,19 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                                         }
                                         if (text.isNotEmpty()) {
                                             val count = viewModel.importPackages(text)
-                                            Toast.makeText(context, "成功导入 $count 个应用", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, MLang.AccessControl.Settings.ImportSuccess.format(count), Toast.LENGTH_SHORT).show()
                                         } else {
-                                            Toast.makeText(context, "导入失败", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, MLang.AccessControl.Settings.ImportFailed, Toast.LENGTH_SHORT).show()
                                         }
                                     }
 
                                     1 -> {
                                         val exportText = viewModel.exportPackages()
                                         val clip = ClipData.newPlainText("packages", exportText)
-                                        clipboardManager.setPrimaryClip(clip)
+                                        clipboardManager?.setPrimaryClip(clip)
                                         Toast.makeText(
                                             context,
-                                            "成功导出 ${uiState.selectedPackages.size} 个应用",
+                                            MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size),
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
@@ -256,14 +246,14 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                         onClick = { showSettingsSheet.value = false },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("取消")
+                        Text(MLang.AccessControl.Button.Cancel)
                     }
                     Button(
                         onClick = { showSettingsSheet.value = false },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColorsPrimary()
                     ) {
-                        Text("确定", color = MiuixTheme.colorScheme.background)
+                        Text(MLang.AccessControl.Button.Confirm, color = MiuixTheme.colorScheme.background)
                     }
                 }
             }
@@ -301,6 +291,7 @@ private fun ExpandedSearchOverlay(
     onAppSelectionChange: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current.applicationContext
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -322,7 +313,7 @@ private fun ExpandedSearchOverlay(
             TextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
-                label = "搜索应用...",
+                label = MLang.AccessControl.Search.Placeholder,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -339,19 +330,33 @@ private fun ExpandedSearchOverlay(
                     items = filteredApps,
                     key = { it.packageName }
                 ) { app ->
+                    val icon by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), key1 = app.packageName) {
+                        if (value == null) {
+                            value = withContext(Dispatchers.IO) {
+                                try {
+                                    val drawable = context.packageManager.getApplicationIcon(app.packageName)
+                                    val bitmap = drawable.toBitmap()
+                                    iconCache.put(app.packageName, bitmap)
+                                    bitmap
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                    }
                     BasicComponent(
                         title = app.label,
                         summary = app.packageName,
-                        leftAction = {
-                            app.icon?.let { icon ->
+                        startAction = {
+                            icon?.let {
                                 Image(
-                                    bitmap = icon.toBitmap(width = 80, height = 80).asImageBitmap(),
+                                    bitmap = it.asImageBitmap(),
                                     contentDescription = app.label,
                                     modifier = Modifier.size(40.dp)
                                 )
                             }
                         },
-                        rightActions = {
+                        endActions = {
                             Checkbox(
                                 checked = app.isSelected,
                                 onCheckedChange = { checked ->
@@ -375,14 +380,29 @@ private fun AppCard(
     onSelectionChange: (Boolean) -> Unit,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current.applicationContext
+    val icon by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), key1 = app.packageName) {
+        if (value == null) {
+            value = withContext(Dispatchers.IO) {
+                try {
+                    val drawable = context.packageManager.getApplicationIcon(app.packageName)
+                    val bitmap = drawable.toBitmap()
+                    iconCache.put(app.packageName, bitmap)
+                    bitmap
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
     Card(modifier = Modifier.padding(vertical = 4.dp)) {
         BasicComponent(
             title = app.label,
             summary = app.packageName,
-            leftAction = {
-                app.icon?.let { icon ->
+            startAction = {
+                icon?.let {
                     Image(
-                        bitmap = icon.toBitmap(width = 80, height = 80).asImageBitmap(),
+                        bitmap = it.asImageBitmap(),
                         contentDescription = app.label,
                         modifier = Modifier
                             .size(45.dp)
@@ -390,7 +410,7 @@ private fun AppCard(
                     )
                 }
             },
-            rightActions = {
+            endActions = {
                 Checkbox(
                     checked = app.isSelected,
                     onCheckedChange = onSelectionChange

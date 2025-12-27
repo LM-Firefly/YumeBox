@@ -9,6 +9,7 @@ import com.github.yumelira.yumebox.core.bridge.ClashException
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.model.Traffic
 import com.github.yumelira.yumebox.core.model.TunnelState
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import timber.log.Timber
 import java.io.File
@@ -40,7 +41,7 @@ object ClashCore {
             if (!configDir.exists() || !configDir.isDirectory) {
                 return@withContext Result.failure(
                     FileAccessException(
-                        "配置目录不存在或不是目录",
+                        MLang.Service.Message.ConfigDirMissing.format("${configDir.absolutePath}"),
                         filePath = configDir.absolutePath,
                         reason = FileAccessException.Reason.NOT_FOUND
                     )
@@ -51,7 +52,7 @@ object ClashCore {
             if (!configFile.exists()) {
                 return@withContext Result.failure(
                     FileAccessException(
-                        "配置文件不存在",
+                        MLang.Util.Profile.NotExist.format(configFile.absolutePath),
                         filePath = configFile.absolutePath,
                         reason = FileAccessException.Reason.NOT_FOUND
                     )
@@ -94,17 +95,17 @@ object ClashCore {
 
         } catch (e: TimeoutCancellationException) {
             val error = TimeoutException(
-                "配置加载超时",
+                MLang.Service.Status.ConfigLoadFailed,
                 e,
                 timeoutMs = options.timeoutMs,
-                operation = "加载配置"
+                operation = MLang.Service.Operation.LoadConfig
             )
             Timber.e(error, "Config load timeout")
             Result.failure(error)
 
         } catch (e: ClashException) {
             val error = ConfigValidationException(
-                e.message ?: "配置加载失败",
+                e.message ?: MLang.Service.Status.ConfigLoadFailed,
                 e
             )
             Timber.e(error, "Config load failed")

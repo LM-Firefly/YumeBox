@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.data.repository
 
 import android.content.Context
@@ -30,6 +10,7 @@ import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import com.github.yumelira.yumebox.service.ClashHttpService
 import com.github.yumelira.yumebox.service.ClashVpnService
+import dev.oom_wg.purejoy.mlang.MLang
 import timber.log.Timber
 
 class ProxyConnectionService(
@@ -60,7 +41,7 @@ class ProxyConnectionService(
 
             Result.success(null)
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "启动代理失败")
+            Timber.tag(TAG).e(e, MLang.Service.Status.StartFailed)
             Result.failure(e)
         }
     }
@@ -72,8 +53,8 @@ class ProxyConnectionService(
         return try {
             val profile = profilesStore.getAllProfiles().find { it.id == profileId }
             if (profile == null) {
-                Timber.tag(TAG).e("未找到配置文件: $profileId")
-                return Result.failure(IllegalArgumentException("配置文件不存在"))
+                Timber.tag(TAG).e(MLang.Service.Message.ProfileNotFound.format(profileId))
+                return Result.failure(IllegalArgumentException(MLang.ProfilesPage.Message.UnknownFile))
             }
 
             profilesStore.updateLastUsedProfileId(profileId)
@@ -90,7 +71,7 @@ class ProxyConnectionService(
 
             Result.success(Unit)
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "启动代理服务失败: ${e.message}")
+            Timber.tag(TAG).e(e, MLang.Service.Message.StartProxyFailed.format(e.message ?: ""))
             Result.failure(e)
         }
     }
@@ -100,10 +81,10 @@ class ProxyConnectionService(
             when (currentMode) {
                 is RunningMode.Tun -> ClashVpnService.stop(context)
                 is RunningMode.Http -> ClashHttpService.stop(context)
-                is RunningMode.None -> Timber.tag(TAG).w("当前没有运行的代理服务")
+                is RunningMode.None -> Timber.tag(TAG).w(MLang.Service.Message.NoRunningProxy)
             }
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "停止代理失败")
+            Timber.tag(TAG).e(e, MLang.Service.Status.UnknownError)
             throw e
         }
     }
@@ -123,7 +104,7 @@ class ProxyConnectionService(
         )
 
         if (result.isFailure) {
-            throw result.exceptionOrNull() ?: Exception("启动服务失败")
+            throw result.exceptionOrNull() ?: Exception(MLang.Service.Status.StartFailed)
         }
     }
 }

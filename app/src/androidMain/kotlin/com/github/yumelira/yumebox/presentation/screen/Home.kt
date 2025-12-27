@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -39,6 +19,7 @@ import com.github.yumelira.yumebox.presentation.screen.home.HomeRunningContent
 import com.github.yumelira.yumebox.presentation.screen.home.ProxyControlButton
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.ConnectionsScreenDestination
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -68,6 +49,7 @@ fun HomePager(mainInnerPadding: PaddingValues) {
     val selectedServerName by homeViewModel.selectedServerName.collectAsState()
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val speedHistory by homeViewModel.speedHistory.collectAsState()
+    val connections by homeViewModel.connections.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -129,10 +111,14 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                                     serverPing = selectedServerPing,
                                     ipMonitoringState = ipMonitoringState,
                                     speedHistory = speedHistory,
+                                    connections = connections,
                                     onChartClick = {
                                         navigator.navigate(TrafficStatisticsScreenDestination) {
                                             launchSingleTop = true
                                         }
+                                    },
+                                    onTopologyClick = {
+                                        navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true }
                                     }
                                 )
                             }

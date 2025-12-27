@@ -19,6 +19,7 @@
 
 # IDE - IntelliJ/Android Studio
 .idea/*
+.vscode/*
 !.idea/codeStyles/
 !.idea/copyright/
 *.iml
@@ -57,11 +58,8 @@ Thumbs.db
 
 # Project specific
 /app/src/androidMain/assets/
-/core/src/foss/golang/mihomo/
 /.claude
 /.qoder
 /app/release/
 /app/build/
 /rule.md
-/google-services.json
-/app/google-services.json

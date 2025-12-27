@@ -6,22 +6,20 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.clash.isConfigSaved
 import com.github.yumelira.yumebox.data.model.Profile
-import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.Delete
-import top.yukonga.miuix.kmp.icon.icons.useful.Edit
-import top.yukonga.miuix.kmp.icon.icons.useful.Refresh
-import top.yukonga.miuix.kmp.icon.icons.useful.Share
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.icon.extended.*
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 
 @Composable
@@ -176,9 +174,9 @@ fun ProfileCard(
                         modifier = Modifier
                             .size(20.dp)
                             .alpha(if (isConfigSaved) 1f else 0.4f),
-                        imageVector = MiuixIcons.Useful.Share,
+                        imageVector = MiuixIcons.Share,
                         tint = actionIconTint.copy(alpha = if (isConfigSaved) 1f else 0.4f),
-                        contentDescription = "导出"
+                        contentDescription = MLang.Component.ProfileCard.Export
                     )
                 }
 
@@ -191,9 +189,9 @@ fun ProfileCard(
                     onClick = { if (!isDownloading) onEdit(profile) }) {
                     Icon(
                         modifier = Modifier.size(20.dp),
-                        imageVector = MiuixIcons.Useful.Edit,
+                        imageVector = MiuixIcons.Edit,
                         tint = actionIconTint,
-                        contentDescription = "编辑"
+                        contentDescription = MLang.Component.ProfileCard.Edit
                     )
                 }
             }
@@ -219,13 +217,13 @@ fun ProfileCard(
                     ) {
                         Icon(
                             modifier = Modifier.size(20.dp),
-                            imageVector = MiuixIcons.Useful.Refresh,
+                            imageVector = MiuixIcons.Refresh,
                             tint = updateTint,
-                            contentDescription = "更新",
+                            contentDescription = MLang.Component.ProfileCard.Update,
                         )
                         Text(
                             modifier = Modifier.padding(end = 3.dp),
-                            text = "更新",
+                            text = MLang.Component.ProfileCard.Update,
                             color = updateTint,
                             fontWeight = FontWeight.Medium,
                             fontSize = 15.sp
@@ -248,13 +246,13 @@ fun ProfileCard(
                 ) {
                     Icon(
                         modifier = Modifier.size(20.dp),
-                        imageVector = MiuixIcons.Useful.Delete,
+                        imageVector = MiuixIcons.Delete,
                         tint = actionIconTint,
-                        contentDescription = "删除"
+                        contentDescription = MLang.Component.ProfileCard.Delete
                     )
                     Text(
                         modifier = Modifier.padding(start = 4.dp, end = 3.dp),
-                        text = "删除",
+                        text = MLang.Component.ProfileCard.Delete,
                         color = actionIconTint,
                         fontWeight = FontWeight.Medium,
                         fontSize = 15.sp

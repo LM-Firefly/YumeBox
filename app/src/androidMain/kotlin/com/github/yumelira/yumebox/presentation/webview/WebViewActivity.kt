@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.webview
 
 import android.app.Activity
@@ -36,13 +16,18 @@ class WebViewActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_INITIAL_URL = "initial_url"
+        private const val EXTRA_TITLE = "title"
 
         fun start(
             context: Context,
             initialUrl: String = "file://${context.filesDir}/frontend/index.html",
+            title: String? = null,
         ) {
             val intent = Intent(context, WebViewActivity::class.java).apply {
                 putExtra(EXTRA_INITIAL_URL, initialUrl)
+                if (title != null) {
+                    putExtra(EXTRA_TITLE, title)
+                }
             }
             if (context !is Activity) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -83,10 +68,10 @@ class WebViewActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val initialUrl = intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://${filesDir}/frontend/index.html"
-
+        val title = intent.getStringExtra(EXTRA_TITLE)
 
         setContent {
-            WebViewScreen(initialUrl = initialUrl)
+            WebViewScreen(initialUrl = initialUrl, title = title)
         }
     }
 }

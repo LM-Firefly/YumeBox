@@ -1,10 +1,10 @@
 package com.github.yumelira.yumebox.presentation.screen
 
-import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.Manifest
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.view.ViewGroup
@@ -26,25 +26,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.model.ProfileType
+import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
@@ -56,6 +56,12 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import kotlin.coroutines.resume
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -65,15 +71,9 @@ import top.yukonga.miuix.kmp.extra.SpinnerEntry
 import top.yukonga.miuix.kmp.extra.SuperBottomSheet
 import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.SuperSpinner
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.New
-import top.yukonga.miuix.kmp.icon.icons.useful.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
-import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import kotlin.coroutines.resume
 
 @Composable
 fun ProfilesPager(mainInnerPadding: PaddingValues) {
@@ -121,16 +121,18 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     Scaffold(
         topBar = {
             TopBar(
-                title = "配置", scrollBehavior = scrollBehavior, actions = {
+                title = MLang.ProfilesPage.Title, scrollBehavior = scrollBehavior, actions = {
                     IconButton(
                         onClick = {
                             if (!isDownloading) {
                                 isDownloading = true
                                 scope.launch {
                                     profiles.filter { it.type == ProfileType.URL }.forEach { p ->
+                                        val job = profilesViewModel.downloadProfileInViewModel(p)
                                         try {
-                                            profilesViewModel.downloadProfile(p)
-                                        } catch (_: Exception) {
+                                            job.join()
+                                        } catch (_: kotlinx.coroutines.CancellationException) {
+                                            // caller scope cancelled (e.g., composable left) — stop waiting
                                         }
                                     }
                                     isDownloading = false
@@ -139,7 +141,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         }, modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Icon(
-                            MiuixIcons.Useful.Refresh, contentDescription = "一键更新所有"
+                            MiuixIcons.Refresh, contentDescription = MLang.ProfilesPage.Action.UpdateAll
                         )
                     }
 
@@ -150,7 +152,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         }, modifier = Modifier.padding(end = LocalSpacing.current.xxl)
                     ) {
                         Icon(
-                            MiuixIcons.Useful.New, contentDescription = "添加配置"
+                            MiuixIcons.AddCircle, contentDescription = MLang.ProfilesPage.Action.AddProfile
                         )
                     }
                 })
@@ -159,7 +161,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
         if (profiles.isEmpty()) {
 
             CenteredText(
-                firstLine = "暂无配置文件", secondLine = "点击右上角添加配置"
+                firstLine = MLang.ProfilesPage.Empty.NoProfiles, secondLine = MLang.ProfilesPage.Empty.Hint
             )
         } else {
 
@@ -195,7 +197,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                         }
                                         context.startActivity(
                                             Intent.createChooser(
-                                                intent, "导出配置"
+                                                intent, MLang.ProfilesPage.Action.ExportConfig
                                             ).apply {
                                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             })
@@ -209,8 +211,14 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                             if (!isDownloading) {
                                 isDownloading = true
                                 scope.launch {
-                                    profilesViewModel.downloadProfile(profile)
-                                    isDownloading = false
+                                    val job = profilesViewModel.downloadProfileInViewModel(profile)
+                                    try {
+                                        job.join()
+                                    } catch (_: kotlinx.coroutines.CancellationException) {
+                                        // ignore
+                                    } finally {
+                                        isDownloading = false
+                                    }
                                 }
                             }
                         },
@@ -274,15 +282,17 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     if (showEditDialog && currentProfileToEdit != null) {
         EditProfileNameDialog(
             show = remember { mutableStateOf(true) },
-            currentName = currentProfileToEdit.name,
+            profile = currentProfileToEdit,
             onDismiss = {
                 showEditDialog = false
                 profileToEdit = null
             },
-            onConfirm = { newName ->
+            onConfirm = { newName, autoUpdateMinutes ->
                 if (newName.isNotBlank()) {
                     val updatedProfile = currentProfileToEdit.copy(
-                        name = newName, updatedAt = System.currentTimeMillis()
+                        name = newName,
+                        autoUpdateMinutes = autoUpdateMinutes,
+                        updatedAt = System.currentTimeMillis()
                     )
                     profilesViewModel.updateProfile(updatedProfile)
                     showEditDialog = false
@@ -295,14 +305,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 @Composable
 private fun EditProfileNameDialog(
     show: MutableState<Boolean>,
-    currentName: String,
+    profile: Profile,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String, Int) -> Unit
 ) {
-    var editName by remember { mutableStateOf(currentName) }
+    var editName by remember { mutableStateOf(profile.name) }
+    var autoUpdateStr by remember { mutableStateOf(profile.autoUpdateMinutes.toString()) }
 
     SuperDialog(
-        title = "编辑配置名称", show = show, onDismissRequest = onDismiss
+        title = MLang.ProfilesPage.EditDialog.Title, show = show, onDismissRequest = onDismiss
     ) {
         Column(
             modifier = Modifier
@@ -313,23 +324,47 @@ private fun EditProfileNameDialog(
             TextField(
                 value = editName,
                 onValueChange = { editName = it },
-                label = "配置名称",
+                label = MLang.ProfilesPage.Input.ProfileName,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Only show auto-update setting for remote subscriptions
+            if (profile.type == ProfileType.URL) {
+                TextField(
+                    value = autoUpdateStr,
+                    onValueChange = { newVal: String -> autoUpdateStr = newVal.filter { ch -> ch.isDigit() } },
+                    label = MLang.ProfilesPage.Input.AutoUpdateMinutes,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
-                    Text("取消")
+                    Text(MLang.ProfilesPage.Button.Cancel)
                 }
+                val context = LocalContext.current
                 Button(
-                    onClick = { onConfirm(editName) },
+                    onClick = {
+                        val parsed = autoUpdateStr.toIntOrNull() ?: 0
+                        val minutes = when {
+                            autoUpdateStr.isBlank() -> 0
+                            parsed <= 0 -> 0
+                            parsed in 1..14 -> 15
+                            else -> parsed
+                        }
+                        if (parsed in 1..14) {
+                            Toast.makeText(context, MLang.ProfilesPage.Validation.AutoUpdateMin.format(15), Toast.LENGTH_SHORT).show()
+                        }
+                        onConfirm(editName.trim(), minutes.coerceAtLeast(0))
+                    },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
                     Text(
-                        "确定", color = MiuixTheme.colorScheme.surface
+                        MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.surface
                     )
                 }
             }
@@ -355,6 +390,7 @@ private fun AddProfileSheet(
     var url by remember { mutableStateOf("") }
     var filePath by remember { mutableStateOf("") }
     var fileName by remember { mutableStateOf("") }
+    var autoUpdateStr by remember { mutableStateOf("0") }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
     var downloadStartTime by remember { mutableLongStateOf(0L) }
@@ -435,7 +471,7 @@ private fun AddProfileSheet(
     ) { isGranted ->
         hasCameraPermission = isGranted
         if (!isGranted) {
-            Toast.makeText(context, "需要相机权限才能扫码", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, MLang.ProfilesPage.QrScanner.NeedCamera, Toast.LENGTH_LONG).show()
             selectedTypeIndex = 0
         }
     }
@@ -452,6 +488,7 @@ private fun AddProfileSheet(
             clearAllState()
             if (profileToEdit != null) {
                 name = profileToEdit.name
+                autoUpdateStr = profileToEdit.autoUpdateMinutes.toString()
                 if (profileToEdit.type == ProfileType.URL) {
                     selectedTypeIndex = 0
                     url = profileToEdit.remoteUrl ?: ""
@@ -463,7 +500,7 @@ private fun AddProfileSheet(
             } else if (!importUrl.isNullOrBlank()) {
                 selectedTypeIndex = 0
                 url = importUrl
-                Toast.makeText(context, "已从链接导入配置", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, MLang.ProfilesPage.Message.UrlImported, Toast.LENGTH_SHORT).show()
             } else {
                 selectedTypeIndex = 0
                 try {
@@ -471,7 +508,7 @@ private fun AddProfileSheet(
                     if (clipboardUrl != null) {
                         url = clipboardUrl
                         Toast.makeText(
-                            context, "已从剪贴板读取链接", Toast.LENGTH_SHORT
+                            context, MLang.ProfilesPage.Message.ClipboardRead, Toast.LENGTH_SHORT
                         ).show()
                     }
                 } catch (e: Exception) {
@@ -551,7 +588,7 @@ private fun AddProfileSheet(
             context.toast(uiState.error!!, Toast.LENGTH_LONG)
             if (isDownloading) {
                 isDownloading = false
-                error = uiState.error ?: "错误"
+                error = uiState.error ?: MLang.Component.Message.Error
             }
             profilesViewModel.clearError()
         }
@@ -571,14 +608,14 @@ private fun AddProfileSheet(
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 cursor.moveToFirst()
                 cursor.getString(nameIndex)
-            } ?: "未知文件"
+            } ?: MLang.ProfilesPage.Message.UnknownFile
 
             val extension = actualFileName.substringAfterLast(".", "")
             if (!extension.equals("yaml", ignoreCase = true) && !extension.equals(
                     "yml", ignoreCase = true
                 )
             ) {
-                error = "仅支持 .yaml 或 .yml 格式的配置文件"
+                error = MLang.ProfilesPage.Validation.YamlOnly
                 return@let
             }
 
@@ -588,7 +625,7 @@ private fun AddProfileSheet(
 
             val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
             if (name.isBlank() || name == actualFileName) {
-                name = fileNameWithoutExt.ifBlank { "新配置" }
+                name = fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile }
             }
         }
     }
@@ -603,16 +640,16 @@ private fun AddProfileSheet(
                             url = result
                             selectedTypeIndex = 0
                             Toast.makeText(
-                                context, "识别成功", Toast.LENGTH_SHORT
+                                context, MLang.ProfilesPage.QrScanner.RecognizeSuccess, Toast.LENGTH_SHORT
                             ).show()
                         } else {
                             Toast.makeText(
-                                context, "未能识别到二维码", Toast.LENGTH_SHORT
+                                context, MLang.ProfilesPage.QrScanner.RecognizeFailed, Toast.LENGTH_SHORT
                             ).show()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(
-                            context, "识别失败: ${e.message}", Toast.LENGTH_SHORT
+                            context, MLang.ProfilesPage.QrScanner.RecognizeError.format(e.message), Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
@@ -628,7 +665,7 @@ private fun AddProfileSheet(
 
     SuperBottomSheet(
         show = show,
-        title = if (profileToEdit != null) "编辑配置文件" else "添加配置文件",
+        title = if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle else MLang.ProfilesPage.Sheet.AddTitle,
         backgroundColor = MiuixTheme.colorScheme.surface,
         dragHandleColor = MiuixTheme.colorScheme.onSurfaceVariantActions,
         insideMargin = DpSize(32.dp, 16.dp),
@@ -684,7 +721,7 @@ private fun AddProfileSheet(
                                     if (complete) {
                                         Icon(
                                             imageVector = Yume.`Package-check`,
-                                            contentDescription = "完成",
+                                            contentDescription = MLang.Component.Button.Confirm,
                                             tint = MiuixTheme.colorScheme.primary,
                                             modifier = Modifier.fillMaxSize()
                                         )
@@ -700,7 +737,7 @@ private fun AddProfileSheet(
                         }
 
                         Text(
-                            text = downloadProgress?.message ?: "下载中...",
+                            text = downloadProgress?.message ?: MLang.ProfilesPage.Progress.Downloading,
                             style = MiuixTheme.textStyles.body1,
                             color = MiuixTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
@@ -736,10 +773,10 @@ private fun AddProfileSheet(
                     top.yukonga.miuix.kmp.basic.Card {
                         Box(modifier = Modifier.alpha(if (profileToEdit != null) 0.5f else 1f)) {
                             SuperSpinner(
-                                title = "配置类型", items = listOf(
-                                    SpinnerEntry(title = "订阅链接"),
-                                    SpinnerEntry(title = "本地文件"),
-                                    SpinnerEntry(title = "扫码添加")
+                                title = MLang.ProfilesPage.Type.Title, items = listOf(
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
+                                    SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan)
                                 ), selectedIndex = selectedTypeIndex, onSelectedIndexChange = {
                                     if (profileToEdit == null) {
                                         selectedTypeIndex = it
@@ -791,7 +828,7 @@ private fun AddProfileSheet(
                                                         url = scannedUrl
                                                         selectedTypeIndex = 0
                                                         Toast.makeText(
-                                                            context, "扫描成功", Toast.LENGTH_SHORT
+                                                            context, MLang.ProfilesPage.QrScanner.ScanSuccess, Toast.LENGTH_SHORT
                                                         ).show()
                                                     })
                                             }
@@ -800,10 +837,10 @@ private fun AddProfileSheet(
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 verticalArrangement = Arrangement.Center
                                             ) {
-                                                Text("需要相机权限")
+                                                Text(MLang.ProfilesPage.QrScanner.NeedPermission)
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 TextButton(
-                                                    text = "授予权限", onClick = {
+                                                    text = MLang.ProfilesPage.QrScanner.GrantPermission, onClick = {
                                                         cameraPermissionLauncher.launch(
                                                             Manifest.permission.CAMERA
                                                         )
@@ -815,7 +852,7 @@ private fun AddProfileSheet(
                                     }
 
                                     TextButton(
-                                        text = "从相册选择二维码图片",
+                                        text = MLang.ProfilesPage.QrScanner.SelectFromAlbum,
                                         onClick = { qrImageLauncher.launch("image/*") },
                                         modifier = Modifier.fillMaxWidth()
                                     )
@@ -826,14 +863,14 @@ private fun AddProfileSheet(
                                             show.value = false
                                             profilesViewModel.clearDownloadProgress()
                                         }, modifier = Modifier.fillMaxWidth()
-                                    ) { Text("取消") }
+                                    ) { Text(MLang.Component.Button.Cancel) }
                                 }
 
                                 else -> {
                                     TextField(
                                         value = name,
                                         onValueChange = { name = it; error = "" },
-                                        label = "配置名称",
+                                        label = MLang.ProfilesPage.Input.ProfileName,
                                         modifier = Modifier.fillMaxWidth()
                                     )
 
@@ -841,17 +878,24 @@ private fun AddProfileSheet(
                                         TextField(
                                             value = url,
                                             onValueChange = { url = it; error = "" },
-                                            label = "订阅链接 (HTTP/HTTPS)",
+                                            label = MLang.ProfilesPage.Input.SubscriptionUrl,
                                             maxLines = 2,
                                             readOnly = profileToEdit != null,
                                             enabled = profileToEdit == null,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                        TextField(
+                                            value = autoUpdateStr,
+                                            onValueChange = { newVal: String -> autoUpdateStr = newVal.filter { ch -> ch.isDigit() } },
+                                            label = MLang.ProfilesPage.Input.AutoUpdateMinutes,
+                                            singleLine = true,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     } else {
                                         TextField(
                                             value = fileName.ifEmpty { "" },
                                             onValueChange = { },
-                                            label = "点击选择文件",
+                                            label = MLang.ProfilesPage.Input.SelectFile,
                                             readOnly = true,
                                             enabled = false,
                                             modifier = Modifier
@@ -879,14 +923,14 @@ private fun AddProfileSheet(
                                                 show.value = false
                                                 profilesViewModel.clearDownloadProgress()
                                             },
-                                        ) { Text("取消") }
+                                        ) { Text(MLang.Component.Button.Cancel) }
                                         Button(
                                             onClick = {
                                                 if (typeIndex == 0 && url.isBlank()) {
-                                                    error = "请输入链接"; return@Button
+                                                    error = MLang.ProfilesPage.Validation.EnterUrl; return@Button
                                                 }
                                                 if (typeIndex == 1 && filePath.isBlank()) {
-                                                    error = "请选择文件"; return@Button
+                                                    error = MLang.ProfilesPage.Validation.SelectFile; return@Button
                                                 }
 
                                                 keyboardController?.hide()
@@ -898,10 +942,19 @@ private fun AddProfileSheet(
                                                 isDownloading = true
 
                                                 if (typeIndex == 0) {
+                                                    val parsed = autoUpdateStr.toIntOrNull() ?: 0
+                                                    val minutes = when {
+                                                        autoUpdateStr.isBlank() -> 0
+                                                        parsed <= 0 -> 0
+                                                        parsed in 1..14 -> 15
+                                                        else -> parsed
+                                                    }
+                                                    if (parsed in 1..14) Toast.makeText(context, MLang.ProfilesPage.Validation.AutoUpdateMin.format(15), Toast.LENGTH_SHORT).show()
                                                     if (profileToEdit != null) {
                                                         val updatedProfile = profileToEdit.copy(
                                                             name = name,
                                                             remoteUrl = url,
+                                                            autoUpdateMinutes = minutes,
                                                             updatedAt = System.currentTimeMillis()
                                                         )
                                                         onUpdateProfile(updatedProfile)
@@ -910,20 +963,23 @@ private fun AddProfileSheet(
                                                         scope.launch {
                                                             val profile = Profile(
                                                                 id = UUID.randomUUID().toString(),
-                                                                name = name.ifBlank { "新配置" },
+                                                                name = name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                                                                 config = "",
                                                                 remoteUrl = url,
                                                                 type = ProfileType.URL,
                                                                 createdAt = System.currentTimeMillis(),
-                                                                updatedAt = System.currentTimeMillis()
+                                                                updatedAt = System.currentTimeMillis(),
+                                                                autoUpdateMinutes = minutes
                                                             )
 
-                                                            val downloadedProfile =
-                                                                profilesViewModel.downloadProfile(
-                                                                    profile, saveToDb = true
-                                                                )
-                                                            if (downloadedProfile != null && downloadedProfile.config.isNotBlank()) {
-                                                            } else {
+                                                            val job = profilesViewModel.downloadProfileInViewModel(profile, saveToDb = true)
+                                                            try {
+                                                                job.join()
+                                                                // We don't get the returned Profile here — viewModel updates DB/state
+                                                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                                                // user left screen; don't block
+                                                            } finally {
+                                                                // ensure UI state cleared
                                                                 isDownloading = false
                                                                 profilesViewModel.clearDownloadProgress()
                                                             }
@@ -939,15 +995,17 @@ private fun AddProfileSheet(
                                                         show.value = false
                                                     } else {
                                                         scope.launch {
-                                                            val importedProfile =
-                                                                profilesViewModel.importProfileFromFile(
-                                                                    filePath.toUri(),
-                                                                    name.ifBlank { "新配置" },
-                                                                    saveToDb = true
-                                                                )
-                                                            isDownloading = false
-                                                            if (importedProfile != null) {
-                                                                show.value = false
+                                                            val job = profilesViewModel.importProfileFromFileInViewModel(
+                                                                filePath.toUri(),
+                                                                name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
+                                                                saveToDb = true
+                                                            )
+                                                            try {
+                                                                job.join()
+                                                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                                                // ignore
+                                                            } finally {
+                                                                isDownloading = false
                                                             }
                                                         }
                                                     }
@@ -957,7 +1015,7 @@ private fun AddProfileSheet(
                                             colors = ButtonDefaults.buttonColorsPrimary()
                                         ) {
                                             Text(
-                                                "确定", color = MiuixTheme.colorScheme.background
+                                                MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.background
                                             )
                                         }
                                     }
@@ -1098,13 +1156,13 @@ private fun DeleteConfirmDialog(
     profileName: String, onConfirm: () -> Unit, onDismiss: () -> Unit
 ) {
     SuperDialog(
-        title = "删除配置",
-        summary = "确定要删除「$profileName」吗？",
+        title = MLang.ProfilesPage.DeleteDialog.Title,
+        summary = MLang.ProfilesPage.DeleteDialog.Message.format(profileName),
         show = remember { mutableStateOf(true) },
         onDismissRequest = onDismiss
     ) {
         DialogButtonRow(
-            onCancel = onDismiss, onConfirm = onConfirm, cancelText = "取消", confirmText = "删除"
+            onCancel = onDismiss, onConfirm = onConfirm, cancelText = MLang.ProfilesPage.Button.Cancel, confirmText = MLang.ProfilesPage.DeleteDialog.Confirm
         )
     }
 }
