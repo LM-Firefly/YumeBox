@@ -30,6 +30,8 @@ ProfilesPage = {
         SubscriptionUrl = "订阅链接 (HTTP/HTTPS)"
         SelectFile = "点击选择文件"
         NewProfile = "新配置"
+        AutoUpdateMinutes = "自动更新（分钟）"
+        AutoUpdateHint = "0 表示不自动更新"
     }
     
     QrScanner = {
@@ -56,6 +58,7 @@ ProfilesPage = {
         SelectFile = "请选择文件"
         YamlOnly = "仅支持 .yaml 或 .yml 格式的配置文件"
         DownloadFailed = "配置下载失败，请重试"
+        AutoUpdateMin = "最小值为 %d 分钟"
     }
     
     Progress = {
@@ -119,7 +122,7 @@ ProfilesPage = {
     }
 
     EditDialog = {
-        Title = "编辑配置名称"
+        Title = "编辑配置"
     }
 
     Provider = {

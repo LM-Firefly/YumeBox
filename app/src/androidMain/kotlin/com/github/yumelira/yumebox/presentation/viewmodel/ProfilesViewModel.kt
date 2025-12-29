@@ -9,6 +9,8 @@ import com.github.yumelira.yumebox.clash.exception.ConfigImportException
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.model.ProfileType
 import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.clash.scheduleNext
+import com.github.yumelira.yumebox.clash.cancel
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,8 +81,13 @@ class ProfilesViewModel(
 
     fun addProfile(profile: Profile) {
         viewModelScope.launch {
-            runCatching { profilesStore.addProfile(profile); showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(profile.name)) }
-                .onFailure { e -> timber.log.Timber.e(e, "addProfile failed"); showError(MLang.ProfilesVM.Message.AddFailed.format(e.message)) }
+            runCatching {
+                profilesStore.addProfile(profile)
+                showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(profile.name))
+                if (profile.type == ProfileType.URL && profile.autoUpdateMinutes > 0) {
+                    scheduleNext(profile)
+                }
+            }.onFailure { e -> timber.log.Timber.e(e, "addProfile failed"); showError(MLang.ProfilesVM.Message.AddFailed.format(e.message)) }
         }
     }
 
@@ -182,6 +189,9 @@ class ProfilesViewModel(
                 showError(errorMsg)
                 null
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Propagate coroutine cancellation
+            throw e
         } catch (e: Exception) {
             _downloadProgress.value = null
             val errorMsg = if (e is ConfigImportException) {
@@ -196,6 +206,26 @@ class ProfilesViewModel(
         }
     }
 
+    fun downloadProfileInViewModel(profile: Profile, saveToDb: Boolean = true) = viewModelScope.launch {
+        try {
+            downloadProfile(profile, saveToDb)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Ignore cancellation — operation will be continued/stopped by coroutine machinery
+            timber.log.Timber.d("downloadProfileInViewModel cancelled for %s", profile.id)
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "downloadProfileInViewModel failed for %s", profile.id)
+        }
+    }
+
+    fun importProfileFromFileInViewModel(uri: Uri, name: String, saveToDb: Boolean = true) = viewModelScope.launch {
+        try {
+            importProfileFromFile(uri, name, saveToDb)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            timber.log.Timber.d("importProfileFromFileInViewModel cancelled for %s", name)
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "importProfileFromFileInViewModel failed for %s", name)
+        }
+    }
 
     fun clearDownloadProgress() {
         _downloadProgress.value = null
@@ -278,6 +308,7 @@ class ProfilesViewModel(
                     getApplication<Application>().filesDir.resolve("imported/$profileId")
                         .takeIf { it.exists() }?.deleteRecursively()
                 }
+                cancel(profileId)
                 showMessage(MLang.ProfilesVM.Message.ProfileDeleted)
             }.onFailure { e -> timber.log.Timber.e(e, "removeProfile failed"); showError(MLang.ProfilesVM.Message.DeleteFailed.format(e.message)) }
         }
@@ -288,6 +319,11 @@ class ProfilesViewModel(
             runCatching {
                 profilesStore.updateProfile(profile)
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(profile.name))
+                if (profile.type == ProfileType.URL && profile.autoUpdateMinutes > 0) {
+                    scheduleNext(profile)
+                } else {
+                    cancel(profile.id)
+                }
             }.onFailure { e ->
                 timber.log.Timber.e(e, "updateProfile failed")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message))

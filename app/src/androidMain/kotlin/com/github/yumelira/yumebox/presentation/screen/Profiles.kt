@@ -129,9 +129,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                 isDownloading = true
                                 scope.launch {
                                     profiles.filter { it.type == ProfileType.URL }.forEach { p ->
+                                        val job = profilesViewModel.downloadProfileInViewModel(p)
                                         try {
-                                            profilesViewModel.downloadProfile(p)
-                                        } catch (_: Exception) {
+                                            job.join()
+                                        } catch (_: kotlinx.coroutines.CancellationException) {
+                                            // caller scope cancelled (e.g., composable left) — stop waiting
                                         }
                                     }
                                     isDownloading = false
@@ -210,8 +212,14 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                             if (!isDownloading) {
                                 isDownloading = true
                                 scope.launch {
-                                    profilesViewModel.downloadProfile(profile)
-                                    isDownloading = false
+                                    val job = profilesViewModel.downloadProfileInViewModel(profile)
+                                    try {
+                                        job.join()
+                                    } catch (_: kotlinx.coroutines.CancellationException) {
+                                        // ignore
+                                    } finally {
+                                        isDownloading = false
+                                    }
                                 }
                             }
                         },
@@ -275,15 +283,17 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     if (showEditDialog && currentProfileToEdit != null) {
         EditProfileNameDialog(
             show = remember { mutableStateOf(true) },
-            currentName = currentProfileToEdit.name,
+            profile = currentProfileToEdit,
             onDismiss = {
                 showEditDialog = false
                 profileToEdit = null
             },
-            onConfirm = { newName ->
+            onConfirm = { newName, autoUpdateMinutes ->
                 if (newName.isNotBlank()) {
                     val updatedProfile = currentProfileToEdit.copy(
-                        name = newName, updatedAt = System.currentTimeMillis()
+                        name = newName,
+                        autoUpdateMinutes = autoUpdateMinutes,
+                        updatedAt = System.currentTimeMillis()
                     )
                     profilesViewModel.updateProfile(updatedProfile)
                     showEditDialog = false
@@ -296,11 +306,12 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 @Composable
 private fun EditProfileNameDialog(
     show: MutableState<Boolean>,
-    currentName: String,
+    profile: Profile,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String, Int) -> Unit
 ) {
-    var editName by remember { mutableStateOf(currentName) }
+    var editName by remember { mutableStateOf(profile.name) }
+    var autoUpdateStr by remember { mutableStateOf(profile.autoUpdateMinutes.toString()) }
 
     SuperDialog(
         title = MLang.ProfilesPage.EditDialog.Title, show = show, onDismissRequest = onDismiss
@@ -318,14 +329,38 @@ private fun EditProfileNameDialog(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Only show auto-update setting for remote subscriptions
+            if (profile.type == ProfileType.URL) {
+                TextField(
+                    value = autoUpdateStr,
+                    onValueChange = { newVal: String -> autoUpdateStr = newVal.filter { ch -> ch.isDigit() } },
+                    label = MLang.ProfilesPage.Input.AutoUpdateMinutes,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
                     Text(MLang.ProfilesPage.Button.Cancel)
                 }
+                val context = LocalContext.current
                 Button(
-                    onClick = { onConfirm(editName) },
+                    onClick = {
+                        val parsed = autoUpdateStr.toIntOrNull() ?: 0
+                        val minutes = when {
+                            autoUpdateStr.isBlank() -> 0
+                            parsed <= 0 -> 0
+                            parsed in 1..14 -> 15
+                            else -> parsed
+                        }
+                        if (parsed in 1..14) {
+                            Toast.makeText(context, MLang.ProfilesPage.Validation.AutoUpdateMin.format(15), Toast.LENGTH_SHORT).show()
+                        }
+                        onConfirm(editName.trim(), minutes.coerceAtLeast(0))
+                    },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
@@ -356,6 +391,7 @@ private fun AddProfileSheet(
     var url by remember { mutableStateOf("") }
     var filePath by remember { mutableStateOf("") }
     var fileName by remember { mutableStateOf("") }
+    var autoUpdateStr by remember { mutableStateOf("0") }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
     var downloadStartTime by remember { mutableLongStateOf(0L) }
@@ -453,6 +489,7 @@ private fun AddProfileSheet(
             clearAllState()
             if (profileToEdit != null) {
                 name = profileToEdit.name
+                autoUpdateStr = profileToEdit.autoUpdateMinutes.toString()
                 if (profileToEdit.type == ProfileType.URL) {
                     selectedTypeIndex = 0
                     url = profileToEdit.remoteUrl ?: ""
@@ -899,10 +936,19 @@ private fun AddProfileSheet(
                                                 isDownloading = true
 
                                                 if (typeIndex == 0) {
+                                                    val parsed = autoUpdateStr.toIntOrNull() ?: 0
+                                                    val minutes = when {
+                                                        autoUpdateStr.isBlank() -> 0
+                                                        parsed <= 0 -> 0
+                                                        parsed in 1..14 -> 15
+                                                        else -> parsed
+                                                    }
+                                                    if (parsed in 1..14) Toast.makeText(context, MLang.ProfilesPage.Validation.AutoUpdateMin.format(15), Toast.LENGTH_SHORT).show()
                                                     if (profileToEdit != null) {
                                                         val updatedProfile = profileToEdit.copy(
                                                             name = name,
                                                             remoteUrl = url,
+                                                            autoUpdateMinutes = minutes,
                                                             updatedAt = System.currentTimeMillis()
                                                         )
                                                         onUpdateProfile(updatedProfile)
@@ -916,15 +962,18 @@ private fun AddProfileSheet(
                                                                 remoteUrl = url,
                                                                 type = ProfileType.URL,
                                                                 createdAt = System.currentTimeMillis(),
-                                                                updatedAt = System.currentTimeMillis()
+                                                                updatedAt = System.currentTimeMillis(),
+                                                                autoUpdateMinutes = minutes
                                                             )
 
-                                                            val downloadedProfile =
-                                                                profilesViewModel.downloadProfile(
-                                                                    profile, saveToDb = true
-                                                                )
-                                                            if (downloadedProfile != null && downloadedProfile.config.isNotBlank()) {
-                                                            } else {
+                                                            val job = profilesViewModel.downloadProfileInViewModel(profile, saveToDb = true)
+                                                            try {
+                                                                job.join()
+                                                                // We don't get the returned Profile here — viewModel updates DB/state
+                                                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                                                // user left screen; don't block
+                                                            } finally {
+                                                                // ensure UI state cleared
                                                                 isDownloading = false
                                                                 profilesViewModel.clearDownloadProgress()
                                                             }
@@ -940,15 +989,17 @@ private fun AddProfileSheet(
                                                         show.value = false
                                                     } else {
                                                         scope.launch {
-                                                            val importedProfile =
-                                                                profilesViewModel.importProfileFromFile(
-                                                                    filePath.toUri(),
-                                                                    name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
-                                                                    saveToDb = true
-                                                                )
-                                                            isDownloading = false
-                                                            if (importedProfile != null) {
-                                                                show.value = false
+                                                            val job = profilesViewModel.importProfileFromFileInViewModel(
+                                                                filePath.toUri(),
+                                                                name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
+                                                                saveToDb = true
+                                                            )
+                                                            try {
+                                                                job.join()
+                                                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                                                // ignore
+                                                            } finally {
+                                                                isDownloading = false
                                                             }
                                                         }
                                                     }
