@@ -37,7 +37,7 @@ fun FeatureScreen(
     val allowLanAccess by viewModel.allowLanAccess.state.collectAsState()
     val backendPort by viewModel.backendPort.state.collectAsState()
     val frontendPort by viewModel.frontendPort.state.collectAsState()
-    val autoCloseMode by viewModel.autoCloseMode.collectAsState()
+    val autoCloseMode by viewModel.autoCloseMode.state.collectAsState()
 
     val host = if (allowLanAccess) "0.0.0.0" else "127.0.0.1"
     val frontendUrl = "http://${host}:${frontendPort}"

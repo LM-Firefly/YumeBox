@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
@@ -44,7 +24,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class FeatureViewModel(
-    featureStore: FeatureStore,
+    private val featureStore: FeatureStore,
     private val application: Application,
 ) : ViewModel() {
 
@@ -54,8 +34,7 @@ class FeatureViewModel(
     val frontendPort: Preference<Int> = featureStore.frontendPort
     val selectedPanelType: Preference<Int> = featureStore.selectedPanelType
 
-    private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
-    val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()
+    val autoCloseMode: Preference<AutoCloseMode> = featureStore.autoCloseMode
 
     private val _serviceRunningState = MutableStateFlow(SubStoreService.isRunning)
     val serviceRunningState: StateFlow<Boolean> = _serviceRunningState.asStateFlow()
@@ -144,18 +123,19 @@ class FeatureViewModel(
             cancelAutoCloseTimer()
             application.stopService(Intent(application, SubStoreService::class.java))
             _serviceRunningState.value = false
-            _autoCloseMode.value = AutoCloseMode.DISABLED
+            featureStore.autoCloseMode.set(AutoCloseMode.DISABLED)
         }
     }
 
-    fun setAllowLanAccess(allow: Boolean) = allowLanAccess.set(allow)
     fun setAutoCloseMode(mode: AutoCloseMode) {
-        _autoCloseMode.value = mode
+        featureStore.autoCloseMode.set(mode)
         if (isServiceRunning) {
             cancelAutoCloseTimer()
             setupAutoCloseTimer()
         }
     }
+
+    fun setAllowLanAccess(allow: Boolean) = allowLanAccess.set(allow)
 
     fun initializeSubStoreStatus() {
         viewModelScope.launch {
@@ -302,13 +282,19 @@ class FeatureViewModel(
 
     private fun setupAutoCloseTimer() {
         cancelAutoCloseTimer()
-        val mode = _autoCloseMode.value
+        val mode = featureStore.autoCloseMode.value
         mode.minutes?.let { minutes ->
             autoCloseJob = viewModelScope.launch {
                 delay(minutes * 60 * 1000L)
                 showToast(MLang.Feature.ServiceStatus.AutoClosed)
                 stopService()
             }
+        }
+    }
+
+    init {
+        if (SubStoreService.isRunning && featureStore.autoCloseMode.value.shouldStartTimer) {
+            setupAutoCloseTimer()
         }
     }
 
