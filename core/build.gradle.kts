@@ -186,7 +186,7 @@ android {
 }
 
 val moduleJvmTargetInt = gropify.project.jvm.toString().toInt()
-val moduleJavaTargetInt = minOf(moduleJvmTargetInt, 17)
+val moduleJavaTargetInt = minOf(moduleJvmTargetInt, 24)
 val moduleKotlinJvmTarget = moduleJavaTargetInt.toString()
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.jvmTarget.set(JvmTarget.fromTarget(moduleKotlinJvmTarget))
