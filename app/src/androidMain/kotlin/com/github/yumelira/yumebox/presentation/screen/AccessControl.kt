@@ -20,11 +20,15 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -69,12 +73,31 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 @Destination<RootGraph>
 fun AccessControlScreen(navigator: DestinationsNavigator) {
+    val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
 
     val showSettingsSheet = rememberSaveable { mutableStateOf(false) }
     val searchExpanded = rememberSaveable { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                viewModel.onPermissionResult()
+            }
+        }
+    )
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState.needsMiuiPermission }
+            .collect { needsPermission ->
+                if (needsPermission) {
+                    permissionLauncher.launch("com.android.permission.GET_INSTALLED_APPS")
+                }
+            }
+    }
 
     BackHandler(enabled = searchExpanded.value) {
         searchExpanded.value = false
