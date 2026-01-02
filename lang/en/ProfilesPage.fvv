@@ -74,4 +74,36 @@ ProfilesPage = {
     EditDialog = {
         Title = "Edit Profile Name"
     }
+
+    LinkSettings = {
+        Title = "Link Settings"
+        OpenMode = "Open Mode"
+        OpenModeInApp = "In App"
+        OpenModeExternal = "External Browser"
+        DefaultLink = "Default Link"
+        DefaultLinkSummary = "Link opened when clicking top-left shortcut button"
+        AddLink = "Add Link"
+        EditLink = "Edit Link"
+        Name = "Name"
+        Url = "URL"
+        Close = "Close"
+        Validation = {
+            EnterName = "Please enter name"
+            EnterUrl = "Please enter URL"
+            InvalidUrl = "Please enter a valid URL"
+        }
+    }
+
+    ShareDialog = {
+        Title = "Share Profile"
+        ShareFile = "Share Config File"
+        ShareLink = "Share Subscription Link"
+        NoLink = "This profile has no subscription link"
+    }
+
+    Misc = {
+        OpenLink = "Open Link"
+        Complete = "Complete"
+        Error = "Error"
+    }
 }
