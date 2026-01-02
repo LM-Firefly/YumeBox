@@ -50,9 +50,11 @@ val appModule = module {
     single<MMKV>(named("substore")) { get<MMKVProvider>().getMMKV("substore") }
     single<MMKV>(named("proxy_display")) { get<MMKVProvider>().getMMKV("proxy_display") }
     single<MMKV>(named("traffic_statistics")) { get<MMKVProvider>().getMMKV("traffic_statistics") }
+    single<MMKV>(named("profile_links")) { get<MMKVProvider>().getMMKV("profile_links") }
 
     single { AppSettingsStorage(get<MMKV>(named("settings"))) }
     single { NetworkSettingsStorage(get(named("network_settings"))) }
+    single { ProfileLinksStorage(get(named("profile_links"))) }
     single { FeatureStore(get(named("substore"))) }
     single { ProfilesStore(get(named("profiles")), get<CoroutineScope>(named(APPLICATION_SCOPE_NAME))) }
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
@@ -77,7 +79,7 @@ val appModule = module {
 
     viewModel { AppSettingsViewModel(get()) }
     viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get(), get(), get()) }
-    viewModel { ProfilesViewModel(androidApplication(), get()) }
+    viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
     viewModel { ProxyViewModel(get<ClashManager>(), get()) }
     viewModel { ProvidersViewModel(get()) }
     viewModel { LogViewModel(androidApplication()) }
