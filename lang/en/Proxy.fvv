@@ -12,6 +12,7 @@ Proxy = {
     }
     
     Action = {
+        TestToast = "Testing..."
         ExternalResources = "External Resources"
         Panel = "Panel"
         Test = "Test"
@@ -28,6 +29,7 @@ Proxy = {
         All = "Testing all proxy groups..."
         RequestSent = "Test request sent"
         Failed = "Test failed: %s"
+        Tip = "You can also test the node by dragging."
     }
     
     Refresh = {
