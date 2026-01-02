@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.presentation.webview
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -156,6 +157,22 @@ private fun createWebView(
 
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: return false
+                val scheme = request.url?.scheme
+                
+                // 处理自定义 scheme (非 http/https)
+                if (scheme != null && scheme != "http" && scheme != "https" && scheme != "file") {
+                    try {
+                        val intent = Intent(Intent.ACTION_VIEW, request.url)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        return true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        return true
+                    }
+                }
+                
                 return false
             }
 
