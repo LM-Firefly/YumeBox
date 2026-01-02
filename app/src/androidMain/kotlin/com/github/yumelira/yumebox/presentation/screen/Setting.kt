@@ -211,7 +211,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         onClick = { navigator.navigate(AboutScreenDestination) { launchSingleTop = true } },
                         leftAction = {
                             CircularIcon(
-                                imageVector = MiuixIcons.Other.GitHub, contentDescription = null
+                                imageVector = Yume.Github, contentDescription = null
                             )
                         },
                         rightActions = {
