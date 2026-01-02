@@ -24,6 +24,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +72,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.androidx.compose.koinViewModel
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.SpinnerEntry
 import top.yukonga.miuix.kmp.extra.SuperBottomSheet
@@ -82,6 +87,9 @@ import top.yukonga.miuix.kmp.icon.icons.useful.Edit
 import top.yukonga.miuix.kmp.icon.icons.useful.New
 import top.yukonga.miuix.kmp.icon.icons.useful.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import sh.calvin.reorderable.ReorderableCollectionItemScope
 import java.io.File
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -218,59 +226,82 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 firstLine = "暂无配置文件", secondLine = "点击右上角添加配置"
             )
         } else {
+            val lazyListState = rememberLazyListState()
+            val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+                profilesViewModel.reorderProfiles(from.index, to.index)
+            }
 
-            ScreenLazyColumn(
-                scrollBehavior = scrollBehavior,
-                innerPadding = combinePaddingValues(innerPadding, mainInnerPadding),
-                topPadding = 20.dp
+            val bottomBarScrollBehavior = LocalBottomBarScrollBehavior.current
+
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scrollEndHaptic()
+                    .overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection)
+                    .let { mod ->
+                        if (bottomBarScrollBehavior != null) {
+                            mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
+                        } else mod
+                    },
+                contentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding() + 20.dp,
+                    bottom = innerPadding.calculateBottomPadding() + mainInnerPadding.calculateBottomPadding() + LocalSpacing.current.md,
+                ),
+                overscrollEffect = null,
             ) {
-                items(profiles.size) { index ->
-                    val profile = profiles[index]
+                items(profiles.size, key = { profiles[it].id }) { index ->
+                    ReorderableItem(reorderableLazyListState, key = profiles[index].id) { isDragging ->
+                        val profile = profiles[index]
 
-
-                    ProfileCard(
-                        profile = profile,
-                        workDir = File(com.github.yumelira.yumebox.App.instance.filesDir, "clash"),
-                        isDownloading = isDownloading,
-                        onExport = { profile ->
-                            if (!isDownloading) {
-                                profileToShare = profile
-                                showShareDialog.value = true
-                            }
-                        },
-                        onUpdate = { profile ->
-                            if (!isDownloading) {
-                                isDownloading = true
-                                scope.launch {
-                                    profilesViewModel.downloadProfile(profile)
-                                    isDownloading = false
+                        ProfileCard(
+                            profile = profile,
+                            workDir = File(com.github.yumelira.yumebox.App.instance.filesDir, "clash"),
+                            isDownloading = isDownloading,
+                            modifier = Modifier
+                                .longPressDraggableHandle()
+                                .alpha(if (isDragging) 0.9f else 1f),
+                            onExport = { profile ->
+                                if (!isDownloading) {
+                                    profileToShare = profile
+                                    showShareDialog.value = true
                                 }
-                            }
-                        },
-                        onDelete = { profile -> if (!isDownloading) showDeleteDialog = profile },
-                        onEdit = { profile ->
-                            if (!isDownloading) {
-                                profileToEdit = profile
-                                editName = profile.name
-                                showEditDialog.value = true
-                            }
-                        },
-                        onToggleEnabled = { updatedProfile ->
-                            if (!isDownloading) {
-                                scope.launch {
-                                    profilesViewModel.toggleProfileEnabled(
-                                        profile = updatedProfile,
-                                        enabled = updatedProfile.enabled,
-                                        onProfileEnabled = { enabledProfile ->
-                                            if (isRunning) {
-                                                scope.launch {
-                                                    homeViewModel.reloadProfile(enabledProfile.id)
+                            },
+                            onUpdate = { profile ->
+                                if (!isDownloading) {
+                                    isDownloading = true
+                                    scope.launch {
+                                        profilesViewModel.downloadProfile(profile)
+                                        isDownloading = false
+                                    }
+                                }
+                            },
+                            onDelete = { profile -> if (!isDownloading) showDeleteDialog = profile },
+                            onEdit = { profile ->
+                                if (!isDownloading) {
+                                    profileToEdit = profile
+                                    editName = profile.name
+                                    showEditDialog.value = true
+                                }
+                            },
+                            onToggleEnabled = { updatedProfile ->
+                                if (!isDownloading) {
+                                    scope.launch {
+                                        profilesViewModel.toggleProfileEnabled(
+                                            profile = updatedProfile,
+                                            enabled = updatedProfile.enabled,
+                                            onProfileEnabled = { enabledProfile ->
+                                                if (isRunning) {
+                                                    scope.launch {
+                                                        homeViewModel.reloadProfile(enabledProfile.id)
+                                                    }
                                                 }
-                                            }
-                                        })
+                                            })
+                                    }
                                 }
-                            }
-                        })
+                            })
+                    }
                 }
             }
         }

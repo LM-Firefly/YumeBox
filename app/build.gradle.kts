@@ -114,6 +114,7 @@ kotlin {
             implementation("com.mikepenz:aboutlibraries-core:13.2.1")
             implementation("com.mikepenz:aboutlibraries-compose:13.2.1")
             implementation("com.mikepenz:aboutlibraries-compose-m3:13.2.1")
+            implementation("sh.calvin.reorderable:reorderable:2.5.0")
         }
 
         commonMain.dependencies {
