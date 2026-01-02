@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import com.github.yumelira.yumebox.common.util.toast
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getLocalBaseUrl
@@ -253,9 +254,13 @@ private fun ProxyTopBar(
             }
         },
         actions = {
+            val context = LocalContext.current
             IconButton(
                 modifier = Modifier.padding(end = 16.dp),
-                onClick = { onTestDelay?.invoke() }
+                onClick = {
+                    context.toast(MLang.Proxy.Testing.Tip)
+                    onTestDelay?.invoke()
+                }
             ) {
                 Icon(Yume.Zap, contentDescription = MLang.Proxy.Action.Test)
             }
