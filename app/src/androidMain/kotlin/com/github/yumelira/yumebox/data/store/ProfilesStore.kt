@@ -42,6 +42,8 @@ class ProfilesStore(
     var lastUsedProfileId: String by str(default = "")
 
     val profiles: StateFlow<List<Profile>> = _profiles.state
+        .map { list -> list.sortedBy { it.order } }
+        .stateIn(scope, SharingStarted.WhileSubscribed(5000), getAllProfiles().sortedBy { it.order })
 
     val enabledProfile: StateFlow<Profile?> = _profiles.state
         .map { list -> list.firstOrNull { it.enabled } }
@@ -74,4 +76,10 @@ class ProfilesStore(
     fun getRecommendedProfile(): Profile? = getEnabledProfile() ?: _profiles.value.firstOrNull()
 
     fun hasEnabledProfile(): Boolean = _profiles.value.any { it.enabled }
+
+    suspend fun reorderProfiles(profiles: List<Profile>) {
+        profiles.forEachIndexed { index, profile ->
+            _profiles.update({ it.id == profile.id }) { profile.copy(order = index) }
+        }
+    }
 }
