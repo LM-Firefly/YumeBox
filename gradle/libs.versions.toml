@@ -26,7 +26,7 @@ kotlinx-serialization = "1.9.0"
 lifecycle = "2.10.0"
 kotlinx-coroutines = "1.10.2"
 work = "2.11.0"
-reorderable = "2.5.0"
+reorderable = "3.0.0"
 desugar-jdk-libs = "2.1.5"
 annotation-jvm = "1.9.1"
 
