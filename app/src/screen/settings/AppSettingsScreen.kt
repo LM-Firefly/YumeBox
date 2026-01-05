@@ -150,25 +150,14 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     val themeMode by viewModel.themeMode.state.collectAsState()
     val appLanguage by viewModel.appLanguage.state.collectAsState()
     val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsState()
+    val invertOnPrimaryColors by viewModel.invertOnPrimaryColors.state.collectAsState()
     val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
     val bottomBarUseLegacyStyle by viewModel.bottomBarUseLegacyStyle.state.collectAsState()
     val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
     val pageScale by viewModel.pageScale.state.collectAsState()
 
-    Title(MLang.AppSettings.Section.Interface)
+    Title(MLang.AppSettings.Interface.ColorThemeTitle)
     Card {
-        PreferenceEnumItem(
-            title = MLang.AppSettings.Interface.LanguageTitle,
-            summary = MLang.AppSettings.Interface.LanguageSummary,
-            currentValue = appLanguage,
-            items = listOf(
-                MLang.AppSettings.Interface.LanguageSystem,
-                MLang.AppSettings.Interface.LanguageChinese,
-                MLang.AppSettings.Interface.LanguageEnglish,
-            ),
-            values = AppLanguage.entries,
-            onValueChange = viewModel::onAppLanguageChange,
-        )
         PreferenceEnumItem(
             title = MLang.AppSettings.Interface.ThemeModeTitle,
             summary = MLang.AppSettings.Interface.ThemeModeSummary,
@@ -184,6 +173,27 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
         ThemeColorPickerItem(
             themeSeedColorArgb = themeSeedColorArgb,
             onThemeSeedColorChange = viewModel::onThemeSeedColorChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.ThemeColorPolarityInvertTitle,
+            summary = MLang.AppSettings.Interface.ThemeColorPolarityInvertSummary,
+            checked = invertOnPrimaryColors,
+            onCheckedChange = viewModel::onInvertOnPrimaryColorsChange,
+        )
+    }
+    Title(MLang.AppSettings.Section.Interface)
+    Card {
+        PreferenceEnumItem(
+            title = MLang.AppSettings.Interface.LanguageTitle,
+            summary = MLang.AppSettings.Interface.LanguageSummary,
+            currentValue = appLanguage,
+            items = listOf(
+                MLang.AppSettings.Interface.LanguageSystem,
+                MLang.AppSettings.Interface.LanguageChinese,
+                MLang.AppSettings.Interface.LanguageEnglish,
+            ),
+            values = AppLanguage.entries,
+            onValueChange = viewModel::onAppLanguageChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Interface.AutoHideNavbarTitle,
