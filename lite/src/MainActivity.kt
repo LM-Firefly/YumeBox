@@ -95,6 +95,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeMode by appSettingsStorage.themeMode.state.collectAsState()
             val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsState()
+            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
             val pendingImportValue by pendingImportUrl.collectAsState()
             val navController = rememberNavController()
 
@@ -110,6 +111,7 @@ class MainActivity : FragmentActivity() {
                 YumeTheme(
                     themeMode = themeMode,
                     themeSeedColorArgb = themeSeedColorArgb,
+                    invertOnPrimaryColors = invertOnPrimaryColors,
                 ) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),

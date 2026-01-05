@@ -136,6 +136,7 @@ class MainActivity : FragmentActivity() {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
             val themeMode = appSettingsViewModel.themeMode.state.collectAsState().value
             val themeSeedColorArgb = appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
+            val invertOnPrimaryColors = appSettingsViewModel.invertOnPrimaryColors.state.collectAsState().value
             val excludeFromRecents = appSettingsViewModel.excludeFromRecents.state.collectAsState().value
             val topBarBlurEnabled = appSettingsViewModel.topBarBlurEnabled.state.collectAsState().value
             val pageScale = appSettingsViewModel.pageScale.state.collectAsState().value
@@ -164,6 +165,7 @@ class MainActivity : FragmentActivity() {
                     YumeTheme(
                         themeMode = themeMode,
                         themeSeedColorArgb = themeSeedColorArgb,
+                        invertOnPrimaryColors = invertOnPrimaryColors,
                     ) {
                         if (!biometricGateState.isAuthenticated) {
                             Surface(

@@ -58,6 +58,7 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
     val accessViewModel = koinViewModel<AccessControlViewModel>()
 
     val themeMode by vpnViewModel.themeMode.state.collectAsState()
+    val invertOnPrimaryColors by vpnViewModel.invertOnPrimaryColors.state.collectAsState()
     val appLanguage by vpnViewModel.appLanguage.state.collectAsState()
     val dnsHijack by vpnViewModel.dnsHijack.state.collectAsState()
     val allowBypass by vpnViewModel.allowBypass.state.collectAsState()
@@ -108,6 +109,9 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
                         values = AppLanguage.entries,
                         onValueChange = vpnViewModel::onAppLanguageChange,
                     )
+                }
+                Title(MLang.AppSettings.Interface.ColorThemeTitle)
+                Card {
                     PreferenceEnumItem(
                         title = MLang.AppSettings.Interface.ThemeModeTitle,
                         currentValue = themeMode,
@@ -118,6 +122,12 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
                         ),
                         values = ThemeMode.entries,
                         onValueChange = vpnViewModel::onThemeModeChange,
+                    )
+                    PreferenceSwitchItem(
+                        title = MLang.AppSettings.Interface.ThemeColorPolarityInvertTitle,
+                        summary = MLang.AppSettings.Interface.ThemeColorPolarityInvertSummary,
+                        checked = invertOnPrimaryColors,
+                        onCheckedChange = vpnViewModel::onInvertOnPrimaryColorsChange,
                     )
                 }
 

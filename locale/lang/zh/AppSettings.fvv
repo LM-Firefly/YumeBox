@@ -37,7 +37,8 @@ AppSettings = {
         ColorThemePickerTitle = "选择主题色"
         ColorThemeCodeLabel = "主题色代码（#RRGGBB）"
         ColorThemeCustomSummary = "当前主题色：%s"
-
+        ThemeColorPolarityInvertTitle = "反转主题前景色"
+        ThemeColorPolarityInvertSummary = "当主题取色看起来怪异时可尝试开启"
         TopBarBlurTitle = "背景模糊"
         TopBarBlurSummary = "应用模糊背景"
         AutoHideNavbarTitle = "滑动隐藏底栏"

@@ -37,7 +37,8 @@ AppSettings = {
         ColorThemePickerTitle = "Pick Theme Color"
         ColorThemeCodeLabel = "Theme Color Code (#RRGGBB)"
         ColorThemeCustomSummary = "Current theme color: %s"
-
+        ThemeColorPolarityInvertTitle = "Invert Theme Foreground"
+        ThemeColorPolarityInvertSummary = "If themed colors look odd, try enabling this"
         TopBarBlurTitle = "Blur"
         TopBarBlurSummary = "Apply a  blur background to"
         AutoHideNavbarTitle = "Auto-hide Navbar"
