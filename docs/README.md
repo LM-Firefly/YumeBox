@@ -18,7 +18,7 @@
 ## Features
 
 - Mihomo kernel
-- SubStore Optional Support
+- Sub-Store Optional Support
 - Web dashboard
 - For more, please explore on your own...
 
@@ -51,7 +51,7 @@ and create or update translation files in the `lang` directory.
 
 - [Mihomo](https://github.com/MetaCubeX/mihomo)
 - [ClashMetaForAndroid](https://github.com/MetaCubeX/ClashMetaForAndroid)
-- [SubStore](https://github.com/sub-store-org)
+- [Sub-Store](https://github.com/sub-store-org)
 - [SubCase](https://github.com/sion-codin/SubCase)
 - [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
 - [Zashboard](https://github.com/Zephyruso/zashboard)
