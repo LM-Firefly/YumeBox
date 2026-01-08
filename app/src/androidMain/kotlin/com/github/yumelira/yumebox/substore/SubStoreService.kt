@@ -84,7 +84,7 @@ class SubStoreService : Service() {
 
             START_STICKY
         }.getOrElse { e ->
-            Timber.e(e, "SubStore service start failed")
+            Timber.e(e, "Sub-Store service start failed")
             isRunning = false
             START_NOT_STICKY
         }
@@ -97,7 +97,7 @@ class SubStoreService : Service() {
             caseEngine = null
             isRunning = false
         }.onFailure { e ->
-            Timber.e(e, "Failed to stop SubStore service")
+            Timber.e(e, "Failed to stop Sub-Store service")
         }
     }
 

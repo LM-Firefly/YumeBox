@@ -71,7 +71,7 @@ object AppUtil {
 
             val unzipSuccess = ArchiveUtil.unzipZip(zipPath, stagingDir)
             if (!unzipSuccess) {
-                throw IllegalStateException("SubStore 前端资源解压失败")
+                throw IllegalStateException("Sub-Store 前端资源解压失败")
             }
 
             val extractedRoot = File(stagingDir, "dist").takeIf { it.exists() } ?: stagingDir

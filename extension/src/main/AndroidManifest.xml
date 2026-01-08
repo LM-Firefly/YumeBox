@@ -29,6 +29,6 @@
                 android:value="1"/>
         <meta-data
                 android:name="extension_type"
-                android:value="js+substore"/>
+                android:value="js+sub-store"/>
     </application>
 </manifest>
