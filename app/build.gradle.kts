@@ -211,7 +211,7 @@ android {
         }
         resources {
             excludes += listOf(
-                "SubStore/**",
+                "Sub-Store/**",
                 "**/*.kotlin_builtins",
                 "DebugProbesKt.bin",
                 "kotlin-tooling-metadata.json",

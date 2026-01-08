@@ -25,7 +25,7 @@ import java.io.File
 
 object SubStorePaths {
 
-    private const val BASE_DIR = "SubStore"
+    private const val BASE_DIR = "Sub-Store"
     private const val FRONTEND_DIR = "frontend"
     private const val BACKEND_DIR = "backend"
     private const val DATA_DIR = "data"
