@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.presentation.theme
 
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
@@ -225,48 +226,26 @@ private val basePalette = ThemePalette(
     ),
 )
 
-fun colorSchemeFromSeed(
-    seed: Color,
-    isDark: Boolean,
-    invertOnPrimaryColors: Boolean = false,
-) = derivePaletteFromSeed(seed = seed, invertOnPrimaryColors = invertOnPrimaryColors).toColorScheme(isDark)
+fun colorSchemeFromSeed(seed: Color, isDark: Boolean) =
+    derivePaletteFromSeed(seed).toColorScheme(isDark)
 
 fun colorFromArgb(argb: Long): Color = Color(argb.toInt())
 
 fun colorToArgbLong(color: Color): Long = color.toArgb().toLong()
 
-private fun derivePaletteFromSeed(
-    seed: Color,
-    invertOnPrimaryColors: Boolean,
-): ThemePalette {
+private fun derivePaletteFromSeed(seed: Color): ThemePalette {
     return ThemePalette(
-        light = deriveThemeColors(
-            base = basePalette.light,
-            seed = seed,
-            dark = false,
-            invertOnPrimaryColors = invertOnPrimaryColors,
-        ),
-        dark = deriveThemeColors(
-            base = basePalette.dark,
-            seed = seed,
-            dark = true,
-            invertOnPrimaryColors = invertOnPrimaryColors,
-        ),
+        light = deriveThemeColors(base = basePalette.light, seed = seed, dark = false),
+        dark = deriveThemeColors(base = basePalette.dark, seed = seed, dark = true),
     )
 }
 
-private fun deriveThemeColors(
-    base: ThemeColors,
-    seed: Color,
-    dark: Boolean,
-    invertOnPrimaryColors: Boolean,
-): ThemeColors {
+private fun deriveThemeColors(base: ThemeColors, seed: Color, dark: Boolean): ThemeColors {
     val primary = if (dark) seed else seed.mix(Color.Black, 0.05f)
     val primaryVariant = if (dark) seed.mix(Color.White, 0.36f) else seed.mix(Color.White, 0.25f)
-    val onPrimaryPalette = if (invertOnPrimaryColors) basePalette.dark else basePalette.light
 
-    val onPrimary = onPrimaryPalette.onPrimary
-    val onPrimaryVariant = onPrimaryPalette.onPrimaryVariant
+    val onPrimary = primary.autoOnColor(threshold = if (dark) 0.72f else 0.52f)
+    val onPrimaryVariant = primaryVariant.autoOnColor(threshold = if (dark) 0.68f else 0.52f)
 
     val disabledPrimary = if (dark) {
         base.disabledPrimary.mix(seed, 0.18f)
@@ -274,9 +253,9 @@ private fun deriveThemeColors(
         base.disabledPrimary.mix(seed, 0.14f)
     }
     val disabledOnPrimary = if (dark) {
-        onPrimaryPalette.disabledOnPrimary.mix(seed, 0.08f)
+        base.disabledOnPrimary.mix(seed, 0.08f)
     } else {
-        onPrimaryPalette.disabledOnPrimary.mix(seed, 0.06f)
+        base.disabledOnPrimary.mix(seed, 0.06f)
     }
     val disabledPrimaryButton = if (dark) {
         base.disabledPrimaryButton.mix(seed, 0.16f)
@@ -284,9 +263,9 @@ private fun deriveThemeColors(
         base.disabledPrimaryButton.mix(seed, 0.12f)
     }
     val disabledOnPrimaryButton = if (dark) {
-        onPrimaryPalette.disabledOnPrimaryButton.mix(seed, 0.06f)
+        base.disabledOnPrimaryButton.mix(seed, 0.06f)
     } else {
-        onPrimaryPalette.disabledOnPrimaryButton.mix(seed, 0.05f)
+        base.disabledOnPrimaryButton.mix(seed, 0.05f)
     }
     val disabledPrimarySlider = if (dark) {
         base.disabledPrimarySlider.mix(seed, 0.14f)
@@ -312,8 +291,8 @@ private fun deriveThemeColors(
         base.tertiaryContainerVariant.mix(seed, 0.13f)
     }
 
-    val onPrimaryContainer = onPrimaryPalette.onPrimaryContainer
-    val onTertiaryContainer = onPrimaryPalette.onTertiaryContainer
+    val onPrimaryContainer = primaryContainer.autoOnColor()
+    val onTertiaryContainer = tertiaryContainer.autoOnColor()
 
     return base.copy(
         primary = primary,
@@ -343,3 +322,6 @@ private fun Color.mix(other: Color, ratio: Float): Color {
         alpha = alpha + (other.alpha - alpha) * t,
     )
 }
+
+private fun Color.autoOnColor(threshold: Float = 0.52f): Color =
+    if (luminance() > threshold) Color.Black else Color.White
