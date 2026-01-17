@@ -1,8 +1,8 @@
 [versions]
-agp = "8.13.2"
-agp-library = "8.13.2"
+agp = "9.0.0"
+agp-library = "9.0.0"
 kotlin = "2.3.0"
-compose-multiplatform = "1.9.3"
+compose-multiplatform = "1.10.0"
 ksp = "2.3.4"
 aboutlibraries = "13.2.1"
 purejoy-mlang = "1.+"
