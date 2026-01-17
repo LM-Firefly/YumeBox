@@ -22,56 +22,94 @@ val extensionJvmTarget = gropify.project.jvm.toString()
 val extensionAbiList = gropify.abi.extension.list.split(",").map { it.trim() }
 val isMergeBuild = System.getProperty("isMergeBuild") == "true"
 
-android {
-    namespace = gropify.project.namespace.extension
-    compileSdk = gropify.android.compileSdk
+pluginManager.withPlugin("com.android.application") {
+    configure<com.android.build.api.dsl.ApplicationExtension> {
+        namespace = gropify.project.namespace.extension
+        compileSdk = gropify.android.compileSdk
 
-    defaultConfig {
-        minSdk = gropify.android.minSdk
-    }
+        defaultConfig {
+            minSdk = gropify.android.minSdk
+            applicationId = gropify.project.namespace.extension
+            versionCode = gropify.project.version.code
+            versionName = gropify.project.version.name
+            targetSdk = gropify.android.targetSdk
+        }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.toVersion(21)
-        targetCompatibility = JavaVersion.toVersion(21)
-    }
-    if (!isMergeBuild) {
-        configure<com.android.build.api.dsl.ApplicationExtension> {
-            defaultConfig {
-                applicationId = gropify.project.namespace.extension
-                versionCode = gropify.project.version.code
-                versionName = gropify.project.version.name
-                targetSdk = gropify.android.targetSdk
+        compileOptions {
+            sourceCompatibility = JavaVersion.toVersion(21)
+            targetCompatibility = JavaVersion.toVersion(21)
+        }
+
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                //noinspection ChromeOsAbiSupport
+                include(*extensionAbiList.toTypedArray())
+                isUniversalApk = false
             }
-            splits {
-                abi {
-                    isEnable = true
-                    reset()
-                    //noinspection ChromeOsAbiSupport
-                    include(*extensionAbiList.toTypedArray())
-                    isUniversalApk = false
+        }
+
+        packaging {
+            jniLibs {
+                useLegacyPackaging = true
+            }
+            resources {
+                excludes += listOf("META-INF/**")
+            }
+        }
+
+        buildTypes {
+            debug {
+                isMinifyEnabled = false
+            }
+            release {
+                isMinifyEnabled = true
+                if (!isMergeBuild) {
+                    isShrinkResources = true
                 }
+                vcsInfo.include = false
+                proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             }
         }
     }
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
+}
+
+pluginManager.withPlugin("com.android.library") {
+    configure<com.android.build.api.dsl.LibraryExtension> {
+        namespace = gropify.project.namespace.extension
+        compileSdk = gropify.android.compileSdk
+
+        defaultConfig {
+            minSdk = gropify.android.minSdk
         }
-        resources {
-            excludes += listOf("META-INF/**")
+
+        compileOptions {
+            sourceCompatibility = JavaVersion.toVersion(21)
+            targetCompatibility = JavaVersion.toVersion(21)
         }
-    }
-    buildTypes {
-        debug {
-            isMinifyEnabled = false
-        }
-        release {
-            isMinifyEnabled = true
-            if (!isMergeBuild) {
-                isShrinkResources = true
+
+        packaging {
+            jniLibs {
+                useLegacyPackaging = true
             }
-            vcsInfo.include = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            resources {
+                excludes += listOf("META-INF/**")
+            }
+        }
+
+        buildTypes {
+            debug {
+                isMinifyEnabled = false
+            }
+            release {
+                isMinifyEnabled = true
+                if (!isMergeBuild) {
+                    isShrinkResources = true
+                }
+                vcsInfo.include = false
+                proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            }
         }
     }
 }

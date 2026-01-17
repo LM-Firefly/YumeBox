@@ -39,8 +39,8 @@ abstract class DownloadGeoFilesTask : DefaultTask() {
 
 
 plugins {
-    alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.compose)
@@ -68,7 +68,7 @@ val appName = gropify.project.name
 val jvmVersionNumber = gropify.project.jvm
 val jvmVersion = jvmVersionNumber.toString()
 val javaVersionInt = minOf(jvmVersionNumber.toString().toInt(), 21)
-val javaVersion = JavaVersion.toVersion(javaVersionInt) ?: JavaVersion.toVersion(21)
+val javaVersion = JavaVersion.toVersion(javaVersionInt)
 val kotlinJvmTargetInt = javaVersionInt
 val kotlinJvmTarget = kotlinJvmTargetInt.toString()
 val appAbiList = gropify.abi.app.list.split(",").map { it.trim() }

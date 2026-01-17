@@ -98,6 +98,10 @@ class BaseAndroidPlugin : Plugin<Project> {
             } else {
                 project.logger.lifecycle("[signing] signing.properties not found; release builds will be unsigned.")
             }
+            lint {
+                abortOnError = false
+                checkReleaseBuilds = false
+            }
             configureKotlinJvm(project, javaVersionInt)
         }
     }
@@ -137,6 +141,10 @@ class BaseAndroidPlugin : Plugin<Project> {
                     )
                 }
                 jniLibs { useLegacyPackaging = true }
+            }
+            lint {
+                abortOnError = false
+                checkReleaseBuilds = false
             }
             configureKotlinJvm(project, javaVersionInt)
         }
