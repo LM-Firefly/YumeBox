@@ -1,0 +1,81 @@
+name: Update Clash-Core and Go Modules
+on:
+  repository_dispatch:
+    types:
+      - core-updated
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.DEFAULT_BRANCH }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout and Update submodules
+        run: git submodule update --init --recursive --remote --force
+
+      - name: Update mihomo
+        id: mihomo
+        run: |
+          # 前面的步骤已经更新了 submodule, 这里只需要获取版本号
+          cd core/src/foss/golang/mihomo
+          echo "mihomo-ver=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: 25
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Install update-go-mod-replace
+        run: |
+          go install github.com/metacubex/update-go-mod-replace@latest
+      - name: Update Foss Gomod
+        run: |
+          cd ${{ github.workspace }}/core/src/foss/golang/
+          update-go-mod-replace ${{ github.workspace }}/core/src/foss/golang/mihomo/go.mod $(pwd)/go.mod
+          go mod tidy
+      - name: Update Main Gomod
+        run: |
+          cd ${{ github.workspace }}/core/src/golang/
+          update-go-mod-replace ${{ github.workspace }}/core/src/foss/golang/mihomo/go.mod $(pwd)/go.mod
+          go mod tidy
+
+      - name: Update version.h
+        run: |
+          sed -i 's/#define GIT_VERSION .*/#define GIT_VERSION Alpha-${{ steps.mihomo.outputs.mihomo-ver }}/' core/src/cpp/version.h
+
+      - name: Commit updated dependencies
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "-A"
+          author_email: mail@example.com
+          default_author: github_actions
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          message: "Updated vendor mihomo to commit ${{ steps.mihomo.outputs.mihomo-ver }} 🎉 "
+
+      #      - uses: tibdex/github-app-token@v2
+      #        id: generate-token
+      #        with:
+      #          app_id: ${{ secrets.MAINTAINER_APPID }}
+      #          private_key: ${{ secrets.MAINTAINER_APP_PRIVATE_KEY }}

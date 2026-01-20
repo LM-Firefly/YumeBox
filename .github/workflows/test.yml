@@ -1,41 +1,36 @@
-name: PR Test
-
+name: Build Pre-Release
 on:
-  pull_request:
-    branches: [ "Yume", "dev" ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
-
-concurrency:
-  group: Build-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Checkout submodules
+        run: git submodule update --init --recursive --force
+
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
           cache: 'gradle'
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: "1.25"
+          go-version: "1.26"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -44,16 +39,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/caches/build-cache-1
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties','settings.gradle*','**/build.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Cache NDK
         id: cache-ndk
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
           key: ndk-29.0.14206865
@@ -69,31 +74,96 @@ jobs:
           mkdir -p core/src/foss/golang/mihomo/component/ca
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/mihomo/component/ca/ca-certificates.crt
 
-      - name: Sync kernel
-        run: |
-          chmod +x scripts/sync-kernel.sh
-          ./scripts/sync-kernel.sh meta
-
       - name: Write signing config
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          if [ -n "${{ secrets.SIGNING_STORE_PASSWORD }}" ]; then
-            echo "keystore.password=${{ secrets.SIGNING_STORE_PASSWORD }}" > signing.properties
-            echo "key.alias=${{ secrets.SIGNING_KEY_ALIAS }}" >> signing.properties
-            echo "key.password=${{ secrets.SIGNING_KEY_PASSWORD }}" >> signing.properties
-            echo "keystore.path=release.keystore" >> signing.properties
-          fi
+          touch signing.properties
+          echo "keystore.password=$SIGNING_STORE_PASSWORD" > signing.properties
+          echo "key.alias=$SIGNING_KEY_ALIAS" >> signing.properties
+          echo "key.password=$SIGNING_KEY_PASSWORD" >> signing.properties
+          echo "keystore.path=$GITHUB_WORKSPACE/release.keystore" >> signing.properties
+          echo "cat signing.properties"
+          cat signing.properties
 
-      - name: Inject google-services.json
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
+      # google-services.json injection removed (Firebase disabled)
 
-      - name: Build Debug APK
+      - name: Pre-release Build
+        if: success()
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          # 1. Build Split APKs
+          ./gradlew --no-daemon --no-configuration-cache assembleRelease --parallel
+          # Create directory for artifacts
+          mkdir -p release_artifacts
+          # Copy Split APKs
+          cp app/build/outputs/apk/release/*.apk release_artifacts/
+          cp extension/build/outputs/apk/release/*.apk release_artifacts/
+          # 2. Clean
+          ./gradlew --no-daemon clean
+          # 3. Build Merged APK
+          ./gradlew --no-daemon --no-configuration-cache assembleReleaseWithExtension --parallel
+          # Copy Merged APK
+          cp app/build/outputs/apk/release/*.apk release_artifacts/
 
-      - name: Generate build summary
-        if: always()
+      - name: Upload all APKs
+        uses: actions/upload-artifact@v6
+        with:
+          name: yumebox-apks
+          path: release_artifacts/*
+
+      - name: Upload mappings
+        uses: actions/upload-artifact@v6
+        with:
+          name: mappings
+          path: app/build/outputs/mapping/release/
+
+      # Delete old Prerelease-alpha
+      - name: Delete old Prerelease-alpha
         run: |
-          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** \`${{ job.status }}\`" >> $GITHUB_STEP_SUMMARY
+          gh release delete Prerelease-alpha -y || true
+          git fetch --tags || true
+          git push --delete origin Prerelease-alpha || true
+          git tag -d Prerelease-alpha || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag Repo
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: Prerelease-alpha
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Changelog Builder
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v6.1.0
+        with:
+          mode: "COMMIT"
+          configurationJson: |
+            {
+              "template": "#{{CHANGELOG}}",
+              "categories": [
+                {
+                  "title": "## 💬 Commits",
+                  "labels": []
+                }
+              ],
+              "ignore_labels": [
+                "Update"
+              ]
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Alpha
+        uses: softprops/action-gh-release@v2
+        if: ${{  success() }}
+        with:
+          tag_name: Prerelease-alpha
+          files: release_artifacts/*
+          prerelease: true
+          body: ${{ steps.build_changelog.outputs.changelog }}
+          generate_release_notes: true
