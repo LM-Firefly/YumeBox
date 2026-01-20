@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
@@ -61,7 +41,43 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
         mmkv.decodeString(KEY_DAILY_SUMMARIES)?.let { jsonStr ->
             runCatching {
                 val summaries: Map<Long, DailyTrafficSummary> = json.decodeFromString(jsonStr)
-                _dailySummaries.value = summaries
+                // Migrate old 4-hour slot data (6 slots) -> new 2-hour slot data (12 slots)
+                val migrated = if (TimeSlot.entries.size == 12) {
+                    summaries.mapValues { entry ->
+                        val s = entry.value
+                        val hourly = s.hourlyData
+                        val maxKey = hourly.keys.maxOrNull() ?: -1
+                        // detect old format by checking max slot index <= 5
+                        if (hourly.isNotEmpty() && maxKey <= 5) {
+                            val newHourly = mutableMapOf<Int, TrafficSlotData>()
+                            for ((oldIndex, data) in hourly) {
+                                val firstIndex = oldIndex * 2
+                                val secondIndex = firstIndex + 1
+                                val halfUpload = data.upload / 2
+                                val halfDownload = data.download / 2
+                                // put any remainder to the first slot to keep totals consistent
+                                val uploadRemainder = data.upload - halfUpload * 2
+                                val downloadRemainder = data.download - halfDownload * 2
+                                val first = newHourly[firstIndex] ?: TrafficSlotData(firstIndex, 0L, 0L)
+                                val second = newHourly[secondIndex] ?: TrafficSlotData(secondIndex, 0L, 0L)
+                                newHourly[firstIndex] = first.copy(
+                                    upload = first.upload + halfUpload + uploadRemainder,
+                                    download = first.download + halfDownload + downloadRemainder
+                                )
+                                newHourly[secondIndex] = second.copy(
+                                    upload = second.upload + halfUpload,
+                                    download = second.download + halfDownload
+                                )
+                            }
+                            s.copy(hourlyData = newHourly)
+                        } else {
+                            s
+                        }
+                    }
+                } else {
+                    summaries
+                }
+                _dailySummaries.value = migrated
             }
         }
 
@@ -158,7 +174,26 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
 
     fun getTodaySummary(): DailyTrafficSummary {
         val todayKey = getDayKey(Calendar.getInstance())
-        return _dailySummaries.value[todayKey] ?: DailyTrafficSummary.EMPTY
+        return _dailySummaries.value[todayKey] ?: run {
+            val now = System.currentTimeMillis()
+            val entries = _dailySummaries.value.filterKeys { it <= now }
+            val maxKey = entries.keys.maxOrNull()
+            if (maxKey != null && isToday(maxKey)) {
+                entries[maxKey] ?: DailyTrafficSummary(
+                    dateMillis = todayKey,
+                    totalUpload = 0L,
+                    totalDownload = 0L,
+                    hourlyData = emptyMap()
+                )
+            } else {
+                DailyTrafficSummary(
+                    dateMillis = todayKey,
+                    totalUpload = 0L,
+                    totalDownload = 0L,
+                    hourlyData = emptyMap()
+                )
+            }
+        }
     }
 
     fun getYesterdaySummary(): DailyTrafficSummary {
@@ -166,7 +201,31 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
             add(Calendar.DAY_OF_YEAR, -1)
         }
         val yesterdayKey = getDayKey(calendar)
-        return _dailySummaries.value[yesterdayKey] ?: DailyTrafficSummary.EMPTY
+        return _dailySummaries.value[yesterdayKey] ?: run {
+            val oneDayMs = 24 * 60 * 60 * 1000L
+            val todayStart = getDayKey(Calendar.getInstance())
+            val entries = _dailySummaries.value.filterKeys { it < todayStart && it >= todayStart - oneDayMs }
+            val maxKey = entries.keys.maxOrNull()
+            if (maxKey != null) {
+                entries[maxKey] ?: DailyTrafficSummary(
+                    dateMillis = yesterdayKey,
+                    totalUpload = 0L,
+                    totalDownload = 0L,
+                    hourlyData = emptyMap()
+                )
+            } else {
+                DailyTrafficSummary(
+                    dateMillis = yesterdayKey,
+                    totalUpload = 0L,
+                    totalDownload = 0L,
+                    hourlyData = emptyMap()
+                )
+            }
+        }
+    }
+    private fun isToday(dateMillis: Long): Boolean {
+        val todayKey = getDayKey(Calendar.getInstance())
+        return dateMillis == todayKey
     }
 
     fun getDailySummaries(days: Int): List<DailyTrafficSummary> {

@@ -30,12 +30,41 @@ var processors = []processor{
 
 type processor func(cfg *config.RawConfig, profileDir string) error
 
+type OverrideConfig struct {
+	GlobalTimeout int `json:"global-timeout"`
+}
+
 func patchOverride(cfg *config.RawConfig, _ string) error {
 	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotPersist))).Decode(cfg); err != nil {
 		log.Warnln("Apply persist override: %s", err.Error())
 	}
 	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotSession))).Decode(cfg); err != nil {
 		log.Warnln("Apply session override: %s", err.Error())
+	}
+
+	var override OverrideConfig
+	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotPersist))).Decode(&override); err != nil {
+		// ignore error
+	}
+	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotSession))).Decode(&override); err != nil {
+		// ignore error
+	}
+	defaultGlobalTimeout := 5000
+	globalTimeout := defaultGlobalTimeout
+	if override.GlobalTimeout > 0 {
+		globalTimeout = override.GlobalTimeout
+	}
+	for _, mapping := range cfg.ProxyGroup {
+		if _, ok := mapping["timeout"]; !ok {
+			mapping["timeout"] = globalTimeout
+		}
+	}
+	for _, mapping := range cfg.ProxyProvider {
+		if hc, ok := mapping["health-check"].(map[string]any); ok {
+			if _, ok := hc["timeout"]; !ok {
+				hc["timeout"] = globalTimeout
+			}
+		}
 	}
 
 	return nil
