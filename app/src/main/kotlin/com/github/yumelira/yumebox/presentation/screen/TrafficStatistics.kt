@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.foundation.background
@@ -129,7 +109,7 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                                     )
 
                                     trafficDifference < 0 -> MLang.TrafficStatistics.Compare.LessThanYesterday.format(
-                                        formatBytes(trafficDifference)
+                                        formatBytes(kotlin.math.abs(trafficDifference))
                                     )
 
                                     else -> MLang.TrafficStatistics.Compare.SameAsYesterday
@@ -158,7 +138,8 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                                     viewModel.setSelectedBarIndex(
                                         if (selectedBarIndex == index) -1 else index
                                     )
-                                }
+                                },
+                                slotCount = if (selectedTimeRange == StatisticsTimeRange.WEEK) 14 else 12
                             )
                         }
 
@@ -172,7 +153,7 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                                 val selectedItem = chartItems.getOrNull(selectedBarIndex)
                                 if (selectedItem != null && selectedItem.label.isNotEmpty()) {
                                     Text(
-                                        text = "${selectedItem.label}: ${formatBytes(selectedItem.value)}",
+                                        text = "${selectedItem.label}: ↑${formatBytes(selectedItem.upload)} ↓${formatBytes(selectedItem.download)}",
                                         style = MiuixTheme.textStyles.body2,
                                         color = MiuixTheme.colorScheme.primary
                                     )

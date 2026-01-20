@@ -4,10 +4,12 @@ package main
 import "C"
 
 import (
+	"time"
 	"unsafe"
 
 	"cfa/native/app"
 	"cfa/native/tunnel"
+	"github.com/metacubex/mihomo/tunnel/statistic"
 )
 
 //export queryTunnelState
@@ -91,6 +93,16 @@ func patchSelector(selector, name C.c_string) C.int {
 	return 0
 }
 
+//export patchForceSelector
+func patchForceSelector(selector, name C.c_string) C.int {
+	s := C.GoString(selector)
+	n := C.GoString(name)
+	if tunnel.PatchForceSelector(s, n) {
+		return 1
+	}
+	return 0
+}
+
 //export queryProviders
 func queryProviders() *C.char {
 	return marshalJson(tunnel.QueryProviders())
@@ -108,4 +120,76 @@ func updateProvider(completable unsafe.Pointer, pType C.c_string, name C.c_strin
 //export suspend
 func suspend(suspended C.int) {
 	tunnel.Suspend(suspended != 0)
+}
+
+//export queryConnections
+func queryConnections() *C.char {
+	return marshalJson(statistic.DefaultManager.Snapshot())
+}
+
+//export subscribeConnections
+func subscribeConnections(remote unsafe.Pointer) {
+	go func(remote unsafe.Pointer) {
+		ch := make(chan struct{}, 256)
+		prev := statistic.DefaultRequestNotify
+		statistic.DefaultRequestNotify = func(c statistic.Tracker) {
+			select {
+			case ch <- struct{}{}:
+			default:
+			}
+		}
+		go func() {
+			defer func() {
+				statistic.DefaultRequestNotify = prev
+			}()
+			const aggWindow = 200 * time.Millisecond
+			const minInterval = 500 * time.Millisecond
+			var lastSent time.Time
+			for {
+				select {
+				case <-ch:
+					timer := time.NewTimer(aggWindow)
+					for {
+						select {
+						case <-ch:
+						case <-timer.C:
+							now := time.Now()
+							if !lastSent.IsZero() {
+								d := now.Sub(lastSent)
+								if d < minInterval {
+									time.Sleep(minInterval - d)
+								}
+							}
+							snap := statistic.DefaultManager.Snapshot()
+							if C.connection_received(remote, marshalJson(snap)) != 0 {
+								C.release_object(remote)
+								statistic.DefaultRequestNotify = prev
+								return
+							}
+							lastSent = time.Now()
+							break
+						}
+					}
+				}
+			}
+		}()
+		// keep outer goroutine alive while remote is valid; it can exit if connection_received returns non-zero
+	}(remote)
+}
+
+//export closeConnection
+func closeConnection(id C.c_string) C.int {
+	i := C.GoString(id)
+	c := statistic.DefaultManager.Get(i)
+	if c != nil {
+		_ = c.Close()
+		return 1
+	}
+	return 0
+}
+
+//export closeAllConnections
+func closeAllConnections() C.int {
+	tunnel.CloseAllConnections()
+	return 1
 }

@@ -1,35 +1,15 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.ramcosta.composedestinations.annotation.Destination
@@ -37,11 +17,13 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.SuperDialog
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
-import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.extended.AddCircle
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Reset
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 object EditorDataHolder {
@@ -530,54 +512,62 @@ private fun KeyValueInputDialog(
     var key by remember { mutableStateOf(initialKey) }
     var value by remember { mutableStateOf(initialValue) }
     var keyError by remember { mutableStateOf<String?>(null) }
-
+    val showDialog = remember { mutableStateOf(true) }
+    if (showDialog.value) {
     WindowBottomSheet(
-        show = remember { mutableStateOf(true) },
-        title = title,
-        insideMargin = DpSize(24.dp, 16.dp),
-        onDismissRequest = onDismiss,
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            TextField(
-                value = key,
-                onValueChange = {
-                    key = it
-                    keyError = null
-                },
-                label = keyPlaceholder,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (keyError != null) {
-                Text(
-                    text = keyError!!,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 4.dp),
+            title = title,
+            show = showDialog,
+            onDismissRequest = {
+                showDialog.value = false
+                onDismiss()
+            },
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                TextField(
+                    value = key,
+                    onValueChange = {
+                        key = it
+                        keyError = null
+                    },
+                    label = keyPlaceholder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (keyError != null) {
+                    Text(
+                        text = keyError!!,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                TextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = valuePlaceholder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                DialogButtonRow(
+                    onCancel = {
+                        showDialog.value = false
+                        onDismiss()
+                    },
+                    onConfirm = {
+                        val trimmedKey = key.trim()
+                        val trimmedValue = value.trim()
+                        when {
+                            trimmedKey.isBlank() -> keyError = MLang.Component.Editor.Error.KeyEmpty
+                            trimmedKey != currentEditingKey && existingKeys.contains(trimmedKey) -> keyError =
+                                MLang.Component.Editor.Error.KeyExists
+                            else -> {
+                                showDialog.value = false
+                                onConfirm(trimmedKey, trimmedValue)
+                            }
+                        }
+                    },
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            TextField(
-                value = value,
-                onValueChange = { value = it },
-                label = valuePlaceholder,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            DialogButtonRow(
-                onCancel = onDismiss,
-                onConfirm = {
-                    val trimmedKey = key.trim()
-                    val trimmedValue = value.trim()
-
-                    when {
-                        trimmedKey.isBlank() -> keyError = MLang.Component.Editor.Error.KeyEmpty
-                        trimmedKey != currentEditingKey && existingKeys.contains(trimmedKey) -> keyError =
-                            MLang.Component.Editor.Error.KeyExists
-
-                        else -> onConfirm(trimmedKey, trimmedValue)
-                    }
-                },
-            )
         }
     }
 }
