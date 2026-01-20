@@ -6,12 +6,20 @@ import com.github.yumelira.yumebox.core.util.Parcelizer
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class DelayHistory(val time: String, val delay: Int)
+
+@Serializable
+data class ProxyExtraState(val alive: Boolean = false, val history: List<DelayHistory> = emptyList())
+
+@Serializable
 data class Proxy(
     val name: String,
     val title: String,
     val subtitle: String,
     val type: Type,
     val delay: Int,
+    val history: List<DelayHistory> = emptyList(),
+    val extra: Map<String, ProxyExtraState> = emptyMap(),
 ) : Parcelable {
     @Suppress("unused")
     enum class Type(val group: Boolean) {
@@ -38,6 +46,8 @@ data class Proxy(
         Mieru(false),
         AnyTLS(false),
         Sudoku(false),
+        Masque(false),
+        TrustTunnel(false),
 
 
         Relay(true),

@@ -23,6 +23,7 @@ package com.github.yumelira.yumebox.data.store
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.theme.AppColorTheme
+import com.github.yumelira.yumebox.presentation.theme.DEFAULT_THEME_SEED_ARGB
 import com.tencent.mmkv.MMKV
 
 class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
@@ -32,6 +33,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
 
     val themeMode by enumFlow(ThemeMode.Auto)
     val colorTheme by enumFlow(AppColorTheme.ClassicMonochrome)
+    val themeSeedColorArgb by longFlow(DEFAULT_THEME_SEED_ARGB)
     val appLanguage by enumFlow(AppLanguage.System)
     val automaticRestart by boolFlow(false)
     val hideAppIcon by boolFlow(false)
@@ -39,10 +41,8 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val bottomBarFloating by boolFlow(false)
     val showDivider by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
-
-    val oneWord by strFlow("古が遺す呪われた種が、もう一度僕らを苦しめても")
-
-    val oneWordAuthor by strFlow("イノチの灯し方")
-
+    val oneWord by strFlow("一个人走 默守一隅清欢")
+    val oneWordAuthor by strFlow("Firefly")
     val customUserAgent by strFlow("")
+    val logLevel by intFlow(android.util.Log.INFO)
 }

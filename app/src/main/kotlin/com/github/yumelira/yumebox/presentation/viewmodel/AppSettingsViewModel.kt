@@ -21,22 +21,29 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.Preference
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import com.github.yumelira.yumebox.domain.facade.SettingsFacade
 import com.github.yumelira.yumebox.presentation.theme.AppColorTheme
+import com.github.yumelira.yumebox.presentation.theme.DEFAULT_THEME_SEED_ARGB
 
 
 class AppSettingsViewModel(
-    storage: AppSettingsStorage,
+    private val settingsFacade: SettingsFacade,
+    private val proxyFacade: ProxyFacade,
 ) : ViewModel() {
+
+    // Note: Currently exposing Preference<T> for UI compatibility
+    // Future consideration: Migrate to StateFlow for more reactive patterns
+    private val storage = settingsFacade.getAppSettingsStorage()
 
     val onboardingCompleted: Preference<Boolean> = storage.onboardingCompleted
     val privacyPolicyAccepted: Preference<Boolean> = storage.privacyPolicyAccepted
 
     val themeMode: Preference<ThemeMode> = storage.themeMode
     val colorTheme: Preference<AppColorTheme> = storage.colorTheme
+    val themeSeedColorArgb: Preference<Long> = storage.themeSeedColorArgb
     val automaticRestart: Preference<Boolean> = storage.automaticRestart
     val hideAppIcon: Preference<Boolean> = storage.hideAppIcon
     val showTrafficNotification: Preference<Boolean> = storage.showTrafficNotification
@@ -47,21 +54,28 @@ class AppSettingsViewModel(
     val oneWord: Preference<String> = storage.oneWord
     val oneWordAuthor: Preference<String> = storage.oneWordAuthor
     val customUserAgent: Preference<String> = storage.customUserAgent
+    val logLevel: Preference<Int> = storage.logLevel
 
 
     fun onThemeModeChange(mode: ThemeMode) = themeMode.set(mode)
     fun onColorThemeChange(theme: AppColorTheme) = colorTheme.set(theme)
+    fun onThemeSeedColorChange(argb: Long) = themeSeedColorArgb.set(argb)
+    fun resetThemeSeedColor() = themeSeedColorArgb.set(DEFAULT_THEME_SEED_ARGB)
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
     fun onAutomaticRestartChange(enabled: Boolean) = automaticRestart.set(enabled)
     fun onHideAppIconChange(hide: Boolean) = hideAppIcon.set(hide)
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)
     fun onBottomBarFloatingChange(floating: Boolean) = bottomBarFloating.set(floating)
     fun onShowDividerChange(show: Boolean) = showDivider.set(show)
+    fun onLogLevelChange(level: Int) {
+        logLevel.set(level)
+        com.github.yumelira.yumebox.data.model.AppLogBuffer.minLogLevel = level
+    }
 
     fun onOneWordChange(text: String) = oneWord.set(text)
     fun onOneWordAuthorChange(author: String) = oneWordAuthor.set(author)
     fun onCustomUserAgentChange(userAgent: String) = customUserAgent.set(userAgent)
-    fun applyCustomUserAgent(userAgent: String) = Clash.setCustomUserAgent(userAgent)
+    fun applyCustomUserAgent(userAgent: String) = proxyFacade.setCustomUserAgent(userAgent)
 
     fun setOnboardingCompleted(completed: Boolean) = onboardingCompleted.set(completed)
     fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)

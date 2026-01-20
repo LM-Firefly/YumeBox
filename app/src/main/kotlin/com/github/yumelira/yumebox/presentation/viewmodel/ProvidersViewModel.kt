@@ -24,9 +24,8 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.model.Provider
-import com.github.yumelira.yumebox.data.repository.ProvidersRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,8 +34,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProvidersViewModel(
-    private val clashManager: ClashManager,
-    private val providersRepository: ProvidersRepository
+    private val proxyFacade: ProxyFacade
 ) : ViewModel() {
 
     private val _providers = MutableStateFlow<List<Provider>>(emptyList())
@@ -45,17 +43,17 @@ class ProvidersViewModel(
     private val _uiState = MutableStateFlow(ProvidersUiState())
     val uiState: StateFlow<ProvidersUiState> = _uiState.asStateFlow()
 
-    val isRunning: StateFlow<Boolean> = clashManager.isRunning
+    val isRunning: StateFlow<Boolean> = proxyFacade.isRunning
 
-    fun refreshProviders() {
+    fun refreshProviders(maxRetries: Int = 2) {
         viewModelScope.launch {
-            if (!clashManager.isRunning.value) {
+            if (!proxyFacade.isRunning.value) {
                 _providers.value = emptyList()
                 return@launch
             }
 
             _uiState.update { it.copy(isLoading = true) }
-            val result = providersRepository.queryProviders()
+            val result = proxyFacade.queryProviders()
             result.onSuccess { providerList ->
                 _providers.value = providerList.sorted()
             }.onFailure { e ->
@@ -71,7 +69,7 @@ class ProvidersViewModel(
         val providerKey = "${provider.type}_${provider.name}"
         viewModelScope.launch {
             _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
-            val result = providersRepository.updateProvider(provider)
+            val result = proxyFacade.updateProvider(provider)
             result.onSuccess {
                 refreshProviders()
                 _uiState.update { it.copy(message = MLang.Providers.Message.UpdateSuccess.format(provider.name)) }
@@ -93,7 +91,7 @@ class ProvidersViewModel(
             val providerKeys = httpProviders.map { "${it.type}_${it.name}" }.toSet()
             _uiState.update { it.copy(updatingProviders = providerKeys) }
 
-            val result = providersRepository.updateAllProviders(httpProviders)
+            val result = proxyFacade.updateAllProviders(httpProviders)
             result.onSuccess { updateResult ->
                 refreshProviders()
                 if (updateResult.failedProviders.isEmpty()) {
@@ -130,7 +128,7 @@ class ProvidersViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
 
-            val result = providersRepository.uploadProviderFile(context, provider, uri)
+            val result = proxyFacade.uploadProviderFile(context, provider, uri)
             result.onSuccess {
                 refreshProviders()
                 _uiState.update { it.copy(message = MLang.Providers.Message.UploadSuccess.format(provider.name)) }

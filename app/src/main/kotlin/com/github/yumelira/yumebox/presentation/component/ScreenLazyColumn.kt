@@ -20,19 +20,22 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
+import dev.chrisbanes.haze.hazeSource
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -45,15 +48,21 @@ fun ScreenLazyColumn(
     bottomPadding: Dp = 0.dp,
     topPadding: Dp = 0.dp,
     enableGlobalScroll: Boolean = true,
+    lazyListState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState(),
     content: LazyListScope.() -> Unit,
 ) {
     val bottomBarScrollBehavior = if (enableGlobalScroll) LocalBottomBarScrollBehavior.current else null
+    val topBarHazeState = LocalTopBarHazeState.current
 
     LazyColumn(
+        state = lazyListState,
         modifier = modifier
             .fillMaxSize()
             .scrollEndHaptic()
             .overScrollVertical()
+            .let { mod ->
+                if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod
+            }
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .let { mod ->
                 if (enableGlobalScroll && bottomBarScrollBehavior != null) {

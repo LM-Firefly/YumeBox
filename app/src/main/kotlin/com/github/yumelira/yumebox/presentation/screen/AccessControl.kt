@@ -20,9 +20,11 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
-import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ClipData
 import android.content.Context
+import android.graphics.Bitmap
+import android.util.LruCache
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -31,44 +33,47 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.zIndex
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -79,7 +84,10 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -92,10 +100,14 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SearchBar
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
+import top.yukonga.miuix.kmp.extra.WindowDropdown
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+private val iconCache = LruCache<String, Bitmap>(100)
 
 @Composable
 @Destination<RootGraph>
@@ -137,6 +149,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 TopBar(
                     title = MLang.AccessControl.Title,
                     scrollBehavior = scrollBehavior,
+                    navigationIcon = { NavigationBackIcon(navigator = navigator) },
                     actions = {
                         IconButton(
                             modifier = Modifier.padding(end = 24.dp),
@@ -212,8 +225,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 insideMargin = DpSize(32.dp, 16.dp),
             ) {
                 val context = LocalContext.current
-                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
+                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 Column {
                     top.yukonga.miuix.kmp.basic.Card {
                         SuperSwitch(
@@ -275,7 +287,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                             onSelectedIndexChange = { index ->
                                 when (index) {
                                     0 -> {
-                                        val clipData = clipboardManager.primaryClip
+                                        val clipData = clipboardManager?.primaryClip
                                         val text = if (clipData != null && clipData.itemCount > 0) {
                                             clipData.getItemAt(0)?.text?.toString() ?: ""
                                         } else {
@@ -300,7 +312,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                                     1 -> {
                                         val exportText = viewModel.exportPackages()
                                         val clip = ClipData.newPlainText("packages", exportText)
-                                        clipboardManager.setPrimaryClip(clip)
+                                        clipboardManager?.setPrimaryClip(clip)
                                         Toast.makeText(
                                             context,
                                             MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size),
@@ -366,6 +378,7 @@ private fun ExpandedSearchOverlay(
     onAppSelectionChange: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current.applicationContext
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -404,13 +417,27 @@ private fun ExpandedSearchOverlay(
                     items = filteredApps,
                     key = { it.packageName }
                 ) { app ->
+                    val icon by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), key1 = app.packageName) {
+                        if (value == null) {
+                            value = withContext(Dispatchers.IO) {
+                                try {
+                                    val drawable = context.packageManager.getApplicationIcon(app.packageName)
+                                    val bitmap = drawable.toBitmap()
+                                    iconCache.put(app.packageName, bitmap)
+                                    bitmap
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            }
+                        }
+                    }
                     BasicComponent(
                         title = app.label,
                         summary = app.packageName,
                         startAction = {
-                            app.icon?.let { icon ->
+                            icon?.let { bmp ->
                                 Image(
-                                    bitmap = icon.toBitmap(width = 80, height = 80).asImageBitmap(),
+                                    bitmap = bmp.asImageBitmap(),
                                     contentDescription = app.label,
                                     modifier = Modifier.size(40.dp)
                                 )
@@ -440,14 +467,29 @@ private fun AppCard(
     onSelectionChange: (Boolean) -> Unit,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current.applicationContext
+    val icon by produceState<Bitmap?>(initialValue = iconCache.get(app.packageName), key1 = app.packageName) {
+        if (value == null) {
+            value = withContext(Dispatchers.IO) {
+                try {
+                    val drawable = context.packageManager.getApplicationIcon(app.packageName)
+                    val bitmap = drawable.toBitmap()
+                    iconCache.put(app.packageName, bitmap)
+                    bitmap
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
     Card(modifier = Modifier.padding(vertical = 4.dp)) {
         BasicComponent(
             title = app.label,
             summary = app.packageName,
             startAction = {
-                app.icon?.let { icon ->
+                icon?.let { bmp ->
                     Image(
-                        bitmap = icon.toBitmap(width = 80, height = 80).asImageBitmap(),
+                        bitmap = bmp.asImageBitmap(),
                         contentDescription = app.label,
                         modifier = Modifier
                             .size(45.dp)

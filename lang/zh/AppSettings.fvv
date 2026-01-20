@@ -12,10 +12,8 @@ AppSettings = {
     }
     
     Behavior = {
-        AutoStartTitle = "自动启动"
-        AutoStartSummary = "应用启动和开机时自动启动代理服务"
-        OneChinaTitle = "坚持一个中国原则"
-        OneChinaSummary = "自动将港澳台地区旗帜及区域码显示为中国"
+        AutoStartTitle = "自动重启"
+        AutoStartSummary = "应用启动、开机及异常终止后自动重启代理服务"
     }
     
     Home = {
@@ -31,7 +29,12 @@ AppSettings = {
         ThemeModeDark = "深色"
         
         ColorThemeTitle = "配色方案"
-        ColorThemeSummary = "选择品牌色风格，默认为极简黑白"
+        ColorThemeSummary = "选择预设配色，或使用自定义主题色"
+        ColorThemePickerTitle = "自定义主题色"
+        ColorThemeCodeLabel = "主题色代码（#RRGGBB）"
+        ColorThemeDefaultSummary = "使用默认黑白主题"
+        ColorThemeCustomSummary = "当前主题色：%s"
+        ColorThemeResetDefault = "恢复默认"
         ColorMinimal = "极简黑白"
         ColorClassic = "柏码经典"
         ColorOcean = "海洋之歌"
@@ -62,6 +65,8 @@ AppSettings = {
     ServiceSection = {
         TrafficNotificationTitle = "显示流量通知"
         TrafficNotificationSummary = "在通知栏中显示流量使用情况"
+        LogLevelTitle = "日志级别"
+        LogLevelSummary = "设置最低日志记录级别"
     }
 
     Network = {

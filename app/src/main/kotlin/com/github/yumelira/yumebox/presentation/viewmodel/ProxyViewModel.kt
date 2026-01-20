@@ -2,11 +2,10 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.TunnelState
-import com.github.yumelira.yumebox.data.repository.OverrideRepository
-import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import com.github.yumelira.yumebox.domain.facade.RuntimeFacade
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
@@ -17,9 +16,8 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class ProxyViewModel(
-    private val clashManager: ClashManager,
-    private val overrideRepository: OverrideRepository,
-    private val proxyDisplaySettingsStore: ProxyDisplaySettingsStore
+    private val proxyFacade: ProxyFacade,
+    private val runtimeFacade: RuntimeFacade
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProxyUiState())
@@ -28,19 +26,22 @@ class ProxyViewModel(
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
 
-    val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsStore.proxyMode.state
+    val currentMode: StateFlow<TunnelState.Mode> = proxyFacade.proxyMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, TunnelState.Mode.Rule)
 
-    val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsStore.displayMode.state
+    val displayMode: StateFlow<ProxyDisplayMode> = proxyFacade.displayMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxyDisplayMode.SINGLE_DETAILED)
 
-    val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
+    val sortMode: StateFlow<ProxySortMode> = proxyFacade.sortMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxySortMode.DEFAULT)
+
+    private val _globalTimeout = MutableStateFlow(0)
+    val globalTimeout: StateFlow<Int> = _globalTimeout.asStateFlow()
 
     private val _selectedGroupIndex = MutableStateFlow(0)
     val selectedGroupIndex: StateFlow<Int> = _selectedGroupIndex.asStateFlow()
 
-    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = clashManager.proxyGroups
+    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
 
 
     val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
@@ -54,10 +55,25 @@ class ProxyViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun patchMode(mode: TunnelState.Mode) {
-        proxyDisplaySettingsStore.proxyMode.set(mode)
+    private val _testRequested = MutableStateFlow(false)
+
+    init {
         viewModelScope.launch {
-            val persistResult = overrideRepository.updatePersist {
+            runCatching {
+                val configResult = runtimeFacade.loadPersist()
+                if (configResult.isSuccess) {
+                    _globalTimeout.value = configResult.getOrNull()?.globalTimeout ?: 5000
+                } else {
+                    _globalTimeout.value = 5000
+                }
+            }
+        }
+    }
+
+    fun patchMode(mode: TunnelState.Mode) {
+        proxyFacade.proxyMode.set(mode)
+        viewModelScope.launch {
+            val persistResult = runtimeFacade.updatePersist {
                 it.copy(mode = mode)
             }
             if (persistResult.isFailure) {
@@ -67,7 +83,7 @@ class ProxyViewModel(
                 return@launch
             }
 
-            val sessionResult = overrideRepository.updateSession {
+            val sessionResult = runtimeFacade.updateSession {
                 it.copy(mode = mode)
             }
             if (sessionResult.isFailure) {
@@ -77,7 +93,7 @@ class ProxyViewModel(
                 return@launch
             }
 
-            val reloadResult = clashManager.reloadCurrentProfile()
+            val reloadResult = proxyFacade.reloadCurrentProfile()
             if (reloadResult.isFailure) {
                 val error = reloadResult.exceptionOrNull()
                 Timber.e(error, "代理模式切换失败：$mode")
@@ -101,13 +117,14 @@ class ProxyViewModel(
     fun testDelay(groupName: String? = null) {
         viewModelScope.launch {
             try {
+                _testRequested.value = true
                 setLoading(true)
                 clearError()
 
                 if (groupName != null) {
                     _testingGroupNames.update { it + groupName }
                     showMessage(MLang.Proxy.Testing.Group.format(groupName))
-                    val result = clashManager.healthCheck(groupName)
+                    val result = proxyFacade.healthCheck(groupName)
                     if (result.isSuccess) {
                         showMessage(MLang.Proxy.Testing.RequestSent)
                     } else {
@@ -115,7 +132,7 @@ class ProxyViewModel(
                     }
                 } else {
                     showMessage(MLang.Proxy.Testing.All)
-                    val result = clashManager.healthCheckAll()
+                    val result = proxyFacade.healthCheckAll()
                     if (result.isFailure) {
                         showError(MLang.Proxy.Testing.Failed.format(result.exceptionOrNull()?.message))
                     }
@@ -132,6 +149,24 @@ class ProxyViewModel(
         }
     }
 
+    fun refreshProxyGroups() {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                val result = proxyFacade.refreshProxyGroups()
+                if (result.isSuccess) {
+                    showMessage(MLang.Proxy.Refresh.Success)
+                } else {
+                    showError(MLang.Proxy.Refresh.Failed.format(result.exceptionOrNull()?.message))
+                }
+            } catch (e: Exception) {
+                showError(MLang.Proxy.Refresh.Failed.format(e.message))
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
     fun setSelectedGroup(index: Int) {
         val groups = proxyGroups.value
         _selectedGroupIndex.value = index.coerceIn(0, groups.size - 1)
@@ -139,18 +174,18 @@ class ProxyViewModel(
 
 
     fun setDisplayMode(mode: ProxyDisplayMode) {
-        proxyDisplaySettingsStore.displayMode.set(mode)
+        proxyFacade.setDisplayMode(mode)
     }
 
     fun setSortMode(mode: ProxySortMode) {
-        proxyDisplaySettingsStore.sortMode.set(mode)
+        proxyFacade.setSortMode(mode)
     }
 
     fun selectProxy(groupName: String, proxyName: String) {
         viewModelScope.launch {
             try {
-                val success = clashManager.selectProxy(groupName, proxyName)
-                if (success) {
+                val result = proxyFacade.selectProxy(groupName, proxyName)
+                if (result.isSuccess && result.getOrNull() == true) {
                     showMessage(MLang.Proxy.Selection.Switched.format(proxyName))
                 } else {
                     showError(MLang.Proxy.Selection.Failed)
@@ -159,6 +194,33 @@ class ProxyViewModel(
                 showError(MLang.Proxy.Selection.Error.format(e.message))
             }
         }
+    }
+
+    fun forceSelectProxy(groupName: String, proxyName: String) {
+        viewModelScope.launch {
+            try {
+                val success = proxyFacade.forceSelectProxy(groupName, proxyName)
+                if (success) {
+                    if (proxyName.isBlank()) {
+                        showMessage(MLang.Proxy.Selection.Unpinned)
+                    } else {
+                        showMessage(MLang.Proxy.Selection.Pinned.format(proxyName))
+                    }
+                } else {
+                    showError(MLang.Proxy.Selection.Failed)
+                }
+            } catch (e: Exception) {
+                showError(MLang.Proxy.Selection.Error.format(e.message))
+            }
+        }
+    }
+
+    fun getCachedDelay(nodeName: String): Int? {
+        return proxyFacade.getCachedDelay(nodeName)
+    }
+
+    fun getResolvedDelay(nodeName: String): Int? {
+        return proxyFacade.getResolvedDelay(nodeName)
     }
 
     private fun sortProxies(proxies: List<Proxy>, sortMode: ProxySortMode): List<Proxy> = when (sortMode) {
@@ -177,6 +239,10 @@ class ProxyViewModel(
 
     private fun showError(error: String) {
         _uiState.update { it.copy(error = error) }
+    }
+
+    fun clearMessage() {
+        _uiState.update { it.copy(message = null) }
     }
 
     fun clearError() {

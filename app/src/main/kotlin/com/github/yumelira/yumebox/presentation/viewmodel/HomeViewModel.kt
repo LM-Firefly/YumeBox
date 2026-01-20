@@ -24,30 +24,40 @@ import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
+import com.github.yumelira.yumebox.clash.config.Configuration
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
-import com.github.yumelira.yumebox.data.repository.NetworkInfoService
-import com.github.yumelira.yumebox.data.repository.ProxyChainResolver
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
-import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.domain.facade.SettingsFacade
+import com.github.yumelira.yumebox.domain.facade.ProfilesFacade
 import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import com.github.yumelira.yumebox.domain.model.Connection
+import com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot
+import com.github.yumelira.yumebox.domain.model.TrafficData
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.json.Json
+import timber.log.Timber
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HomeViewModel(
     application: Application,
     private val proxyFacade: ProxyFacade,
-    private val profilesRepository: ProfilesRepository,
-    appSettingsStorage: AppSettingsStorage,
-    private val clashManager: ClashManager,
-    private val networkInfoService: NetworkInfoService,
-    private val proxyChainResolver: ProxyChainResolver
+    private val profilesRepository: ProfilesFacade,
+    private val settingsFacade: SettingsFacade
 ) : AndroidViewModel(application) {
+    companion object {
+        private const val TAG = "HomeViewModel"
+        private val SUSPICIOUS_TYPE_LOGGED = AtomicBoolean(false)
+    }
 
     val profiles: StateFlow<List<Profile>> = profilesRepository.profiles
     val recommendedProfile: StateFlow<Profile?> = profilesRepository.recommendedProfile
@@ -57,10 +67,11 @@ class HomeViewModel(
     val currentProfile = proxyFacade.currentProfile
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
-    val tunnelState = proxyFacade.tunnelState
+    private val _connections = MutableStateFlow<List<Connection>>(emptyList())
+    val connections: StateFlow<List<Connection>> = _connections.asStateFlow()
 
-    val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
-    val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
+    val oneWord: StateFlow<String> = settingsFacade.oneWord
+    val oneWordAuthor: StateFlow<String> = settingsFacade.oneWordAuthor
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -76,15 +87,28 @@ class HomeViewModel(
     )
     val vpnPrepareIntent = _vpnPrepareIntent.asSharedFlow()
 
-    private val _speedHistory = MutableStateFlow<List<Long>>(emptyList())
-    val speedHistory: StateFlow<List<Long>> = _speedHistory.asStateFlow()
+    val speedHistory: StateFlow<List<TrafficData>> = flow {
+        val history = java.util.ArrayDeque<TrafficData>(24)
+        repeat(24) { history.add(TrafficData.ZERO) }
+        while (true) {
+            val sample = proxyFacade.trafficNow.value
+            if (history.size >= 24) history.removeFirst()
+            history.add(sample)
+            emit(history.toList())
+            delay(1000)
+        }
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = List(24) { TrafficData.ZERO }
+    )
 
     private val mainProxyNode: StateFlow<com.github.yumelira.yumebox.core.model.Proxy?> =
         combine(isRunning, proxyGroups) { running, groups ->
             if (!running || groups.isEmpty()) return@combine null
             val mainGroup = groups.find { it.name.equals("Proxy", ignoreCase = true) } ?: groups.firstOrNull()
             if (mainGroup != null && mainGroup.now.isNotBlank()) {
-                proxyChainResolver.resolveEndNode(mainGroup.now, groups)
+                proxyFacade.resolveProxyEndNode(mainGroup.now, groups)
             } else {
                 null
             }
@@ -102,18 +126,28 @@ class HomeViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     val ipMonitoringState: StateFlow<IpMonitoringState> = isRunning.flatMapLatest { running ->
         if (running) {
-            networkInfoService.startIpMonitoring(isRunning)
+            proxyFacade.startIpMonitoring(isRunning)
         } else {
             flowOf(IpMonitoringState.Loading)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IpMonitoringState.Loading)
 
-    private val _recentLogs = MutableStateFlow<List<LogMessage>>(emptyList())
-
     init {
         syncDisplayState()
-        subscribeToLogs()
-        startSpeedSampling()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                proxyFacade.connections.collect { snapshot ->
+                    Timber.tag(TAG).v("Connections snapshot received: size=%d", snapshot.connections?.size ?: 0)
+                    handleConnectionsSnapshot(snapshot)
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) {
+                    Timber.tag(TAG).w(e, "Connections flow cancelled, aborting")
+                    return@launch
+                }
+                Timber.tag(TAG).e(e, "Connections flow failed")
+            }
+        }
     }
 
     private fun syncDisplayState() {
@@ -129,6 +163,14 @@ class HomeViewModel(
         }
     }
 
+    private fun handleConnectionsSnapshot(snapshot: com.github.yumelira.yumebox.domain.model.ConnectionsSnapshot) {
+        try {
+            _connections.value = snapshot.connections ?: emptyList()
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error handling connections snapshot in HomeViewModel")
+        }
+    }
+
     suspend fun reloadProfile(profileId: String) {
         try {
             setLoading(true)
@@ -140,7 +182,7 @@ class HomeViewModel(
             }
 
             // 重新加载配置
-            val result = clashManager.loadProfile(profile)
+            val result = proxyFacade.loadProfile(profile)
             if (result.isSuccess) {
                 showMessage(MLang.Home.Message.ConfigSwitched)
             } else {
@@ -209,37 +251,7 @@ class HomeViewModel(
         }
     }
 
-    private fun subscribeToLogs() {
-        viewModelScope.launch {
-            proxyFacade.logs.collect { log ->
-                _recentLogs.update { currentLogs ->
-                    buildList {
-                        add(log)
-                        addAll(currentLogs.take(49))
-                    }
-                }
-            }
-        }
-    }
 
-    private fun startSpeedSampling(sampleLimit: Int = 24) {
-        viewModelScope.launch {
-            flow {
-                while (true) {
-                    emit(proxyFacade.trafficNow.value.download.coerceAtLeast(0L))
-                    kotlinx.coroutines.delay(1000L)
-                }
-            }.catch { }.collect { sample ->
-                _speedHistory.update { old ->
-                    buildList(sampleLimit) {
-                        repeat((sampleLimit - old.size - 1).coerceAtLeast(0)) { add(0L) }
-                        addAll(old.takeLast(sampleLimit - 1))
-                        add(sample)
-                    }
-                }
-            }
-        }
-    }
 
     private fun setLoading(loading: Boolean) = _uiState.update { it.copy(isLoading = loading) }
     private fun showMessage(message: String) = _uiState.update { it.copy(message = message) }

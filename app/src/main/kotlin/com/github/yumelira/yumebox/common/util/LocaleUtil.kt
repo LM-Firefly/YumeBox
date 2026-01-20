@@ -23,32 +23,13 @@ package com.github.yumelira.yumebox.common.util
 import java.util.*
 
 object LocaleUtil {
-
-    private val CHINA_REGION_CODES = setOf("TW", "HK", "MO")
-
-    fun isChineseLocale(): Boolean {
-        val locale = Locale.getDefault()
-        return locale.language == "zh"
-    }
-
     fun normalizeRegionCode(countryCode: String?): String? {
-        if (countryCode == null) return null
-        if (!isChineseLocale()) return countryCode
-
-        val upperCode = countryCode.uppercase()
-        return if (upperCode in CHINA_REGION_CODES) "CN" else countryCode
+        return countryCode
     }
-
-    fun normalizeFlagUrl(
-        countryCode: String,
-        baseUrl: String = "https://hatscripts.github.io/circle-flags/flags/"
-    ): String {
-        val normalizedCode = if (isChineseLocale()) {
-            val upperCode = countryCode.uppercase()
-            if (upperCode in CHINA_REGION_CODES) "cn" else countryCode.lowercase()
-        } else {
-            countryCode.lowercase()
-        }
-        return "${baseUrl}${normalizedCode}.svg"
+    fun getFlagEmoji(countryCode: String): String {
+        if (countryCode.length != 2) return "🌐"
+        return countryCode.uppercase().map { char ->
+            Character.toChars(char.code + 127397)
+        }.joinToString("") { String(it) }
     }
 }

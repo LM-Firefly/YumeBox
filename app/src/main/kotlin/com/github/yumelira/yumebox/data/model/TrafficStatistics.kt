@@ -33,12 +33,18 @@ data class TrafficRecord(
 }
 
 enum class TimeSlot(val startHour: Int, val endHour: Int, val label: String) {
-    SLOT_0_4(0, 4, "0-4"),
-    SLOT_4_8(4, 8, "4-8"),
-    SLOT_8_12(8, 12, "8-12"),
-    SLOT_12_16(12, 16, "12-16"),
-    SLOT_16_20(16, 20, "16-20"),
-    SLOT_20_24(20, 24, "20-24");
+    SLOT_0_2(0, 2, "0-2"),
+    SLOT_2_4(2, 4, "2-4"),
+    SLOT_4_6(4, 6, "4-6"),
+    SLOT_6_8(6, 8, "6-8"),
+    SLOT_8_10(8, 10, "8-10"),
+    SLOT_10_12(10, 12, "10-12"),
+    SLOT_12_14(12, 14, "12-14"),
+    SLOT_14_16(14, 16, "14-16"),
+    SLOT_16_18(16, 18, "16-18"),
+    SLOT_18_20(18, 20, "18-20"),
+    SLOT_20_22(20, 22, "20-22"),
+    SLOT_22_24(22, 24, "22-24");
 
     companion object {
         fun fromHour(hour: Int): TimeSlot {
@@ -82,7 +88,7 @@ data class ProfileTrafficUsage(
 
 enum class StatisticsTimeRange(val days: Int) {
     TODAY(1),
-    WEEK(7);
+    WEEK(14);
 
     val label: String
         get() = when (this) {

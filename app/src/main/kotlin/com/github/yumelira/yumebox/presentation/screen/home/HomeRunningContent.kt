@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.repository.IpMonitoringState
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.domain.model.Connection
 
 @Composable
 fun HomeRunningContent(
@@ -36,8 +37,10 @@ fun HomeRunningContent(
     serverName: String?,
     serverPing: Int?,
     ipMonitoringState: IpMonitoringState,
-    speedHistory: List<Long>,
+    speedHistory: List<TrafficData>,
+    connections: List<Connection>,
     onChartClick: () -> Unit,
+    onTopologyClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -65,6 +68,9 @@ fun HomeRunningContent(
             SpeedChart(
                 speedHistory = speedHistory, onClick = onChartClick
             )
+            if (connections.isNotEmpty()) {
+                TopologyChart(connections = connections, onClick = onTopologyClick)
+            }
         }
     }
 }

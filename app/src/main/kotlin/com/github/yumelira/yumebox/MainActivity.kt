@@ -52,6 +52,8 @@ import com.github.yumelira.yumebox.presentation.component.BottomBar
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.LocalPagerState
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import com.github.yumelira.yumebox.presentation.component.rememberBottomBarScrollBehavior
 import com.github.yumelira.yumebox.presentation.screen.HomePager
 import com.github.yumelira.yumebox.presentation.screen.ProfilesPager
@@ -96,7 +98,7 @@ class MainActivity : ComponentActivity() {
 
     private val appSettingsStorage: com.github.yumelira.yumebox.data.store.AppSettingsStorage by inject()
     private val networkSettingsStorage: com.github.yumelira.yumebox.data.store.NetworkSettingsStorage by inject()
-    private val profilesStore: com.github.yumelira.yumebox.data.store.ProfilesStore by inject()
+    private val profilesStore: com.github.yumelira.yumebox.data.store.ProfilesStorage by inject()
     private val clashManager: com.github.yumelira.yumebox.clash.manager.ClashManager by inject()
     private val proxyConnectionService: com.github.yumelira.yumebox.data.repository.ProxyConnectionService by inject()
 
@@ -132,22 +134,38 @@ class MainActivity : ComponentActivity() {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
             val themeMode = appSettingsViewModel.themeMode.state.collectAsState().value
             val colorTheme = appSettingsViewModel.colorTheme.state.collectAsState().value
+            val themeSeedColorArgb = appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
 
             ProvideAndroidPlatformTheme {
                 YumeTheme(
                     themeMode = themeMode,
                     colorTheme = colorTheme,
+                    themeSeedColorArgb = themeSeedColorArgb,
                 ) {
-                    val navController = rememberNavController()
-
-                    Surface(
-                        modifier = Modifier.fillMaxSize(), color = MiuixTheme.colorScheme.surface
-                    ) {
-                        DestinationsNavHost(
-                            navGraph = NavGraphs.root,
-                            navController = navController,
-                            defaultTransitions = NavigationTransitions.defaultStyle,
+                    val topBarHazeState = remember { HazeState() }
+                    val topBarBackground = MiuixTheme.colorScheme.surface
+                    val topBarHazeStyle = remember(topBarBackground) {
+                        HazeStyle(
+                            backgroundColor = topBarBackground,
+                            tint = HazeTint(topBarBackground.copy(0.8f)),
                         )
+                    }
+                    CompositionLocalProvider(
+                        LocalTopBarHazeState provides topBarHazeState,
+                        LocalTopBarHazeStyle provides topBarHazeStyle,
+                    ) {
+                        val navController = rememberNavController()
+
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MiuixTheme.colorScheme.surface
+                        ) {
+                            DestinationsNavHost(
+                                navGraph = NavGraphs.root,
+                                navController = navController,
+                                defaultTransitions = NavigationTransitions.defaultStyle,
+                            )
+                        }
                     }
                 }
             }
@@ -200,11 +218,6 @@ fun MainScreen(
     val activity = LocalActivity.current
     val coroutineScope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = initialPage.coerceIn(0, 3), pageCount = { 4 })
-    val hazeState = remember { HazeState() }
-    val hazeStyle = HazeStyle(
-        backgroundColor = MiuixTheme.colorScheme.background,
-        tint = HazeTint(MiuixTheme.colorScheme.background.copy(0.8f)),
-    )
 
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val bottomBarAutoHide by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
@@ -275,15 +288,12 @@ fun MainScreen(
         Scaffold(
             bottomBar = {
                 BottomBar(
-                    hazeState = hazeState,
-                    hazeStyle = hazeStyle,
                     isVisible = bottomBarScrollBehavior.isBottomBarVisible
                 )
             },
         ) { innerPadding ->
             HorizontalPager(
                 modifier = Modifier
-                    .hazeSource(state = hazeState)
                     .nestedScroll(bottomBarScrollBehavior.nestedScrollConnection),
                 state = pagerState,
                 beyondViewportPageCount = 2,

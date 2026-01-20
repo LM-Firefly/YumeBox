@@ -28,10 +28,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-class ProfilesStore(
+class ProfilesStorage(
     mmkv: MMKV,
     private val scope: CoroutineScope
-) : MMKVPreference(externalMmkv = mmkv) {
+) :  MMKVPreference(externalMmkv = mmkv) {
 
     private val _profiles: Preference<List<Profile>> by jsonListFlow(
         default = emptyList(),
@@ -40,6 +40,7 @@ class ProfilesStore(
     )
 
     var lastUsedProfileId: String by str(default = "")
+    var profilesInitialized: Boolean by bool(default = false)
 
     val profiles: StateFlow<List<Profile>> = _profiles.state
         .map { list -> list.sortedBy { it.order } }
@@ -60,6 +61,7 @@ class ProfilesStore(
 
     suspend fun addProfile(profile: Profile) {
         _profiles.add(profile)
+        profilesInitialized = true
     }
 
     suspend fun removeProfile(id: String) {
@@ -68,6 +70,7 @@ class ProfilesStore(
 
     suspend fun updateProfile(profile: Profile) {
         _profiles.update({ it.id == profile.id }) { profile }
+        profilesInitialized = true
     }
 
     fun updateLastUsedProfileId(profileId: String) {

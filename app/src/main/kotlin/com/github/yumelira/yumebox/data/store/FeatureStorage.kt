@@ -20,16 +20,17 @@
 
 package com.github.yumelira.yumebox.data.store
 
+import com.github.yumelira.yumebox.data.model.AutoCloseMode
 import com.tencent.mmkv.MMKV
 
-class FeatureStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
+class FeatureStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
 
     val allowLanAccess by boolFlow(false)
     val backendPort by intFlow(8081)
     val frontendPort by intFlow(8080)
     val selectedPanelType by intFlow(0)
     val showWebControlInProxy by boolFlow(false)
-
+    val autoCloseMode by enumFlow(AutoCloseMode.DISABLED)
 
     var isFirstOpen by bool(true)
 

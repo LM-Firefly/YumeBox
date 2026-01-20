@@ -21,110 +21,117 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.service.LogRecordService
+import com.github.yumelira.yumebox.domain.facade.RuntimeFacade
+import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
+import timber.log.Timber
 
 class LogViewModel(
-    application: Application
+    application: Application,
+    private val runtimeFacade: RuntimeFacade
 ) : AndroidViewModel(application) {
 
-    private val _isRecording = MutableStateFlow(false)
-    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+    val isRecording: StateFlow<Boolean> = runtimeFacade.isRecording
 
     private val _logFiles = MutableStateFlow<List<LogFileInfo>>(emptyList())
     val logFiles: StateFlow<List<LogFileInfo>> = _logFiles.asStateFlow()
-
-    private val logDir: File
-        get() = LogRecordService.getLogDir(getApplication())
 
     init {
         refreshLogFiles()
     }
 
-    fun startRecording() {
-        LogRecordService.start(getApplication())
-        _isRecording.value = true
+    fun saveAppLog() {
         viewModelScope.launch {
-            kotlinx.coroutines.delay(300)
+            val result = runtimeFacade.saveAppLog()
+            withContext(Dispatchers.Main) {
+                if (result.isSuccess) {
+                    val file = result.getOrNull()!!
+                    android.widget.Toast.makeText(
+                        getApplication(),
+                        MLang.Log.Message.Saved.format(file.name),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    refreshLogFiles()
+                } else {
+                    val error = result.exceptionOrNull()
+                    android.widget.Toast.makeText(
+                        getApplication(),
+                        MLang.Log.Message.SaveFailed.format(error?.message ?: ""),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    fun startRecording() {
+        runtimeFacade.startRecording()
+        viewModelScope.launch {
+            delay(300)
             refreshLogFiles()
         }
     }
 
     fun stopRecording() {
-        LogRecordService.stop(getApplication())
-        _isRecording.value = false
+        runtimeFacade.stopRecording()
         viewModelScope.launch {
-            kotlinx.coroutines.delay(300)
+            delay(300)
             refreshLogFiles()
         }
     }
 
     fun refreshLogFiles() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val isCurrentlyRecording = LogRecordService.isRecording
-            val currentFileName = LogRecordService.currentLogFileName
+        viewModelScope.launch {
+            val files = runtimeFacade.getLogFiles()
+            val isCurrentlyRecording = isRecording.value
 
-            _isRecording.value = isCurrentlyRecording
-
-            val files = logDir.listFiles { file ->
-                file.isFile && file.name.startsWith(LogRecordService.LOG_PREFIX) && file.name.endsWith(LogRecordService.LOG_SUFFIX)
-            }?.sortedByDescending { it.lastModified() } ?: emptyList()
-
-            val fileInfos = files.map { file ->
+            _logFiles.value = files.map { logFileInfo ->
                 LogFileInfo(
-                    file = file,
-                    name = file.name,
-                    createdAt = file.lastModified(),
-                    size = file.length(),
-                    isRecording = isCurrentlyRecording && file.name == currentFileName
+                    file = logFileInfo.file,
+                    name = logFileInfo.name,
+                    createdAt = logFileInfo.lastModified,
+                    size = logFileInfo.size,
+                    isRecording = isCurrentlyRecording && logFileInfo.file.name.contains("recording")
                 )
             }
-            _logFiles.value = fileInfos
         }
     }
 
     fun deleteLogFile(file: File) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val currentFileName = LogRecordService.currentLogFileName
-            if (LogRecordService.isRecording && file.name == currentFileName) {
-                LogRecordService.stop(getApplication())
-                _isRecording.value = false
-                kotlinx.coroutines.delay(500)
+        viewModelScope.launch {
+            val result = runtimeFacade.deleteLogFile(file)
+            if (result.isSuccess) {
+                refreshLogFiles()
+            } else {
+                Timber.e("Failed to delete log file: ${file.name}")
             }
-
-            if (file.exists()) {
-                val deleted = file.delete()
-                if (!deleted) {
-                    timber.log.Timber.e("删除文件失败: ${file.absolutePath}")
-                }
-            }
-            refreshLogFiles()
         }
     }
 
     fun deleteAllLogs() {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (LogRecordService.isRecording) {
-                LogRecordService.stop(getApplication())
-                _isRecording.value = false
-                kotlinx.coroutines.delay(500)
+        viewModelScope.launch {
+            if (isRecording.value) {
+                runtimeFacade.stopRecording()
+                delay(500)
             }
 
-            logDir.listFiles()?.forEach { file ->
-                if (file.exists()) {
-                    file.delete()
-                }
+            val result = runtimeFacade.clearAllLogs()
+            if (result.isSuccess) {
+                refreshLogFiles()
+            } else {
+                Timber.e("Failed to clear all logs")
             }
-            refreshLogFiles()
         }
     }
 
@@ -135,7 +142,7 @@ class LogViewModel(
                 parseLogLine(line)
             }
         } catch (e: Exception) {
-            timber.log.Timber.e(e, "读取日志文件失败")
+            Timber.e(e, "Failed to read log file")
             emptyList()
         }
     }
@@ -155,11 +162,23 @@ class LogViewModel(
         return LogEntry(time = timeStr, level = level, message = message)
     }
 
+    fun createShareIntent(file: File): Intent? {
+        return runtimeFacade.shareLogFile(file)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
     data class LogFileInfo(
-        val file: File, val name: String, val createdAt: Long, val size: Long, val isRecording: Boolean
+        val file: File,
+        val name: String,
+        val createdAt: Long,
+        val size: Long,
+        val isRecording: Boolean
     )
 
     data class LogEntry(
-        val time: String, val level: LogMessage.Level, val message: String
+        val time: String,
+        val level: LogMessage.Level,
+        val message: String
     )
 }
