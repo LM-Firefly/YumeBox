@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -33,6 +34,7 @@ type ProxyGroup struct {
 	Type    string   `json:"type"`
 	Now     string   `json:"now"`
 	Icon    string   `json:"icon,omitempty"`
+	Fixed   string   `json:"fixed"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -60,23 +62,23 @@ func QueryProxyGroupNames(excludeNotSelectable bool) []string {
 		return []string{}
 	}
 
-	global := tunnel.Proxies()["GLOBAL"].Adapter().(outboundgroup.ProxyGroup)
-	proxies := global.Providers()[0].Proxies()
-	result := make([]string, 0, len(proxies)+1)
-
-	if mode == tunnel.Global {
-		result = append(result, "GLOBAL")
-	}
-
-	for _, p := range proxies {
-		if _, ok := p.Adapter().(outboundgroup.ProxyGroup); ok {
-			if !excludeNotSelectable || p.Type() == C.Selector {
-				result = append(result, p.Name())
+	globalAdapter := tunnel.Proxies()["GLOBAL"].Adapter()
+	if global, ok := globalAdapter.(interface{ Proxies() []C.Proxy }); ok {
+		proxies := global.Proxies()
+		result := make([]string, 0, len(proxies)+1)
+		if mode == tunnel.Global {
+			result = append(result, "GLOBAL")
+		}
+		for _, p := range proxies {
+			if _, ok := p.Adapter().(interface{ Proxies() []C.Proxy }); ok {
+				if !excludeNotSelectable || p.Type() == C.Selector {
+					result = append(result, p.Name())
+				}
 			}
 		}
+		return result
 	}
-
-	return result
+	return []string{}
 }
 
 func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.Regexp) *ProxyGroup {
@@ -88,14 +90,42 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		return nil
 	}
 
-	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
-	if !ok {
+	// 检查是否为代理组类型
+	adapter := p.Adapter()
+	if _, ok := adapter.(interface{ Proxies() []C.Proxy }); !ok {
 		log.Warnln("Query group `%s`: invalid type %s", name, p.Type().String())
 
 		return nil
 	}
 
-	proxies := convertProxies(g.Proxies(), uiSubtitlePattern)
+	// 使用类型断言获取代理组的代理列表和当前选择
+	var proxiesList []C.Proxy
+	var now string
+	var fixed string
+	if group, ok := adapter.(interface {
+		Proxies() []C.Proxy
+		Now() string
+	}); ok {
+		proxiesList = group.Proxies()
+		now = group.Now()
+		if marshaler, ok := adapter.(json.Marshaler); ok {
+			if data, err := marshaler.MarshalJSON(); err == nil {
+				var mapData map[string]interface{}
+				if err := json.Unmarshal(data, &mapData); err == nil {
+					if v, ok := mapData["fixed"]; ok {
+						if s, ok := v.(string); ok {
+							fixed = s
+						}
+					}
+				}
+			}
+		}
+	} else {
+		log.Warnln("Query group `%s`: unable to get proxies or now", name)
+		return nil
+	}
+
+	proxies := convertProxies(proxiesList, uiSubtitlePattern)
 	// 	proxies := collectProviders(g.Providers(), uiSubtitlePattern)
 
 	switch sortMode {
@@ -106,7 +136,6 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 				return strings.Compare(a.Title, b.Title) < 0
 			},
 		}
-
 		sort.Sort(wrapper)
 	case Delay:
 		wrapper := &sortableProxyList{
@@ -115,21 +144,21 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 				return a.Delay < b.Delay
 			},
 		}
-
 		sort.Sort(wrapper)
 	case Default:
 	default:
 	}
 
 	return &ProxyGroup{
-		Type:    g.Type().String(),
-		Now:     g.Now(),
-		Icon:    proxyGroupIcon(g),
+		Type:    p.Type().String(),
+		Now:     now,
+		Icon:    proxyGroupIcon(adapter),
+		Fixed:   fixed,
 		Proxies: proxies,
 	}
 }
 
-func proxyGroupIcon(group outboundgroup.ProxyGroup) string {
+func proxyGroupIcon(group interface{}) string {
 	switch g := group.(type) {
 	case *outboundgroup.Selector:
 		return g.Icon
@@ -149,32 +178,53 @@ func PatchSelector(selector, name string) bool {
 
 	if p == nil {
 		log.Warnln("Patch selector `%s`: not found", selector)
-
 		return false
 	}
 
-	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
+	// 获取适配器并检查是否为代理组类型
+	adapter := p.Adapter()
+	if _, ok := adapter.(interface{ Proxies() []C.Proxy }); !ok {
+		log.Warnln("Patch selector `%s`: not a proxy group type: %s", selector, p.Type().String())
+		return false
+	}
+
+	// 尝试获取 Set 方法
+	s, ok := adapter.(interface{ Set(string) error })
 	if !ok {
-		log.Warnln("Patch selector `%s`: invalid type %s", selector, p.Type().String())
-
+		log.Warnln("Patch selector `%s`: does not support Set operation", selector)
 		return false
 	}
 
-	s, ok := g.(outboundgroup.SelectAble)
-	if !ok {
-		log.Warnln("Patch selector `%s`: invalid type %s", selector, p.Type().String())
-
-		return false
-	}
-
+	// 执行设置操作
 	if err := s.Set(name); err != nil {
-		log.Warnln("Patch selector `%s`: %s", selector, err.Error())
+		log.Warnln("Patch selector `%s`: failed to set proxy - %v", selector, err)
+		return false
 	}
 
-	log.Infoln("Patch selector %s -> %s", selector, name)
+	log.Infoln("Patch selector `%s`: successfully set to %s", selector, name)
+	return true
+}
 
-	closeConnByGroup(selector)
-
+// PatchForceSelector forces a selection (pin/fixed) for compatible groups
+func PatchForceSelector(selector, name string) bool {
+	p := tunnel.Proxies()[selector]
+	if p == nil {
+		log.Warnln("Force patch selector `%s`: not found", selector)
+		return false
+	}
+	// 检查是否为代理组类型
+	adapter := p.Adapter()
+	if _, ok := adapter.(interface{ Proxies() []C.Proxy }); !ok {
+		log.Warnln("Force patch selector `%s`: invalid type %s", selector, p.Type().String())
+		return false
+	}
+	s, ok := adapter.(interface{ ForceSet(string) })
+	if !ok {
+		log.Warnln("Force patch selector `%s`: not supported", selector)
+		return false
+	}
+	s.ForceSet(name)
+	log.Infoln("Force patch selector `%s` -> %s", selector, name)
 	return true
 }
 
@@ -187,7 +237,8 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 		subtitle := p.Type().String()
 
 		if uiSubtitlePattern != nil {
-			if _, ok := p.Adapter().(outboundgroup.ProxyGroup); !ok {
+			adapter := p.Adapter()
+			if _, ok := adapter.(interface{ Proxies() []C.Proxy }); !ok {
 				runes := []rune(name)
 				match, err := uiSubtitlePattern.FindRunesMatch(runes)
 				if err == nil && match != nil {
@@ -204,12 +255,19 @@ func convertProxies(proxies []C.Proxy, uiSubtitlePattern *regexp2.Regexp) []*Pro
 			}
 		}
 
+		ld := p.LastDelayForTestUrl(testURL)
+		var delay int
+		if ld == 0xffff {
+			delay = -1 // treat as TIMEOUT
+		} else {
+			delay = int(ld)
+		}
 		result = append(result, &Proxy{
 			Name:     name,
 			Title:    strings.TrimSpace(title),
 			Subtitle: strings.TrimSpace(subtitle),
 			Type:     p.Type().String(),
-			Delay:    int(p.LastDelayForTestUrl(testURL)),
+			Delay:    delay,
 		})
 	}
 	return result
@@ -225,7 +283,8 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 			subtitle := px.Type().String()
 
 			if uiSubtitlePattern != nil {
-				if _, ok := px.Adapter().(outboundgroup.ProxyGroup); !ok {
+				adapter := px.Adapter()
+				if _, ok := adapter.(interface{ Proxies() []C.Proxy }); !ok {
 					runes := []rune(name)
 					match, err := uiSubtitlePattern.FindRunesMatch(runes)
 					if err == nil && match != nil {
@@ -243,15 +302,32 @@ func collectProviders(providers []provider.ProxyProvider, uiSubtitlePattern *reg
 				}
 			}
 
+			ld := px.LastDelayForTestUrl(testURL)
+			var delay int
+			if ld == 0xffff {
+				delay = -1 // treat as TIMEOUT
+			} else {
+				delay = int(ld)
+			}
+
 			result = append(result, &Proxy{
 				Name:     name,
 				Title:    strings.TrimSpace(title),
 				Subtitle: strings.TrimSpace(subtitle),
 				Type:     px.Type().String(),
-				Delay:    int(px.LastDelayForTestUrl(testURL)),
+				Delay:    delay,
 			})
 		}
 	}
 
 	return result
+}
+
+// QueryProviderNames query provider names
+func QueryProviderNames() []string {
+	var names []string
+	for name := range tunnel.Providers() {
+		names = append(names, name)
+	}
+	return names
 }

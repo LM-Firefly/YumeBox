@@ -1,45 +1,38 @@
 name: Build YumeBox
 
 on:
-  push:
-    branches: [ "Yume", "dev", "ci" ]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.gitignore'
   workflow_dispatch:
-  workflow_call:
-
-concurrency:
-  group: Build-${{ github.ref }}
-  cancel-in-progress: true
-
+    inputs:
+      release-tag:
+        description: "Release Tag (v0.3.x)"
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Checkout submodules
+        run: git submodule update --init --recursive --force
+
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '25'
           cache: 'gradle'
 
-
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.25"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -49,14 +42,25 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/caches/build-cache-1
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties','settings.gradle*','**/build.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Cache NDK
         id: cache-ndk
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
           key: ndk-29.0.14206865
@@ -65,6 +69,43 @@ jobs:
         if: steps.cache-ndk.outputs.cache-hit != 'true'
         run: sdkmanager "ndk;29.0.14206865"
 
+      - name: Convert and set version env
+        id: process-version
+        run: |
+          VERSION_TAG=${{ inputs.release-tag }}
+          VERSION_TAG=${VERSION_TAG#v}                              # remove the 'v' prefix
+          IFS='.' read -ra VERSION_PARTS <<< "$VERSION_TAG"         # split into array
+          if [ ${#VERSION_PARTS[@]} -ne 3 ]; then echo "Invalid version format; expected X.Y.Z" && exit 1; fi
+            # Compute a numeric version code in 310-style: major*1000 + minor*100 + patch*10
+            # Example: 0.3.1 -> 0*1000 + 3*100 + 1*10 = 310
+            VERSION_CODE=$(( ${VERSION_PARTS[0]} * 1000 + ${VERSION_PARTS[1]} * 100 + ${VERSION_PARTS[2]} * 10 ))
+          echo "versionName=$VERSION_TAG" >> $GITHUB_OUTPUT          # "0.3.1"
+          echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT         # "310"
+          echo "Computed VERSION: $VERSION_TAG -> $VERSION_CODE"
+
+      - name: Update version in gradle.properties
+        run: |
+          sed -i "s/^project.version.name=.*$/project.version.name=${{ steps.process-version.outputs.versionName }}/" gradle.properties
+          sed -i "s/^project.version.code=.*$/project.version.code=${{ steps.process-version.outputs.versionCode }}/" gradle.properties
+          echo "--- gradle.properties after update ---"
+          cat gradle.properties
+
+      - name: Commit and push if changes
+        run: |
+          BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          changes=$(git diff --name-only origin/$BRANCH | wc -l)
+          if [ $changes -gt 0 ]
+          then
+            newVersionName=${{ steps.process-version.outputs.versionName }}
+            newVersionCode=${{ steps.process-version.outputs.versionCode }}
+            git config --global user.name 'GitHub Action'
+            git config --global user.email 'action@github.com'
+            git add gradle.properties
+            git commit -am "Bump version to $newVersionName ($newVersionCode)"
+            git tag "v$newVersionName"
+            git push --follow-tags
+          fi
+
       - name: Update CA certificates
         run: |
           sudo apt-get update && sudo apt-get install -y ca-certificates
@@ -72,119 +113,127 @@ jobs:
           mkdir -p core/src/foss/golang/mihomo/component/ca
           cp -f /etc/ssl/certs/ca-certificates.crt core/src/foss/golang/mihomo/component/ca/ca-certificates.crt
 
-      - name: Sync kernel
-        run: |
-          chmod +x scripts/sync-kernel.sh
-          ./scripts/sync-kernel.sh alpha
-
-      - name: Check upload availability
-        id: check_upload
-        run: echo "UPLOAD=${{ secrets.BOT_TOKEN != '' }}" >> $GITHUB_OUTPUT
-
       - name: Write signing config
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
-          if [ -n "${{ secrets.SIGNING_STORE_PASSWORD }}" ]; then
-            echo "keystore.password=${{ secrets.SIGNING_STORE_PASSWORD }}" > signing.properties
-            echo "key.alias=${{ secrets.SIGNING_KEY_ALIAS }}" >> signing.properties
-            echo "key.password=${{ secrets.SIGNING_KEY_PASSWORD }}" >> signing.properties
-            echo "keystore.path=release.keystore" >> signing.properties
-          fi
+          touch signing.properties
+          echo "keystore.password=$SIGNING_STORE_PASSWORD" > signing.properties
+          echo "key.alias=$SIGNING_KEY_ALIAS" >> signing.properties
+          echo "key.password=$SIGNING_KEY_PASSWORD" >> signing.properties
+          echo "keystore.path=$GITHUB_WORKSPACE/release.keystore" >> signing.properties
+          echo "cat signing.properties"
+          cat signing.properties
 
-      - name: Inject google-services.json
-        run: |
-          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
-            echo "Using real google-services.json from secrets"
-            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
-          else
-            echo "Creating dummy google-services.json for PR/Fork builds"
-            cat > app/google-services.json << 'EOF'
-          {
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "dummy-project",
-              "storage_bucket": "dummy-project.appspot.com"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                  "android_client_info": {
-                    "package_name": "com.github.yumelira.yumebox"
-                  }
-                },
-                "oauth_client": [],
-                "api_key": [
-                  {
-                    "current_key": "AIzaDummyKeyForBuildOnly-0000000000000"
-                  }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": []
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          EOF
-          fi
+#      - name: Inject google-services.json
+#        run: |
+#          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+#            echo "Using real google-services.json from secrets"
+#            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
+#          else
+#            echo "Creating dummy google-services.json for PR/Fork builds"
+#            cat > app/google-services.json << 'EOF'
+#          {
+#            "project_info": {
+#              "project_number": "000000000000",
+#              "project_id": "dummy-project",
+#              "storage_bucket": "dummy-project.appspot.com"
+#            },
+#            "client": [
+#              {
+#                "client_info": {
+#                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+#                  "android_client_info": {
+#                    "package_name": "com.github.yumelira.yumebox"
+#                  }
+#                },
+#                "oauth_client": [],
+#                "api_key": [
+#                  {
+#                    "current_key": "AIzaDummyKeyForBuildOnly-0000000000000"
+#                  }
+#                ],
+#                "services": {
+#                  "appinvite_service": {
+#                    "other_platform_oauth_client": []
+#                  }
+#                }
+#              }
+#            ],
+#            "configuration_version": "1"
+#          }
+#          EOF
+#          fi
 
       - name: Build Release APKs
+        if: success()
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease
+          # 1. Build Split APKs (App + Extension separately)
+          ./gradlew --no-daemon --no-configuration-cache assembleRelease --parallel
+          # Create directory for artifacts
+          mkdir -p release_artifacts
+          # Copy Split APKs
+          cp app/build/outputs/apk/release/*.apk release_artifacts/
+          cp extension/build/outputs/apk/release/*.apk release_artifacts/
+          # 2. Clean to avoid conflicts when switching Extension from App to Lib
+          ./gradlew --no-daemon clean
+          # 3. Build Merged APK (App with Extension)
+          ./gradlew --no-daemon --no-configuration-cache assembleReleaseWithExtension --parallel
+          # Copy Merged APK
+          cp app/build/outputs/apk/release/*.apk release_artifacts/
 
-      - name: Upload arm64-v8a APK
-        uses: actions/upload-artifact@v4
+      - name: Upload all APKs
+        uses: actions/upload-artifact@v6
         with:
-          name: yumebox-arm64-v8a
-          path: app/build/outputs/apk/release/*arm64-v8a*.apk
-
-      - name: Upload armeabi-v7a APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: yumebox-armeabi-v7a
-          path: app/build/outputs/apk/release/*armeabi-v7a*.apk
-
-      - name: Upload x86_64 APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: yumebox-x86_64
-          path: app/build/outputs/apk/release/*x86_64*.apk
-
-      - name: Upload x86 APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: yumebox-x86
-          path: app/build/outputs/apk/release/*x86*.apk
-
-      - name: Upload universal APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: yumebox-universal
-          path: app/build/outputs/apk/release/*universal*.apk
+          name: yumebox-apks
+          path: release_artifacts/*
 
       - name: Upload mappings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: mappings
           path: app/build/outputs/mapping/release/
 
-      - name: Bot session cache
-        if: steps.check_upload.outputs.UPLOAD == 'true'
-        uses: actions/cache@v4
+      - name: Tag Repo
+        uses: richardsimko/update-tag@v1
         with:
-          path: scripts/yumebot.session
-          key: ${{ runner.os }}-bot-session
-
-      - name: Upload to Telegram
-        if: steps.check_upload.outputs.UPLOAD == 'true'
+          tag_name: ${{ inputs.release-tag }}
         env:
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          TITLE: YumeBox
-          BRANCH: ${{ github.ref_name }}
-        run: python3 $GITHUB_WORKSPACE/scripts/yumebot.py
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch tags for changelog
+        run: |
+          git fetch --prune --tags --force
+
+      - name: Release Changelog Builder
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v6.1.0
+        with:
+          mode: "COMMIT"
+          configurationJson: |
+            {
+              "template": "#{{CHANGELOG}}",
+              "categories": [
+                {
+                  "title": "## 💬 Commits",
+                  "labels": []
+                }
+              ],
+              "ignore_labels": [
+                "Update"
+              ]
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ success() }}
+        with:
+          tag_name: ${{ inputs.release-tag }}
+          files: release_artifacts/*
+          body: ${{ steps.build_changelog.outputs.changelog }}
+          generate_release_notes: true

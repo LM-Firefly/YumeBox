@@ -15,8 +15,8 @@ suspend fun downloadProfile(
     workDir: File,
     force: Boolean = true,
     onProgress: ((String, Int) -> Unit)? = null
-): Result<String> = withContext(Dispatchers.IO) {
-    runCatching {
+): Result<String> {
+    return runCatching {
         val importService = ImportService(workDir)
 
         val result = importService.importProfile(
@@ -55,7 +55,14 @@ private fun mapStateToProgress(state: ImportState): Pair<String, Int> {
         is ImportState.Downloading -> state.message to (10 + (state.progressPercent * 0.4).toInt())
         is ImportState.Copying -> state.message to (10 + (state.progress * 0.4).toInt())
         is ImportState.Validating -> state.message to (50 + (state.progress * 0.2).toInt())
-        is ImportState.LoadingProviders -> state.message to (70 + (state.progress * 0.2).toInt())
+        is ImportState.LoadingProviders -> {
+            val msg = if (!state.currentProvider.isNullOrEmpty()) {
+                "下载资源: ${state.currentProvider}"
+            } else {
+                state.message
+            }
+            msg to (70 + (state.progress * 0.2).toInt())
+        }
         is ImportState.Retrying -> state.retryMessage to 5
         is ImportState.Cleaning -> state.message to 95
         is ImportState.Success -> state.message to 100

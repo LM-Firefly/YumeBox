@@ -1,29 +1,8 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -46,7 +25,6 @@ class AccessControlViewModel(
     data class AppInfo(
         val packageName: String,
         val label: String,
-        val icon: Drawable?,
         val isSystemApp: Boolean,
         val isSelected: Boolean,
         val installTime: Long = 0L,
@@ -120,6 +98,7 @@ class AccessControlViewModel(
             _uiState.update { it.copy(isLoading = true) }
 
             val selectedPackages = storage.accessControlPackages.value
+            val showSystemApps = storage.accessControlShowSystemApps.value
             val apps = withContext(Dispatchers.IO) {
                 loadInstalledApps(selectedPackages)
             }
@@ -129,10 +108,11 @@ class AccessControlViewModel(
                     isLoading = false,
                     apps = apps,
                     selectedPackages = selectedPackages,
+                    showSystemApps = showSystemApps,
                     filteredApps = filterApps(
                         apps,
                         state.searchQuery,
-                        state.showSystemApps,
+                        showSystemApps,
                         state.sortMode,
                         state.descending,
                         state.selectedFirst
@@ -153,7 +133,6 @@ class AccessControlViewModel(
             AppInfo(
                 packageName = appInfo.packageName,
                 label = appInfo.loadLabel(pm).toString(),
-                icon = runCatching { appInfo.loadIcon(pm) }.getOrNull(),
                 isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                 isSelected = selectedPackages.contains(appInfo.packageName),
                 installTime = pkgInfo?.firstInstallTime ?: 0L,
@@ -256,6 +235,7 @@ class AccessControlViewModel(
     }
 
     fun onShowSystemAppsChange(show: Boolean) {
+        storage.accessControlShowSystemApps.set(show)
         _uiState.update { state ->
             state.copy(
                 showSystemApps = show,

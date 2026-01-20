@@ -39,8 +39,6 @@ Proxy = {
     }
     
     PullToRefresh = {
-        PullToTest = "Pull to test delay"
-        ReleaseToTest = "Release to test delay"
         DelaySuccess = "Delay test successful"
     }
     
@@ -48,6 +46,8 @@ Proxy = {
         Switched = "Switched to: %s"
         Failed = "Switch failed"
         Error = "Switch failed: %s"
+        Pinned = "Pinned: %s"
+        Unpinned = "Unpinned"
     }
     
     Settings = {
@@ -55,6 +55,15 @@ Proxy = {
         ProxyMode = "Proxy Mode"
         SortMode = "Sort Mode"
         DisplayMode = "Display Mode"
+    }
+
+    Message = {
+        QueryGroupFailed = "Failed to query proxy group: %s"
+        SyncGroupFailed = "Failed to sync proxy group status: %s"
+        GroupNotFound = "Proxy group not found: %s"
+        SelectProxyFailed = "Select proxy failed: %s -> %s"
+        TestGroupDelayFailed = "Test group delay failed: %s"
+        TestAllGroupDelayFailed = "Test all groups delay failed: %s"
     }
     
     SortMode = {
