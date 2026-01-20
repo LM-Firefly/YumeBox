@@ -7,7 +7,7 @@ description: "了解覆写配置的工作原理及使用方法。"
 
 覆写（Override）允许你在不修改原始订阅配置的前提下，自定义配置项。订阅更新时，你的自定义配置仍然保留，不会被覆盖。
 
-<Tip>大多数情况下推荐使用app内的可视化编辑</Tip>
+<Tip>大多数情况下推荐使用 app 内的可视化编辑</Tip>
 
 ## 修饰符规则
 
@@ -21,6 +21,10 @@ description: "了解覆写配置的工作原理及使用方法。"
 | `-merge` | `"key-merge": {...}` | 合并 Map 类型的键值对 |
 | `-force` | `"key-force": {...}` | 强制覆盖整个对象，不递归合并 |
 
+<Warning>
+<strong>简化说明：</strong>当前版本仅支持基础键值配置覆写，已移除对代理组、代理节点、规则列表等复杂功能的支持。
+</Warning>
+
 ## 配置示例
 
 ### 基础示例
@@ -33,7 +37,6 @@ description: "了解覆写配置的工作原理及使用方法。"
     "enable": true,
     "nameserver": ["8.8.8.8"]
   },
-  "rules-start": ["DOMAIN-SUFFIX,local,DIRECT"],
   "hosts-merge": {
     "test.local": "192.168.1.1"
   }
@@ -54,10 +57,6 @@ description: "了解覆写配置的工作原理及使用方法。"
     "router.local": "192.168.1.1",
     "nas.local": "192.168.1.100"
   },
-  "rules-start": [
-    "IP-CIDR,192.168.0.0/16,DIRECT",
-    "DOMAIN-SUFFIX,local,DIRECT"
-  ],
   "tun": {
     "enable": true,
     "stack": "gvisor",
@@ -143,31 +142,38 @@ description: "了解覆写配置的工作原理及使用方法。"
 
 | 写法 | 行为 |
 |------|------|
-| `"rules": [...]` | 覆盖整个数组 |
-| `"rules-start": [...]` | 插入到数组开头 |
-| `"rules-end": [...]` | 追加到数组末尾 |
+| `"rules": [...]` | 覆盖整个数组（已移除） |
+| `"rules-start": [...]` | 插入到数组开头（已移除） |
+| `"rules-end": [...]` | 追加到数组末尾（已移除） |
+| `"dns.nameserver": [...]` | 覆盖 DNS 服务器列表 |
+| `"dns.nameserver-start": [...]` | 插入到 DNS 服务器列表开头 |
+| `"dns.nameserver-end": [...]` | 追加到 DNS 服务器列表末尾 |
 
 <Tabs>
   <Tab title="原配置">
     ```yaml
-    rules:
-      - MATCH,DIRECT
+    dns:
+      nameserver:
+        - 223.5.5.5
     ```
   </Tab>
   <Tab title="覆写">
     ```json
     {
-      "rules-start": ["DOMAIN-SUFFIX,local,DIRECT"],
-      "rules-end": ["DOMAIN-SUFFIX,example.com,Proxy"]
+      "dns": {
+        "nameserver-start": ["119.29.29.29"],
+        "nameserver-end": ["8.8.8.8"]
+      }
     }
     ```
   </Tab>
   <Tab title="最终">
     ```yaml
-    rules:
-      - DOMAIN-SUFFIX,local,DIRECT
-      - MATCH,DIRECT
-      - DOMAIN-SUFFIX,example.com,Proxy
+    dns:
+      nameserver:
+        - 119.29.29.29
+        - 223.5.5.5
+        - 8.8.8.8
     ```
   </Tab>
 </Tabs>
@@ -214,13 +220,6 @@ Map 类型使用 `-merge` 合并键值对。
       enable: true
       nameserver: [https://dns.alidns.com/dns-query]
 
-    proxies:
-      - name: ss
-        type: ss
-        server: 127.0.0.1
-        port: 443
-        password: mihomo
-
     rules:
       - GEOIP,CN,DIRECT
       - MATCH,home
@@ -232,22 +231,7 @@ Map 类型使用 `-merge` 合并键值对。
       "mixed-port": 7891,
       "dns": {
         "nameserver": ["https://doh.pub/dns-query"]
-      },
-      "proxies-end": [
-        {
-          "name": "vmess",
-          "type": "vmess",
-          "server": "example.com",
-          "port": 443,
-          "uuid": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-        }
-      ],
-      "rules-start": [
-        "DOMAIN-SUFFIX,local,DIRECT"
-      ],
-      "rules-end": [
-        "DOMAIN-SUFFIX,example.com,Proxy"
-      ]
+      }
     }
     ```
   </Tab>
@@ -261,23 +245,9 @@ Map 类型使用 `-merge` 合并键值对。
         - https://dns.alidns.com/dns-query
         - https://doh.pub/dns-query
 
-    proxies:
-      - name: ss
-        type: ss
-        server: 127.0.0.1
-        port: 443
-        password: mihomo
-      - name: vmess
-        type: vmess
-        server: example.com
-        port: 443
-        uuid: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-
     rules:
-      - DOMAIN-SUFFIX,local,DIRECT
       - GEOIP,CN,DIRECT
       - MATCH,home
-      - DOMAIN-SUFFIX,example.com,Proxy
     ```
   </Tab>
 </Tabs>
@@ -296,6 +266,10 @@ Map 类型使用 `-merge` 合并键值对。
 <strong>强制覆盖：</strong>使用 <code>-force</code> 时，未指定的子字段会丢失。
 </Warning>
 
+<Warning>
+<strong>已移除功能：</strong>当前版本不支持 <code>proxies</code>、<code>proxy-groups</code>、<code>rules</code>、<code>rule-providers</code>、<code>proxy-providers</code> 等字段的覆写。
+</Warning>
+
 ## 支持覆写的字段
 
 完整字段清单见：[字段清单](/override/fields)
@@ -308,5 +282,4 @@ Map 类型使用 `-merge` 合并键值对。
 | DNS | `dns.enable`、`dns.nameserver`、`dns.fake-ip-filter` |
 | 入站 | `port`、`socks-port`、`mixed-port` |
 | TUN | `tun.enable`、`tun.stack`、`tun.mtu` |
-| 规则 | `rules`、`proxies`、`proxy-groups` |
 | 其他 | `hosts`、`sniffer`、`geox-url` |

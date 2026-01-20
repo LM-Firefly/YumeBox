@@ -40,5 +40,3 @@ dependencies {
     implementation("androidx.annotation:annotation-jvm:${gropify.dep.version.annotationJvm}")
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
 }
-
-
