@@ -21,18 +21,24 @@
 package com.github.yumelira.yumebox.data.repository
 
 import com.github.yumelira.yumebox.clash.manager.ClashManager
-import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.data.store.TrafficStatisticsStorage
+import com.github.yumelira.yumebox.domain.model.TrafficData
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import timber.log.Timber
 
 class TrafficStatisticsCollector(
     private val clashManager: ClashManager,
-    private val trafficStatisticsStore: TrafficStatisticsStore,
+    private val trafficStatisticsStore: TrafficStatisticsStorage,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) {
     companion object {
         private const val TAG = "TrafficStatisticsCollector"
-        private const val COLLECTION_INTERVAL_MS = 5000L
+        private const val FOREGROUND_INTERVAL_MS = 900000L // 15 minutes
+        private const val BACKGROUND_INTERVAL_MS = 1800000L // 30 minutes
     }
 
     private var collectionJob: Job? = null
@@ -47,9 +53,14 @@ class TrafficStatisticsCollector(
     private fun startCollection() {
         collectionJob?.cancel()
         collectionJob = scope.launch {
-            clashManager.isRunning.collect { isRunning ->
+            combine(
+                clashManager.isRunning,
+                clashManager.isScreenOn
+            ) { isRunning, isScreenOn ->
+                isRunning to isScreenOn
+            }.collectLatest { (isRunning, isScreenOn) ->
                 if (isRunning) {
-                    startTrafficMonitoring()
+                    startTrafficMonitoring(isScreenOn)
                 } else {
                     resetLastValues()
                 }
@@ -57,29 +68,38 @@ class TrafficStatisticsCollector(
         }
     }
 
-    private fun CoroutineScope.startTrafficMonitoring() {
-        launch {
-            lastTotalUpload = trafficStatisticsStore.getLastTrafficUpload()
-            lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
-            lastProfileId = trafficStatisticsStore.getLastProfileId()
-
-            while (isActive && clashManager.isRunning.value) {
-                runCatching {
-                    collectTrafficData()
-                    delay(COLLECTION_INTERVAL_MS)
-                }.onFailure { e ->
-                    if (e is CancellationException) throw e
-                    Timber.tag("TrafficStatisticsCollec").e(e, "流量数据收集失败")
-                    delay(COLLECTION_INTERVAL_MS)
-                }
+    private suspend fun startTrafficMonitoring(isScreenOn: Boolean) {
+        lastTotalUpload = trafficStatisticsStore.getLastTrafficUpload()
+        lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
+        lastProfileId = trafficStatisticsStore.getLastProfileId()
+        if (!isScreenOn) {
+            resetLastValues()
+            return
+        }
+        val interval = FOREGROUND_INTERVAL_MS
+        while (currentCoroutineContext().isActive) {
+            runCatching {
+                collectTrafficData()
+            }.onFailure { e ->
+                if (e is CancellationException) throw e
+                Timber.tag(TAG).e(e, MLang.TrafficStatistics.Message.CollectionFailed.format(e.message ?: ""))
             }
+            delay(interval)
         }
     }
 
-    private fun collectTrafficData() {
-        val trafficTotal = clashManager.trafficTotal.value
-        val currentUpload = trafficTotal.upload
-        val currentDownload = trafficTotal.download
+    private suspend fun getInternalTrafficTotal(): Pair<Long, Long> {
+        return try {
+            val total = TrafficData.from(Clash.queryTrafficTotal())
+            total.upload to total.download
+        } catch (e: Exception) {
+            Timber.tag(TAG).d(e, "Failed to query traffic via core")
+            throw e
+        }
+    }
+
+    private suspend fun collectTrafficData() {
+        val (currentUpload, currentDownload) = getInternalTrafficTotal()
         val currentProfile = clashManager.currentProfile.value
         val currentProfileId = currentProfile?.id
         val currentProfileName = currentProfile?.name
@@ -117,8 +137,8 @@ class TrafficStatisticsCollector(
                 currentProfileId,
                 currentProfileName
             )
-            Timber.tag("TrafficStatisticsCollec")
-                .v("记录流量: 上传=$uploadDelta, 下载=$downloadDelta, 配置=$currentProfileName")
+            Timber.tag(TAG)
+                .v(MLang.TrafficStatistics.Message.RecordTraffic.format(uploadDelta, downloadDelta, currentProfileName))
         }
 
         lastTotalUpload = currentUpload

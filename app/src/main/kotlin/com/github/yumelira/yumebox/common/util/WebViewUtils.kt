@@ -32,6 +32,7 @@ object WebViewUtils {
         return distDir.exists() && indexFile.exists()
     }
 
+    fun checkLocalResources(context: Context): Boolean = checkLocalResources()
 
     fun getLocalFileUrl(path: String): String {
         val file = File(SubStorePaths.frontendDir, path)
@@ -42,12 +43,17 @@ object WebViewUtils {
         }
     }
 
+    fun getLocalFileUrl(context: Context, path: String): String = getLocalFileUrl(path)
     fun getLocalBaseUrl(): String {
         return "file://${SubStorePaths.frontendDir.absolutePath}/"
     }
 
     fun getLocalBaseUrl(context: Context): String = getLocalBaseUrl()
 
+    fun getSubStoreUrl(): String {
+        return getLocalFileUrl("index.html")
+    }
+    fun getSubStoreUrl(context: Context): String = getSubStoreUrl()
 
     fun getPanelUrl(context: Context, panelType: Int): String {
         val panelNames = listOf("zashboard", "metacubexd")

@@ -23,14 +23,13 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.domain.facade.ProfilesFacade
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.data.store.Preference
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.domain.facade.SettingsFacade
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,25 +42,24 @@ import kotlinx.coroutines.launch
 
 class NetworkSettingsViewModel(
     application: Application,
-    storage: NetworkSettingsStorage,
-    private val profilesStore: ProfilesStore,
-    private val proxyConnectionService: ProxyConnectionService,
-    private val clashManager: ClashManager,
+    settingsFacade: SettingsFacade,
+    private val profilesRepository: ProfilesFacade,
+    private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
 
     private var restartJob: Job? = null
 
-    val proxyMode: Preference<ProxyMode> = storage.proxyMode
-    val bypassPrivateNetwork: Preference<Boolean> = storage.bypassPrivateNetwork
-    val dnsHijack: Preference<Boolean> = storage.dnsHijack
-    val allowBypass: Preference<Boolean> = storage.allowBypass
-    val enableIPv6: Preference<Boolean> = storage.enableIPv6
-    val systemProxy: Preference<Boolean> = storage.systemProxy
-    val tunStack: Preference<TunStack> = storage.tunStack
-    val accessControlMode: Preference<AccessControlMode> = storage.accessControlMode
+    val proxyMode: Preference<ProxyMode> = settingsFacade.proxyMode
+    val bypassPrivateNetwork: Preference<Boolean> = settingsFacade.bypassPrivateNetwork
+    val dnsHijack: Preference<Boolean> = settingsFacade.dnsHijack
+    val allowBypass: Preference<Boolean> = settingsFacade.allowBypass
+    val enableIPv6: Preference<Boolean> = settingsFacade.enableIPv6
+    val systemProxy: Preference<Boolean> = settingsFacade.systemProxy
+    val tunStack: Preference<TunStack> = settingsFacade.tunStack
+    val accessControlMode: Preference<AccessControlMode> = settingsFacade.accessControlMode
 
 
-    val serviceState: StateFlow<ServiceState> = clashManager.isRunning
+    val serviceState: StateFlow<ServiceState> = proxyFacade.isRunning
         .map { running -> if (running) ServiceState.Running else ServiceState.Stopped }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Stopped)
 
@@ -127,21 +125,21 @@ class NetworkSettingsViewModel(
     fun startService(proxyMode: ProxyMode) {
         viewModelScope.launch {
             val profileId = resolveProfileId() ?: return@launch
-            val runningMode = clashManager.runningMode.value
+            val runningMode = proxyFacade.runningMode.value
             if (runningMode != RunningMode.None) {
-                proxyConnectionService.stop(runningMode)
+                proxyFacade.stopProxy(runningMode)
             }
-            proxyConnectionService.startDirect(profileId, proxyMode)
+            proxyFacade.startDirectProxy(profileId, proxyMode)
         }
     }
 
     fun restartService() {
         viewModelScope.launch {
-            val runningMode = clashManager.runningMode.value
+            val runningMode = proxyFacade.runningMode.value
             if (runningMode == RunningMode.None) return@launch
-            proxyConnectionService.stop(runningMode)
+            proxyFacade.stopProxy(runningMode)
             val profileId = resolveProfileId() ?: return@launch
-            proxyConnectionService.startDirect(profileId, proxyMode.value)
+            proxyFacade.startDirectProxy(profileId, proxyMode.value)
         }
     }
 
@@ -156,8 +154,8 @@ class NetworkSettingsViewModel(
     }
 
     private fun resolveProfileId(): String? {
-        return profilesStore.lastUsedProfileId.takeIf { it.isNotBlank() }
-            ?: profilesStore.getRecommendedProfile()?.id
+        return profilesRepository.getLastUsedProfileId().takeIf { it.isNotBlank() }
+            ?: profilesRepository.getRecommendedProfile()?.id
     }
 
 }
