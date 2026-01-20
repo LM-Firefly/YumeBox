@@ -8,13 +8,12 @@ AppSettings = {
         Interface = "Interface"
         Service = "Service"
         Language = "Language"
+        Network = "Network"
     }
     
     Behavior = {
-        AutoStartTitle = "Auto Start"
-        AutoStartSummary = "Automatically start proxy service on app launch and boot"
-        OneChinaTitle = "One-China Policy"
-        OneChinaSummary = "Automatically display HK/MO/TW region flags and codes as China"
+        AutoStartTitle = "Auto Restart"
+        AutoStartSummary = "Automatically restart proxy on boot, app launch, and unexpected termination"
     }
     
     Home = {
@@ -41,6 +40,9 @@ AppSettings = {
         
         FloatingNavbarTitle = "Floating Navbar"
         FloatingNavbarSummary = "Use floating style bottom navigation bar"
+
+        BottomBarAutoHideTitle = "Auto-hide Bottom Bar on Scroll"
+        BottomBarAutoHideSummary = "Hide bottom bar when scrolling down, show when scrolling up"
         
         ShowDividerTitle = "Show Dividers"
         ShowDividerSummary = "Show dividers between list items"
@@ -53,11 +55,16 @@ AppSettings = {
         LanguageSystem = "Follow System"
         LanguageZh = "简体中文"
         LanguageEn = "English"
+
+        CustomUserAgentTitle = "Custom User-Agent"
+        CustomUserAgentNotSet = "Not set, using default"
     }
     
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
+        LogLevelTitle = "Log Level"
+        LogLevelSummary = "Set the minimum log level"
     }
     
     WarningDialog = {
@@ -69,5 +76,6 @@ AppSettings = {
     EditDialog = {
         OneWordTitle = "Edit Quote"
         AuthorTitle = "Edit Author"
+        UserAgentTitle = "Edit User-Agent"
     }
 }

@@ -1,16 +1,22 @@
 @file:Suppress("UnstableApiUsage")
 rootProject.name = "YumeBox"
 
+val isMergeBuild = gradle.startParameter.taskNames.any { it.contains("assembleReleaseWithExtension", ignoreCase = true) }
+if (isMergeBuild) {
+    System.setProperty("isMergeBuild", "true")
+}
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
 pluginManagement {
     includeBuild("build-logic")
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
+        maven("https://plugins.gradle.org/m2/")
         maven("https://jitpack.io")
         maven("https://oom-maven.sawahara.host") {
             content {
@@ -26,10 +32,13 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
+        mavenLocal()
         google()
         mavenCentral()
         maven("https://jitpack.io")
         maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
+        maven("https://plugins.gradle.org/m2/")
+        maven("https://packages.foojay.io/maven")
         maven("https://oom-maven.sawahara.host") {
             content {
                 includeGroupByRegex("ren\\.shiror.*")

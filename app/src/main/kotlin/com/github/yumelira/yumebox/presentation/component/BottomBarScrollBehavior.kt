@@ -23,7 +23,7 @@ class BottomBarScrollBehavior {
     val nestedScrollConnection = object : NestedScrollConnection {
         override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
             if (!isAutoHideEnabled) return Offset.Zero
-            if (source != NestedScrollSource.Drag) return Offset.Zero
+            if (source != NestedScrollSource.UserInput) return Offset.Zero
 
             val delta = available.y
 
@@ -48,7 +48,7 @@ class BottomBarScrollBehavior {
             source: NestedScrollSource
         ): Offset {
             if (!isAutoHideEnabled) return Offset.Zero
-            if (source != NestedScrollSource.Drag) return Offset.Zero
+            if (source != NestedScrollSource.UserInput) return Offset.Zero
 
             if (consumed.y != 0f) {
                 val delta = consumed.y

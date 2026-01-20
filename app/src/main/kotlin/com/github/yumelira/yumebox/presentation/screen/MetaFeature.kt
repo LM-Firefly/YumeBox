@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import android.provider.OpenableColumns
@@ -35,6 +15,9 @@ import com.github.yumelira.yumebox.presentation.viewmodel.OverrideViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,10 +27,8 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.Restore
-import java.io.File
-import java.io.FileOutputStream
 
 @Composable
 @Destination<RootGraph>
@@ -129,10 +110,13 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = "Meta 功能",
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {
-                        Icon(MiuixIcons.Useful.Restore, contentDescription = "刷新")
+                        Icon(MiuixIcons.Reset, contentDescription = "刷新")
                     }
                 },
             )
@@ -149,6 +133,12 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                         title = "统一延迟",
                         summary = "使用统一的延迟测试方式", value = configuration.unifiedDelay,
                         onValueChange = { viewModel.setUnifiedDelay(it) },
+                    )
+                    IntInput(
+                        title = MLang.MetaFeature.Core.GlobalTimeoutTitle,
+                        value = configuration.globalTimeout,
+                        label = MLang.MetaFeature.Core.GlobalTimeoutLabel,
+                        onValueChange = { viewModel.setGlobalTimeout(it) },
                     )
                     NullableBooleanSelector(
                         title = "Geodata 模式",

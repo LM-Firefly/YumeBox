@@ -1,9 +1,3 @@
-// Copyright (c) YumeYuka 2025.
-//
-// This work is free. You can redistribute it and/or modify it under the
-// terms of the Do What The Fuck You Want To Public License, Version 2,
-//  as published by Sam Hocevar. See http://www.wtfpl.net/ for more details.
-
 #pragma once
 
 #include <stddef.h>
@@ -26,6 +20,7 @@ extern void (*fetch_report_func)(void *fetch_callback, const char *status_json);
 extern void (*fetch_complete_func)(void *fetch_callback, const char *error);
 
 extern int (*logcat_received_func)(void *logcat_interface, const char *payload);
+extern int (*connection_received_func)(void *connection_interface, const char *payload);
 
 extern void (*release_object_func)(void *obj);
 
@@ -43,6 +38,7 @@ extern void fetch_complete(void *completable, char *exception);
 extern void fetch_report(void *fetch_callback, char *status_json);
 
 extern int logcat_received(void *logcat_interface, char *payload);
+extern int connection_received(void *connection_interface, char *payload);
 
 extern void release_object(void *obj);
 

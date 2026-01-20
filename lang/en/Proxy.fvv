@@ -39,8 +39,8 @@ Proxy = {
     }
     
     PullToRefresh = {
-        PullToTest = "Pull to test delay"
-        ReleaseToTest = "Release to test delay"
+        PullToTest = "Pull to test current group"
+        ReleaseToTest = "Release to test current group"
         DelaySuccess = "Delay test successful"
     }
     
@@ -48,6 +48,8 @@ Proxy = {
         Switched = "Switched to: %s"
         Failed = "Switch failed"
         Error = "Switch failed: %s"
+        Pinned = "Pinned: %s"
+        Unpinned = "Unpinned"
     }
     
     Settings = {
@@ -55,6 +57,29 @@ Proxy = {
         ProxyMode = "Proxy Mode"
         SortMode = "Sort Mode"
         DisplayMode = "Display Mode"
+    }
+
+    State = {
+        Preparing = "Preparing..."
+    }
+
+    Message = {
+        LoadProfileFirst = "Please load a profile first"
+        AddProfile = "Please add a profile first"
+        EnableProfileFirst = "Please enable a profile in 'Config' page first"
+        QueryGroupFailed = "Failed to query proxy group: %s"
+        SyncGroupFailed = "Failed to sync proxy group status: %s"
+        GroupNotFound = "Proxy group not found: %s"
+        GroupNotSelectable = "Proxy group type does not support selection: %s"
+        OnlySelector = "Only Selector type proxy groups can select nodes"
+        SelectProxyFailed = "Select proxy failed: %s -> %s"
+        TestGroupDelayFailed = "Test group delay failed: %s"
+        TestAllGroupDelayFailed = "Test all groups delay failed: %s"
+        SaveSelectionFailed = "Failed to save selection"
+        AutoSyncFailed = "Auto sync failed: %s"
+        RepositoryNotStarted = "Repository not started"
+        ResolveFailed = "Failed to resolve proxy: %s"
+        CycleDetected = "Cycle detected: %s"
     }
     
     SortMode = {

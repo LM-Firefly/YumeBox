@@ -1,30 +1,10 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.service
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import com.github.yumelira.yumebox.MainActivity
+import com.github.yumelira.yumebox.service.AutoRestartService
 
 class DialerReceiver : BroadcastReceiver() {
 
@@ -32,6 +12,7 @@ class DialerReceiver : BroadcastReceiver() {
         private const val SECRET_CODE = "*#*#0721#*#*"
     }
 
+    @Suppress("DEPRECATION")
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             "android.provider.Telephony.SECRET_CODE" -> {
@@ -66,16 +47,7 @@ class RestartReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
                 -> {
-                val serviceIntent = Intent(context, AutoRestartService::class.java)
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        context.startForegroundService(serviceIntent)
-                    } else {
-                        context.startService(serviceIntent)
-                    }
-                } catch (e: Exception) {
-                    // 忽略启动失败（可能是因为应用在后台）
-                }
+                AutoRestartService.start(context)
             }
         }
     }
