@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
@@ -30,17 +10,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.repeatOnLifecycle
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.viewmodel.LogViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.LogDetailScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
@@ -49,13 +34,9 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.Cancel
-import top.yukonga.miuix.kmp.icon.icons.useful.Delete
-import top.yukonga.miuix.kmp.icon.icons.useful.Play
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Composable
 @Destination<RootGraph>
@@ -66,10 +47,13 @@ fun LogScreen(navigator: DestinationsNavigator) {
     val isRecording by viewModel.isRecording.collectAsState()
     val logFiles by viewModel.logFiles.collectAsState()
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000)
-            viewModel.refreshLogFiles()
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) {
+                delay(1000)
+                viewModel.refreshLogFiles()
+            }
         }
     }
 
@@ -83,6 +67,15 @@ fun LogScreen(navigator: DestinationsNavigator) {
                 },
                 actions = {
                     IconButton(
+                        onClick = { viewModel.saveAppLog() },
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Download,
+                            contentDescription = "Save App Log",
+                        )
+                    }
+                    IconButton(
                         onClick = {
                             if (isRecording) {
                                 viewModel.stopRecording()
@@ -93,7 +86,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(
-                            imageVector = if (isRecording) MiuixIcons.Useful.Cancel else MiuixIcons.Useful.Play,
+                            imageVector = if (isRecording) Yume.Square else Yume.Play,
                             contentDescription = if (isRecording) MLang.Log.Action.StopRecording else MLang.Log.Action.StartRecording,
                         )
                     }
@@ -102,7 +95,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
                         modifier = Modifier.padding(end = 24.dp)
                     ) {
                         Icon(
-                            imageVector = MiuixIcons.Useful.Delete,
+                            imageVector = MiuixIcons.Delete,
                             contentDescription = MLang.Log.Action.ClearLogs,
                         )
                     }
@@ -153,7 +146,7 @@ private fun LogFileItem(
         visible = true
     }
 
-    rememberInfiniteTransition(label = "recording_pulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "recording_pulse")
 
     val animatedSize by animateFloatAsState(
         targetValue = fileInfo.size.toFloat(),
@@ -173,14 +166,14 @@ private fun LogFileItem(
     ) {
         SuperArrow(
             title = fileInfo.name, summary = summary, onClick = onClick,
-            rightActions = {
+            endActions = {
                 if (fileInfo.isRecording) {
                     Text(
                         MLang.Log.Status.Recording,
                         modifier = Modifier.padding(end = 16.dp),
                         style = MiuixTheme.textStyles.body2,
                     )
-                }
+                } else null
             }
         )
     }

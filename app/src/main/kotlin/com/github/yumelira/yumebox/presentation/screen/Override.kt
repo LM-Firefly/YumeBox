@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.foundation.layout.padding
@@ -38,12 +18,16 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.icon.extended.*
+import androidx.compose.foundation.layout.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.Restore
 
 @Composable
 @Destination<RootGraph>
-fun OverrideScreen(navigator: DestinationsNavigator) {
+fun OverrideScreen(
+    navigator: DestinationsNavigator,
+    openControllerAddress: Boolean = false
+) {
     val viewModel: OverrideViewModel = koinViewModel()
     val scrollBehavior = MiuixScrollBehavior()
 
@@ -55,10 +39,13 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.Override.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {
-                        Icon(MiuixIcons.Useful.Restore, contentDescription = MLang.Component.Navigation.Refresh)
+                        Icon(MiuixIcons.Reset, contentDescription = MLang.Component.Navigation.Refresh)
                     }
                 },
             )
@@ -171,6 +158,7 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
                         value = configuration.externalController,
                         placeholder = MLang.Override.ExternalController.AddressHint,
                         onValueChange = { viewModel.setExternalController(it) },
+                        initiallyExpanded = openControllerAddress
                     )
                     StringInput(
                         title = MLang.Override.ExternalController.Tls,
@@ -183,6 +171,7 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
                         value = configuration.secret,
                         placeholder = MLang.Override.ExternalController.ApiSecretHint,
                         onValueChange = { viewModel.setSecret(it) },
+                        onRandomGenerate = { java.util.UUID.randomUUID().toString() }
                     )
                     StringListInput(
                         title = MLang.Override.ExternalController.CorsAllowOrigins,
