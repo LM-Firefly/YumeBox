@@ -1,15 +1,6 @@
 name: Build Pre-Release
 on:
   workflow_dispatch:
-    inputs:
-      purejoy_repo:
-        description: 'Owner/repo for PureJoy-FYL'
-        required: false
-        default: 'OOM-WG/PureJoy-FYL'
-      purejoy_ref:
-        description: 'Branch or ref to checkout'
-        required: false
-        default: 'purejoy'
   push:
     branches:
       - main
@@ -50,38 +41,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
-
-      - name: Free up disk space
-        run: |
-          echo "Disk usage before cleanup:"
-          df -h || true
-          du -sh ~/.gradle || true
-          echo "Removing Gradle caches to free space..."
-          rm -rf ~/.gradle/caches/* || true
-          echo "Removing other safe caches..."
-          rm -rf /home/runner/.cache/* || true
-          echo "Disk usage after cleanup:"
-          df -h || true
-
-      # Checkout and publish PureJoy-FYL to local Maven so YumeBox can resolve plugin/dependencies from mavenLocal
-      - name: Checkout PureJoy-FYL
-        uses: actions/checkout@v6
-        with:
-          # Accept repository in workflow_dispatch input 'purejoy_repo' (owner/repo), default to upstream
-          repository: ${{ github.event.inputs.purejoy_repo || 'OOM-WG/PureJoy-FYL' }}
-          path: purejoy
-          ref: ${{ github.event.inputs.purejoy_ref || 'purejoy' }}
-
-      - name: Publish PureJoy-FYL to mavenLocal
-        working-directory: purejoy
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon publishToMavenLocal -x test --parallel
-
-      - name: List published PureJoy artifacts
-        run: |
-          echo "Listing published PureJoy artifacts in ~/.m2/repository/dev/oom-wg/purejoy"
-          ls -R ~/.m2/repository/dev/oom-wg/purejoy || true
 
       - name: Cache Gradle
         uses: actions/cache@v5

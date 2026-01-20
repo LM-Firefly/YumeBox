@@ -20,8 +20,9 @@ pluginManagement {
         maven("https://jitpack.io")
         maven("https://oom-maven.sawahara.host") {
             content {
-                includeGroupByRegex("ren\\.shiror.*")
-                includeGroupByRegex("dev\\.oom-wg.*")
+                includeGroupAndSubgroups("ren.shiror")
+                includeGroupAndSubgroups("work.niggergo")
+                includeGroupAndSubgroups("dev.oom-wg")
             }
         }
         gradlePluginPortal()
@@ -41,8 +42,9 @@ dependencyResolutionManagement {
         maven("https://packages.foojay.io/maven")
         maven("https://oom-maven.sawahara.host") {
             content {
-                includeGroupByRegex("ren\\.shiror.*")
-                includeGroupByRegex("dev\\.oom-wg.*")
+                includeGroupAndSubgroups("ren.shiror")
+                includeGroupAndSubgroups("work.niggergo")
+                includeGroupAndSubgroups("dev.oom-wg")
             }
         }
     }
