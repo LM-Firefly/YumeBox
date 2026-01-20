@@ -6,19 +6,25 @@ Service = {
         ConnectedWithProfile = "Connected: %s"
         Connected = "Connected"
         TrafficFormat = "Total: %s"
+        CheckingAutoStart = "Checking auto-start..."
+        AutoRestartName = "Auto Restart Service"
+        AutoRestartDescription = "Used for auto-restarting proxy service"
     }
-    
+
     Status = {
         Connecting = "Connecting..."
         Establishing = "Establishing connection"
         StartingProxy = "Starting proxy"
         StartFailed = "Start failed"
         ConfigLoadFailed = "Config load failed"
+        ConfigLoadFailedWithProfile = "Config load failed: %s"
+        TunStartFailed = "TUN start failed: %s"
+        HttpStartFailed = "HTTP start failed: %s"
         VpnEstablishFailed = "Unable to establish VPN connection"
         HttpProxyStartFailed = "Unable to start HTTP proxy"
         UnknownError = "Unknown error"
     }
-    
+
     Tile = {
         Connected = "Connected"
         Disconnected = "Disconnected"
@@ -28,13 +34,39 @@ Service = {
         ClickToOpen = "Click to open app"
         ModeVpn = "VPN Mode"
         ModeHttp = "HTTP Mode"
+        NoProfiles = "No available profiles, open app"
     }
-    
+
     LogRecord = {
         ChannelName = "Log Recording"
         ChannelDescription = "Log recording service notification"
         Recording = "Recording logs"
         RecordingFile = "Recording logs..."
         ActionStop = "Stop"
+        RecordingFailed = "Failed to write logs"
+        StartFailed = "Start log recording failed"
+        StopFailed = "Stop log writer failed"
+        Created = "Log recording service created"
+        Destroyed = "Log recording service destroyed"
+        AlreadyRecording = "Log recording already in progress"
+        RecordingStarted = "Recording started: %s"
+        StartSubscribe = "Start subscribing log stream"
+        SendToChannelFailed = "Failed to send log to channel"
+        Stopped = "Stopped recording"
+    }
+
+    Message = {
+        ProfileIdMissing = "Profile ID not provided"
+        ProfileNotFound = "Profile not found: %s"
+        MonitorFailed = "Monitor task failed"
+        LogSubscribeError = "Log subscribe error"
+        ConfigDirMissing = "Config directory not found: %s"
+        AutoStartFailed = "Auto start failed: %s"
+        StartProxyFailed = "Failed to start proxy service: %s"
+        NoRunningProxy = "No running proxy service"
+    }
+
+    Operation = {
+        LoadConfig = "Load config"
     }
 }

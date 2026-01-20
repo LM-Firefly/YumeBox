@@ -30,6 +30,8 @@ ProfilesPage = {
         SubscriptionUrl = "Subscription URL (HTTP/HTTPS)"
         SelectFile = "Click to select file"
         NewProfile = "New Profile"
+        AutoUpdateMinutes = "Auto-update (minutes)"
+        AutoUpdateHint = "0 means no auto-update"
     }
     
     QrScanner = {
@@ -46,7 +48,10 @@ ProfilesPage = {
     Message = {
         UrlImported = "Profile imported from URL"
         ClipboardRead = "URL read from clipboard"
+        UnknownProfile = "Unknown profile"
         UnknownFile = "Unknown file"
+        DownloadFailedWithName = "Profile download failed: %s"
+        MySubscription = "My Subscription"
     }
     
     Validation = {
@@ -54,10 +59,80 @@ ProfilesPage = {
         SelectFile = "Please select a file"
         YamlOnly = "Only .yaml or .yml format supported"
         DownloadFailed = "Profile download failed, please retry"
+        AutoUpdateMin = "Minimum is %d minutes"
     }
     
     Progress = {
         Downloading = "Downloading..."
+        Idle = "Idle"
+    }
+
+    Import = {
+        Preparing = "Preparing to import profile..."
+        Downloading = "Downloading profile..."
+        DownloadingFile = "Downloading profile file..."
+        DownloadingExternal = "Downloading external resources..."
+        Validating = "Validating profile..."
+        Copying = "Copying profile file..."
+        CopyingDone = "Copy completed"
+        FileReady = "File ready"
+        Success = "Import successful"
+        Canceled = "Import canceled"
+        ImportFailed = "Import failed: %s"
+
+        Message = {
+            AlreadyImporting = "Profile import already in progress: %s"
+            URLEmpty = "URL is empty"
+            NetworkHttpFailed = "Network request failed (HTTP %s): %s"
+            Retrying = "Retry %d/%d, reason: %s"
+            UnableToConnect = "Unable to connect to server: %s"
+            NetworkConnFailed = "Network connection failed: %s"
+            NetworkRequest = "Network request"
+            FormatValidationErrors = "Profile format errors:\n%s"
+            FormatValidationError = "Profile format error: %s"
+            FileNotFound = "File not found: %s"
+            NoReadPermission = "No read permission: %s"
+            NoWritePermission = "No write permission: %s"
+            InsufficientSpace = "Insufficient storage space"
+            InvalidPath = "Invalid file path: %s"
+            FileAccessError = "File access error: %s"
+            OperationTimeout = "Operation timeout %s"
+            ImportCancelled = "Import was cancelled"
+            PathCompareFallback = "Cannot compare file paths, falling back to absolute comparison"
+            CannotDetermineImportDir = "Cannot determine import directory"
+            CannotCreateImportDir = "Cannot create import directory: %s"
+            CannotCreateConfigDir = "Cannot create config directory: %s"
+            CannotDetermineImportDirPath = "Cannot determine import directory path: %s"
+            ImportFailedLog = "Profile import failed: %s - %s"
+            CleanupFailed = "Failed to cleanup failed imports: %s"
+            CleanupOrphanedSuccess = "Cleaned %s orphan profiles"
+            CleanupOrphanedFailed = "Failed to clean orphan profiles"
+            UnknownError = "Unknown error"
+        }
+    }
+
+    Provider = {
+        Remote = "Remote subscription"
+        Local = "Local file"
+        Unknown = "Unknown provider"
+    }
+
+    Info = {
+        TrafficFormat = "Traffic: %s/%s (%d%%)"
+        UsedBytes = "Used: %s"
+        ClickToUpdate = "Click to update"
+        ExpireAt = "Expires at: %s (remaining %s days)"
+        ExpiresToday = "Expires today"
+        Expired = "Expired: %s"
+        UpdatedSuffix = "|%s"
+        Local = "Local profile"
+    }
+
+    Time = {
+        JustNow = "Just now"
+        MinutesAgo = "%d minutes ago"
+        HoursAgo = "%d hours ago"
+        DaysAgo = "%d days ago"
     }
     
     Button = {
@@ -72,7 +147,7 @@ ProfilesPage = {
     }
 
     EditDialog = {
-        Title = "Edit Profile Name"
+        Title = "Edit Profile"
     }
 
     LinkSettings = {

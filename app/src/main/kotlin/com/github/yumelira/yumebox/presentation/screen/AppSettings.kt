@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.foundation.layout.Spacer
@@ -39,8 +19,10 @@ import com.github.yumelira.yumebox.presentation.viewmodel.AppSettingsViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
+import android.util.Log
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperSwitch
@@ -68,6 +50,7 @@ fun AppSettingsScreen(
     val oneWord = viewModel.oneWord.state.collectAsState().value
     val oneWordAuthor = viewModel.oneWordAuthor.state.collectAsState().value
     val customUserAgent = viewModel.customUserAgent.state.collectAsState().value
+    val logLevel = viewModel.logLevel.state.collectAsState().value
 
     val showHideIconDialog = remember { mutableStateOf(false) }
     val showEditOneWordDialog = remember { mutableStateOf(false) }
@@ -80,7 +63,13 @@ fun AppSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = "应用设置", scrollBehavior = scrollBehavior)
+            TopBar(
+                title = "应用设置",
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(
@@ -91,20 +80,11 @@ fun AppSettingsScreen(
                 SmallTitle("行为")
                 Card {
                     SuperSwitch(
-                        title = "自动启动",
-                        summary = "应用启动和开机时自动启动代理服务",
+                        title = "自动重启",
+                        summary = "应用启动、开机及异常终止后自动重启代理服务",
                         checked = automaticRestart,
                         onCheckedChange = { viewModel.onAutomaticRestartChange(it) },
                     )
-                    if (com.github.yumelira.yumebox.common.util.LocaleUtil.isChineseLocale()) {
-                        SuperSwitch(
-                            title = "坚持一个中国原则",
-                            summary = "自动将港澳台地区旗帜及区域码显示为中国",
-                            checked = true,
-                            onCheckedChange = { },
-                            enabled = false,
-                        )
-                    }
                 }
                 SmallTitle("首页")
                 Card {
@@ -190,6 +170,14 @@ fun AppSettingsScreen(
                         summary = "在通知栏中显示流量使用情况",
                         checked = showTrafficNotification,
                         onCheckedChange = { viewModel.onShowTrafficNotificationChange(it) },
+                    )
+                    EnumSelector(
+                        title = MLang.AppSettings.ServiceSection.LogLevelTitle,
+                        summary = MLang.AppSettings.ServiceSection.LogLevelSummary,
+                        currentValue = logLevel,
+                        items = listOf("VERBOSE", "DEBUG", "INFO", "WARN", "ERROR", "ASSERT"),
+                        values = listOf(Log.VERBOSE, Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.ASSERT),
+                        onValueChange = { viewModel.onLogLevelChange(it) },
                     )
                 }
                 SmallTitle("网络")

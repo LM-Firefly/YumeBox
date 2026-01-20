@@ -1,59 +1,43 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.component
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.Proxy
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Text
@@ -73,17 +57,19 @@ internal fun DelayPill(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MiuixTheme.textStyles.footnote1,
+    globalTimeout: Int = 0,
     height: Dp = 18.dp,
 ) {
-    val (text, color) = remember(delay) {
-        when {
-            delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
-            delay == 0 -> "N/A" to Color(0xFFBDBDBD)
-            delay in 1..800 -> "${delay}" to Color(0xFF4CAF50)
-            delay in 801..5000 -> "${delay}" to Color(0xFFFFA726)
-            else -> null
-        }
-    } ?: return
+    val timeoutThreshold = if (globalTimeout > 0) globalTimeout else 65535
+    val (text, color) = when {
+        delay < 0 -> "" to Color(0x00000000)
+        delay >= timeoutThreshold -> "Timeout" to Color(0xFF9E9E9E)
+        delay == 0 -> "N/A" to Color(0xFFBDBDBD)
+        delay in 1..500 -> "${delay}" to Color(0xFF4CAF50)
+        delay in 501..1000 -> "${delay}" to Color(0xFFFFC107)
+        delay in 1001..5000 -> "${delay}" to Color(0xFFFF9800)
+        else -> "${delay}" to Color(0xFFF44336)
+    }
 
     val backgroundColor = remember(delay) {
         when {
@@ -191,40 +177,46 @@ internal fun ProxySelectableCard(
     isSelected: Boolean,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    overlay: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
     Card(modifier = modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    color = if (isSelected) {
-                        MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    } else {
-                        MiuixTheme.colorScheme.background
-                    },
-                    shape = RoundedCornerShape(ProxyCardDefaults.CornerRadius)
-                )
-                .clip(RoundedCornerShape(ProxyCardDefaults.CornerRadius))
-                .let {
-                    if (onClick != null) {
-                        it.clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = onClick
-                        )
-                    } else {
-                        it
-                    }
+        val boxModifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = if (isSelected) {
+                    MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
+                } else {
+                    MiuixTheme.colorScheme.background
+                },
+                shape = RoundedCornerShape(ProxyCardDefaults.CornerRadius)
+            )
+            .clip(RoundedCornerShape(ProxyCardDefaults.CornerRadius))
+            .let {
+                if (onClick != null) {
+                    it.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick
+                    )
+                } else {
+                    it
                 }
-                .padding(
-                    horizontal = ProxyCardDefaults.PaddingHorizontal,
-                    vertical = ProxyCardDefaults.PaddingVertical
-                ),
-            content = content
-        )
+            }
+            .padding(
+                horizontal = ProxyCardDefaults.PaddingHorizontal,
+                vertical = ProxyCardDefaults.PaddingVertical
+            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = boxModifier, content = content)
+            overlay?.let { overlayContent ->
+                Box(modifier = Modifier.fillMaxSize()) {
+                    overlayContent()
+                }
+            }
+        }
     }
 }
 
@@ -233,16 +225,29 @@ fun ProxyNodeCard(
     proxy: Proxy,
     isSelected: Boolean,
     onClick: (() -> Unit)?,
+    isPinned: Boolean = false,
     modifier: Modifier = Modifier,
     isSingleColumn: Boolean = false,
     showDetail: Boolean = false,
     onDelayClick: (() -> Unit)? = null,
     isDelayTesting: Boolean = false,
+    globalTimeout: Int = 0
 ) {
     ProxySelectableCard(
         isSelected = isSelected,
         onClick = onClick,
         modifier = modifier,
+        overlay = if (isPinned) {
+            {
+                Text(
+                    text = "📌",
+                    style = MiuixTheme.textStyles.footnote1.copy(fontSize = 18.sp),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-2).dp, y = 2.dp)
+                )
+            }
+        } else null,
     ) {
         val textColor = if (isSelected) {
             MiuixTheme.colorScheme.primary
@@ -261,7 +266,8 @@ fun ProxyNodeCard(
                         style = MiuixTheme.textStyles.body1,
                         color = textColor,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.basicMarquee()
                     )
                     if (showDetail) {
                         Spacer(modifier = Modifier.height(ProxyCardDefaults.TextSpacing))
@@ -277,6 +283,7 @@ fun ProxyNodeCard(
                     onClick = onDelayClick,
                     isLoading = isDelayTesting,
                     textStyle = MiuixTheme.textStyles.body2,
+                    globalTimeout = globalTimeout,
                     height = 22.dp,
                 )
             }
@@ -289,6 +296,7 @@ fun ProxyNodeCard(
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.basicMarquee(),
                 )
                 Spacer(modifier = Modifier.height(ProxyCardDefaults.TextSpacing))
                 Row(
@@ -324,7 +332,7 @@ fun ProxyNodeCard(
                     color = textColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).basicMarquee()
                 )
                 DelayPill(delay = proxy.delay, onClick = onDelayClick, isLoading = isDelayTesting)
             }

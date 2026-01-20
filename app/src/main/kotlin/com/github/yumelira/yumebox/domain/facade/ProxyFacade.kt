@@ -30,7 +30,7 @@ class ProxyFacade(
 
     val trafficTotal: StateFlow<TrafficData> = clashManager.trafficTotal
 
-    val tunnelState: StateFlow<TunnelState?> = clashManager.tunnelState
+    suspend fun getTunnelState(): TunnelState? = clashManager.queryTunnelState()
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = clashManager.proxyStateRepository.proxyGroups
 
@@ -49,7 +49,7 @@ class ProxyFacade(
     }
 
     suspend fun selectProxy(groupName: String, proxyName: String): Result<Boolean> {
-        val result = clashManager.proxyStateRepository.selectProxy(groupName, proxyName)
+        val result = clashManager.proxyStateRepository.selectProxy(groupName, proxyName, currentProfile.value)
 
         if (result.isSuccess && result.getOrNull() == true) {
             val profile = currentProfile.value
@@ -83,10 +83,6 @@ class ProxyFacade(
 
     fun getCurrentSelection(groupName: String): String? {
         return clashManager.proxyStateRepository.getCurrentSelection(groupName)
-    }
-
-    fun isSelectableGroup(groupName: String): Boolean {
-        return clashManager.proxyStateRepository.isSelectableGroup(groupName)
     }
 
 }

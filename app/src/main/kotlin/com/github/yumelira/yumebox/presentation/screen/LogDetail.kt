@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,53 +6,61 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.repeatOnLifecycle
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.Square
 import com.github.yumelira.yumebox.presentation.viewmodel.LogViewModel
 import com.github.yumelira.yumebox.service.LogRecordService
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
-import kotlinx.coroutines.Dispatchers
+import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import timber.log.Timber
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 @Composable
 @Destination<RootGraph>
@@ -85,13 +73,10 @@ fun LogDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isRecording by viewModel.isRecording.collectAsState()
-
     val file = remember { File(filePath) }
     var logEntries by remember { mutableStateOf<List<LogViewModel.LogEntry>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-
     val isCurrentFileRecording = isRecording && file.name == LogRecordService.currentLogFileName
-
     val saveFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -109,17 +94,20 @@ fun LogDetailScreen(
             }
         }
     }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
     LaunchedEffect(filePath) {
         logEntries = viewModel.readLogContent(file).reversed()
         isLoading = false
     }
 
-    LaunchedEffect(isCurrentFileRecording) {
+    LaunchedEffect(isCurrentFileRecording, lifecycleOwner) {
         if (isCurrentFileRecording) {
-            while (true) {
-                delay(1000)
-                logEntries = viewModel.readLogContent(file).reversed()
+            lifecycleOwner.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(1000)
+                    logEntries = viewModel.readLogContent(file).reversed()
+                }
             }
         }
     }
@@ -141,7 +129,7 @@ fun LogDetailScreen(
                             modifier = Modifier.padding(end = 24.dp)
                         ) {
                             Icon(
-                                imageVector = MiuixIcons.Close,
+                                imageVector = Yume.Square,
                                 contentDescription = "暂停记录",
                             )
                         }
@@ -153,7 +141,7 @@ fun LogDetailScreen(
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Icon(
-                                imageVector = MiuixIcons.Ok,
+                                imageVector = MiuixIcons.Download,
                                 contentDescription = "保存",
                             )
                         }

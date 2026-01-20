@@ -5,7 +5,8 @@ Providers = {
     Action = {
         UpdateAll = "Update All"
         Update = "Update"
-        Upload = "Upload"
+        Import = "Import"
+        View = "View"
         Operation = "Operation"
     }
     
@@ -20,6 +21,13 @@ Providers = {
         ProxyProviders = "Proxy Providers (%d)"
         RuleProviders = "Rule Providers (%d)"
     }
+
+    Info = {
+        ExpireDays = "%d days left"
+        Expired = "Expired"
+        RemainingTraffic = "Remaining: %s"
+        UsedTraffic = "Used: %s / %s"
+    }
     
     Message = {
         FetchFailed = "Failed to fetch resources: %s"
@@ -28,5 +36,6 @@ Providers = {
         AllUpdated = "All updated"
         UploadSuccess = "%s uploaded successfully"
         UploadFailed = "Upload failed: %s"
+        OpenFileFailed = "Open file failed: %s"
     }
 }

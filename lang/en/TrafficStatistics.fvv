@@ -23,7 +23,12 @@ TrafficStatistics = {
         Section = "Profile Traffic Statistics"
         Empty = "No profile traffic data"
     }
-    
+
+    Message = {
+        CollectionFailed = "Failed to collect traffic data: %s"
+        RecordTraffic = "Record traffic: upload=%s, download=%s, profile=%s"
+    }
+
     Chart = {
         Hourly = "4 Hours"
         Daily = "Daily"
