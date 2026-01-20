@@ -48,6 +48,7 @@ Component = {
         Cancel = "取消"
         Confirm = "确定"
         Clear = "清除"
+        Random = "随机"
     }
     
     Loading = {

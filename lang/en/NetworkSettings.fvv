@@ -6,6 +6,7 @@ NetworkSettings = {
         VpnService = "VPN Service"
         VpnOptions = "VPN Service Options"
         ProxyOptions = "Proxy Options"
+        ServiceManagement = "Service Management"
     }
     
     VpnService = {

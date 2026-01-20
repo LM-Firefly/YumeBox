@@ -49,7 +49,7 @@ fun TextEditBottomSheet(
     onDismiss: () -> Unit = { show.value = false },
 ) {
     WindowBottomSheet(
-        show = show, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
+        show = show.value, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
     ) {
         Column {
             TextField(
@@ -83,7 +83,7 @@ fun WarningBottomSheet(
     onDismiss: () -> Unit = { show.value = false },
 ) {
     WindowBottomSheet(
-        show = show,
+        show = show.value,
         title = title,
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = onDismiss,
