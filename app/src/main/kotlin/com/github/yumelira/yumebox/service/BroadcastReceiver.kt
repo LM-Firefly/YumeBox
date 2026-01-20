@@ -23,7 +23,6 @@ package com.github.yumelira.yumebox.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import com.github.yumelira.yumebox.MainActivity
 import timber.log.Timber
 
@@ -33,6 +32,7 @@ class DialerReceiver : BroadcastReceiver() {
         private const val SECRET_CODE = "*#*#0721#*#*"
     }
 
+    @Suppress("DEPRECATION")
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             "android.provider.Telephony.SECRET_CODE" -> {
@@ -57,28 +57,6 @@ class DialerReceiver : BroadcastReceiver() {
             context.startActivity(launchIntent)
         } catch (e: Exception) {
             Timber.e(e, "启动主界面失败")
-        }
-    }
-}
-
-class RestartReceiver : BroadcastReceiver() {
-
-    override fun onReceive(context: Context, intent: Intent) {
-        when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED,
-            Intent.ACTION_MY_PACKAGE_REPLACED,
-                -> {
-                val serviceIntent = Intent(context, AutoRestartService::class.java)
-                try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        context.startForegroundService(serviceIntent)
-                    } else {
-                        context.startService(serviceIntent)
-                    }
-                } catch (e: Exception) {
-                    // 忽略启动失败（可能是因为应用在后台）
-                }
-            }
         }
     }
 }
