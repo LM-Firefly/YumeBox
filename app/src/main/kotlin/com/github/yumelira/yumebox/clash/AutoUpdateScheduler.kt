@@ -1,0 +1,98 @@
+package com.github.yumelira.yumebox.clash
+
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import com.github.yumelira.yumebox.data.model.Profile
+import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.service.ProfileAutoUpdateService
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.koin.core.context.GlobalContext
+import timber.log.Timber
+
+private const val TAG = "AutoUpdateScheduler"
+
+fun scheduleNext(profile: Profile) {
+    // Delegate to broadcast-based scheduler (CMFA-like behavior)
+    try {
+        val context = com.github.yumelira.yumebox.core.Global.application
+        com.github.yumelira.yumebox.service.ProfileReceiver.scheduleNext(context, profile)
+    } catch (e: Exception) {
+        Timber.tag(TAG).e(e, "scheduleNext delegate failed for %s", profile.id)
+    }
+}
+
+fun cancel(profileId: String) {
+    try {
+        val context = com.github.yumelira.yumebox.core.Global.application
+        val profile = com.github.yumelira.yumebox.data.model.Profile(id = profileId, name = "", type = com.github.yumelira.yumebox.data.model.ProfileType.URL)
+        com.github.yumelira.yumebox.service.ProfileReceiver.cancelNext(context, profile)
+    } catch (e: Exception) {
+        Timber.tag(TAG).e(e, "cancel delegate failed for %s", profileId)
+    }
+}
+
+suspend fun restoreAll() {
+    withContext(Dispatchers.IO) {
+        runCatching {
+            val profilesStore = try { GlobalContext.get().get<ProfilesStore>() } catch (_: Exception) { null }
+            if (profilesStore == null) {
+                Timber.tag(TAG).w("Koin ProfilesStore not available when restoring auto-updates")
+                return@runCatching
+            }
+            val profiles = profilesStore.getAllProfiles()
+            profiles.forEach { p ->
+                if (p.type == com.github.yumelira.yumebox.data.model.ProfileType.URL && p.autoUpdateMinutes > 0) {
+                    scheduleNext(p)
+                } else {
+                    cancel(p.id)
+                }
+            }
+        }.onFailure { e -> Timber.tag(TAG).e(e, "restoreAll failed") }
+    }
+}
+
+suspend fun performUpdate(profileId: String): Result<Boolean> = withContext(Dispatchers.IO) {
+    // Retry on transient network errors, and schedule a short retry on persistent failure
+    val maxAttempts = 3
+    val retryDelayMs = 5000L
+    try {
+        val profilesStore = try { GlobalContext.get().get<ProfilesStore>() } catch (_: Exception) { null }
+            ?: return@withContext Result.failure<Boolean>(IllegalStateException("ProfilesStore not available"))
+        val profile = profilesStore.getAllProfiles().firstOrNull { it.id == profileId }
+            ?: return@withContext Result.failure<Boolean>(IllegalArgumentException("Profile not found: $profileId"))
+        if (profile.type != com.github.yumelira.yumebox.data.model.ProfileType.URL) {
+            return@withContext Result.failure<Boolean>(IllegalArgumentException("Profile is not URL type: $profileId"))
+        }
+        val workDir = com.github.yumelira.yumebox.core.Global.application.filesDir.resolve("clash")
+        var lastError: Throwable? = null
+        repeat(maxAttempts) { attempt ->
+            if (attempt > 0) {
+                kotlinx.coroutines.delay(retryDelayMs * attempt)
+            }
+            val result = downloadProfile(profile, workDir, force = true)
+            if (result.isSuccess) {
+                val configPath = result.getOrThrow()
+                val updated = profile.copy(config = configPath, lastUpdatedAt = System.currentTimeMillis())
+                profilesStore.updateProfile(updated)
+                // schedule next run
+                scheduleNext(updated)
+                return@withContext Result.success(true)
+            } else {
+                lastError = result.exceptionOrNull()
+                Timber.tag(TAG).w(lastError, "performUpdate attempt %d failed for %s", attempt + 1, profileId)
+            }
+        }
+        // All attempts failed — schedule a retry in 15 minutes (best-effort) and return failure
+        val ctx = com.github.yumelira.yumebox.core.Global.application
+        com.github.yumelira.yumebox.service.ProfileReceiver.scheduleRetry(ctx, profileId, 15)
+        Timber.tag(TAG).e(lastError, "performUpdate all attempts failed for %s; scheduled retry", profileId)
+        Result.failure(lastError ?: IllegalStateException("Unknown update error"))
+    } catch (e: Exception) {
+        Timber.tag(TAG).e(e, "performUpdate failed for %s", profileId)
+        Result.failure(e)
+    }
+}

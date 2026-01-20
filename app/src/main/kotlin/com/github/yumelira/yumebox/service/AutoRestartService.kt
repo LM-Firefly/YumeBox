@@ -1,21 +1,17 @@
 package com.github.yumelira.yumebox.service
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
-import androidx.core.app.NotificationCompat
-import androidx.core.app.ServiceCompat
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
 import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
@@ -25,8 +21,15 @@ class AutoRestartService : Service() {
 
     companion object {
         private const val TAG = "AutoRestartService"
-        private const val NOTIFICATION_ID = 1101
-        private const val CHANNEL_ID = "auto_restart_channel"
+        const val ACTION_START = "START"
+        fun start(context: Context) {
+            val intent = Intent(context, AutoRestartService::class.java).apply { action = ACTION_START }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
     }
 
     private val appSettingsStorage: AppSettingsStorage by inject()
@@ -35,27 +38,41 @@ class AutoRestartService : Service() {
     private val clashManager: ClashManager by inject()
     private val proxyConnectionService: ProxyConnectionService by inject()
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val notificationManager by lazy {
+        ServiceNotificationManager(
+            this,
+            ServiceNotificationManager.Config(
+                notificationId = 1003,
+                channelId = "auto_restart_service",
+                channelName = "Auto Restart Service",
+                stopAction = "STOP"
+            )
+        )
+    }
+    private var serviceScope: CoroutineScope? = null
+    override fun onCreate() {
+        super.onCreate()
+        notificationManager.createChannel()
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel()
-            val notification = createNotification()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(
-                    NOTIFICATION_ID,
-                    notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                )
-            } else {
-                startForeground(NOTIFICATION_ID, notification)
-            }
+        startForeground(
+            1003,
+            notificationManager.create(MLang.Service.Status.StartingProxy, MLang.Service.Status.StartingProxy, false)
+        )
+        when (intent?.action) {
+            ACTION_START -> startAutoRestartTask()
+            else -> stopSelf()
         }
 
-        serviceScope.launch {
-            runCatching {
+        return START_NOT_STICKY
+    }
+    private fun startAutoRestartTask() {
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        serviceScope?.launch {
+            try {
                 ProxyAutoStartHelper.checkAndAutoStart(
                     proxyConnectionService = proxyConnectionService,
                     appSettingsStorage = appSettingsStorage,
@@ -64,43 +81,18 @@ class AutoRestartService : Service() {
                     clashManager = clashManager,
                     isBootCompleted = true
                 )
-            }.onFailure { e ->
-                Timber.tag(TAG).e(e, "自动启动失败: ${e.message}")
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, MLang.Service.Message.AutoStartFailed.format(e.message ?: ""))
+                // show error notification briefly
+                startForeground(1003, notificationManager.create("启动失败", e.message ?: "启动失败", false))
+                delay(3000)
             }
-            ServiceCompat.stopForeground(this@AutoRestartService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
-
-        return START_NOT_STICKY
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                MLang.Service.AutoRestart.ChannelName,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = MLang.Service.AutoRestart.ChannelDescription
-                setShowBadge(false)
-            }
-
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(MLang.Home.Title)
-            .setContentText(MLang.Service.AutoRestart.Checking)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setOngoing(true)
-            .build()
     }
 
     override fun onDestroy() {
-        serviceScope.cancel()
+        serviceScope?.cancel()
         super.onDestroy()
     }
 }

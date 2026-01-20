@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           xmlns:tools="http://schemas.android.com/tools">
 
@@ -29,6 +28,7 @@
     <application
             android:name=".App"
             android:allowBackup="true"
+            tools:replace="android:icon,android:label"
             android:icon="@mipmap/ic_launcher"
             android:label="${appName}"
             android:roundIcon="@mipmap/ic_launcher_round"
@@ -115,10 +115,6 @@
         </service>
 
         <service
-                android:name=".service.DialerLaunchService"
-                android:exported="false"/>
-
-        <service
                 android:name=".service.LogRecordService"
                 android:exported="false"
                 android:foregroundServiceType="specialUse">
@@ -134,6 +130,15 @@
             <property
                     android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                     android:value="sub_store_service"/>
+        </service>
+
+        <service
+                android:name=".service.ProfileAutoUpdateService"
+                android:exported="false"
+                android:foregroundServiceType="specialUse">
+            <property
+                    android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                    android:value="profile_auto_update_service"/>
         </service>
 
         <service
@@ -170,6 +175,18 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+                android:name=".service.ProfileReceiver"
+                android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+                <action android:name="com.github.yumelira.yumebox.action.PROFILE_REQUEST_UPDATE"/>
+            </intent-filter>
+        </receiver>
+
         <meta-data
                 android:name="org.chromium.webapk.shell_apk"
                 android:value=""/>
@@ -188,6 +205,17 @@
             <meta-data
                     android:name="android.support.FILE_PROVIDER_PATHS"
                     android:resource="@xml/file_paths"/>
+        </provider>
+
+        <provider
+                android:name=".service.YumeFilesProvider"
+                android:authorities="${applicationId}.files"
+                android:exported="true"
+                android:grantUriPermissions="true"
+                android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
         </provider>
     </application>
 </manifest>
