@@ -25,8 +25,8 @@ import android.content.Intent
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
-import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.data.store.ProfilesStorage
+import com.github.yumelira.yumebox.domain.facade.ProfilesFacade
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -43,9 +43,9 @@ class IntentController(
     }
 
     private val proxyConnectionService: ProxyConnectionService by inject()
-    private val profilesRepository: ProfilesRepository by inject()
+    private val profilesRepository: ProfilesFacade by inject()
     private val networkSettingsStorage: NetworkSettingsStorage by inject()
-    private val profilesStore: ProfilesStore by inject()
+    private val profilesStore: ProfilesStorage by inject()
     private val clashManager: ClashManager by inject()
 
     fun handleIntent(intent: Intent?) {

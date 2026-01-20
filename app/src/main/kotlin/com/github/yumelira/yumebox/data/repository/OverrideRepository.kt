@@ -17,6 +17,14 @@ class OverrideRepository {
         return clear(Clash.OverrideSlot.Persist)
     }
 
+    fun loadSession(): Result<ConfigurationOverride> {
+        return query(Clash.OverrideSlot.Session)
+    }
+
+    fun saveSession(override: ConfigurationOverride): Result<Unit> {
+        return save(Clash.OverrideSlot.Session, override)
+    }
+
     fun update(
         slot: Clash.OverrideSlot,
         transform: (ConfigurationOverride) -> ConfigurationOverride
