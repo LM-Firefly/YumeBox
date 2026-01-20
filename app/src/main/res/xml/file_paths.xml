@@ -39,4 +39,9 @@
     <files-path
             name="imported_files"
             path="imported"/>
+
+    <!-- 允许访问内部存储 files/clash 目录 (用于查看外部资源) -->
+    <files-path
+            name="clash_files"
+            path="clash"/>
 </paths>

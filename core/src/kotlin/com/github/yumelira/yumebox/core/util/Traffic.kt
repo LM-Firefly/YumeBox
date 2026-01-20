@@ -20,10 +20,22 @@
 
 package com.github.yumelira.yumebox.core.util
 
-import android.annotation.SuppressLint
+import com.github.yumelira.yumebox.core.model.Traffic
 
+fun Traffic.trafficUpload(): String {
+    return trafficString(scaleTraffic(this ushr 32))
+}
 
-@SuppressLint("DefaultLocale")
+fun Traffic.trafficDownload(): String {
+    return trafficString(scaleTraffic(this and 0xFFFFFFFF))
+}
+
+fun Traffic.trafficTotal(): String {
+    val upload = scaleTraffic(this ushr 32)
+    val download = scaleTraffic(this and 0xFFFFFFFF)
+    return trafficString(upload + download)
+}
+
 private fun trafficString(scaled: Long): String {
     return when {
         scaled > 1024 * 1024 * 1024 * 100L -> {

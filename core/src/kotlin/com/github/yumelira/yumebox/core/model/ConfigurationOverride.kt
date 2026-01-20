@@ -59,6 +59,9 @@ data class ConfigurationOverride(
     @SerialName("unified-delay")
     var unifiedDelay: Boolean? = null,
 
+    @SerialName("global-timeout")
+    var globalTimeout: Int? = null,
+
     @SerialName("geodata-mode")
     var geodataMode: Boolean? = null,
 
@@ -67,6 +70,21 @@ data class ConfigurationOverride(
 
     @SerialName("find-process-mode")
     var findProcessMode: FindProcessMode? = null,
+
+    @SerialName("global-ua")
+    var globalUA: String? = null,
+
+    @SerialName("geodata-loader")
+    var geodataLoader: String? = null,
+
+    @SerialName("geo-auto-update")
+    var geoAutoUpdate: Boolean? = null,
+
+    @SerialName("geo-update-interval")
+    var geoUpdateInterval: Int? = null,
+
+    @SerialName("geosite-matcher")
+    var geositeMatcher: String? = null,
 
     @SerialName("dns")
     val dns: Dns = Dns(),
@@ -230,17 +248,17 @@ data class ConfigurationOverride(
     @Serializable
     data class Sniff(
         @SerialName("HTTP")
-        var http: ProtocolConig = ProtocolConig(),
+        var http: ProtocolConfig = ProtocolConfig(),
 
         @SerialName("TLS")
-        var tls: ProtocolConig = ProtocolConig(),
+        var tls: ProtocolConfig = ProtocolConfig(),
 
         @SerialName("QUIC")
-        var quic: ProtocolConig = ProtocolConig(),
+        var quic: ProtocolConfig = ProtocolConfig(),
     )
 
     @Serializable
-    data class ProtocolConig(
+    data class ProtocolConfig(
         @SerialName("ports")
         var ports: List<String>? = null,
 

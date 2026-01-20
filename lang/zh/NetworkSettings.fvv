@@ -6,6 +6,7 @@ NetworkSettings = {
         VpnService = "VPN 服务"
         VpnOptions = "VPN 服务选项"
         ProxyOptions = "代理选项"
+        ServiceManagement = "服务管理"
     }
     
     VpnService = {
