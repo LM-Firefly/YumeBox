@@ -24,7 +24,7 @@ import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.data.store.ProfilesStorage
 import kotlinx.coroutines.delay
 import timber.log.Timber
 
@@ -36,7 +36,7 @@ object ProxyAutoStartHelper {
         proxyConnectionService: ProxyConnectionService,
         appSettingsStorage: AppSettingsStorage,
         networkSettingsStorage: NetworkSettingsStorage,
-        profilesStore: ProfilesStore,
+        profilesStore: ProfilesStorage,
         clashManager: ClashManager,
         isBootCompleted: Boolean = false
     ) {
@@ -74,7 +74,7 @@ object ProxyAutoStartHelper {
         }
     }
 
-    private fun getProfileToStart(profilesStore: ProfilesStore): String? {
+    private fun getProfileToStart(profilesStore: ProfilesStorage): String? {
         val profiles = profilesStore.getAllProfiles()
         val lastUsedId = profilesStore.lastUsedProfileId
         if (lastUsedId.isNotEmpty()) {

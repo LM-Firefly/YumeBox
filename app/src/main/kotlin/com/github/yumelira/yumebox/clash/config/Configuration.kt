@@ -20,7 +20,11 @@
 
 package com.github.yumelira.yumebox.clash.config
 
+import com.github.yumelira.yumebox.core.Clash
+import timber.log.Timber
+
 object Configuration {
+    private const val TAG = "Configuration"
     object Defaults {
         const val MIXED_PORT = 7890
         const val HTTP_ADDRESS = "127.0.0.1"
@@ -33,6 +37,16 @@ object Configuration {
 
     sealed class ProxyMode {
         object Tun : ProxyMode()
+    }
+
+    fun getSmartControllerAndSecret(): Pair<String, String> {
+        val session = Clash.queryOverride(Clash.OverrideSlot.Session)
+        val persist = Clash.queryOverride(Clash.OverrideSlot.Persist)
+        val config = Clash.queryConfiguration()
+        val controller = session.externalController?.takeIf { it.isNotBlank() } ?: persist.externalController?.takeIf { it.isNotBlank() } ?: config.externalController?.takeIf { it.isNotBlank() } ?: "127.0.0.1:9090"
+        val secret = session.secret?.takeIf { it.isNotBlank() } ?: persist.secret?.takeIf { it.isNotBlank() } ?: config.secret?.takeIf { it.isNotBlank() } ?: ""
+        Timber.tag(TAG).d("getSmartControllerAndSecret: session=%s, persist=%s, config=%s, result=%s", session.externalController, persist.externalController, config.externalController, controller)
+        return controller to secret
     }
 
     data class TunConfig(

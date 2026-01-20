@@ -44,11 +44,15 @@ import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.StringListInput
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
+import com.github.yumelira.yumebox.presentation.component.IntInput
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,10 +62,9 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Reset
-import java.io.File
-import java.io.FileOutputStream
 
 @Composable
 @Destination<RootGraph>
@@ -151,6 +154,9 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.MetaFeature.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = 24.dp), onClick = { showResetDialog.value = true }) {
@@ -172,6 +178,12 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                         summary = MLang.MetaFeature.Core.UnifiedDelaySummary,
                         value = configuration.unifiedDelay,
                         onValueChange = { viewModel.setUnifiedDelay(it) },
+                    )
+                    IntInput(
+                        title = MLang.MetaFeature.Core.GlobalTimeoutTitle,
+                        value = configuration.globalTimeout,
+                        label = MLang.MetaFeature.Core.GlobalTimeoutLabel,
+                        onValueChange = { viewModel.setGlobalTimeout(it) },
                     )
                     NullableBooleanSelector(
                         title = MLang.MetaFeature.Core.GeodataModeTitle,

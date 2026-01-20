@@ -27,7 +27,7 @@ import android.os.Build
 import android.os.IBinder
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.data.store.ProfilesStorage
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
@@ -62,7 +62,7 @@ class ClashHttpService : Service() {
     }
 
     private val clashManager: ClashManager by inject()
-    private val profilesStore: ProfilesStore by inject()
+    private val profilesStore: ProfilesStorage by inject()
     private val appSettingsStorage: AppSettingsStorage by inject()
 
     private val notificationManager by lazy {
@@ -118,7 +118,7 @@ class ClashHttpService : Service() {
 
     private fun startHttpProxy(profileId: String) {
         serviceScope?.cancel()
-        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         serviceScope?.launch {
             try {
                 // 1. 获取配置
@@ -139,7 +139,6 @@ class ClashHttpService : Service() {
                     )
                     return@launch
                 }
-
                 // 3. 启动HTTP代理
                 clashManager.startHttp().getOrNull() ?: run {
                     showErrorNotification(

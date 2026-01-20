@@ -21,17 +21,19 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,25 +63,79 @@ fun LazyListScope.proxyGroupGridItems(
     onGroupClick: (ProxyGroupInfo) -> Unit,
     onGroupDelayClick: (ProxyGroupInfo) -> Unit,
     testingGroupNames: Set<String> = emptySet(),
+    getResolvedDelay: (String) -> Int? = { null },
 ) {
     val showDetail = displayMode.showDetail
+    val isSingle = displayMode.isSingleColumn
 
-    items(
-        count = groups.size,
-        key = { index -> "group_${groups[index].name}_$index" },
-    ) { index ->
-        val group = groups[index]
-        ProxyGroupCard(
-            group = group,
-            showDetail = showDetail,
-            isSingleColumn = true,
-            isDelayTesting = testingGroupNames.contains(group.name),
-            onClick = { onGroupClick(group) },
-            onDelayClick = { onGroupDelayClick(group) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-        )
+    if (isSingle) {
+        items(
+            count = groups.size,
+            key = { index -> "group_${groups[index].name}_$index" },
+        ) { index ->
+            val group = groups[index]
+            ProxyGroupCard(
+                group = group,
+                showDetail = showDetail,
+                isSingleColumn = true,
+                isDelayTesting = testingGroupNames.contains(group.name),
+                onClick = { onGroupClick(group) },
+                onDelayClick = { onGroupDelayClick(group) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                getResolvedDelay = getResolvedDelay,
+            )
+        }
+    } else {
+        val rowCount = (groups.size + 1) / 2
+        items(
+            count = rowCount,
+            key = { rowIndex ->
+                val first = groups.getOrNull(rowIndex * 2)?.name ?: ""
+                val second = groups.getOrNull(rowIndex * 2 + 1)?.name ?: ""
+                "group_${first}_${second}_$rowIndex"
+            }
+        ) { rowIndex ->
+            val startIndex = rowIndex * 2
+            val firstGroup = groups.getOrNull(startIndex)
+            val secondGroup = groups.getOrNull(startIndex + 1)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    firstGroup?.let { group ->
+                        ProxyGroupCard(
+                            group = group,
+                            showDetail = showDetail,
+                            isSingleColumn = false,
+                            isDelayTesting = testingGroupNames.contains(group.name),
+                            onClick = { onGroupClick(group) },
+                            onDelayClick = { onGroupDelayClick(group) },
+                            modifier = Modifier.fillMaxWidth(),
+                            getResolvedDelay = getResolvedDelay,
+                        )
+                    } ?: Spacer(modifier = Modifier.fillMaxWidth())
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    secondGroup?.let { group ->
+                        ProxyGroupCard(
+                            group = group,
+                            showDetail = showDetail,
+                            isSingleColumn = false,
+                            isDelayTesting = testingGroupNames.contains(group.name),
+                            onClick = { onGroupClick(group) },
+                            onDelayClick = { onGroupDelayClick(group) },
+                            modifier = Modifier.fillMaxWidth(),
+                            getResolvedDelay = getResolvedDelay,
+                        )
+                    } ?: Spacer(modifier = Modifier.fillMaxWidth())
+                }
+            }
+        }
     }
 }
 
@@ -92,13 +148,22 @@ private fun ProxyGroupCard(
     onDelayClick: () -> Unit,
     isDelayTesting: Boolean,
     modifier: Modifier = Modifier,
+    getResolvedDelay: (String) -> Int? = { null },
 ) {
     val summary = remember(group.now) {
         extractFlaggedName(group.now).displayName.ifBlank { MLang.Proxy.Mode.Direct }
     }
     val iconUri = remember(group.icon) { group.icon?.trim()?.takeIf { it.isNotEmpty() } }
-    val delay = remember(group.proxies, group.now) {
-        group.proxies.firstOrNull { it.name == group.now }?.delay
+    val delay = remember(group.proxies, group.now, group.chainPath) {
+        val direct = group.proxies.firstOrNull { it.name == group.now }?.delay
+        if (direct != null && direct > 0) return@remember direct
+        val resolvedFromNow = getResolvedDelay(group.now)
+        if (resolvedFromNow != null && resolvedFromNow > 0) return@remember resolvedFromNow
+        val fallbackNode = group.chainPath.lastOrNull()
+        val fallbackResolved = fallbackNode?.let { node -> getResolvedDelay(node) }
+        if (fallbackResolved != null && fallbackResolved != 0) return@remember fallbackResolved
+        if (resolvedFromNow != null && resolvedFromNow != 0) return@remember resolvedFromNow
+        null
     }
 
     ProxySelectableCard(
@@ -155,17 +220,27 @@ private fun ProxyGroupCard(
                         }
                     } else if (delayLabel != null) {
                         val (delayText, delayColor) = delayLabel
-                        Text(
-                            text = delayText,
-                            style = MiuixTheme.textStyles.footnote1,
-                            color = delayColor,
-                            maxLines = 1,
-                            textAlign = TextAlign.End,
+                        Box(
                             modifier = Modifier
                                 .padding(start = 8.dp)
                                 .then(delaySlotModifier)
-                                .clickable(onClick = onDelayClick),
-                        )
+                                .clip(CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = androidx.compose.foundation.LocalIndication.current,
+                                    onClick = onDelayClick,
+                                )
+                                .padding(vertical = 2.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = delayText,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = delayColor,
+                                maxLines = 1,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             } else {
@@ -202,17 +277,27 @@ private fun ProxyGroupCard(
                         }
                     } else if (delayLabel != null) {
                         val (delayText, delayColor) = delayLabel
-                        Text(
-                            text = delayText,
-                            style = MiuixTheme.textStyles.footnote1,
-                            color = delayColor,
-                            maxLines = 1,
-                            textAlign = TextAlign.End,
+                        Box(
                             modifier = Modifier
                                 .padding(start = 8.dp)
                                 .then(delaySlotModifier)
-                                .clickable(onClick = onDelayClick),
-                        )
+                                .clip(CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = androidx.compose.foundation.LocalIndication.current,
+                                    onClick = onDelayClick,
+                                )
+                                .padding(vertical = 2.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = delayText,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = delayColor,
+                                maxLines = 1,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             }
@@ -265,17 +350,27 @@ private fun ProxyGroupCard(
                             }
                         } else if (delayLabel != null) {
                             val (delayText, delayColor) = delayLabel
-                            Text(
-                                text = delayText,
-                                style = MiuixTheme.textStyles.footnote1,
-                                color = delayColor,
-                                maxLines = 1,
-                                textAlign = TextAlign.End,
+                            Box(
                                 modifier = Modifier
                                     .padding(start = 8.dp)
                                     .then(delaySlotModifier)
-                                    .clickable(onClick = onDelayClick),
-                            )
+                                    .clip(CircleShape)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = androidx.compose.foundation.LocalIndication.current,
+                                        onClick = onDelayClick,
+                                    )
+                                    .padding(vertical = 2.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = delayText,
+                                    style = MiuixTheme.textStyles.footnote1,
+                                    color = delayColor,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
                         }
                     }
                 }
@@ -313,17 +408,27 @@ private fun ProxyGroupCard(
                         }
                     } else if (delayLabel != null) {
                         val (delayText, delayColor) = delayLabel
-                        Text(
-                            text = delayText,
-                            style = MiuixTheme.textStyles.footnote1,
-                            color = delayColor,
-                            maxLines = 1,
-                            textAlign = TextAlign.End,
+                        Box(
                             modifier = Modifier
                                 .padding(start = 8.dp)
                                 .then(delaySlotModifier)
-                                .clickable(onClick = onDelayClick),
-                        )
+                                .clip(CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = androidx.compose.foundation.LocalIndication.current,
+                                    onClick = onDelayClick,
+                                )
+                                .padding(vertical = 2.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = delayText,
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = delayColor,
+                                maxLines = 1,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             }
@@ -358,4 +463,15 @@ private fun ProxyGroupIcon(
         contentScale = ContentScale.Crop,
         modifier = modifier,
     )
+}
+
+@Composable
+fun ProxyGroupTabs(
+    groups: List<com.github.yumelira.yumebox.domain.model.ProxyGroupInfo>,
+    selectedIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val names = groups.map { it.name }
+    TabRowWithContour(tabs = names, selectedTabIndex = selectedIndex, onTabSelected = onTabSelected, modifier = modifier)
 }

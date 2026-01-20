@@ -37,12 +37,14 @@ import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 fun ProxyNodeGrid(
     proxies: List<Proxy>,
     selectedProxyName: String,
+    pinnedProxyName: String,
     displayMode: ProxyDisplayMode,
     onProxyClick: ((Proxy) -> Unit)? = null,
     isDelayTesting: Boolean = false,
     onDelayTestClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(0.dp)
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    getResolvedDelay: (String) -> Int? = { null }
 ) {
     val showDetail = displayMode.showDetail
     val isSingleColumn = displayMode.isSingleColumn
@@ -67,6 +69,7 @@ fun ProxyNodeGrid(
                     showDetail = showDetail,
                     isDelayTesting = isDelayTesting,
                     onDelayTestClick = onDelayTestClick,
+                    getResolvedDelay = getResolvedDelay,
                 )
             }
         }
@@ -105,10 +108,12 @@ fun ProxyNodeGrid(
                         proxy = left,
                         isSelected = left.name == selectedProxyName,
                         onClick = onProxyClick?.let { { it(left) } },
+                        isPinned = left.name == pinnedProxyName,
                         isSingleColumn = false,
                         showDetail = showDetail,
                         isDelayTesting = isDelayTesting,
                         onDelayTestClick = onDelayTestClick,
+                        getResolvedDelay = getResolvedDelay,
                         modifier = Modifier.weight(1f),
                     )
                 } else {
@@ -120,10 +125,12 @@ fun ProxyNodeGrid(
                         proxy = right,
                         isSelected = right.name == selectedProxyName,
                         onClick = onProxyClick?.let { { it(right) } },
+                        isPinned = right.name == pinnedProxyName,
                         isSingleColumn = false,
                         showDetail = showDetail,
                         isDelayTesting = isDelayTesting,
                         onDelayTestClick = onDelayTestClick,
+                        getResolvedDelay = getResolvedDelay,
                         modifier = Modifier.weight(1f),
                     )
                 } else {

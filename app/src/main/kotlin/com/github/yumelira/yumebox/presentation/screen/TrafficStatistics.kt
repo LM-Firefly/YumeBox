@@ -129,7 +129,7 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                                     )
 
                                     trafficDifference < 0 -> MLang.TrafficStatistics.Compare.LessThanYesterday.format(
-                                        formatBytes(trafficDifference)
+                                        formatBytes(kotlin.math.abs(trafficDifference))
                                     )
 
                                     else -> MLang.TrafficStatistics.Compare.SameAsYesterday
@@ -158,7 +158,8 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                                     viewModel.setSelectedBarIndex(
                                         if (selectedBarIndex == index) -1 else index
                                     )
-                                }
+                                },
+                                slotCount = if (selectedTimeRange == StatisticsTimeRange.WEEK) 14 else 12
                             )
                         }
 
@@ -172,7 +173,7 @@ fun TrafficStatisticsScreen(navigator: DestinationsNavigator) {
                                 val selectedItem = chartItems.getOrNull(selectedBarIndex)
                                 if (selectedItem != null && selectedItem.label.isNotEmpty()) {
                                     Text(
-                                        text = "${selectedItem.label}: ${formatBytes(selectedItem.value)}",
+                                        text = "${selectedItem.label}: ↑${formatBytes(selectedItem.upload)} ↓${formatBytes(selectedItem.download)}",
                                         style = MiuixTheme.textStyles.body2,
                                         color = MiuixTheme.colorScheme.primary
                                     )

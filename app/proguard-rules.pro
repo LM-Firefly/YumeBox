@@ -302,13 +302,10 @@
 -dontwarn org.brotli.dec.**
 
 # --------------------------------
-# Google Play Services & Firebase
+# Google Play Services & Firebase (Firebase removed)
+# Keep ML Kit rules, remove Firebase/Play Services keep/dontwarn rules
 # --------------------------------
--keep class com.google.android.gms.** { *; }
--keep class com.google.firebase.** { *; }
 -keep class com.google.mlkit.** { *; }
--dontwarn com.google.android.gms.**
--dontwarn com.google.firebase.**
 
 # --------------------------------
 # Other Missing Classes

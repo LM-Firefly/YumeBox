@@ -39,10 +39,10 @@ plugins {
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
     id("com.google.devtools.ksp")
-    id("com.mikepenz.aboutlibraries.plugin")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
+//    id("com.google.gms.google-services")
+//    id("com.google.firebase.crashlytics")
     id("dev.oom-wg.purejoy.fyl.fytxt")
+    id("com.mikepenz.aboutlibraries.plugin.android")
 }
 
 fytxt {
@@ -58,8 +58,8 @@ fytxt {
 
 val targetAbi = project.findProperty("android.injected.build.abi") as String?
 val mmkvVersion = when (targetAbi) {
-    "arm64-v8a", "x86_64" -> "2.2.4"
-    else -> "1.3.14"
+    "arm64-v8a", "x86_64" -> "2.3.0"
+    else -> "1.3.16"
 }
 val mmkvDependency = "com.tencent:mmkv:$mmkvVersion"
 
@@ -67,7 +67,7 @@ val appNamespace = gropify.project.namespace.base
 val appName = gropify.project.name
 val jvmVersionNumber = gropify.project.jvm
 val jvmVersion = jvmVersionNumber.toString()
-val javaVersion = JavaVersion.toVersion(jvmVersionNumber) ?: JavaVersion.VERSION_17
+val javaVersion = JavaVersion.toVersion(jvmVersionNumber) ?: JavaVersion.VERSION_21
 val appAbiList = gropify.abi.app.list.split(",").map { it.trim() }
 val localeList = gropify.locale.app.list.split(",").map { it.trim() }
 
@@ -86,16 +86,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Clarity Analytics Configuration
-        buildConfigField("String", "CLARITY_PROJECT_ID", "\"${project.findProperty("clarity.projectId") ?: ""}\"")
-
-        // Specify supported locales
-        resourceConfigurations.addAll(localeList)
+        // buildConfigField("String", "CLARITY_PROJECT_ID", "\"${project.findProperty("clarity.projectId") ?: ""}\"")
     }
 
     sourceSets {
         named("main") {
             // Include fytxt generated code
-            kotlin.srcDir("build/generated/fytxt/kotlin/commonMain/kotlin")
+            kotlin.srcDirs("build/generated/fytxt/kotlin/commonMain/kotlin")
         }
     }
 
@@ -114,6 +111,8 @@ android {
     androidResources {
         // Don't generate automatic locale config, we'll specify locales manually
         generateLocaleConfig = false
+        // new API for language resources
+        localeFilters.addAll(localeList)
     }
 
     buildFeatures {
@@ -171,7 +170,9 @@ android {
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (System.getProperty("isMergeBuild") != "true") {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
         resources {
@@ -197,9 +198,16 @@ android {
                 // Set correct versionName
                 output.versionName.set(gropify.project.version.name)
                 // Set APK output file name
-                (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
+                val isMergeBuild = System.getProperty("isMergeBuild") == "true"
+                val fileName = if (isMergeBuild) {
+                    (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
+                    "${appName}_Extension-${abiName}-${buildTypeName}.apk"
+                    )
+                } else {
+                    (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
                     "${appName}-${abiName}-${buildTypeName}.apk"
-                )
+                    )
+                }
             }
         }
     }
@@ -210,21 +218,27 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core"))
-
+    if (System.getProperty("isMergeBuild") == "true") {
+        implementation(project(":extension"))
+    }
+    
     // Compose dependencies (using Jetpack Compose BOM for version management)
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
-    implementation(composeBom)
+    implementation(platform("androidx.compose:compose-bom:2026.02.01"))
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose:1.12.2")
+    implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.12.4")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Additional Compose libraries
-    implementation("top.yukonga.miuix.kmp:miuix:0.8.0-rc06")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0-rc06")
-    implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
+    val miuixVersion = "0.8.5"
+    implementation("top.yukonga.miuix.kmp:miuix:$miuixVersion")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:$miuixVersion")
+    implementation("dev.chrisbanes.haze:haze:1.7.2")
 
     // Storage
     implementation(mmkvDependency)
@@ -233,54 +247,56 @@ dependencies {
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("io.insert-koin:koin-android:4.1.1")
     implementation("io.insert-koin:koin-androidx-compose:4.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
     ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
 
     // Network
+    val ktorVersion = "3.4.0"
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
-    implementation("io.ktor:ktor-client-core:3.3.3")
-    implementation("io.ktor:ktor-client-android:3.3.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
     // Utilities
     implementation("com.jakewharton.timber:timber:5.0.1")
-    implementation("com.caoccao.javet:javet-node-android:5.0.3")
+    implementation("com.caoccao.javet:javet-node-android:5.0.4")
     implementation("com.highcapable.pangutext:pangutext-android:1.0.5")
     implementation("org.apache.commons:commons-compress:1.28.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
-    implementation("com.google.firebase:firebase-crashlytics-ndk")
-    implementation("com.google.firebase:firebase-analytics")
-    implementation("com.microsoft.clarity:clarity-compose:3.+")
+    // implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
+    // implementation("com.google.firebase:firebase-crashlytics-ndk")
+    // implementation("com.google.firebase:firebase-analytics")
+    // implementation("com.microsoft.clarity:clarity-compose:3.8.1")
 
     // ML Kit
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // Camera
-    implementation("androidx.camera:camera-camera2:1.5.2")
-    implementation("androidx.camera:camera-lifecycle:1.5.2")
-    implementation("androidx.camera:camera-view:1.5.2")
-    implementation("androidx.camera:camera-core:1.5.2")
-    implementation("androidx.camera:camera-video:1.5.2")
+    val cameraVersion = "1.5.3"
+    implementation("androidx.camera:camera-camera2:$cameraVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraVersion")
+    implementation("androidx.camera:camera-view:$cameraVersion")
+    implementation("androidx.camera:camera-core:$cameraVersion")
+    implementation("androidx.camera:camera-video:$cameraVersion")
 
     // Image Loading
-    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
-    implementation("io.coil-kt.coil3:coil-svg:3.3.0")
-    implementation("io.github.panpf.sketch4:sketch-compose-android:4.3.1")
-    implementation("io.github.panpf.sketch4:sketch-http-android:4.3.1")
-    implementation("io.github.panpf.sketch4:sketch-animated-gif-android:4.3.1")
-    implementation("io.github.panpf.sketch4:sketch-animated-webp-android:4.3.1")
+    // implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    // implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+    // implementation("io.coil-kt.coil3:coil-svg:3.3.0")
+    implementation("io.github.panpf.sketch4:sketch-compose:4.3.1")
+    implementation("io.github.panpf.sketch4:sketch-http:4.3.1")
+    implementation("io.github.panpf.sketch4:sketch-animated-webp:4.3.1")
 
     // About Libraries
-    implementation("com.mikepenz:aboutlibraries-core:13.2.1")
-    implementation("com.mikepenz:aboutlibraries-compose:13.2.1")
-    implementation("com.mikepenz:aboutlibraries-compose-m3:13.2.1")
+    val aboutLibrariesVersion = "14.0.0-b02"
+    implementation("com.mikepenz:aboutlibraries-core:$aboutLibrariesVersion")
+    implementation("com.mikepenz:aboutlibraries-compose:$aboutLibrariesVersion")
 
     // UI Components
     implementation("sh.calvin.reorderable:reorderable:3.0.0")

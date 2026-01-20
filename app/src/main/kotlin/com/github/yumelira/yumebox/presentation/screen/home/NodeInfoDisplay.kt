@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
+import com.github.yumelira.yumebox.presentation.component.CountryFlag
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
@@ -67,7 +67,7 @@ fun NodeInfoDisplay(
             ) {
                 val countryCode = flagged?.countryCode
                 if (countryCode != null) {
-                    CountryFlagCircle(countryCode = countryCode, size = 18.dp)
+                    CountryFlag(countryCode = countryCode, size = 18.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(

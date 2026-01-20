@@ -36,13 +36,18 @@ class WebViewActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_INITIAL_URL = "initial_url"
+        private const val EXTRA_TITLE = "title"
 
         fun start(
             context: Context,
             initialUrl: String = "file://${context.filesDir}/frontend/index.html",
+            title: String? = null,
         ) {
             val intent = Intent(context, WebViewActivity::class.java).apply {
                 putExtra(EXTRA_INITIAL_URL, initialUrl)
+                if (title != null) {
+                    putExtra(EXTRA_TITLE, title)
+                }
             }
             if (context !is Activity) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -83,10 +88,10 @@ class WebViewActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val initialUrl = intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://${filesDir}/frontend/index.html"
-
+        val title = intent.getStringExtra(EXTRA_TITLE)
 
         setContent {
-            WebViewScreen(initialUrl = initialUrl)
+            WebViewScreen(initialUrl = initialUrl, title = title)
         }
     }
 }

@@ -1,0 +1,66 @@
+<Connections Page>
+Connections = {
+    Title = "Connections"
+    
+    Tab = {
+        Active = "Active"
+        Closed = "Closed"
+    }
+    
+    Search = {
+        Label = "Search connections..."
+        Desc = "Search"
+    }
+    
+    Sort = {
+        Desc = "Sort"
+        Host = "Host"
+        Download = "Download"
+        Upload = "Upload"
+        DownloadSpeed = "Download Speed"
+        UploadSpeed = "Upload Speed"
+        Time = "Time"
+    }
+    
+    Action = {
+        Pause = "Pause"
+        Resume = "Resume"
+        CloseAll = "Close All"
+        Close = "Close"
+    }
+    
+    Detail = {
+        Down = "Down"
+        Up = "Up"
+        Title = "Connection Details"
+        BasicInfo = "Basic Info"
+        ID = "ID"
+        StartTime = "Start Time"
+        Duration = "Duration"
+        TrafficStats = "Traffic Statistics"
+        Metadata = "Metadata"
+        Network = "Network"
+        Type = "Type"
+        DestIP = "Destination IP"
+        DestPort = "Destination Port"
+        SourceIP = "Source IP"
+        SourcePort = "Source Port"
+        Process = "Process"
+        ProcessPath = "Process Path"
+        DNSMode = "DNS Mode"
+        RulesAndChains = "Rules & Chains"
+        Rule = "Rule"
+        RulePayload = "Rule Payload"
+        Chain = "Chain"
+    }
+    
+    Time = {
+        JustNow = "Just now"
+        MinAgo = "min ago"
+    }
+
+    Error = {
+        Title = "Connection Error: %s"
+        CheckSettings = "Please check 'Override > External Controller' settings."
+    }
+}

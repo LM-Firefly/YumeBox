@@ -75,6 +75,7 @@ private fun ThemeColors.toLightScheme() = lightColorScheme(
     onTertiaryContainer = onTertiaryContainer,
     tertiaryContainerVariant = tertiaryContainerVariant,
     onBackgroundVariant = onBackgroundVariant,
+    onSurfaceContainer = primary,
 )
 
 private fun ThemeColors.toDarkScheme() = darkColorScheme(
@@ -93,6 +94,7 @@ private fun ThemeColors.toDarkScheme() = darkColorScheme(
     onTertiaryContainer = onTertiaryContainer,
     tertiaryContainerVariant = tertiaryContainerVariant,
     onBackgroundVariant = onBackgroundVariant,
+    onSurfaceContainer = primary,
 )
 
 private fun ThemePalette.toColorScheme(isDark: Boolean) =
