@@ -23,11 +23,10 @@ package com.github.yumelira.yumebox.presentation.viewmodel
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.domain.facade.SettingsFacade
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,13 +39,12 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val storage: NetworkSettingsStorage,
+    private val settingsFacade: SettingsFacade,
 ) : AndroidViewModel(application) {
 
     data class AppInfo(
         val packageName: String,
         val label: String,
-        val icon: Drawable?,
         val isSystemApp: Boolean,
         val isSelected: Boolean,
         val installTime: Long = 0L,
@@ -119,7 +117,8 @@ class AccessControlViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            val selectedPackages = storage.accessControlPackages.value
+            val selectedPackages = settingsFacade.accessControlPackages.value
+            val showSystemApps = settingsFacade.accessControlShowSystemApps.value
             val apps = withContext(Dispatchers.IO) {
                 loadInstalledApps(selectedPackages)
             }
@@ -129,10 +128,11 @@ class AccessControlViewModel(
                     isLoading = false,
                     apps = apps,
                     selectedPackages = selectedPackages,
+                    showSystemApps = showSystemApps,
                     filteredApps = filterApps(
                         apps,
                         state.searchQuery,
-                        state.showSystemApps,
+                        showSystemApps,
                         state.sortMode,
                         state.descending,
                         state.selectedFirst
@@ -153,7 +153,6 @@ class AccessControlViewModel(
             AppInfo(
                 packageName = appInfo.packageName,
                 label = appInfo.loadLabel(pm).toString(),
-                icon = runCatching { appInfo.loadIcon(pm) }.getOrNull(),
                 isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
                 isSelected = selectedPackages.contains(appInfo.packageName),
                 installTime = pkgInfo?.firstInstallTime ?: 0L,
@@ -256,6 +255,7 @@ class AccessControlViewModel(
     }
 
     fun onShowSystemAppsChange(show: Boolean) {
+        settingsFacade.accessControlShowSystemApps.set(show)
         _uiState.update { state ->
             state.copy(
                 showSystemApps = show,
@@ -303,7 +303,7 @@ class AccessControlViewModel(
 
 
         val packagesToSave = _uiState.value.selectedPackages
-        storage.accessControlPackages.set(packagesToSave)
+        settingsFacade.accessControlPackages.set(packagesToSave)
     }
 
     fun selectAll() {
@@ -333,7 +333,7 @@ class AccessControlViewModel(
             )
         }
 
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        settingsFacade.accessControlPackages.set(_uiState.value.selectedPackages)
     }
 
     fun deselectAll() {
@@ -363,7 +363,7 @@ class AccessControlViewModel(
             )
         }
 
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        settingsFacade.accessControlPackages.set(_uiState.value.selectedPackages)
     }
 
     fun invertSelection() {
@@ -393,7 +393,7 @@ class AccessControlViewModel(
                 )
             )
         }
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        settingsFacade.accessControlPackages.set(_uiState.value.selectedPackages)
     }
 
     fun exportPackages(): String {
@@ -432,7 +432,7 @@ class AccessControlViewModel(
             )
         }
 
-        storage.accessControlPackages.set(_uiState.value.selectedPackages)
+        settingsFacade.accessControlPackages.set(_uiState.value.selectedPackages)
         return packages.intersect(_uiState.value.apps.map { it.packageName }.toSet()).size
     }
 }

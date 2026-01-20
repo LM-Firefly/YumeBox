@@ -21,4 +21,6 @@
 
 <resources>
     <string name="tile_proxy_label">YumeBox</string>
+    <string name="yumebox_documents_title">YumeBox</string>
+    <string name="yumebox_documents_summary">Data</string>
 </resources>
