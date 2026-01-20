@@ -12,6 +12,7 @@ ProfilesVM = {
         RenewNotImplemented = "Renewal feature not implemented"
         ToggleFailed = "Toggle state failed: %s"
         ProfileImported = "Profile imported: %s"
+        DownloadInProgress = "Download in progress"
         ImportFailed = "Import profile failed: %s"
         SortFailed = "Sort failed: %s"
     }

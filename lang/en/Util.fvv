@@ -68,4 +68,24 @@ Util = {
         ConfigDirInvalid = "Config directory does not exist or is invalid"
         ConfigFileMissing = "Config file does not exist"
     }
+
+    File = {
+        CannotCreateDir = "Cannot create directory: %s"
+        TargetNotDirectory = "Target is not a directory: %s"
+        PathTraversal = "Detected path traversal: %s"
+        PathExistsNotDirectory = "Path exists but is not a directory: %s"
+    }
+
+    Download = {
+        Failed = "Download failed: %s"
+    }
+
+    Native = {
+        ExtractFailed = "Failed to extract library: %s"
+        LoadJniFailed = "Failed to load JNI library: %s"
+    }
+
+    SystemProxy = {
+        CleanupFailed = "Failed to cleanup system proxy: %s"
+    }
 }

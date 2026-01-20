@@ -12,10 +12,8 @@ AppSettings = {
     }
     
     Behavior = {
-        AutoStartTitle = "自动启动"
-        AutoStartSummary = "应用启动和开机时自动启动代理服务"
-        OneChinaTitle = "坚持一个中国原则"
-        OneChinaSummary = "自动将港澳台地区旗帜及区域码显示为中国"
+        AutoStartTitle = "自动重启"
+        AutoStartSummary = "应用启动、开机及异常终止后自动重启代理服务"
     }
     
     Home = {
@@ -57,11 +55,16 @@ AppSettings = {
         LanguageSystem = "跟随系统"
         LanguageZh = "简体中文"
         LanguageEn = "English"
+
+        CustomUserAgentTitle = "自定义 User-Agent"
+        CustomUserAgentNotSet = "未设置，使用默认值"
     }
     
     ServiceSection = {
         TrafficNotificationTitle = "显示流量通知"
         TrafficNotificationSummary = "在通知栏中显示流量使用情况"
+        LogLevelTitle = "日志级别"
+        LogLevelSummary = "设置最低日志记录级别"
     }
 
     Network = {

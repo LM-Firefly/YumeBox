@@ -37,6 +37,11 @@ AccessControl = {
         UpdateTime = "Update Time"
     }
     
+    Permission = {
+        Title = "App List Access Permission Required"
+        Description = "accessing the app list requires special permissions, currently no permissions available."
+    }
+
     Button = {
         Cancel = "Cancel"
         Confirm = "Confirm"

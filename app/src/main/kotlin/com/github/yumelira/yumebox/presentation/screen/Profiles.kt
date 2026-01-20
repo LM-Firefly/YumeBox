@@ -1,11 +1,11 @@
 package com.github.yumelira.yumebox.presentation.screen
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.Manifest
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.view.ViewGroup
@@ -32,54 +32,56 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.model.ProfileType
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.ProfileLink
+import com.github.yumelira.yumebox.MainActivity
+import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import com.github.yumelira.yumebox.presentation.component.LocalBottomBarScrollBehavior
@@ -87,10 +89,10 @@ import com.github.yumelira.yumebox.presentation.component.ProfileCard
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
-import com.github.yumelira.yumebox.presentation.icon.yume.Chromium
 import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Link-2`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.icon.yume.Chromium
 import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProfilesViewModel
@@ -101,12 +103,19 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
+import java.util.UUID
+import kotlin.coroutines.resume
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.androidx.compose.koinViewModel
-import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import sh.calvin.reorderable.ReorderableItem
+import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -118,21 +127,18 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.extra.*
 import top.yukonga.miuix.kmp.extra.SpinnerEntry
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.extra.WindowDropdown
 import top.yukonga.miuix.kmp.extra.WindowSpinner
-import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.icon.extended.Delete
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
-import java.io.File
-import java.util.UUID
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import kotlin.coroutines.resume
 
 @SuppressLint("UseKtx")
 @Composable
@@ -197,9 +203,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 navigationIcon = {
                     Row {
                         IconButton(
-                            modifier = Modifier.padding(start = 24.dp), onClick = {
+                            modifier = Modifier.padding(start = 24.dp),
+                            onClick = {
                                 if (links.isNotEmpty()) {
-                                    // 优先使用默认链接, 如果没有设置默认链接则使用第一个
+                                    // 优先使用默认链接,如果没有设置默认链接则使用第一个
                                     val link = if (defaultLinkId.isNotEmpty()) {
                                         links.find { it.id == defaultLinkId } ?: links.first()
                                     } else {
@@ -207,7 +214,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                     }
                                     val context = com.github.yumelira.yumebox.App.instance
                                     if (linkOpenMode == LinkOpenMode.IN_APP) {
-                                        WebViewActivity.start(context, link.url)
+                                        WebViewActivity.start(context, link.url, link.name)
                                     } else {
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
                                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -216,19 +223,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                 } else {
                                     showLinkSettingsDialog.value = true
                                 }
-                            }) {
-                            Icon(
-                                imageVector = Yume.Chromium,
-                                contentDescription = MLang.ProfilesPage.Misc.OpenLink
-                            )
+                            }
+                        ) {
+                            Icon(imageVector = Yume.Chromium, contentDescription = MLang.ProfilesPage.Misc.OpenLink)
                         }
                         IconButton(
                             modifier = Modifier.padding(start = 12.dp),
-                            onClick = { showLinkSettingsDialog.value = true }) {
-                            Icon(
-                                imageVector = Yume.`Link-2`,
-                                contentDescription = MLang.ProfilesPage.LinkSettings.Title
-                            )
+                            onClick = { showLinkSettingsDialog.value = true }
+                        ) {
+                            Icon(imageVector = Yume.`Link-2`, contentDescription = MLang.ProfilesPage.LinkSettings.Title)
                         }
                     }
                 },
@@ -391,22 +394,22 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     val currentProfileToEdit = profileToEdit
     if (showEditDialog.value && currentProfileToEdit != null) {
-        EditProfileNameDialog(
-            show = showEditDialog,
-            currentName = currentProfileToEdit.name,
-            onDismiss = {
+        EditProfileNameDialog(show = showEditDialog, profile = currentProfileToEdit, onDismiss = {
+            showEditDialog.value = false
+            profileToEdit = null
+        }, onConfirm = { newName, newUrl, autoUpdateMinutes ->
+            if (newName.isNotBlank()) {
+                val updatedProfile = currentProfileToEdit.copy(
+                    name = newName,
+                    remoteUrl = newUrl,
+                    autoUpdateMinutes = autoUpdateMinutes,
+                    updatedAt = System.currentTimeMillis()
+                )
+                profilesViewModel.updateProfile(updatedProfile)
                 showEditDialog.value = false
                 profileToEdit = null
-            },
-            onConfirm = { newName ->
-                if (newName.isNotBlank()) {
-                    val updatedProfile = currentProfileToEdit.copy(
-                        name = newName, updatedAt = System.currentTimeMillis()
-                    )
-                    profilesViewModel.updateProfile(updatedProfile)
-                    showEditDialog.value = false
-                }
-            })
+            }
+        })
     }
 
     if (showLinkSettingsDialog.value) {
@@ -431,7 +434,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             onOpenLink = { link ->
                 val context = com.github.yumelira.yumebox.App.instance
                 if (linkOpenMode == LinkOpenMode.IN_APP) {
-                    WebViewActivity.start(context, link.url)
+                    WebViewActivity.start(context, link.url, link.name)
                 } else {
                     val intent = Intent(Intent.ACTION_VIEW, link.url.toUri())
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -531,11 +534,13 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 @Composable
 private fun EditProfileNameDialog(
     show: MutableState<Boolean>,
-    currentName: String,
+    profile: Profile,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String, String?, Int) -> Unit
 ) {
-    var editName by remember { mutableStateOf(currentName) }
+    var editName by remember { mutableStateOf(profile.name) }
+    var editUrl by remember { mutableStateOf(profile.remoteUrl ?: "") }
+    var autoUpdateStr by remember { mutableStateOf(profile.autoUpdateMinutes.toString()) }
 
     WindowDialog(
         title = MLang.ProfilesPage.EditDialog.Title, show = show, onDismissRequest = onDismiss
@@ -552,15 +557,44 @@ private fun EditProfileNameDialog(
                 label = MLang.ProfilesPage.Input.ProfileName,
                 modifier = Modifier.fillMaxWidth()
             )
-
+            // Only show auto-update setting for remote subscriptions
+            if (profile.type == ProfileType.URL) {
+                TextField(
+                    value = editUrl,
+                    onValueChange = { editUrl = it },
+                    label = MLang.ProfilesPage.LinkSettings.Url,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = autoUpdateStr,
+                    onValueChange = { newVal: String -> autoUpdateStr = newVal.filter { ch -> ch.isDigit() } },
+                    label = MLang.ProfilesPage.Input.AutoUpdateMinutes,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = onDismiss, modifier = Modifier.weight(1f)
                 ) {
                     Text(MLang.ProfilesPage.Button.Cancel)
                 }
+                val context = LocalContext.current
                 Button(
-                    onClick = { onConfirm(editName) },
+                    onClick = {
+                        val parsed = autoUpdateStr.toIntOrNull() ?: 0
+                        val minutes = when {
+                            autoUpdateStr.isBlank() -> 0
+                            parsed <= 0 -> 0
+                            parsed in 1..14 -> 15
+                            else -> parsed
+                        }
+                        if (parsed in 1..14) {
+                            Toast.makeText(context, MLang.ProfilesPage.Validation.AutoUpdateMin.format(15), Toast.LENGTH_SHORT).show()
+                        }
+                        val newUrl = if (profile.type == ProfileType.URL) editUrl else null
+                        onConfirm(editName.trim(), newUrl, minutes.coerceAtLeast(0))
+                    },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColorsPrimary()
                 ) {
@@ -591,6 +625,7 @@ private fun AddProfileSheet(
     var url by remember { mutableStateOf("") }
     var filePath by remember { mutableStateOf("") }
     var fileName by remember { mutableStateOf("") }
+    var autoUpdateStr by remember { mutableStateOf("0") }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
     var downloadStartTime by remember { mutableLongStateOf(0L) }
@@ -689,6 +724,7 @@ private fun AddProfileSheet(
             clearAllState()
             if (profileToEdit != null) {
                 name = profileToEdit.name
+                autoUpdateStr = profileToEdit.autoUpdateMinutes.toString()
                 if (profileToEdit.type == ProfileType.URL) {
                     selectedTypeIndex = 0
                     url = profileToEdit.remoteUrl ?: ""
@@ -988,8 +1024,9 @@ private fun AddProfileSheet(
                                         selectedTypeIndex = it
                                         clearCurrentTypeState()
                                     }
-                                })
-
+                                },
+                                modifier = Modifier .fillMaxWidth() .wrapContentHeight()
+                            )
                             if (profileToEdit != null) {
                                 Box(
                                     modifier = Modifier
@@ -1093,6 +1130,13 @@ private fun AddProfileSheet(
                                             enabled = profileToEdit == null,
                                             modifier = Modifier.fillMaxWidth()
                                         )
+                                        TextField(
+                                            value = autoUpdateStr,
+                                            onValueChange = { newVal: String -> autoUpdateStr = newVal.filter { ch -> ch.isDigit() } },
+                                            label = MLang.ProfilesPage.Input.AutoUpdateMinutes,
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
                                     } else {
                                         TextField(
                                             value = fileName.ifEmpty { "" },
@@ -1147,10 +1191,19 @@ private fun AddProfileSheet(
                                                 isDownloading = true
 
                                                 if (typeIndex == 0) {
+                                                    val parsed = autoUpdateStr.toIntOrNull() ?: 0
+                                                    val minutes = when {
+                                                        autoUpdateStr.isBlank() -> 0
+                                                        parsed <= 0 -> 0
+                                                        parsed in 1..14 -> 15
+                                                        else -> parsed
+                                                    }
+                                                    if (parsed in 1..14) Toast.makeText(context, MLang.ProfilesPage.Validation.AutoUpdateMin.format(15), Toast.LENGTH_SHORT).show()
                                                     if (profileToEdit != null) {
                                                         val updatedProfile = profileToEdit.copy(
                                                             name = name,
                                                             remoteUrl = url,
+                                                            autoUpdateMinutes = minutes,
                                                             updatedAt = System.currentTimeMillis()
                                                         )
                                                         onUpdateProfile(updatedProfile)
@@ -1164,15 +1217,17 @@ private fun AddProfileSheet(
                                                                 remoteUrl = url,
                                                                 type = ProfileType.URL,
                                                                 createdAt = System.currentTimeMillis(),
-                                                                updatedAt = System.currentTimeMillis()
+                                                                updatedAt = System.currentTimeMillis(),
+                                                                autoUpdateMinutes = minutes
                                                             )
-
-                                                            val downloadedProfile =
-                                                                profilesViewModel.downloadProfile(
-                                                                    profile, saveToDb = true
-                                                                )
-                                                            if (downloadedProfile != null && downloadedProfile.config.isNotBlank()) {
-                                                            } else {
+                                                            val job = profilesViewModel.downloadProfileInViewModel(profile, saveToDb = true)
+                                                            try {
+                                                                job.join()
+                                                                // We don't get the returned Profile here — viewModel updates DB/state
+                                                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                                                // user left screen; don't block
+                                                            } finally {
+                                                                // ensure UI state cleared
                                                                 isDownloading = false
                                                                 profilesViewModel.clearDownloadProgress()
                                                             }
@@ -1188,15 +1243,17 @@ private fun AddProfileSheet(
                                                         show.value = false
                                                     } else {
                                                         scope.launch {
-                                                            val importedProfile =
-                                                                profilesViewModel.importProfileFromFile(
-                                                                    filePath.toUri(),
-                                                                    name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
-                                                                    saveToDb = true
-                                                                )
-                                                            isDownloading = false
-                                                            if (importedProfile != null) {
-                                                                show.value = false
+                                                            val job = profilesViewModel.importProfileFromFileInViewModel(
+                                                                filePath.toUri(),
+                                                                name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
+                                                                saveToDb = true
+                                                            )
+                                                            try {
+                                                                job.join()
+                                                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                                                // ignore
+                                                            } finally {
+                                                                isDownloading = false
                                                             }
                                                         }
                                                     }

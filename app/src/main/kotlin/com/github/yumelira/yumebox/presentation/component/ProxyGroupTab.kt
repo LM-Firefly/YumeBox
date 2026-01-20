@@ -63,23 +63,73 @@ fun LazyListScope.proxyGroupGridItems(
     testingGroupNames: Set<String> = emptySet(),
 ) {
     val showDetail = displayMode.showDetail
+    val isSingle = displayMode.isSingleColumn
 
-    items(
-        count = groups.size,
-        key = { index -> "group_${groups[index].name}_$index" },
-    ) { index ->
-        val group = groups[index]
-        ProxyGroupCard(
-            group = group,
-            showDetail = showDetail,
-            isSingleColumn = true,
-            isDelayTesting = testingGroupNames.contains(group.name),
-            onClick = { onGroupClick(group) },
-            onDelayClick = { onGroupDelayClick(group) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-        )
+    if (isSingle) {
+        items(
+            count = groups.size,
+            key = { index -> "group_${groups[index].name}_$index" },
+        ) { index ->
+            val group = groups[index]
+            ProxyGroupCard(
+                group = group,
+                showDetail = showDetail,
+                isSingleColumn = true,
+                isDelayTesting = testingGroupNames.contains(group.name),
+                onClick = { onGroupClick(group) },
+                onDelayClick = { onGroupDelayClick(group) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+            )
+        }
+    } else {
+        val rowCount = (groups.size + 1) / 2
+        items(
+            count = rowCount,
+            key = { rowIndex ->
+                val first = groups.getOrNull(rowIndex * 2)?.name ?: ""
+                val second = groups.getOrNull(rowIndex * 2 + 1)?.name ?: ""
+                "group_${first}_${second}_$rowIndex"
+            }
+        ) { rowIndex ->
+            val startIndex = rowIndex * 2
+            val firstGroup = groups.getOrNull(startIndex)
+            val secondGroup = groups.getOrNull(startIndex + 1)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    firstGroup?.let { group ->
+                        ProxyGroupCard(
+                            group = group,
+                            showDetail = showDetail,
+                            isSingleColumn = false,
+                            isDelayTesting = testingGroupNames.contains(group.name),
+                            onClick = { onGroupClick(group) },
+                            onDelayClick = { onGroupDelayClick(group) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } ?: Spacer(modifier = Modifier.fillMaxWidth())
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    secondGroup?.let { group ->
+                        ProxyGroupCard(
+                            group = group,
+                            showDetail = showDetail,
+                            isSingleColumn = false,
+                            isDelayTesting = testingGroupNames.contains(group.name),
+                            onClick = { onGroupClick(group) },
+                            onDelayClick = { onGroupDelayClick(group) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } ?: Spacer(modifier = Modifier.fillMaxWidth())
+                }
+            }
+        }
     }
 }
 
@@ -358,4 +408,15 @@ private fun ProxyGroupIcon(
         contentScale = ContentScale.Crop,
         modifier = modifier,
     )
+}
+
+@Composable
+fun ProxyGroupTabs(
+    groups: List<com.github.yumelira.yumebox.domain.model.ProxyGroupInfo>,
+    selectedIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val names = groups.map { it.name }
+    TabRowWithContour(tabs = names, selectedTabIndex = selectedIndex, onTabSelected = onTabSelected, modifier = modifier)
 }

@@ -1,0 +1,4 @@
+[submodule "core/src/foss/golang/mihomo"]
+	path = core/src/foss/golang/mihomo
+	url = https://github.com/LM-Firefly/mihomo.git
+	branch = Alpha

@@ -16,6 +16,9 @@ Service = {
         StartFailed = "启动失败"
         ProfileNotFound = "配置文件不存在"
         ConfigLoadFailed = "配置加载失败"
+        ConfigLoadFailedWithProfile = "配置加载失败：%s"
+        TunStartFailed = "TUN 模式启动失败: %s"
+        HttpStartFailed = "HTTP 代理模式启动失败: %s"
         VpnEstablishFailed = "无法建立 VPN 连接"
         HttpProxyStartFailed = "无法启动 HTTP 代理"
         TunStartFailed = "TUN 启动失败"
@@ -31,6 +34,7 @@ Service = {
         ClickToOpen = "点击打开应用"
         ModeVpn = "VPN 模式"
         ModeHttp = "HTTP 模式"
+        NoProfiles = "没有可用的配置文件，打开应用"
     }
     
     LogRecord = {
@@ -39,6 +43,31 @@ Service = {
         Recording = "正在记录日志"
         RecordingFile = "日志记录中..."
         ActionStop = "停止"
+        RecordingFailed = "写入日志失败"
+        StartFailed = "启动日志记录失败"
+        StopFailed = "关闭日志写入器失败"
+        Created = "日志记录服务创建"
+        Destroyed = "日志记录服务销毁"
+        AlreadyRecording = "日志记录已在进行中"
+        RecordingStarted = "日志记录已开始: %s"
+        StartSubscribe = "开始订阅日志流"
+        SendToChannelFailed = "发送日志到通道失败"
+        Stopped = "停止日志记录"
+    }
+
+    Message = {
+        ProfileIdMissing = "未提供配置文件 ID"
+        ProfileNotFound = "未找到配置文件: %s"
+        MonitorFailed = "监控任务执行失败"
+        LogSubscribeError = "日志订阅错误"
+        ConfigDirMissing = "配置目录不存在: %s"
+        AutoStartFailed = "自动启动代理失败: %s"
+        StartProxyFailed = "启动代理服务失败: %s"
+        NoRunningProxy = "当前没有运行的代理服务"
+    }
+
+    Operation = {
+        LoadConfig = "加载配置"
     }
 
     AutoRestart = {

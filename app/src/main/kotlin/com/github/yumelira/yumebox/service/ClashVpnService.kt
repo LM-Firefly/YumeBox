@@ -3,6 +3,7 @@ package com.github.yumelira.yumebox.service
 import android.app.Notification
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
@@ -22,6 +23,7 @@ import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
 import java.net.InetSocketAddress
 import java.security.SecureRandom
+import timber.log.Timber
 
 class ClashVpnService : VpnService() {
 
@@ -31,6 +33,7 @@ class ClashVpnService : VpnService() {
         const val EXTRA_PROFILE_ID = "profile_id"
 
         private val random = SecureRandom()
+        private const val TAG = "ClashVpnService"
 
         fun start(context: Context, profileId: String) {
             val intent = Intent(context, ClashVpnService::class.java).apply {
@@ -62,6 +65,7 @@ class ClashVpnService : VpnService() {
 
     private var notificationJob: Job? = null
     private var serviceScope: CoroutineScope? = null
+    private var appListModule: com.github.yumelira.yumebox.service.AppListCacheModule? = null
 
     private var vpnInterface: ParcelFileDescriptor? = null
 
@@ -88,6 +92,7 @@ class ClashVpnService : VpnService() {
                 if (!profileId.isNullOrBlank()) {
                     startVpn(profileId)
                 } else {
+                    Timber.tag(TAG).e("配置文件不存在")
                     stopSelf()
                 }
             }
@@ -142,14 +147,14 @@ class ClashVpnService : VpnService() {
 
                 val pfd = vpnInterface!!
                 val rawFd = pfd.detachFd()
-
                 runCatching { pfd.close() }
                 vpnInterface = null
-
                 val config = Configuration.TunConfig()
+                val tunDns = if (networkSettings.dnsHijack.value) config.dns else "0.0.0.0"
                 val tunConfig = config.copy(
                     stack = networkSettings.tunStack.value.name.lowercase(),
-                    dnsHijacking = networkSettings.dnsHijack.value
+                    dnsHijacking = networkSettings.dnsHijack.value,
+                    dns = tunDns
                 )
 
                 val startResult = clashManager.startTun(
@@ -168,6 +173,10 @@ class ClashVpnService : VpnService() {
                 }
 
                 startNotificationUpdate()
+                appListModule = com.github.yumelira.yumebox.service.AppListCacheModule(this@ClashVpnService, serviceScope!!).apply { start() }
+            } catch (e: TimeoutCancellationException) {
+                Timber.tag(TAG).e(e, "VPN startup timed out")
+                showErrorNotification("启动失败", "Connection timeout")
             } catch (e: Exception) {
                 showErrorNotification(
                     MLang.Service.Status.StartFailed,
@@ -180,7 +189,7 @@ class ClashVpnService : VpnService() {
     private fun startNotificationUpdate() {
         notificationJob?.cancel()
         notificationJob = notificationManager.startTrafficUpdate(
-            serviceScope!!, clashManager, appSettingsStorage
+            serviceScope!! + Dispatchers.IO, clashManager, appSettingsStorage
         )
     }
 
@@ -219,6 +228,15 @@ class ClashVpnService : VpnService() {
         val port = address.substring(lastColon + 1).toInt()
         return InetSocketAddress(host, port)
     }
+    private fun querySocketUid(protocol: Int, source: InetSocketAddress, target: InetSocketAddress): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return -1
+        val cm = connectivityManager ?: (getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager).also { connectivityManager = it }
+        return runCatching {
+            cm?.getConnectionOwnerUid(protocol, source, target) ?: -1
+        }.getOrElse { -1 }
+    }
+
+    private var connectivityManager: ConnectivityManager? = null
 
     private fun establishVpnInterface(): ParcelFileDescriptor? = runCatching {
         val config = Configuration.TunConfig()
@@ -291,6 +309,8 @@ class ClashVpnService : VpnService() {
 
     private fun stopVpn() {
         stopNotificationUpdate()
+        appListModule?.stop()
+        appListModule = null
 
         clashManager.stop()
 
