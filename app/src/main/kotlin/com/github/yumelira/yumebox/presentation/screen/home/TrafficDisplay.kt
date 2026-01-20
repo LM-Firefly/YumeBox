@@ -21,6 +21,8 @@
 package com.github.yumelira.yumebox.presentation.screen.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,6 +86,7 @@ private fun DownloadSection(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProfileModeBadge(
     profileName: String?,
@@ -92,11 +95,13 @@ private fun ProfileModeBadge(
     Surface(
         color = MiuixTheme.colorScheme.primary.copy(alpha = 0.1f),
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(28.dp)
+        modifier = Modifier
+            .heightIn(min = 28.dp)
+            .widthIn(max = 288.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
@@ -105,7 +110,15 @@ private fun ProfileModeBadge(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = MiuixTheme.colorScheme.primary
+                color = MiuixTheme.colorScheme.primary,
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        velocity = 30.dp
+                    ),
+                maxLines = 1,
+                softWrap = false
             )
 
             Box(

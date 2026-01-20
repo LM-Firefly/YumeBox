@@ -56,7 +56,7 @@ sealed class ImportState {
 
     data class Success(
         val configPath: String,
-        val message: String = "导入成功"
+        val message: String = ""
     ) : ImportState()
 
     data class Failed(

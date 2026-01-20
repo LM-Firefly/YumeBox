@@ -66,6 +66,7 @@ data class Profile(
     val totalBytes: Long? = null,
     val lastUpdatedAt: Long? = null,
     val order: Int = 0,
+    val autoUpdateMinutes: Int = 0,
 ) {
     fun getDisplayProvider(): String = when (type) {
         ProfileType.URL -> provider ?: MLang.Component.ProfileCard.RemoteSubscription

@@ -31,7 +31,7 @@ import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.data.store.ProfilesStorage
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
@@ -47,7 +47,7 @@ class ProxyTileService : TileService() {
     }
 
     private val clashManager: ClashManager by inject()
-    private val profilesStore: ProfilesStore by inject()
+    private val profilesStore: ProfilesStorage by inject()
     private val proxyConnectionService: ProxyConnectionService by inject()
 
     private var serviceScope: CoroutineScope? = null

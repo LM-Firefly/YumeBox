@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,6 +42,7 @@ fun ProfileCard(
     profile: Profile,
     workDir: File,
     isDownloading: Boolean = false,
+    isCurrentlyUpdating: Boolean = false,
     onExport: (Profile) -> Unit,
     onUpdate: (Profile) -> Unit,
     onDelete: (Profile) -> Unit,
@@ -67,7 +68,8 @@ fun ProfileCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp),
+            .padding(bottom = 12.dp)
+            .alpha(if (isCurrentlyUpdating) 0.6f else 1f),
         insideMargin = PaddingValues(16.dp)
     ) {
 

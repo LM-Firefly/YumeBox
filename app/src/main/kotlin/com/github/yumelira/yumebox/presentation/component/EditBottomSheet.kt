@@ -22,16 +22,18 @@ package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -49,9 +51,9 @@ fun TextEditBottomSheet(
     onDismiss: () -> Unit = { show.value = false },
 ) {
     WindowBottomSheet(
-        show = show, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
+        show = show.value, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
     ) {
-        Column {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             TextField(
                 value = textFieldValue.value,
                 onValueChange = { textFieldValue.value = it },
@@ -83,7 +85,7 @@ fun WarningBottomSheet(
     onDismiss: () -> Unit = { show.value = false },
 ) {
     WindowBottomSheet(
-        show = show,
+        show = show.value,
         title = title,
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = onDismiss,

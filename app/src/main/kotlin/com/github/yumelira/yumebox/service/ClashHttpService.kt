@@ -27,7 +27,7 @@ import android.os.Build
 import android.os.IBinder
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.data.store.ProfilesStorage
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
@@ -62,7 +62,7 @@ class ClashHttpService : Service() {
     }
 
     private val clashManager: ClashManager by inject()
-    private val profilesStore: ProfilesStore by inject()
+    private val profilesStore: ProfilesStorage by inject()
     private val appSettingsStorage: AppSettingsStorage by inject()
 
     private val notificationManager by lazy {
@@ -70,6 +70,7 @@ class ClashHttpService : Service() {
     }
 
     private var notificationJob: Job? = null
+    private var startupJob: Job? = null
     private var serviceScope: CoroutineScope? = null
 
     override fun onCreate() {
@@ -93,7 +94,11 @@ class ClashHttpService : Service() {
             ACTION_START -> {
                 val profileId = intent.getStringExtra(EXTRA_PROFILE_ID)
                 if (!profileId.isNullOrBlank()) {
-                    startHttpProxy(profileId)
+                    if (startupJob?.isActive == true) {
+                        Timber.tag(TAG).d("启动任务正在执行中，忽略重复 ACTION_START: %s", profileId)
+                    } else {
+                        startHttpProxy(profileId)
+                    }
                 } else {
                     Timber.tag(TAG).e("未提供配置文件 ID")
                     stopSelf()
@@ -117,9 +122,13 @@ class ClashHttpService : Service() {
     }
 
     private fun startHttpProxy(profileId: String) {
+        if (startupJob?.isActive == true) {
+            Timber.tag(TAG).d("启动任务正在执行中，忽略 startHttpProxy: %s", profileId)
+            return
+        }
         serviceScope?.cancel()
-        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-        serviceScope?.launch {
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        startupJob = serviceScope?.launch {
             try {
                 // 1. 获取配置
                 val profile = profilesStore.getProfileById(profileId)
@@ -139,7 +148,6 @@ class ClashHttpService : Service() {
                     )
                     return@launch
                 }
-
                 // 3. 启动HTTP代理
                 clashManager.startHttp().getOrNull() ?: run {
                     showErrorNotification(
@@ -156,6 +164,8 @@ class ClashHttpService : Service() {
                     MLang.Service.Status.StartFailed,
                     e.message ?: MLang.Service.Status.UnknownError
                 )
+            } finally {
+                startupJob = null
             }
         }
     }
@@ -184,6 +194,8 @@ class ClashHttpService : Service() {
     }
 
     private fun stopHttpProxy() {
+        startupJob?.cancel()
+        startupJob = null
         stopNotificationUpdate()
         clashManager.stop()
         stopForeground(STOP_FOREGROUND_REMOVE)
@@ -191,6 +203,8 @@ class ClashHttpService : Service() {
     }
 
     override fun onDestroy() {
+        startupJob?.cancel()
+        startupJob = null
         stopHttpProxy()
         serviceScope?.cancel()
         super.onDestroy()

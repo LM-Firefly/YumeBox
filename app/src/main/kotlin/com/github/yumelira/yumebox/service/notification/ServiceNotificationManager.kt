@@ -5,31 +5,29 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.github.yumelira.yumebox.MainActivity
-import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.MainActivity
+import com.github.yumelira.yumebox.R
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class ServiceNotificationManager(
     private val service: Service,
     private val config: Config
 ) {
-    private data class NotificationData(
-        val now: TrafficData,
-        val total: TrafficData,
-        val currentProfile: Profile?,
-        val showTraffic: Boolean
-    )
-
     data class Config(
         val notificationId: Int,
         val channelId: String,
@@ -96,31 +94,48 @@ class ServiceNotificationManager(
         notificationManager.notify(config.notificationId, create(title, content, isConnected))
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun startTrafficUpdate(
         scope: CoroutineScope,
         clashManager: ClashManager,
         appSettings: AppSettingsStorage
     ): Job = scope.launch {
         combine(
-            clashManager.trafficNow,
-            clashManager.trafficTotal,
-            clashManager.currentProfile,
-            appSettings.showTrafficNotification.state
-        ) { now, total, currentProfile, showTraffic ->
-            NotificationData(now, total, currentProfile, showTraffic)
-            }
-            .collect { (now, total, currentProfile, showTraffic) ->
-                val profileName = currentProfile?.name ?: MLang.Service.Notification.UnknownProfile
-                if (showTraffic) {
+            appSettings.showTrafficNotification.state,
+            clashManager.isScreenOn
+        ) { showTraffic, isScreenOn ->
+            showTraffic to isScreenOn
+        }.flatMapLatest { (showTraffic, isScreenOn) ->
+            if (showTraffic && isScreenOn) {
+                combine(
+                    clashManager.createTrafficFlow(),
+                    clashManager.currentProfile
+                ) { trafficPair, profile ->
+                    val now = trafficPair.first
+                    val total = trafficPair.second
+                    val profileName = profile?.name ?: MLang.ProfilesPage.Message.UnknownProfile
                     val speedStr = "↓ ${formatSpeed(now.download)} ↑ ${formatSpeed(now.upload)}"
                     val totalStr = MLang.Service.Notification.TrafficFormat.format(
                         formatBytes(total.download + total.upload)
                     )
-                    update(MLang.Service.Notification.ConnectedWithProfile.format(profileName), "$speedStr | $totalStr", true)
-                } else {
-                    update(MLang.Service.Notification.Connected, profileName, true)
+                    Triple(profileName, "$speedStr | $totalStr", true)
                 }
+                    .onStart { clashManager.setTrafficMonitorRequested(true) }
+                    .onCompletion { clashManager.setTrafficMonitorRequested(false) }
+                    .distinctUntilChanged()
+            } else {
+                clashManager.setTrafficMonitorRequested(false)
+                clashManager.currentProfile.map { currentProfile ->
+                    Triple(currentProfile?.name ?: MLang.ProfilesPage.Message.UnknownProfile, "", false)
+                }.distinctUntilChanged()
             }
+        }.collect { (profileNameOrNow, contentOrTotal, showTraffic) ->
+            if (showTraffic) {
+                update(MLang.Service.Notification.ConnectedWithProfile.format(profileNameOrNow), contentOrTotal, true)
+            } else {
+                update(MLang.Service.Notification.Connected, profileNameOrNow, true)
+            }
+        }
     }
 
     companion object {
@@ -130,7 +145,6 @@ class ServiceNotificationManager(
             channelName = "Clash VPN Service",
             stopAction = "STOP"
         )
-
         val HTTP_CONFIG = Config(
             notificationId = 1002,
             channelId = "clash_http_service",
