@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,16 +10,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.yumelira.yumebox.common.AppConstants
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.screen.home.HomeIdleContent
 import com.github.yumelira.yumebox.presentation.screen.home.HomeRunningContent
 import com.github.yumelira.yumebox.presentation.screen.home.ProxyControlButton
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.viewmodel.HomeViewModel
+import com.ramcosta.composedestinations.generated.destinations.ConnectionsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
@@ -57,20 +39,20 @@ fun HomePager(mainInnerPadding: PaddingValues) {
     val homeViewModel = koinViewModel<HomeViewModel>()
     val navigator = LocalNavigator.current
 
-    val displayRunning by homeViewModel.displayRunning.collectAsState()
-    val isToggling by homeViewModel.isToggling.collectAsState()
-    val trafficNow by homeViewModel.trafficNow.collectAsState()
-    val profiles by homeViewModel.profiles.collectAsState()
-    val ipMonitoringState by homeViewModel.ipMonitoringState.collectAsState()
-    val recommendedProfile by homeViewModel.recommendedProfile.collectAsState()
-    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsState(initial = false)
-    val tunnelState by homeViewModel.tunnelState.collectAsState()
-    val currentProfile by homeViewModel.currentProfile.collectAsState()
-    val oneWord by homeViewModel.oneWord.collectAsState()
-    val oneWordAuthor by homeViewModel.oneWordAuthor.collectAsState()
-    val selectedServerName by homeViewModel.selectedServerName.collectAsState()
-    val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
-    val speedHistory by homeViewModel.speedHistory.collectAsState()
+    val displayRunning by homeViewModel.displayRunning.collectAsStateWithLifecycle()
+    val isToggling by homeViewModel.isToggling.collectAsStateWithLifecycle()
+    val trafficNow by homeViewModel.trafficNow.collectAsStateWithLifecycle()
+    val profiles by homeViewModel.profiles.collectAsStateWithLifecycle()
+    val ipMonitoringState by homeViewModel.ipMonitoringState.collectAsStateWithLifecycle()
+    val recommendedProfile by homeViewModel.recommendedProfile.collectAsStateWithLifecycle()
+    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsStateWithLifecycle(initialValue = false)
+    val currentProfile by homeViewModel.currentProfile.collectAsStateWithLifecycle()
+    val oneWord by homeViewModel.oneWord.collectAsStateWithLifecycle()
+    val oneWordAuthor by homeViewModel.oneWordAuthor.collectAsStateWithLifecycle()
+    val selectedServerName by homeViewModel.selectedServerName.collectAsStateWithLifecycle()
+    val selectedServerPing by homeViewModel.selectedServerPing.collectAsStateWithLifecycle()
+    val speedHistory by homeViewModel.speedHistory.collectAsStateWithLifecycle()
+    val connections by homeViewModel.connections.collectAsStateWithLifecycle()
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -127,15 +109,19 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                                 HomeDisplayState.Running -> HomeRunningContent(
                                     trafficNow = trafficNow,
                                     profileName = currentProfile?.name,
-                                    tunnelMode = tunnelState?.mode,
+                                    tunnelMode = null,
                                     serverName = selectedServerName,
                                     serverPing = selectedServerPing,
                                     ipMonitoringState = ipMonitoringState,
                                     speedHistory = speedHistory,
+                                    connections = connections,
                                     onChartClick = {
                                         navigator.navigate(TrafficStatisticsScreenDestination) {
                                             launchSingleTop = true
                                         }
+                                    },
+                                    onTopologyClick = {
+                                        navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true }
                                     }
                                 )
                             }
@@ -155,6 +141,7 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                     handleProxyToggle(
                         isRunning = displayRunning,
                         recommendedProfile = recommendedProfile,
+                        profiles = profiles,
                         onStart = { profile ->
                             pendingProfileId = profile.id
                             coroutineScope.launch {
@@ -214,11 +201,13 @@ private fun AnimatedContentTransitionScope<HomeDisplayState>.createHomeTransitio
 private fun handleProxyToggle(
     isRunning: Boolean,
     recommendedProfile: com.github.yumelira.yumebox.data.model.Profile?,
+    profiles: List<com.github.yumelira.yumebox.data.model.Profile>,
     onStart: (com.github.yumelira.yumebox.data.model.Profile) -> Unit,
     onStop: () -> Unit
 ) {
     if (!isRunning) {
-        recommendedProfile?.let { profile -> onStart(profile) }
+        val targetProfile = recommendedProfile ?: profiles.find { it.enabled }
+        targetProfile?.let { profile -> onStart(profile) }
     } else {
         onStop()
     }

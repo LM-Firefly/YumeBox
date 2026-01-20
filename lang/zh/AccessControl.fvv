@@ -36,7 +36,7 @@ AccessControl = {
         InstallTime = "安装时间"
         UpdateTime = "更新时间"
     }
-    
+
     Button = {
         Cancel = "取消"
         Confirm = "确定"

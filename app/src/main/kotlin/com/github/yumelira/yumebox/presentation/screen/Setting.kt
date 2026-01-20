@@ -4,11 +4,11 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,11 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,32 +29,37 @@ import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.common.util.DeviceUtil.is32BitDevice
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.Atom
+import com.github.yumelira.yumebox.presentation.icon.yume.`Arrow-down-up`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Chart-column`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Git-merge`
-import com.github.yumelira.yumebox.presentation.icon.yume.Github
-import com.github.yumelira.yumebox.presentation.icon.yume.Meta
-import com.github.yumelira.yumebox.presentation.icon.yume.Rocket
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Wifi-cog`
+import com.github.yumelira.yumebox.presentation.icon.yume.Atom
+import com.github.yumelira.yumebox.presentation.icon.yume.Github
+import com.github.yumelira.yumebox.presentation.icon.yume.Link
+import com.github.yumelira.yumebox.presentation.icon.yume.Meta
+import com.github.yumelira.yumebox.presentation.icon.yume.Rocket
+import com.github.yumelira.yumebox.presentation.icon.yume.Substore
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
-import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.github.yumelira.yumebox.substore.SubStoreService
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.ActivationWizardScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.ConnectionsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.FeatureScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.LogScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.MetaFeatureScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.NetworkSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.OverrideScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.WebViewScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
@@ -63,6 +68,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.icon.extended.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -118,7 +124,6 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
     val scrollBehavior = MiuixScrollBehavior()
     val navigator = LocalNavigator.current
     val context = LocalContext.current
-
     val versionInfo = remember { BuildConfig.VERSION_NAME }
 
     LaunchedEffect(viewModel, context) {
@@ -126,7 +131,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
             when (event) {
                 is SettingEvent.OpenWebView -> {
                     runCatching {
-                        WebViewActivity.start(context, event.url)
+                        navigator.navigate(WebViewScreenDestination(initialUrl = event.url, title = event.title)) {
+                            launchSingleTop = true
+                        }
                     }.getOrElse { throwable ->
                         context.toast(MLang.Settings.Error.WebviewFailed.format(throwable.message))
                     }
@@ -168,7 +175,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     )
                     SuperArrow(
                         title = MLang.Settings.UiSettings.Override,
-                        onClick = { navigator.navigate(OverrideScreenDestination) { launchSingleTop = true } },
+                        onClick = { navigator.navigate(OverrideScreenDestination(openControllerAddress = false)) { launchSingleTop = true } },
                         startAction = {
                             CircularIcon(
                                 imageVector = Yume.`Git-merge`, contentDescription = null
@@ -199,7 +206,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         enabled = !is32BitDevice() && SubStoreService.isRunning,
                         startAction = {
                             CircularIcon(
-                                imageVector = Yume.Atom, contentDescription = null
+                                imageVector = Yume.Substore, contentDescription = null, iconSize = 1.4f
                             )
                         },
                     )
@@ -221,6 +228,24 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                 SmallTitle(MLang.Settings.Section.More)
 
                 Card {
+                    SuperArrow(
+                        title = MLang.Settings.More.TrafficStatistics,
+                        onClick = { navigator.navigate(TrafficStatisticsScreenDestination) { launchSingleTop = true } },
+                        startAction = {
+                            CircularIcon(
+                                imageVector = Yume.`Arrow-down-up`, contentDescription = null
+                            )
+                        },
+                    )
+                    SuperArrow(
+                        title = MLang.Connections.Title,
+                        onClick = { navigator.navigate(ConnectionsScreenDestination) { launchSingleTop = true } },
+                        startAction = {
+                            CircularIcon(
+                                imageVector = Yume.Link, contentDescription = null
+                            )
+                        },
+                    )
                     SuperArrow(
                         title = MLang.Settings.More.Logs,
                         onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },

@@ -1,39 +1,26 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.repository.OverrideRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class OverrideViewModel(
-    private val overrideRepository: OverrideRepository
+    private val overrideRepository: OverrideRepository,
+    private val proxyFacade: ProxyFacade,
+    private val appScope: CoroutineScope,
 ) : ViewModel() {
 
     companion object {
@@ -47,6 +34,7 @@ class OverrideViewModel(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _hasChanges = MutableStateFlow(false)
+    private var initialConfiguration: ConfigurationOverride? = null
 
     init {
         loadConfiguration()
@@ -58,6 +46,7 @@ class OverrideViewModel(
             val result = overrideRepository.loadPersist()
             result.onSuccess { config ->
                 _configuration.value = config
+                initialConfiguration = config
             }.onFailure { e ->
                 Timber.tag(TAG).e(e, "加载覆写配置失败")
             }
@@ -114,7 +103,7 @@ class OverrideViewModel(
         updateConfig { it.copy(logLevel = level) }
     }
 
-    fun setExternalController(address: String?) {
+    fun setExternalController(address: String? = null) {
         updateConfig { it.copy(externalController = address) }
     }
 
@@ -131,6 +120,9 @@ class OverrideViewModel(
         updateConfig { it.copy(unifiedDelay = enabled) }
     }
 
+    fun setGlobalTimeout(timeout: Int?) {
+        updateConfig { it.copy(globalTimeout = timeout) }
+    }
     fun setGeodataMode(enabled: Boolean?) {
         updateConfig { it.copy(geodataMode = enabled) }
     }
@@ -367,6 +359,25 @@ class OverrideViewModel(
     private fun updateConfig(transform: (ConfigurationOverride) -> ConfigurationOverride) {
         _configuration.value = transform(_configuration.value)
         _hasChanges.value = true
+        viewModelScope.launch {
+            runCatching {
+                Clash.patchOverride(Clash.OverrideSlot.Persist, _configuration.value)
+            }.onFailure { e ->
+                Timber.tag(TAG).e(e, MLang.Override.Message.AutoSaveFailed.format(e.message ?: ""))
+            }.also {
+                // Also apply to Session immediately so consumers that read session will see the change
+                runCatching {
+                    Clash.patchOverride(Clash.OverrideSlot.Session, _configuration.value)
+                    Timber.tag(TAG).d("Patched Persist and Session overrides: externalController=%s", _configuration.value.externalController)
+                    // Verify persistence by reading back both slots
+                    val persistRead = Clash.queryOverride(Clash.OverrideSlot.Persist)
+                    val sessionRead = Clash.queryOverride(Clash.OverrideSlot.Session)
+                    Timber.tag(TAG).d("Verify override after patch. Persist.externalController=%s, Session.externalController=%s", persistRead.externalController, sessionRead.externalController)
+                }.onFailure { e ->
+                    Timber.tag(TAG).w(e, "Failed to patch Session override")
+                }
+            }
+        }
     }
 
     override fun onCleared() {
@@ -375,6 +386,25 @@ class OverrideViewModel(
             val result = overrideRepository.savePersist(_configuration.value)
             result.onFailure { e ->
                 Timber.tag(TAG).e(e, "自动保存配置失败")
+            }
+            val initial = initialConfiguration
+            if (initial != null && proxyFacade.isRunning.value) {
+                val currentConfig = Clash.queryOverride(Clash.OverrideSlot.Session)
+                val shouldRestart = initial.secret != currentConfig.secret ||
+                        initial.externalController != currentConfig.externalController ||
+                        initial.externalControllerTLS != currentConfig.externalControllerTLS ||
+                        initial.externalControllerCors != currentConfig.externalControllerCors
+                if (shouldRestart) {
+                    val profileId = proxyFacade.currentProfile.value?.id
+                    if (profileId != null) {
+                        appScope.launch {
+                            Timber.tag(TAG).i("External controller settings changed, restarting proxy...")
+                            proxyFacade.stopProxy()
+                            delay(1000)
+                            proxyFacade.startProxy(profileId)
+                        }
+                    }
+                }
             }
         }
     }
