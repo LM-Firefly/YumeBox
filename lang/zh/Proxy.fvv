@@ -39,15 +39,15 @@ Proxy = {
     }
     
     PullToRefresh = {
-        PullToTest = "下拉测试延迟"
-        ReleaseToTest = "松开测试延迟"
-        DelaySuccess = "刷新延迟成功"
+        DelaySuccess = "延迟测试成功"
     }
     
     Selection = {
         Switched = "已切换到: %s"
         Failed = "切换失败"
         Error = "切换失败: %s"
+        Pinned = "已固定: %s"
+        Unpinned = "已取消固定"
     }
     
     Settings = {
@@ -55,6 +55,15 @@ Proxy = {
         ProxyMode = "分流模式"
         SortMode = "排序方式"
         DisplayMode = "显示模式"
+    }
+
+    Message = {
+        QueryGroupFailed = "查询代理组失败: %s"
+        SyncGroupFailed = "同步代理组状态失败: %s"
+        GroupNotFound = "代理组不存在: %s"
+        SelectProxyFailed = "选择代理节点异常: %s -> %s"
+        TestGroupDelayFailed = "测试代理组延迟失败: %s"
+        TestAllGroupDelayFailed = "测试所有代理组延迟失败: %s"
     }
     
     SortMode = {

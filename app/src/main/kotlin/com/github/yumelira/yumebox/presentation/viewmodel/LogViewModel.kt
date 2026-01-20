@@ -1,30 +1,18 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.data.model.AppLogBuffer
 import com.github.yumelira.yumebox.service.LogRecordService
+import dev.oom_wg.purejoy.mlang.MLang
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import timber.log.Timber
 
 class LogViewModel(
     application: Application
@@ -48,6 +37,28 @@ class LogViewModel(
 
     init {
         refreshLogFiles()
+    }
+
+    fun saveAppLog() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val logs = AppLogBuffer.getSnapshot()
+            if (logs.isEmpty()) return@launch
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "app_log_$timestamp.log"
+            val file = File(logDir, fileName)
+            try {
+                file.writeText(logs.joinToString("\n"))
+                refreshLogFiles()
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(getApplication(), MLang.Log.Message.Saved.format(file.name), android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, MLang.Log.Message.SaveFailed.format(e.message ?: ""))
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(getApplication(), MLang.Log.Message.SaveFailed.format(e.message ?: ""), android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     fun startRecording() {
@@ -153,6 +164,26 @@ class LogViewModel(
         }
 
         return LogEntry(time = timeStr, level = level, message = message)
+    }
+
+    fun createShareIntent(file: File): Intent? {
+        return try {
+            val context = getApplication<Application>()
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, MLang.Log.Message.ShareFailed.format(e.message ?: ""))
+            null
+        }
     }
 
     data class LogFileInfo(
