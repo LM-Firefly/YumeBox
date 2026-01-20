@@ -16,6 +16,7 @@ class ImportService(private val workDir: File) {
     companion object {
         private const val IMPORTED_DIR = "imported"
         private const val CONFIG_FILE = "config.yaml"
+        private const val DOWNLOADING_MARK = ".downloading"
     }
 
     private val activeImports = ConcurrentHashMap<String, Job>()
@@ -39,11 +40,15 @@ class ImportService(private val workDir: File) {
         force: Boolean = false,
         onProgress: ((ImportState) -> Unit)? = null
     ): Result<String> = coroutineScope {
+        val importedDir = workDir.parentFile?.resolve(IMPORTED_DIR)
+        val profileDir = if (importedDir != null) File(importedDir, profile.id) else null
+        val downloadMark = if (profileDir != null) File(profileDir, DOWNLOADING_MARK) else null
         try {
             if (activeImports.containsKey(profile.id)) {
                 throw IllegalStateException("配置正在导入中: ${profile.name}")
             }
-
+            downloadMark?.parentFile?.mkdirs()
+            downloadMark?.createNewFile()
             activeImports[profile.id] = coroutineContext.job
 
             onProgress?.invoke(ImportState.Preparing("准备导入配置..."))
@@ -70,6 +75,7 @@ class ImportService(private val workDir: File) {
             cleanupFailedImport(profile.id)
             Result.failure(importException)
         } finally {
+            downloadMark?.delete()
             activeImports.remove(profile.id)
         }
     }
@@ -103,16 +109,7 @@ class ImportService(private val workDir: File) {
         }
 
         val targetDir = File(importedDir, profile.id)
-
-        if (!targetDir.exists()) {
-            val created = targetDir.mkdirs()
-            if (!created && !targetDir.exists()) {
-                throw FileAccessException(
-                    "无法创建配置目录: ${targetDir.absolutePath}",
-                    FileAccessException.Reason.NO_WRITE_PERMISSION
-                )
-            }
-        }
+        val tempDir = File(importedDir, "${profile.id}.tmp.${System.currentTimeMillis()}")
 
         val url = profile.remoteUrl ?: profile.config
         if (url.isBlank()) {
@@ -122,8 +119,17 @@ class ImportService(private val workDir: File) {
         onProgress?.invoke(ImportState.Downloading(0, 0L, 0L, "正在下载配置..."))
 
         try {
+            if (!tempDir.exists()) {
+                val created = tempDir.mkdirs()
+                if (!created && !tempDir.exists()) {
+                    throw FileAccessException(
+                        "无法创建临时配置目录: ${tempDir.absolutePath}",
+                        FileAccessException.Reason.NO_WRITE_PERMISSION
+                    )
+                }
+            }
             Clash.fetchAndValid(
-                path = targetDir,
+                path = tempDir,
                 url = url,
                 force = force,
                 reportStatus = { status ->
@@ -155,17 +161,28 @@ class ImportService(private val workDir: File) {
                     onProgress?.invoke(state)
                 }
             ).await()
-
+            onProgress?.invoke(ImportState.Cleaning("提交配置..."))
+            synchronized(this@ImportService) {
+                if (targetDir.exists()) {
+                    targetDir.deleteRecursively()
+                }
+                if (!tempDir.renameTo(targetDir)) {
+                    throw FileAccessException(
+                        "无法提交配置文件: 重命名失败",
+                        FileAccessException.Reason.NO_WRITE_PERMISSION
+                    )
+                }
+            }
             File(targetDir, CONFIG_FILE).absolutePath
 
         } catch (e: ClashException) {
-            targetDir.deleteRecursively()
+            tempDir.deleteRecursively()
             throw ConfigValidationException(
                 e.message ?: "配置验证失败",
                 e
             )
         } catch (e: Exception) {
-            targetDir.deleteRecursively()
+            tempDir.deleteRecursively()
             throw NetworkException("下载失败: ${e.message}", e)
         }
     }

@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.foundation.layout.Spacer
@@ -41,6 +21,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
+import android.util.Log
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.extra.SuperSwitch
@@ -68,6 +49,7 @@ fun AppSettingsScreen(
     val oneWord = viewModel.oneWord.state.collectAsState().value
     val oneWordAuthor = viewModel.oneWordAuthor.state.collectAsState().value
     val customUserAgent = viewModel.customUserAgent.state.collectAsState().value
+    val logLevel = viewModel.logLevel.state.collectAsState().value
 
     val showHideIconDialog = remember { mutableStateOf(false) }
     val showEditOneWordDialog = remember { mutableStateOf(false) }
@@ -80,7 +62,13 @@ fun AppSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.AppSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(
@@ -96,15 +84,6 @@ fun AppSettingsScreen(
                         checked = automaticRestart,
                         onCheckedChange = { viewModel.onAutomaticRestartChange(it) },
                     )
-                    if (com.github.yumelira.yumebox.common.util.LocaleUtil.isChineseLocale()) {
-                        SuperSwitch(
-                            title = MLang.AppSettings.Behavior.OneChinaTitle,
-                            summary = MLang.AppSettings.Behavior.OneChinaSummary,
-                            checked = true,
-                            onCheckedChange = { },
-                            enabled = false,
-                        )
-                    }
                 }
                 SmallTitle(MLang.AppSettings.Section.Home)
                 Card {
@@ -194,6 +173,14 @@ fun AppSettingsScreen(
                         summary = MLang.AppSettings.ServiceSection.TrafficNotificationSummary,
                         checked = showTrafficNotification,
                         onCheckedChange = { viewModel.onShowTrafficNotificationChange(it) },
+                    )
+                    EnumSelector(
+                        title = MLang.AppSettings.ServiceSection.LogLevelTitle,
+                        summary = MLang.AppSettings.ServiceSection.LogLevelSummary,
+                        currentValue = logLevel,
+                        items = listOf("VERBOSE", "DEBUG", "INFO", "WARN", "ERROR", "ASSERT"),
+                        values = listOf(Log.VERBOSE, Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.ASSERT),
+                        onValueChange = { viewModel.onLogLevelChange(it) },
                     )
                 }
                 SmallTitle(MLang.AppSettings.Section.Network)

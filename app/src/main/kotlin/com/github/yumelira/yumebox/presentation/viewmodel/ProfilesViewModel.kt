@@ -1,31 +1,13 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.clash.cancel
 import com.github.yumelira.yumebox.clash.downloadProfile
 import com.github.yumelira.yumebox.clash.exception.ConfigImportException
+import com.github.yumelira.yumebox.clash.scheduleNext
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.model.ProfileType
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
@@ -34,15 +16,16 @@ import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.data.store.ProfileLinksStorage
 import com.github.yumelira.yumebox.data.store.ProfilesStore
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.IOException
+import java.util.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
-import java.util.*
+import timber.log.Timber
 
 
 class ProfilesViewModel(
@@ -82,7 +65,8 @@ class ProfilesViewModel(
 
     private val _downloadProgress = MutableStateFlow<DownloadProgress?>(null)
     val downloadProgress: StateFlow<DownloadProgress?> = _downloadProgress.asStateFlow()
-
+    private val _downloadingProfileIds = MutableStateFlow<Set<String>>(emptySet())
+    val downloadingProfileIds: StateFlow<Set<String>> = _downloadingProfileIds.asStateFlow()
     val profiles: StateFlow<List<Profile>> = profilesStore.profiles
 
     // 防重复下载的profile ID集合
@@ -109,18 +93,31 @@ class ProfilesViewModel(
 
                     file.isDirectory && file.name in activeIds -> {
                         val cfg = java.io.File(file, "config.yaml")
-                        if (cfg.exists() && cfg.length() <= 10) {
-                            cfg.delete()
+                        val downloadMark = java.io.File(file, ".downloading")
+                        if (downloadMark.exists()) {
+                            return@forEach
                         }
-                        // 清理临时文件
-                        file.listFiles()?.forEach { subFile ->
-                            if (subFile.name != "config.yaml") {
-                                subFile.delete()
+                        if (!cfg.exists()) {
+                            file.listFiles()?.forEach { subFile ->
+                                if (subFile.name != ".downloading") {
+                                    subFile.delete()
+                                }
+                            }
+                        } else {
+                            file.listFiles()?.forEach { subFile ->
+                                if (subFile.name.endsWith(".tmp") || 
+                                    (subFile.isDirectory && subFile.name.endsWith(".tmp")) ||
+                                    subFile.name == ".downloading") {
+                                    subFile.deleteRecursively()
+                                }
                             }
                         }
                     }
 
                     file.isFile && (file.name.endsWith(".yaml") || file.name.endsWith(".yml")) -> {
+                        file.delete()
+                    }
+                    file.isFile && file.name.endsWith(".tmp") -> {
                         file.delete()
                     }
                 }
@@ -135,10 +132,12 @@ class ProfilesViewModel(
                 val profileWithOrder = profile.copy(order = maxOrder + 1)
                 profilesStore.addProfile(profileWithOrder)
                 showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(profile.name))
+                if (profile.type == ProfileType.URL && profile.autoUpdateMinutes > 0) {
+                    scheduleNext(profile)
+                }
             }.onFailure { e ->
                 timber.log.Timber.e(e, "addProfile failed")
-                showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
+                showError(MLang.ProfilesVM.Message.AddFailed.format(e.message ?: MLang.Util.Error.UnknownError)) }
         }
     }
 
@@ -161,6 +160,7 @@ class ProfilesViewModel(
         }
 
         downloadingProfiles.add(profile.id)
+        _downloadingProfileIds.value = downloadingProfiles.toSet()
 
         return try {
             _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
@@ -242,6 +242,9 @@ class ProfilesViewModel(
                 showError(errorMsg)
                 null
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Propagate coroutine cancellation
+            throw e
         } catch (e: Exception) {
             _downloadProgress.value = null
             val errorMsg = if (e is ConfigImportException) {
@@ -253,9 +256,30 @@ class ProfilesViewModel(
             null
         } finally {
             downloadingProfiles.remove(profile.id)
+            _downloadingProfileIds.value = downloadingProfiles.toSet()
         }
     }
 
+    fun downloadProfileInViewModel(profile: Profile, saveToDb: Boolean = true) = viewModelScope.launch {
+        try {
+            downloadProfile(profile, saveToDb)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Ignore cancellation — operation will be continued/stopped by coroutine machinery
+            Timber.d("downloadProfileInViewModel cancelled for %s", profile.id)
+        } catch (e: Exception) {
+            Timber.e(e, "downloadProfileInViewModel failed for %s", profile.id)
+        }
+    }
+
+    fun importProfileFromFileInViewModel(uri: Uri, name: String, saveToDb: Boolean = true) = viewModelScope.launch {
+        try {
+            importProfileFromFile(uri, name, saveToDb)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            Timber.d("importProfileFromFileInViewModel cancelled for %s", name)
+        } catch (e: Exception) {
+            Timber.e(e, "importProfileFromFileInViewModel failed for %s", name)
+        }
+    }
 
     fun clearDownloadProgress() {
         _downloadProgress.value = null
@@ -338,6 +362,7 @@ class ProfilesViewModel(
                     getApplication<Application>().filesDir.resolve("imported/$profileId")
                         .takeIf { it.exists() }?.deleteRecursively()
                 }
+                cancel(profileId)
                 showMessage(MLang.ProfilesVM.Message.ProfileDeleted)
             }.onFailure { e ->
                 timber.log.Timber.e(e, "removeProfile failed")
@@ -351,6 +376,11 @@ class ProfilesViewModel(
             runCatching {
                 profilesStore.updateProfile(profile)
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(profile.name))
+                if (profile.type == ProfileType.URL && profile.autoUpdateMinutes > 0) {
+                    scheduleNext(profile)
+                } else {
+                    cancel(profile.id)
+                }
             }.onFailure { e ->
                 timber.log.Timber.e(e, "updateProfile failed")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: MLang.Util.Error.UnknownError))
