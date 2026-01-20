@@ -17,7 +17,7 @@ plugins {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("androidx.annotation:annotation-jvm:1.9.1")
 }
 
@@ -64,7 +64,8 @@ abstract class GitCommandValueSource : ValueSource<String, GitCommandValueSource
             errorOutput = ByteArrayOutputStream()
             isIgnoreExitValue = true
         }
-        return if (result.exitValue == 0) output.toString().trim() else "unknown"
+        val out = output.toString().trim()
+        return if (result.exitValue == 0 && out.isNotEmpty()) out else "unknown"
     }
 }
 
@@ -77,10 +78,27 @@ val gitCommitProvider: Provider<String> = providers.of(GitCommandValueSource::cl
     }
 }
 
-val gitBranchProvider: Provider<String> = providers.of(GitCommandValueSource::class) {
+val gitBranchPrimaryProvider: Provider<String> = providers.of(GitCommandValueSource::class) {
     parameters {
         workingDir.set(mihomoDir)
         args.set(listOf("branch", "--show-current"))
+    }
+}
+
+val gitBranchFallbackProvider: Provider<String> = providers.of(GitCommandValueSource::class) {
+    parameters {
+        workingDir.set(mihomoDir)
+        args.set(listOf("name-rev", "--name-only", "HEAD"))
+    }
+}
+
+val gitBranchProvider: Provider<String> = gitBranchPrimaryProvider.zip(gitBranchFallbackProvider) { primary, fallback ->
+    if (primary != "unknown") {
+        primary
+    } else if (fallback != "unknown" && fallback != "undefined") {
+        fallback.substringAfterLast("/")
+    } else {
+        "unknown"
     }
 }
 
