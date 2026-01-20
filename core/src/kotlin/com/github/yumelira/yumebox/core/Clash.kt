@@ -3,14 +3,14 @@ package com.github.yumelira.yumebox.core
 import com.github.yumelira.yumebox.core.bridge.*
 import com.github.yumelira.yumebox.core.model.*
 import com.github.yumelira.yumebox.core.util.parseInetSocketAddress
-import kotlinx.coroutines.CompletableDeferred
+import java.io.File
+import java.net.InetSocketAddress
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonPrimitive
-import java.io.File
-import java.net.InetSocketAddress
 
 object Clash {
     enum class OverrideSlot {
@@ -46,6 +46,14 @@ object Clash {
 
     fun queryTrafficTotal(): Traffic {
         return Bridge.nativeQueryTrafficTotal()
+    }
+
+    fun queryTrafficProxyTotal(): Traffic {
+        return try {
+            Bridge.nativeQueryTrafficProxyTotal()
+        } catch (t: Throwable) {
+            0L
+        }
     }
 
     fun notifyDnsChanged(dns: List<String>) {
@@ -115,7 +123,7 @@ object Clash {
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)
             ?.let { Json.decodeFromString(ProxyGroup.serializer(), it) }
-            ?: ProxyGroup(Proxy.Type.Unknown, emptyList(), "")
+            ?: ProxyGroup(Proxy.Type.Unknown, emptyList<Proxy>(), "", fixed = "")
     }
 
     fun healthCheck(name: String): CompletableDeferred<Unit> {
@@ -130,6 +138,10 @@ object Clash {
 
     fun patchSelector(selector: String, name: String): Boolean {
         return Bridge.nativePatchSelector(selector, name)
+    }
+
+    fun patchForceSelector(selector: String, name: String): Boolean {
+        return Bridge.nativeForcePatchSelector(selector, name)
     }
 
     fun fetchAndValid(
@@ -179,6 +191,30 @@ object Clash {
         }
     }
 
+    fun queryConnectionsJson(): String {
+        return try {
+            Bridge.nativeQueryConnections()
+        } catch (t: Throwable) {
+            ""
+        }
+    }
+
+    fun closeConnection(id: String): Boolean {
+        return try {
+            Bridge.nativeCloseConnection(id) != 0
+        } catch (t: Throwable) {
+            false
+        }
+    }
+
+    fun closeAllConnections(): Boolean {
+        return try {
+            Bridge.nativeCloseAllConnections() != 0
+        } catch (t: Throwable) {
+            false
+        }
+    }
+
     fun updateProvider(type: Provider.Type, name: String): CompletableDeferred<Unit> {
         return CompletableDeferred<Unit>().apply {
             Bridge.nativeUpdateProvider(this, type.toString(), name)
@@ -211,10 +247,14 @@ object Clash {
     }
 
     fun queryConfiguration(): UiConfiguration {
-        return Json.decodeFromString(
-            UiConfiguration.serializer(),
-            Bridge.nativeQueryConfiguration(),
-        )
+        return try {
+            Json.decodeFromString(
+                UiConfiguration.serializer(),
+                Bridge.nativeQueryConfiguration(),
+            )
+        } catch (t: Throwable) {
+            UiConfiguration()
+        }
     }
 
     fun subscribeLogcat(): ReceiveChannel<LogMessage> {
@@ -227,6 +267,31 @@ object Clash {
                 },
             )
         }
+    }
+
+    fun unsubscribeLogcat() {
+        Bridge.nativeSubscribeLogcat(object : LogcatInterface {
+            override fun received(jsonPayload: String) {
+            }
+        })
+    }
+
+    fun subscribeConnections(): ReceiveChannel<String> {
+        return Channel<String>(32).apply {
+            Bridge.nativeSubscribeConnections(
+                object : ConnectionInterface {
+                    override fun received(jsonPayload: String) {
+                        trySend(jsonPayload)
+                    }
+                }
+            )
+        }
+    }
+    fun unsubscribeConnections() {
+        Bridge.nativeSubscribeConnections(object : ConnectionInterface {
+            override fun received(jsonPayload: String) {
+            }
+        })
     }
 
     fun setCustomUserAgent(userAgent: String) {

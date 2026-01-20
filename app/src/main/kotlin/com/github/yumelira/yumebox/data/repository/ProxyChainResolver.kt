@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.data.repository
 
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.core.model.ProxyGroup
 import timber.log.Timber
 
 class ProxyChainResolver {
@@ -56,7 +57,7 @@ class ProxyChainResolver {
             val proxy = group.proxies.find { it.name == proxyName }
             if (proxy != null) {
                 if (proxy.type.group) {
-                    val targetGroup = groups.find { it.name == proxyName }
+                    val targetGroup = groups.find { it.name == proxy.name }
                     if (targetGroup != null && targetGroup.now.isNotBlank()) {
                         return resolveProxyChain(targetGroup.now, groups, visitedNames)
                     }
@@ -91,6 +92,23 @@ class ProxyChainResolver {
         val asGroup = groups.find { it.name == proxyName }
         if (asGroup != null && asGroup.now.isNotBlank()) {
             buildChainPathRecursive(asGroup.now, groups, visited, path)
+        }
+    }
+
+    fun buildChainPathFromMap(
+        groupName: String,
+        currentNode: String,
+        groups: Map<String, ProxyGroup>,
+        visited: MutableSet<String> = mutableSetOf()
+    ): List<String> {
+        if (groupName in visited) return listOf(groupName)
+        visited.add(groupName)
+        val nextGroup = groups[currentNode] ?: return listOf(groupName, currentNode)
+        val groupNow = nextGroup.now.ifBlank { "" }
+        return if (groupNow.isNotBlank()) {
+            listOf(groupName) + buildChainPathFromMap(currentNode, groupNow, groups, visited)
+        } else {
+            listOf(groupName, currentNode)
         }
     }
 }

@@ -19,6 +19,7 @@
 
 # IDE - IntelliJ/Android Studio
 .idea/*
+.vscode/*
 !.idea/codeStyles/
 !.idea/copyright/
 *.iml
@@ -33,6 +34,10 @@ cmake-build-*/
 *.a
 *.o
 *.obj
+/feature/override/pkg/
+/lite/pkg/
+/platform/pkg/
+/runtime/client/pkg/
 
 # Signing & secrets
 *.jks
@@ -58,7 +63,6 @@ Thumbs.db
 # Project specific
 /app/src/androidMain/assets/
 /app/src/main/assets/
-/core/src/foss/golang/mihomo/
 /.claude
 /.qoder
 /app/release/

@@ -66,7 +66,7 @@ fun MessageHost(
         WindowDialog (
             title = getTitle(message.type, message.title),
             summary = message.content,
-            show = showDialog,
+            show = showDialog.value,
             onDismissRequest = {
                 showDialog.value = false
                 onDismiss()
