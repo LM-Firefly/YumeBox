@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
@@ -31,7 +11,6 @@ import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
 import com.github.yumelira.yumebox.presentation.component.BarChartItem
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -56,7 +35,7 @@ class TrafficStatisticsViewModel(
 
     val weekSummary: StateFlow<Long> = trafficStatisticsStore.dailySummaries
         .map {
-            trafficStatisticsStore.getDailySummaries(7).sumOf { it.total }
+            trafficStatisticsStore.getDailySummaries(14).sumOf { it.total }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
@@ -70,7 +49,7 @@ class TrafficStatisticsViewModel(
     ) { timeRange, _ ->
         when (timeRange) {
             StatisticsTimeRange.TODAY -> getTodayHourlyChartItems()
-            StatisticsTimeRange.WEEK -> getDailyChartItems(7)
+            StatisticsTimeRange.WEEK -> getDailyChartItems(14)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -100,7 +79,8 @@ class TrafficStatisticsViewModel(
             val slotData = hourlyData.getOrNull(slot.ordinal)
             BarChartItem(
                 label = slot.label,
-                value = slotData?.total ?: 0L,
+                upload = slotData?.upload ?: 0L,
+                download = slotData?.download ?: 0L,
                 isHighlighted = slot == currentSlot
             )
         }
@@ -120,7 +100,8 @@ class TrafficStatisticsViewModel(
             }
             BarChartItem(
                 label = label,
-                value = summary.total,
+                upload = summary.totalUpload,
+                download = summary.totalDownload,
                 isHighlighted = summary.dateMillis == todayKey
             )
         }
