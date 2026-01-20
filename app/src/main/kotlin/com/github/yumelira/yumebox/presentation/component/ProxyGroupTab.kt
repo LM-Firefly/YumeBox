@@ -247,3 +247,14 @@ private fun ProxyGroupCard(
         }
     }
 }
+
+@Composable
+fun ProxyGroupTabs(
+    groups: List<com.github.yumelira.yumebox.domain.model.ProxyGroupInfo>,
+    selectedIndex: Int,
+    onTabSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val names = groups.map { it.name }
+    TabRowWithContour(tabs = names, selectedTabIndex = selectedIndex, onTabSelected = onTabSelected, modifier = modifier)
+}
