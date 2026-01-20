@@ -84,7 +84,13 @@ fun NetworkSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.NetworkSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    NavigationBackIcon(navigator = navigator)
+                }
+            )
         },
     ) { innerPadding ->
         ScreenLazyColumn(
@@ -184,8 +190,8 @@ fun NetworkSettingsScreen(
                     )
                 }
 
-
                 if (uiState.needsRestart && serviceState == ServiceState.Running) {
+                    SmallTitle(MLang.NetworkSettings.Section.ServiceManagement)
                     Card {
                         SuperArrow(
                             title = MLang.NetworkSettings.RestartService.Title,

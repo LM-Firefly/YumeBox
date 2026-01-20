@@ -93,7 +93,7 @@ object ArchiveUtil {
             prepareDestination(destination)
 
             TarArchiveInputStream(FileInputStream(tarFile)).use { tis ->
-                var entry: TarArchiveEntry? = tis.nextTarEntry
+                var entry: TarArchiveEntry? = tis.nextEntry
                 while (entry != null) {
                     val outFile = resolveEntryTarget(destination, entry.name)
 
@@ -103,7 +103,7 @@ object ArchiveUtil {
                         writeEntry(tis, outFile)
                     }
 
-                    entry = tis.nextTarEntry
+                    entry = tis.nextEntry
                 }
             }
             true
@@ -122,7 +122,7 @@ object ArchiveUtil {
             FileInputStream(tarGzFile).use { fis ->
                 GzipCompressorInputStream(fis).use { gzip ->
                     TarArchiveInputStream(gzip).use { tis ->
-                        var entry: TarArchiveEntry? = tis.nextTarEntry
+                        var entry: TarArchiveEntry? = tis.nextEntry
                         while (entry != null) {
                             val outFile = resolveEntryTarget(destination, entry.name)
 
@@ -132,7 +132,7 @@ object ArchiveUtil {
                                 writeEntry(tis, outFile)
                             }
 
-                            entry = tis.nextTarEntry
+                            entry = tis.nextEntry
                         }
                     }
                 }

@@ -16,6 +16,8 @@ Service = {
         StartFailed = "启动失败"
         ProfileNotFound = "配置文件不存在"
         ConfigLoadFailed = "配置加载失败"
+        ConfigLoadFailedWithProfile = "配置加载失败：%s"
+        HttpStartFailed = "HTTP 代理模式启动失败: %s"
         VpnEstablishFailed = "无法建立 VPN 连接"
         HttpProxyStartFailed = "无法启动 HTTP 代理"
         TunStartFailed = "TUN 启动失败"
@@ -31,6 +33,7 @@ Service = {
         ClickToOpen = "点击打开应用"
         ModeVpn = "VPN 模式"
         ModeHttp = "HTTP 模式"
+        NoProfiles = "没有可用的配置文件，打开应用"
     }
     
     LogRecord = {
@@ -39,6 +42,10 @@ Service = {
         Recording = "正在记录日志"
         RecordingFile = "日志记录中..."
         ActionStop = "停止"
+    }
+
+    Message = {
+        AutoStartFailed = "自动启动代理失败: %s"
     }
 
     AutoRestart = {

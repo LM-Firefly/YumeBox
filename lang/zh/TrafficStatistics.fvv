@@ -4,24 +4,29 @@ TrafficStatistics = {
     
     TimeRange = {
         Today = "今日"
-        Week = "本周"
+        Week = "近两周"
     }
     
     Summary = {
         TodayTraffic = "今日流量"
-        WeekTraffic = "本周流量"
+        WeekTraffic = "近两周流量"
     }
     
     Compare = {
         MoreThanYesterday = "较昨日 +%s"
-        LessThanYesterday = "较昨日 %s"
+        LessThanYesterday = "较昨日 -%s"
         SameAsYesterday = "与昨日持平"
-        WeekStats = "近7天统计"
+        WeekStats = "近两周统计"
     }
     
     ProfileUsage = {
         Section = "配置流量统计"
         Empty = "暂无配置流量数据"
+    }
+
+    Message = {
+        CollectionFailed = "流量数据收集失败: %s"
+        RecordTraffic = "记录流量: 上传=%s, 下载=%s, 配置=%s"
     }
     
     Chart = {

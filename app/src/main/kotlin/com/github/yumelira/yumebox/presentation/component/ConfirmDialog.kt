@@ -47,7 +47,7 @@ fun ConfirmDialog(
     confirmText: String = MLang.Component.Button.Confirm,
 ) {
     WindowBottomSheet(
-        show = show,
+        show = show.value,
         title = title,
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = onDismiss,
@@ -78,7 +78,7 @@ fun ConfirmDialogSimple(
     confirmText: String = MLang.Component.Button.Confirm,
 ) {
     WindowBottomSheet(
-        show = remember { mutableStateOf(true) },
+        show = true,
         title = title,
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = onDismiss,

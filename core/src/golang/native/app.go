@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"cfa/native/app"
+	"cfa/native/config"
 
 	"github.com/metacubex/mihomo/log"
 )
@@ -51,7 +52,7 @@ func notifyTimeZoneChanged(name C.c_string, offset C.int) {
 
 //export queryConfiguration
 func queryConfiguration() *C.char {
-	response := &struct{}{}
+	response := config.GetUiConfiguration()
 
 	return marshalJson(&response)
 }

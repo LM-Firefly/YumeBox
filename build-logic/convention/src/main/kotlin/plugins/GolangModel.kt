@@ -38,7 +38,7 @@ abstract class GolangExtension {
             "x86" to "386",
             "x86_64" to "amd64",
         )
-        val DEFAULT_BUILD_TAGS = listOf("with_gvisor", "cmfa")
+        val DEFAULT_BUILD_TAGS = listOf("foss", "with_gvisor", "cmfa")
         val DEFAULT_BUILD_FLAGS = listOf("-v", "-trimpath", "-ldflags=-s -w -buildid=")
     }
 }

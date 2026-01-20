@@ -25,7 +25,7 @@ import android.content.Intent
 import android.net.VpnService
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.data.store.ProfilesStorage
 import com.github.yumelira.yumebox.domain.model.RunningMode
 import com.github.yumelira.yumebox.service.ClashHttpService
 import com.github.yumelira.yumebox.service.ClashVpnService
@@ -33,7 +33,7 @@ import timber.log.Timber
 
 class ProxyConnectionService(
     private val context: Context,
-    private val profilesStore: ProfilesStore,
+    private val profilesStore: ProfilesStorage,
     private val networkSettingsStorage: NetworkSettingsStorage
 ) {
     companion object {

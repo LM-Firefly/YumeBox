@@ -4,8 +4,8 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.annotation.Keep
 import com.github.yumelira.yumebox.core.Global
-import kotlinx.coroutines.CompletableDeferred
 import java.io.File
+import kotlinx.coroutines.CompletableDeferred
 
 @Keep
 object Bridge {
@@ -15,6 +15,7 @@ object Bridge {
     external fun nativeQueryTunnelState(): String
     external fun nativeQueryTrafficNow(): Long
     external fun nativeQueryTrafficTotal(): Long
+    external fun nativeQueryTrafficProxyTotal(): Long
     external fun nativeNotifyDnsChanged(dnsList: String)
     external fun nativeNotifyTimeZoneChanged(name: String, offset: Int)
     external fun nativeNotifyInstalledAppChanged(uidList: String)
@@ -27,6 +28,7 @@ object Bridge {
     external fun nativeHealthCheck(completable: CompletableDeferred<Unit>, name: String)
     external fun nativeHealthCheckAll()
     external fun nativePatchSelector(selector: String, name: String): Boolean
+    external fun nativeForcePatchSelector(selector: String, name: String): Boolean
     external fun nativeFetchAndValid(
         completable: FetchCallback,
         path: String,
@@ -36,6 +38,9 @@ object Bridge {
 
     external fun nativeLoad(completable: CompletableDeferred<Unit>, path: String)
     external fun nativeQueryProviders(): String
+    external fun nativeQueryConnections(): String
+    external fun nativeCloseConnection(id: String): Int
+    external fun nativeCloseAllConnections(): Int
     external fun nativeUpdateProvider(
         completable: CompletableDeferred<Unit>,
         type: String,
@@ -47,6 +52,7 @@ object Bridge {
     external fun nativeClearOverride(slot: Int)
     external fun nativeQueryConfiguration(): String
     external fun nativeSubscribeLogcat(callback: LogcatInterface)
+    external fun nativeSubscribeConnections(callback: ConnectionInterface)
     external fun nativeCoreVersion(): String
     external fun nativeSetCustomUserAgent(userAgent: String)
 
