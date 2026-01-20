@@ -22,13 +22,9 @@ package com.github.yumelira.yumebox.data.util
 
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.model.dnsSection
-import com.github.yumelira.yumebox.core.model.proxyResourceSection
-import com.github.yumelira.yumebox.core.model.routingSection
 import com.github.yumelira.yumebox.core.model.snifferSection
 import com.github.yumelira.yumebox.core.model.supportSection
 import com.github.yumelira.yumebox.core.model.withDnsSection
-import com.github.yumelira.yumebox.core.model.withProxyResourceSection
-import com.github.yumelira.yumebox.core.model.withRoutingSection
 import com.github.yumelira.yumebox.core.model.withSnifferSection
 import com.github.yumelira.yumebox.core.model.withSupportSection
 
@@ -36,18 +32,6 @@ internal object ConfigurationOverrideMerger {
 
     fun merge(base: ConfigurationOverride, incoming: ConfigurationOverride): ConfigurationOverride {
         return ConfigurationOverrideCoreMerger.merge(base, incoming)
-            .withRoutingSection(
-                ConfigurationOverrideRoutingMerger.merge(
-                    base = base.routingSection(),
-                    incoming = incoming.routingSection(),
-                ),
-            )
-            .withProxyResourceSection(
-                ConfigurationOverrideProxyResourceMerger.merge(
-                    base = base.proxyResourceSection(),
-                    incoming = incoming.proxyResourceSection(),
-                ),
-            )
             .withDnsSection(
                 ConfigurationOverrideDnsMerger.merge(
                     base = base.dnsSection(),

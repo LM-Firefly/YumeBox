@@ -1,13 +1,17 @@
 ---
 title: "覆写字段清单"
 sidebarTitle: "字段清单"
-description: "所有覆写字段及修饰符支持情况"
+description: "所有支持覆写的字段清单"
 icon: "list"
 ---
 
 ## 使用说明
 
 本页面列出所有支持覆写的字段。
+
+<Warning>
+<strong>简化说明：</strong>当前版本仅支持基础键值配置覆写，已移除对代理组、代理节点、规则列表、提供者等复杂功能的支持。
+</Warning>
 
 ### 修饰符说明
 
@@ -31,7 +35,6 @@ icon: "list"
     "enable": true,
     "nameserver": ["8.8.8.8"]
   },
-  "rules-start": ["DOMAIN-SUFFIX,local,DIRECT"],
   "hosts-merge": {
     "test.local": "192.168.1.1"
   }
@@ -171,19 +174,6 @@ icon: "list"
 
 ---
 
-## 出站与规则
-
-| 字段 | 修饰符 | 说明 |
-|------|--------|------|
-| `proxies` | `-start` `-end` | 代理节点列表 |
-| `proxy-groups` | `-start` `-end` | 代理组列表 |
-| `rules` | `-start` `-end` | 路由规则列表 |
-| `sub-rules` | `-merge` | 子规则配置 |
-| `proxy-providers` | `-merge` | 代理提供者配置 |
-| `rule-providers` | `-merge` | 规则提供者配置 |
-
----
-
 ## 其他配置
 
 | 字段 | 修饰符 | 说明 |
@@ -202,3 +192,17 @@ icon: "list"
 | `geo-update-interval` | - | Geo 数据更新间隔（分钟） |
 | `profile.store-selected` | - | 存储选择的代理组 |
 | `profile.store-fake-ip` | - | 存储 Fake-IP 映射 |
+
+---
+
+## 已移除的字段
+
+以下字段在当前版本中已不再支持覆写：
+
+| 分类 | 已移除字段 |
+|------|-----------|
+| 出站 | `proxies`、`proxies-start`、`proxies-end` |
+| 策略组 | `proxy-groups`、`proxy-groups-start`、`proxy-groups-end` |
+| 规则 | `rules`、`rules-start`、`rules-end` |
+| 子规则 | `sub-rules`、`sub-rules-merge` |
+| 提供者 | `proxy-providers`、`proxy-providers-merge`、`rule-providers`、`rule-providers-merge` |

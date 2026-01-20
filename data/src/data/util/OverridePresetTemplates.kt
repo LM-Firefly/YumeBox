@@ -226,16 +226,7 @@ fun applyPresetTemplateToConfig(
             enableFallbackGroup = selection.enableFallbackGroup,
         ),
     )
-    return base.copy(
-        ruleProviders = generated.ruleProviders,
-        ruleProvidersMerge = null,
-        proxyGroups = generated.proxyGroups,
-        proxyGroupsStart = null,
-        proxyGroupsEnd = null,
-        rules = generated.rules,
-        rulesStart = null,
-        rulesEnd = null,
-    )
+    return base.copy()
 }
 
 private fun requireRegionSpec(id: String) = checkNotNull(officialMrsRegionById(id))

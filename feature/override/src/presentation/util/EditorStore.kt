@@ -31,30 +31,15 @@ import kotlinx.serialization.json.JsonElement
 object OverrideStructuredEditorStore {
     private val previewSession = OverrideConfigPreviewSession()
     private val stringListSession = OverrideStringListEditorSession()
-    private val ruleSession = OverrideRuleEditorSession()
     private val objectSession = OverrideObjectEditorSession()
     private val keyedObjectMapSession = OverrideKeyedObjectMapEditorSession()
-    private val subRuleGroupSession = OverrideSubRuleGroupEditorSession()
-    private val ruleDraftSession = OverrideDraftEditorSession<OverrideRuleDraft> { value ->
-        value?.copy(extras = value.extras.toList())
-    }
     private val proxyDraftSession = OverrideDraftEditorSession<OverrideProxyDraft> { value ->
         value?.copy(extraFields = toOrderedJsonElementMap(value.extraFields))
-    }
-    private val proxyGroupDraftSession = OverrideDraftEditorSession<OverrideProxyGroupDraft> { value ->
-        value?.copy(
-            proxies = value.proxies.toList(),
-            use = value.use.toList(),
-            extraFields = toOrderedJsonElementMap(value.extraFields),
-        )
     }
     private val keyedObjectDraftSession =
         OverrideTypedDraftEditorSession(OverrideStructuredMapType.RuleProviders) { value: OverrideKeyedObjectDraft? ->
             value?.copy(fields = toOrderedJsonElementMap(value.fields))
         }
-    private val subRuleDraftSession = OverrideDraftEditorSession<OverrideSubRuleGroupDraft> { value ->
-        value?.copy(rules = value.rules.toList())
-    }
 
     var referenceCatalog: OverrideReferenceCatalog by mutableStateOf(OverrideReferenceCatalog())
 
