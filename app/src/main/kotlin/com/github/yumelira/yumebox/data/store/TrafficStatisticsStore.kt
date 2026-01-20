@@ -1,23 +1,3 @@
-/*
- * This file is part of YumeBox.
- *
- * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- *
- * Copyright (c)  YumeLira 2025.
- *
- */
-
 package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
@@ -61,7 +41,43 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
         mmkv.decodeString(KEY_DAILY_SUMMARIES)?.let { jsonStr ->
             runCatching {
                 val summaries: Map<Long, DailyTrafficSummary> = json.decodeFromString(jsonStr)
-                _dailySummaries.value = summaries
+                // Migrate old 4-hour slot data (6 slots) -> new 2-hour slot data (12 slots)
+                val migrated = if (TimeSlot.entries.size == 12) {
+                    summaries.mapValues { entry ->
+                        val s = entry.value
+                        val hourly = s.hourlyData
+                        val maxKey = hourly.keys.maxOrNull() ?: -1
+                        // detect old format by checking max slot index <= 5
+                        if (hourly.isNotEmpty() && maxKey <= 5) {
+                            val newHourly = mutableMapOf<Int, TrafficSlotData>()
+                            for ((oldIndex, data) in hourly) {
+                                val firstIndex = oldIndex * 2
+                                val secondIndex = firstIndex + 1
+                                val halfUpload = data.upload / 2
+                                val halfDownload = data.download / 2
+                                // put any remainder to the first slot to keep totals consistent
+                                val uploadRemainder = data.upload - halfUpload * 2
+                                val downloadRemainder = data.download - halfDownload * 2
+                                val first = newHourly[firstIndex] ?: TrafficSlotData(firstIndex, 0L, 0L)
+                                val second = newHourly[secondIndex] ?: TrafficSlotData(secondIndex, 0L, 0L)
+                                newHourly[firstIndex] = first.copy(
+                                    upload = first.upload + halfUpload + uploadRemainder,
+                                    download = first.download + halfDownload + downloadRemainder
+                                )
+                                newHourly[secondIndex] = second.copy(
+                                    upload = second.upload + halfUpload,
+                                    download = second.download + halfDownload
+                                )
+                            }
+                            s.copy(hourlyData = newHourly)
+                        } else {
+                            s
+                        }
+                    }
+                } else {
+                    summaries
+                }
+                _dailySummaries.value = migrated
             }
         }
 

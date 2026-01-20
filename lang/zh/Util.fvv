@@ -40,7 +40,6 @@ Util = {
     Error = {
         UnknownError = "未知错误"
         SaveFailed = "保存失败"
-        FileReadFailed = "无法读取文件: %s"
         FileTooLarge = "文件超过 %dMB 限制"
         UrlEmpty = "URL 地址为空"
         DownloadFailed = "下载失败: %s"

@@ -5,6 +5,7 @@ import (
 	P "path"
 	"runtime"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -60,29 +61,36 @@ func Parse(rawConfig *config.RawConfig) (*config.Config, error) {
 }
 
 func Load(path string) error {
+	start := time.Now()
 	rawCfg, err := UnmarshalAndPatch(path)
 	if err != nil {
 		log.Errorln("Load %s: %s", path, err.Error())
 
 		return err
 	}
+	log.Infoln("Unmarshal and patch done in %s", time.Since(start))
 
 	logDns(rawCfg)
 
+	parseStart := time.Now()
 	cfg, err := Parse(rawCfg)
 	if err != nil {
 		log.Errorln("Load %s: %s", path, err.Error())
 
 		return err
 	}
+	log.Infoln("Parse done in %s", time.Since(parseStart))
 
+	applyStart := time.Now()
 	// like hub.Parse()
 	hub.ApplyConfig(cfg)
+	log.Infoln("ApplyConfig done in %s", time.Since(applyStart))
 
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
 
 	runtime.GC()
 
+	log.Infoln("Total config load time for %s: %s", path, time.Since(start))
 	return nil
 }
 
