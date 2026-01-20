@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
+import com.github.yumelira.yumebox.presentation.component.SmallTopBar
 import com.mikepenz.aboutlibraries.entity.Library
 import com.mikepenz.aboutlibraries.ui.compose.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.util.strippedLicenseContent
@@ -60,7 +61,7 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            SmallTopBar(
                 title = MLang.OpenSourceLicenses.Title,
                 scrollBehavior = scrollBehavior,
             )
@@ -71,7 +72,13 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
             innerPadding = innerPadding,
         ) {
             libraries?.libraries?.let { libs ->
-                items(libs.size) { index ->
+                items(
+                    count = libs.size,
+                    key = { index -> 
+                        val lib = libs[index]
+                        "${lib.uniqueId}_${lib.artifactVersion}"
+                    }
+                ) { index ->
                     val library = libs[index]
                     LibraryItem(
                         library = library,

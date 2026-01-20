@@ -27,17 +27,16 @@ import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
 import com.github.yumelira.yumebox.data.model.ProfileTrafficUsage
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TimeSlot
-import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import com.github.yumelira.yumebox.domain.facade.RuntimeFacade
 import com.github.yumelira.yumebox.presentation.component.BarChartItem
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
 class TrafficStatisticsViewModel(
     application: Application,
-    private val trafficStatisticsStore: TrafficStatisticsStore
+    private val runtimeFacade: RuntimeFacade
 ) : AndroidViewModel(application) {
 
     private val _selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
@@ -46,35 +45,45 @@ class TrafficStatisticsViewModel(
     private val _selectedBarIndex = MutableStateFlow(-1)
     val selectedBarIndex: StateFlow<Int> = _selectedBarIndex.asStateFlow()
 
-    val todaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsStore.dailySummaries
-        .map { trafficStatisticsStore.getTodaySummary() }
+    val todaySummary: StateFlow<DailyTrafficSummary> = runtimeFacade.dailySummaries
+        .map { runtimeFacade.getTodaySummary() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
 
-    val yesterdaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsStore.dailySummaries
-        .map { trafficStatisticsStore.getYesterdaySummary() }
+    val yesterdaySummary: StateFlow<DailyTrafficSummary> = runtimeFacade.dailySummaries
+        .map { runtimeFacade.getYesterdaySummary() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
 
-    val weekSummary: StateFlow<Long> = trafficStatisticsStore.dailySummaries
+    val weekSummary: StateFlow<Long> = runtimeFacade.dailySummaries
         .map {
-            trafficStatisticsStore.getDailySummaries(7).sumOf { it.total }
+            runtimeFacade.getDailySummaries(14).sumOf { it.total }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
-    val trafficDifference: StateFlow<Long> = combine(todaySummary, yesterdaySummary) { today, yesterday ->
-        today.total - yesterday.total
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
+    val trafficDifference: StateFlow<Long> = runtimeFacade.dailySummaries
+        .map {
+            val recentDays = runtimeFacade.getDailySummaries(2)
+            if (recentDays.size >= 2) {
+                val yesterday = recentDays[0]  // 昨天
+                val today = recentDays[1]      // 今天
+                today.total - yesterday.total
+            } else if (recentDays.size == 1) {
+                recentDays[0].total
+            } else {
+                0L
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
     val chartItems: StateFlow<List<BarChartItem>> = combine(
         _selectedTimeRange,
-        trafficStatisticsStore.dailySummaries
+        runtimeFacade.dailySummaries
     ) { timeRange, _ ->
         when (timeRange) {
             StatisticsTimeRange.TODAY -> getTodayHourlyChartItems()
-            StatisticsTimeRange.WEEK -> getDailyChartItems(7)
+            StatisticsTimeRange.WEEK -> getDailyChartItems(14)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val profileUsages: StateFlow<List<ProfileTrafficUsage>> = trafficStatisticsStore.profileUsages
+    val profileUsages: StateFlow<List<ProfileTrafficUsage>> = runtimeFacade.profileUsages
         .map { usages ->
             usages.values
                 .sortedByDescending { it.totalBytes }
@@ -92,22 +101,28 @@ class TrafficStatisticsViewModel(
     }
 
     private fun getTodayHourlyChartItems(): List<BarChartItem> {
-        val hourlyData = trafficStatisticsStore.getTodayHourlyData()
+        val hourlyData = runtimeFacade.getTodayHourlyData()
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val currentSlot = TimeSlot.fromHour(currentHour)
+        val currentSlotIndex = currentSlot.ordinal
 
-        return TimeSlot.entries.map { slot ->
-            val slotData = hourlyData.getOrNull(slot.ordinal)
+        return TimeSlot.entries.mapIndexed { index, slot ->
+            val slotData = if (index <= currentSlotIndex) {
+                hourlyData.getOrNull(slot.ordinal)
+            } else {
+                null
+            }
             BarChartItem(
                 label = slot.label,
-                value = slotData?.total ?: 0L,
+                upload = slotData?.upload ?: 0L,
+                download = slotData?.download ?: 0L,
                 isHighlighted = slot == currentSlot
             )
         }
     }
 
     private fun getDailyChartItems(days: Int): List<BarChartItem> {
-        val summaries = trafficStatisticsStore.getDailySummaries(days)
+        val summaries = runtimeFacade.getDailySummaries(days)
         val dateFormat = SimpleDateFormat("M/d", Locale.getDefault())
         val todayKey = getDayKey(Calendar.getInstance())
 
@@ -120,7 +135,8 @@ class TrafficStatisticsViewModel(
             }
             BarChartItem(
                 label = label,
-                value = summary.total,
+                upload = summary.totalUpload,
+                download = summary.totalDownload,
                 isHighlighted = summary.dateMillis == todayKey
             )
         }

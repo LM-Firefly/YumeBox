@@ -79,6 +79,31 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryTrafficTotal(JNIE
     return (jlong) (down_scale_traffic(upload) << 32u | down_scale_traffic(download));
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryConnections(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    scoped_string response = queryConnections();
+
+    return new_string(response);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeCloseConnection(JNIEnv *env, jobject thiz, jstring id) {
+    TRACE_METHOD();
+
+    scoped_string _id = get_string(id);
+
+    return (jint) closeConnection(_id);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeCloseAllConnections(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    return (jint) closeAllConnections();
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeNotifyDnsChanged(JNIEnv *env, jobject thiz,
                                                                       jstring dns_list) {
@@ -214,6 +239,17 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativePatchSelector(JNIEnv *
     return (jboolean) patchSelector(_selector, _name);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeForcePatchSelector(JNIEnv *env, jobject thiz,
+                                                                      jstring selector, jstring name) {
+    TRACE_METHOD();
+
+    scoped_string _selector = get_string(selector);
+    scoped_string _name = get_string(name);
+
+    return (jboolean) patchForceSelector(_selector, _name);
+}
+
 JNIEXPORT void JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeLoad(JNIEnv *env, jobject thiz,
                                                           jobject completable, jstring path) {
@@ -310,6 +346,16 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSubscribeLogcat(JNIEnv
     subscribeLogcat(_callback);
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSubscribeConnections(JNIEnv *env, jobject thiz,
+                                                                           jobject callback) {
+    TRACE_METHOD();
+
+    jobject _callback = new_global(callback);
+
+    subscribeConnections(_callback);
+}
+
 
 static jmethodID m_tun_interface_mark_socket;
 static jmethodID m_tun_interface_query_socket_uid;
@@ -317,6 +363,7 @@ static jmethodID m_completable_complete;
 static jmethodID m_completable_complete_exceptionally;
 static jmethodID m_logcat_interface_received;
 static jmethodID m_clash_exception;
+static jmethodID m_connection_interface_received;
 static jmethodID m_fetch_callback_report;
 static jmethodID m_fetch_callback_complete;
 static jmethodID m_open;
@@ -419,6 +466,23 @@ static int call_logcat_interface_received_impl(void *callback, const char *paylo
     return 0;
 }
 
+static int call_connection_interface_received_impl(void *callback, const char *payload) {
+    TRACE_METHOD();
+
+    ATTACH_JNI();
+
+    (*env)->CallVoidMethod(env,
+                           (jobject) callback,
+                           (jmethodID) m_connection_interface_received,
+                           (jstring) new_string(payload));
+
+    if (jni_catch_exception(env)) {
+        return 1;
+    }
+
+    return 0;
+}
+
 static int open_content_impl(const char *url, char *error, int error_length) {
     TRACE_METHOD();
 
@@ -493,6 +557,9 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
                                                        "(Ljava/lang/Throwable;)Z");
     m_logcat_interface_received = find_method(c_logcat_interface, "received",
                                               "(Ljava/lang/String;)V");
+    jclass c_connection_interface = find_class("com/github/yumelira/yumebox/core/bridge/ConnectionInterface");
+    m_connection_interface_received = find_method(c_connection_interface, "received",
+                                              "(Ljava/lang/String;)V");
     m_clash_exception = find_method(_c_clash_exception, "<init>",
                                     "(Ljava/lang/String;)V");
     m_get_message = find_method(c_throwable, "getMessage",
@@ -514,6 +581,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved) {
     fetch_report_func = &call_fetch_callback_report_impl;
     fetch_complete_func = &call_fetch_callback_complete_impl;
     logcat_received_func = &call_logcat_interface_received_impl;
+    connection_received_func = &call_connection_interface_received_impl;
     open_content_func = &open_content_impl;
     release_object_func = &release_jni_object_impl;
 

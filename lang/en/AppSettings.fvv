@@ -12,10 +12,8 @@ AppSettings = {
     }
     
     Behavior = {
-        AutoStartTitle = "Auto Start"
-        AutoStartSummary = "Automatically start proxy service on app launch and boot"
-        OneChinaTitle = "One-China Policy"
-        OneChinaSummary = "Automatically display HK/MO/TW region flags and codes as China"
+        AutoStartTitle = "Auto Restart"
+        AutoStartSummary = "Automatically restart proxy on boot, app launch, and unexpected termination"
     }
     
     Home = {
@@ -31,7 +29,12 @@ AppSettings = {
         ThemeModeDark = "Dark"
         
         ColorThemeTitle = "Color Theme"
-        ColorThemeSummary = "Select brand color style, default is minimal black & white"
+        ColorThemeSummary = "Choose a preset palette or use a custom seed color"
+        ColorThemePickerTitle = "Custom Theme Color"
+        ColorThemeCodeLabel = "Theme color code (#RRGGBB)"
+        ColorThemeDefaultSummary = "Using default monochrome theme"
+        ColorThemeCustomSummary = "Current theme color: %s"
+        ColorThemeResetDefault = "Restore Default"
         ColorMinimal = "Minimal B&W"
         ColorClassic = "Classic"
         ColorOcean = "Ocean Song"
@@ -62,6 +65,8 @@ AppSettings = {
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
+        LogLevelTitle = "Log Level"
+        LogLevelSummary = "Set the minimum log level"
     }
 
     Network = {

@@ -29,8 +29,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -42,29 +42,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Arrow-down-up`
+import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.presentation.icon.yume.Bolt
 import com.github.yumelira.yumebox.presentation.icon.yume.House
-import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.viewmodel.AppSettingsViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.FloatingNavigationBar
+import top.yukonga.miuix.kmp.basic.FloatingNavigationBarItem
 import top.yukonga.miuix.kmp.basic.NavigationBar
+import top.yukonga.miuix.kmp.basic.NavigationBarItem
+import top.yukonga.miuix.kmp.basic.NavigationDisplayMode
 import top.yukonga.miuix.kmp.basic.NavigationItem
-
-val LocalPagerState = compositionLocalOf<PagerState> { error("LocalPagerState is not provided") }
-val LocalHandlePageChange = compositionLocalOf<(Int) -> Unit> { error("LocalHandlePageChange is not provided") }
-val LocalNavigator = compositionLocalOf<DestinationsNavigator> { error("LocalNavigator is not provided") }
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun BottomBar(
-    hazeState: HazeState,
-    hazeStyle: HazeStyle,
     isVisible: Boolean = true,
 ) {
     LocalContext.current
@@ -76,6 +75,8 @@ fun BottomBar(
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val bottomBarFloating by appSettingsViewModel.bottomBarFloating.state.collectAsState()
     val showDivider by appSettingsViewModel.showDivider.state.collectAsState()
+    val hazeState = LocalTopBarHazeState.current
+    val hazeStyle = LocalTopBarHazeStyle.current
 
     val items = BottomBarDestination.entries.map { destination ->
         NavigationItem(
@@ -112,29 +113,55 @@ fun BottomBar(
         label = "BottomBarVisibility"
     ) {
         val modifier = Modifier.hazeEffect(hazeState) {
-            style = hazeStyle
+            hazeStyle?.let { style = it }
             blurRadius = 30.dp
             noiseFactor = 0f
+            progressive = HazeProgressive.verticalGradient(
+                startIntensity = 0f,
+                endIntensity = 1f,
+                preferPerformance = true,
+            )
         }
+        val colorScheme = MiuixTheme.colorScheme
+        val bottomBarColorScheme = colorScheme.copy(
+            onSurfaceContainer = colorScheme.primary,
+            onSurfaceContainerVariant = colorScheme.primary.copy(alpha = 0.3f),
+        )
 
-        if (bottomBarFloating) {
-            FloatingNavigationBar(
-                modifier = modifier,
-                color = Color.Transparent,
-                items = items,
-                selected = page,
-                onClick = onItemClick,
-                showDivider = showDivider,
-            )
-        } else {
-            NavigationBar(
-                modifier = modifier,
-                color = Color.Transparent,
-                items = items,
-                selected = page,
-                onClick = onItemClick,
-                showDivider = showDivider,
-            )
+        MiuixTheme(colors = bottomBarColorScheme) {
+            if (bottomBarFloating) {
+                FloatingNavigationBar(
+                    modifier = modifier,
+                    color = Color.Transparent,
+                    showDivider = showDivider,
+                    mode = NavigationDisplayMode.IconOnly,
+                ) {
+                    BottomBarDestination.entries.forEachIndexed { index, destination ->
+                        FloatingNavigationBarItem(
+                            selected = page == index,
+                            onClick = { onItemClick(index) },
+                            icon = destination.icon,
+                            label = destination.label,
+                        )
+                    }
+                }
+            } else {
+                NavigationBar(
+                    modifier = modifier,
+                    color = Color.Transparent,
+                    showDivider = showDivider,
+                    mode = NavigationDisplayMode.IconAndText,
+                ) {
+                    BottomBarDestination.entries.forEachIndexed { index, destination ->
+                        NavigationBarItem(
+                            selected = page == index,
+                            onClick = { onItemClick(index) },
+                            icon = destination.icon,
+                            label = destination.label,
+                        )
+                    }
+                }
+            }
         }
     }
 }
