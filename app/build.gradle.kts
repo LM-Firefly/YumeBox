@@ -41,8 +41,8 @@ plugins {
     id("org.jetbrains.compose")
     id("com.google.devtools.ksp")
     id("com.mikepenz.aboutlibraries.plugin")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
+//    id("com.google.gms.google-services")
+//    id("com.google.firebase.crashlytics")
     id("dev.oom-wg.purejoy.fyl.fytxt")
 }
 
@@ -59,8 +59,8 @@ fytxt {
 
 val targetAbi = project.findProperty("android.injected.build.abi") as String?
 val mmkvVersion = when (targetAbi) {
-    "arm64-v8a", "x86_64" -> "2.2.4"
-    else -> "1.3.14"
+    "arm64-v8a", "x86_64" -> "2.3.0"
+    else -> "1.3.16"
 }
 val mmkvDependency = "com.tencent:mmkv:$mmkvVersion"
 
@@ -68,7 +68,7 @@ val appNamespace = gropify.project.namespace.base
 val appName = gropify.project.name
 val jvmVersionNumber = gropify.project.jvm
 val jvmVersion = jvmVersionNumber.toString()
-val javaVersion = JavaVersion.toVersion(jvmVersionNumber) ?: JavaVersion.VERSION_17
+val javaVersion = JavaVersion.toVersion(jvmVersionNumber) ?: JavaVersion.VERSION_21
 val appAbiList = gropify.abi.app.list.split(",").map { it.trim() }
 val localeList = gropify.locale.app.list.split(",").map { it.trim() }
 
@@ -172,7 +172,9 @@ android {
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (System.getProperty("isMergeBuild") != "true") {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
         resources {
@@ -198,9 +200,16 @@ android {
                 // Set correct versionName
                 output.versionName.set(gropify.project.version.name)
                 // Set APK output file name
-                (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
+                val isMergeBuild = System.getProperty("isMergeBuild") == "true"
+                val fileName = if (isMergeBuild) {
+                    (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
+                    "${appName}_Extension-${abiName}-${buildTypeName}.apk"
+                    )
+                } else {
+                    (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
                     "${appName}-${abiName}-${buildTypeName}.apk"
-                )
+                    )
+                }
             }
         }
     }
@@ -211,14 +220,19 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core"))
-
+    if (System.getProperty("isMergeBuild") == "true") {
+        implementation(project(":extension"))
+    }
+    
     // Compose dependencies (using Jetpack Compose BOM for version management)
-    val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
-    implementation(composeBom)
+    implementation(platform("androidx.compose:compose-bom:2026.01.00"))
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.12.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
@@ -254,9 +268,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
-    implementation("com.google.firebase:firebase-crashlytics-ndk")
-    implementation("com.google.firebase:firebase-analytics")
+    // implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    // implementation("com.google.firebase:firebase-crashlytics-ndk")
+    // implementation("com.google.firebase:firebase-analytics")
     implementation("com.microsoft.clarity:clarity-compose:3.+")
 
     // ML Kit
@@ -270,10 +284,10 @@ dependencies {
     implementation("androidx.camera:camera-video:1.5.2")
 
     // Image Loading
-    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
-    implementation("io.coil-kt.coil3:coil-svg:3.3.0")
-
+    // implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    // implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+    // implementation("io.coil-kt.coil3:coil-svg:3.3.0")
+    
     // About Libraries
     implementation("com.mikepenz:aboutlibraries-core:13.2.1")
     implementation("com.mikepenz:aboutlibraries-compose:13.2.1")

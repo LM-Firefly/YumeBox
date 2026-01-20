@@ -3,6 +3,7 @@ package com.github.yumelira.yumebox.service
 import android.app.Notification
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.ProxyInfo
 import android.net.VpnService
 import android.os.Build
@@ -21,6 +22,7 @@ import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
 import java.net.InetSocketAddress
 import java.security.SecureRandom
+import timber.log.Timber
 
 class ClashVpnService : VpnService() {
 
@@ -30,6 +32,7 @@ class ClashVpnService : VpnService() {
         const val EXTRA_PROFILE_ID = "profile_id"
 
         private val random = SecureRandom()
+        private const val TAG = "ClashVpnService"
 
         fun start(context: Context, profileId: String) {
             val intent = Intent(context, ClashVpnService::class.java).apply {
@@ -61,6 +64,7 @@ class ClashVpnService : VpnService() {
 
     private var notificationJob: Job? = null
     private var serviceScope: CoroutineScope? = null
+    private var appListModule: com.github.yumelira.yumebox.service.AppListCacheModule? = null
 
     private var vpnInterface: ParcelFileDescriptor? = null
     private var tunFd: Int? = null
@@ -85,6 +89,7 @@ class ClashVpnService : VpnService() {
                 if (profileId != null) {
                     startVpn(profileId)
                 } else {
+                    Timber.tag(TAG).e("配置文件不存在")
                     stopSelf()
                 }
             }
@@ -97,51 +102,97 @@ class ClashVpnService : VpnService() {
     }
 
     private fun startVpn(profileId: String) {
-        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         serviceScope?.launch {
             try {
-
+                // Resolve profile quickly
                 val profile = profilesStore.getAllProfiles().find { it.id == profileId }
-                if (profile == null) {
-                    showErrorNotification("启动失败", "配置文件不存在")
-                    return@launch
-                }
-
-
-                val loadResult = clashManager.loadProfile(profile)
-                if (loadResult.isFailure) {
-                    val error = loadResult.exceptionOrNull()
-                    showErrorNotification("启动失败", error?.message ?: "配置加载失败")
-                    return@launch
-                }
-
-                vpnInterface = withContext(Dispatchers.IO) { establishVpnInterface() }
-                    ?: run {
-                        showErrorNotification("启动失败", "无法建立 VPN 连接")
-                        return@launch
+                    ?: throw IllegalStateException("配置文件不存在")
+                // --- Load profile with timeout and retry ---
+                val loadTimeout = 60_000L
+                var loadAttempt = 0
+                val maxLoadAttempts = 2
+                var loadSuccess = false
+                var lastLoadError: Throwable? = null
+                while (loadAttempt < maxLoadAttempts && !loadSuccess) {
+                    loadAttempt++
+                    Timber.tag(TAG).d("Loading profile '${'$'}{profile.name}' (attempt #${'$'}loadAttempt)...")
+                    try {
+                        withTimeout(loadTimeout) {
+                            val loadResult = clashManager.loadProfile(profile)
+                            if (loadResult.isFailure) {
+                                throw loadResult.exceptionOrNull() ?: IllegalStateException("配置加载失败")
+                            }
+                        }
+                        loadSuccess = true
+                    } catch (e: Exception) {
+                        lastLoadError = e
+                        Timber.tag(TAG).w(e, "loadProfile failed on attempt #${'$'}loadAttempt")
+                        if (loadAttempt < maxLoadAttempts) delay(2000L * loadAttempt)
                     }
-
+                }
+                if (!loadSuccess) {
+                    val msg = lastLoadError?.message ?: "配置加载失败"
+                    throw IllegalStateException(msg)
+                }
+                // --- Establish VPN interface with separate timeout ---
+                Timber.tag(TAG).d("Establishing VPN interface...")
+                vpnInterface = try {
+                    withTimeout(60_000L) { establishVpnInterface() ?: throw IllegalStateException("establishVpnInterface failed") }
+                } catch (e: Exception) {
+                    Timber.tag(TAG).w(e, "establishVpnInterface failed")
+                    throw e
+                }
                 val pfd = vpnInterface!!
                 val rawFd = pfd.detachFd()
-
                 runCatching { pfd.close() }
                 vpnInterface = null
-
                 val config = Configuration.TunConfig()
+                val tunDns = if (networkSettings.dnsHijack.value) config.dns else "0.0.0.0"
                 val tunConfig = config.copy(
                     stack = networkSettings.tunStack.value.name.lowercase(),
-                    dnsHijacking = networkSettings.dnsHijack.value
+                    dnsHijacking = networkSettings.dnsHijack.value,
+                    dns = tunDns
                 )
-
-                clashManager.startTun(
-                    fd = rawFd,
-                    config = tunConfig,
-                    enableIPv6 = networkSettings.enableIPv6.value,
-                    markSocket = { protect(it) }
-                )
-
+                // --- Start TUN with timeout and retry ---
+                var startAttempt = 0
+                val maxStartAttempts = 2
+                var startSuccess = false
+                var lastStartError: Throwable? = null
+                while (startAttempt < maxStartAttempts && !startSuccess) {
+                    startAttempt++
+                    Timber.tag(TAG).d("Starting TUN (attempt #${'$'}startAttempt)...")
+                    try {
+                        withTimeout(60_000L) {
+                            val startResult = clashManager.startTun(
+                                fd = rawFd,
+                                config = tunConfig,
+                                enableIPv6 = networkSettings.enableIPv6.value,
+                                markSocket = { protect(it) },
+                                querySocketUid = ::querySocketUid
+                            )
+                            if (startResult.isFailure) {
+                                throw startResult.exceptionOrNull() ?: IllegalStateException("Failed to start TUN")
+                            }
+                        }
+                        startSuccess = true
+                    } catch (e: Exception) {
+                        lastStartError = e
+                        Timber.tag(TAG).w(e, "startTun failed on attempt #${'$'}startAttempt")
+                        if (startAttempt < maxStartAttempts) delay(1000L * startAttempt)
+                    }
+                }
+                if (!startSuccess) {
+                    val msg = lastStartError?.message ?: "Failed to start TUN"
+                    throw IllegalStateException(msg)
+                }
                 startNotificationUpdate()
+                appListModule = com.github.yumelira.yumebox.service.AppListCacheModule(this@ClashVpnService, serviceScope!!).apply { start() }
+            } catch (e: TimeoutCancellationException) {
+                Timber.tag(TAG).e(e, "VPN startup timed out")
+                showErrorNotification("启动失败", "Connection timeout")
             } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "VPN startup failed")
                 showErrorNotification("启动失败", e.message ?: "未知错误")
             }
         }
@@ -150,7 +201,7 @@ class ClashVpnService : VpnService() {
     private fun startNotificationUpdate() {
         notificationJob?.cancel()
         notificationJob = notificationManager.startTrafficUpdate(
-            serviceScope!!, clashManager, appSettingsStorage
+            serviceScope!! + Dispatchers.IO, clashManager, appSettingsStorage
         )
     }
 
@@ -189,6 +240,15 @@ class ClashVpnService : VpnService() {
         val port = address.substring(lastColon + 1).toInt()
         return InetSocketAddress(host, port)
     }
+    private fun querySocketUid(protocol: Int, source: InetSocketAddress, target: InetSocketAddress): Int {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return -1
+        val cm = connectivityManager ?: (getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager).also { connectivityManager = it }
+        return runCatching {
+            cm?.getConnectionOwnerUid(protocol, source, target) ?: -1
+        }.getOrElse { -1 }
+    }
+
+    private var connectivityManager: ConnectivityManager? = null
 
     private fun establishVpnInterface(): ParcelFileDescriptor? = runCatching {
         val config = Configuration.TunConfig()
@@ -262,6 +322,8 @@ class ClashVpnService : VpnService() {
 
     private fun stopVpn() {
         stopNotificationUpdate()
+        appListModule?.stop()
+        appListModule = null
 
         clashManager.stop()
 

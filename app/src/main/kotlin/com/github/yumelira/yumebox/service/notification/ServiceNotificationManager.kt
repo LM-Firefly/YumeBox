@@ -1,21 +1,31 @@
 package com.github.yumelira.yumebox.service.notification
 
 import android.app.*
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import com.github.yumelira.yumebox.MainActivity
-import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.data.model.Profile
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.MainActivity
+import com.github.yumelira.yumebox.R
+import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class ServiceNotificationManager(
@@ -39,6 +49,7 @@ class ServiceNotificationManager(
     private val notificationManager: NotificationManager by lazy {
         service.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
+    private var lastNotificationData: NotificationData? = null
 
     fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -79,9 +90,10 @@ class ServiceNotificationManager(
             .setContentIntent(contentIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(isConnected)
+            .setOnlyAlertOnce(true)
             .apply {
                 if (isConnected) {
-                    addAction(android.R.drawable.ic_menu_close_clear_cancel, "断开", stopPendingIntent)
+                    addAction(android.R.drawable.ic_menu_close_clear_cancel, MLang.Service.Notification.ActionDisconnect, stopPendingIntent)
                 }
             }
             .build()
@@ -91,29 +103,65 @@ class ServiceNotificationManager(
         notificationManager.notify(config.notificationId, create(title, content, isConnected))
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     fun startTrafficUpdate(
         scope: CoroutineScope,
         clashManager: ClashManager,
         appSettings: AppSettingsStorage
     ): Job = scope.launch {
-        combine(
-            clashManager.trafficNow,
-            clashManager.trafficTotal,
-            clashManager.currentProfile,
-            appSettings.showTrafficNotification.state
-        ) { now, total, currentProfile, showTraffic ->
-            NotificationData(now, total, currentProfile, showTraffic)
-        }
-            .collect { (now, total, currentProfile, showTraffic) ->
-                val profileName = currentProfile?.name ?: "未知配置"
-                if (showTraffic) {
-                    val speedStr = "↓ ${formatSpeed(now.download)} ↑ ${formatSpeed(now.upload)}"
-                    val totalStr = "总计: ${formatBytes(total.download + total.upload)}"
-                    update("已连接: $profileName", "$speedStr | $totalStr", true)
-                } else {
-                    update("已连接", profileName, true)
+        val screenFlow = service.screenStateFlow()
+        appSettings.showTrafficNotification.state.flatMapLatest { showTraffic ->
+            if (showTraffic) {
+                combine(
+                    clashManager.createTrafficFlow(),
+                    clashManager.currentProfile,
+                    screenFlow
+                ) { trafficPair, profile, screenOn ->
+                    val now = trafficPair.first
+                    val total = trafficPair.second
+                    val profileName = profile?.name ?: MLang.ProfilesPage.Message.UnknownProfile
+                    val content = if (screenOn) {
+                        val speedStr = "↓ ${formatSpeed(now.download)} ↑ ${formatSpeed(now.upload)}"
+                        val totalStr = MLang.Service.Notification.TrafficFormat.format(formatBytes(total.download + total.upload))
+                        "$speedStr | $totalStr"
+                    } else ""
+                    Triple(profileName, content, screenOn)
                 }
+                    .distinctUntilChanged()
+            } else {
+                clashManager.currentProfile.map { currentProfile ->
+                    Triple(currentProfile?.name ?: MLang.ProfilesPage.Message.UnknownProfile, "", false)
+                }.distinctUntilChanged()
             }
+        }.collect { (profileNameOrNow, contentOrTotal, showTraffic) ->
+            if (showTraffic) {
+                update(MLang.Service.Notification.ConnectedWithProfile.format(profileNameOrNow), contentOrTotal, true)
+            } else {
+                update(MLang.Service.Notification.Connected, profileNameOrNow, true)
+            }
+            lastNotificationData = NotificationData(TrafficData.ZERO, TrafficData.ZERO, Profile(id = profileNameOrNow), showTraffic)
+        }
+    }
+
+    private fun Context.screenStateFlow() = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                trySend(intent.action == Intent.ACTION_SCREEN_ON)
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(receiver, filter)
+        }
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        trySend(pm.isInteractive)
+        awaitClose { unregisterReceiver(receiver) }
     }
 
     companion object {

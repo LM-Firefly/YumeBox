@@ -88,4 +88,11 @@ Override = {
         Title = "Reset Override Settings"
         Message = "All override settings will be erased. Are you sure you want to continue?"
     }
+
+    Message = {
+        LoadFailed = "Failed to load override config: %s"
+        ResetFailed = "Failed to reset override config: %s"
+        AutoSaveFailed = "Failed to auto save config: %s"
+        InitSecretFailed = "Failed to initialize random secret"
+    }
 }
