@@ -17,7 +17,7 @@ pluginManagement {
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
         maven("https://plugins.gradle.org/m2/")
-        maven("https://jitpack.io")
+        gradlePluginPortal()
         maven("https://oom-maven.sawahara.host") {
             content {
                 includeGroupAndSubgroups("ren.shiror")
@@ -25,7 +25,7 @@ pluginManagement {
                 includeGroupAndSubgroups("dev.oom-wg")
             }
         }
-        gradlePluginPortal()
+        maven("https://jitpack.io")
     }
 }
 
@@ -36,7 +36,6 @@ dependencyResolutionManagement {
         mavenLocal()
         google()
         mavenCentral()
-        maven("https://jitpack.io")
         maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
         maven("https://plugins.gradle.org/m2/")
         maven("https://packages.foojay.io/maven")
@@ -47,6 +46,7 @@ dependencyResolutionManagement {
                 includeGroupAndSubgroups("dev.oom-wg")
             }
         }
+        maven("https://jitpack.io")
     }
 
     versionCatalogs {
