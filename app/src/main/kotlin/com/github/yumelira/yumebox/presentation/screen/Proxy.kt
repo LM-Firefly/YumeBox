@@ -20,9 +20,12 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
+import android.content.Context
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -34,6 +37,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -42,9 +46,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.WebViewUtils.getLocalBaseUrl
@@ -70,12 +78,14 @@ import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -189,7 +199,7 @@ fun ProxyPager(
                     Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Settings.SortMode)
                 }
 
-                WindowListPopup  (
+                WindowListPopup(
                     show = showPopup,
                     popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
                     alignment = PopupPositionProvider.Align.Start,
@@ -239,7 +249,7 @@ fun ProxyPager(
 @Composable
 private fun ProxyTopBar(
     scrollBehavior: ScrollBehavior,
-    context: android.content.Context,
+    context: Context,
     selectedPanelType: Int,
     onNavigateToProviders: () -> Unit,
     onTestDelay: (() -> Unit)?,
@@ -347,27 +357,72 @@ private fun ProxyGroupSelectorContent(
         }
     }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val minSheetHeight = (maxHeight * 0.42f).coerceAtLeast(280.dp).coerceAtMost(380.dp)
-        val maxSheetHeight = (maxHeight * 0.72f).coerceAtLeast(420.dp).coerceAtMost(620.dp)
+    val shouldShowLoading = remember(group.proxies.size) {
+        group.proxies.size > 10
+    }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = minSheetHeight, max = maxSheetHeight)
-        ) {
-            ProxyNodeGrid(
-                proxies = group.proxies,
-                selectedProxyName = group.now,
-                displayMode = displayMode,
-                onProxyClick = onProxyClick?.let { click ->
-                    { proxy: Proxy -> click(proxy.name) }
-                },
-                onProxyDelayClick = { onGroupDelayClick() },
-                isDelayTesting = isGroupTesting,
-                contentPadding = PaddingValues(top = 12.dp, bottom = 16.dp),
-                modifier = Modifier.fillMaxSize(),
-            )
+    var showContent by remember { mutableStateOf(false) }
+    val alpha by animateFloatAsState(
+        targetValue = if (showContent) 1f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "contentAlpha"
+    )
+
+    LaunchedEffect(shouldShowLoading) {
+        if (shouldShowLoading) {
+            delay(450)
+            showContent = true
+        } else {
+            showContent = true
+        }
+    }
+
+    val contentPadding = remember {
+        PaddingValues(top = 12.dp, bottom = 16.dp)
+    }
+
+    val configuration = LocalConfiguration.current
+    val screenHeight = with(LocalDensity.current) { configuration.screenHeightDp.dp }
+    val minSheetHeight = (screenHeight * 0.42f).coerceAtLeast(280.dp).coerceAtMost(380.dp)
+    val maxSheetHeight = (screenHeight * 0.72f).coerceAtLeast(420.dp).coerceAtMost(620.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = minSheetHeight, max = maxSheetHeight),
+        contentAlignment = Alignment.Center
+    ) {
+        if (!showContent && shouldShowLoading) {
+            // 加载指示器使用固定高度 minSheetHeight，避免高度跳动
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(minSheetHeight),
+                contentAlignment = Alignment.Center
+            ) {
+                InfiniteProgressIndicator()
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(alpha)
+            ) {
+                ProxyNodeGrid(
+                    proxies = group.proxies,
+                    selectedProxyName = group.now,
+                    displayMode = displayMode,
+                    onProxyClick = if (onProxyClick != null) {
+                        { proxy: Proxy -> onProxyClick(proxy.name) }
+                    } else {
+                        null
+                    },
+                    onProxyDelayClick = { onGroupDelayClick() },
+                    isDelayTesting = isGroupTesting,
+                    contentPadding = contentPadding,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }

@@ -83,9 +83,12 @@ android {
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
         manifestPlaceholders["appName"] = appName
-        
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
+
+        // Clarity Analytics Configuration
+        buildConfigField("String", "CLARITY_PROJECT_ID", "\"${project.findProperty("clarity.projectId") ?: ""}\"")
+
         // Specify supported locales
         resourceConfigurations.addAll(localeList)
     }
@@ -188,8 +191,8 @@ android {
     androidComponents {
         onVariants { variant ->
             variant.outputs.forEach { output ->
-                val abiName = output.filters.find { 
-                    it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI 
+                val abiName = output.filters.find {
+                    it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
                 }?.identifier ?: "universal"
                 val buildTypeName = variant.buildType ?: "release"
                 // Set correct versionName
@@ -208,7 +211,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core"))
-    
+
     // Compose dependencies (using Jetpack Compose BOM for version management)
     val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
     implementation(composeBom)
@@ -218,67 +221,67 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.activity:activity-compose:1.12.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
-    
+
     // Additional Compose libraries
     implementation("top.yukonga.miuix.kmp:miuix:0.8.0-rc06")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0-rc06")
     implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
-    
+
     // Storage
     implementation(mmkvDependency)
-    
+
     // Dependency Injection
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("io.insert-koin:koin-android:4.1.1")
     implementation("io.insert-koin:koin-androidx-compose:4.1.1")
-    
+
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
     ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
-    
+
     // Network
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("io.ktor:ktor-client-core:3.3.3")
     implementation("io.ktor:ktor-client-android:3.3.3")
     implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
-    
+
     // Utilities
     implementation("com.jakewharton.timber:timber:5.0.1")
     implementation("com.caoccao.javet:javet-node-android:5.0.3")
     implementation("com.highcapable.pangutext:pangutext-android:1.0.5")
     implementation("org.apache.commons:commons-compress:1.28.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
     implementation("com.google.firebase:firebase-crashlytics-ndk")
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.microsoft.clarity:clarity-compose:3.+")
-    
+
     // ML Kit
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
-    
+
     // Camera
     implementation("androidx.camera:camera-camera2:1.5.2")
     implementation("androidx.camera:camera-lifecycle:1.5.2")
     implementation("androidx.camera:camera-view:1.5.2")
     implementation("androidx.camera:camera-core:1.5.2")
     implementation("androidx.camera:camera-video:1.5.2")
-    
+
     // Image Loading
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation("io.coil-kt.coil3:coil-svg:3.3.0")
-    
+
     // About Libraries
     implementation("com.mikepenz:aboutlibraries-core:13.2.1")
     implementation("com.mikepenz:aboutlibraries-compose:13.2.1")
     implementation("com.mikepenz:aboutlibraries-compose-m3:13.2.1")
-    
+
     // UI Components
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
-    
+
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
@@ -306,8 +309,8 @@ val downloadGeoFilesTask = tasks.register<DownloadGeoFilesTask>("downloadGeoFile
 
 tasks.configureEach {
     when {
-        name.startsWith("assemble") || 
-        name.startsWith("lintVitalAnalyze") || 
+        name.startsWith("assemble") ||
+        name.startsWith("lintVitalAnalyze") ||
         (name.startsWith("generate") && name.contains("LintVitalReportModel")) -> {
             dependsOn(downloadGeoFilesTask)
         }

@@ -62,6 +62,9 @@ import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.presentation.viewmodel.AppSettingsViewModel
+import com.microsoft.clarity.Clarity
+import com.microsoft.clarity.ClarityConfig
+import com.microsoft.clarity.models.LogLevel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -121,6 +124,12 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+
+        val config = ClarityConfig(
+            projectId = "v4e5psv4w6",
+            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
+        )
+        Clarity.initialize(applicationContext, config)
 
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
@@ -207,37 +216,42 @@ fun MainScreen(navigator: DestinationsNavigator) {
         )
     }
 
-    val pagerClickAnimationSpec: (Int, Int) -> androidx.compose.animation.core.AnimationSpec<Float> = remember {
-        { fromPage: Int, toPage: Int ->
-            val distance = abs(fromPage - toPage)
-            val durationMillis = when (distance) {
-                0 -> AnimationSpecs.DURATION_INSTANT
-                1 -> AnimationSpecs.DURATION_STANDARD
-                else -> (AnimationSpecs.DURATION_FAST + (distance - 1) * 60).coerceAtMost(AnimationSpecs.DURATION_SLOW)
-            }
-            tween<Float>(
-                durationMillis = durationMillis,
-                easing = AnimationSpecs.EmphasizedDecelerate
-            )
-        }
-    }
-
-    var pageChangeJob by remember { mutableStateOf<Job?>(null) }
-
-    val handlePageChange: (Int) -> Unit = remember(pagerState, coroutineScope, pagerClickAnimationSpec) {
-        { page ->
-            if (page == pagerState.currentPage && !pagerState.isScrollInProgress) return@remember
-
-            pageChangeJob?.cancel()
-            pageChangeJob = coroutineScope.launch {
-                val fromPage = if (pagerState.isScrollInProgress) pagerState.targetPage else pagerState.currentPage
-                pagerState.animateScrollToPage(
-                    page = page,
-                    animationSpec = pagerClickAnimationSpec(fromPage, page)
+    val pagerClickAnimationSpec: (Int, Int) -> androidx.compose.animation.core.AnimationSpec<Float> =
+        remember {
+            { fromPage: Int, toPage: Int ->
+                val distance = abs(fromPage - toPage)
+                val durationMillis = when (distance) {
+                    0 -> AnimationSpecs.DURATION_INSTANT
+                    1 -> AnimationSpecs.DURATION_STANDARD
+                    else -> (AnimationSpecs.DURATION_FAST + (distance - 1) * 60).coerceAtMost(
+                        AnimationSpecs.DURATION_SLOW
+                    )
+                }
+                tween<Float>(
+                    durationMillis = durationMillis,
+                    easing = AnimationSpecs.EmphasizedDecelerate
                 )
             }
         }
-    }
+
+    var pageChangeJob by remember { mutableStateOf<Job?>(null) }
+
+    val handlePageChange: (Int) -> Unit =
+        remember(pagerState, coroutineScope, pagerClickAnimationSpec) {
+            { page ->
+                if (page == pagerState.currentPage && !pagerState.isScrollInProgress) return@remember
+
+                pageChangeJob?.cancel()
+                pageChangeJob = coroutineScope.launch {
+                    val fromPage =
+                        if (pagerState.isScrollInProgress) pagerState.targetPage else pagerState.currentPage
+                    pagerState.animateScrollToPage(
+                        page = page,
+                        animationSpec = pagerClickAnimationSpec(fromPage, page)
+                    )
+                }
+            }
+        }
 
     BackHandler {
         if (pagerState.currentPage != 0) {
@@ -263,7 +277,9 @@ fun MainScreen(navigator: DestinationsNavigator) {
         Scaffold(
             bottomBar = {
                 BottomBar(
-                    hazeState = hazeState, hazeStyle = hazeStyle, isVisible = bottomBarScrollBehavior.isBottomBarVisible
+                    hazeState = hazeState,
+                    hazeStyle = hazeStyle,
+                    isVisible = bottomBarScrollBehavior.isBottomBarVisible
                 )
             },
         ) { innerPadding ->
@@ -275,7 +291,8 @@ fun MainScreen(navigator: DestinationsNavigator) {
                 beyondViewportPageCount = 2,
                 userScrollEnabled = true,
                 pageNestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
-                    state = pagerState, orientation = androidx.compose.foundation.gestures.Orientation.Horizontal
+                    state = pagerState,
+                    orientation = androidx.compose.foundation.gestures.Orientation.Horizontal
                 ),
                 flingBehavior = PagerDefaults.flingBehavior(
                     state = pagerState,
