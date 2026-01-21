@@ -62,9 +62,6 @@ import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.presentation.viewmodel.AppSettingsViewModel
-import com.microsoft.clarity.Clarity
-import com.microsoft.clarity.ClarityConfig
-import com.microsoft.clarity.models.LogLevel
 import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -125,11 +122,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val config = ClarityConfig(
-            projectId = "v4e5psv4w6",
-            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
-        )
-        Clarity.initialize(applicationContext, config)
+//        val config = ClarityConfig(
+//            projectId = "v4e5psv4w6",
+//            logLevel = if (BuildConfig.DEBUG) LogLevel.Verbose else LogLevel.None
+//        )
+//        Clarity.initialize(applicationContext, config)
 
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
