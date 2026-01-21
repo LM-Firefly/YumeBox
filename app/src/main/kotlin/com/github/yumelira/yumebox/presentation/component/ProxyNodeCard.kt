@@ -20,6 +20,12 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,25 +39,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
 import top.yukonga.miuix.kmp.basic.Card
@@ -72,15 +73,27 @@ internal fun DelayPill(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MiuixTheme.textStyles.footnote1,
+    height: Dp = 18.dp,
 ) {
-    val (text, color) = when {
-        delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
-        delay == 0 -> "N/A" to Color(0xFFBDBDBD)
-        delay in 1..800 -> "${delay}" to Color(0xFF4CAF50)
-        delay in 801..5000 -> "${delay}" to Color(0xFFFFA726)
-        else -> return
+    val (text, color) = remember(delay) {
+        when {
+            delay < 0 -> "TIMEOUT" to Color(0xFF9E9E9E)
+            delay == 0 -> "N/A" to Color(0xFFBDBDBD)
+            delay in 1..800 -> "${delay}" to Color(0xFF4CAF50)
+            delay in 801..5000 -> "${delay}" to Color(0xFFFFA726)
+            else -> null
+        }
+    } ?: return
+
+    val backgroundColor = remember(delay) {
+        when {
+            delay < 0 -> Color(0xFF9E9E9E)
+            delay == 0 -> Color(0xFFBDBDBD)
+            delay in 1..800 -> Color(0xFF4CAF50)
+            delay in 801..5000 -> Color(0xFFFFA726)
+            else -> Color.Transparent
+        }.copy(alpha = 0.14f)
     }
-    val backgroundColor = color.copy(alpha = 0.14f)
     val interactionSource = remember { MutableInteractionSource() }
 
     Box(
@@ -98,22 +111,24 @@ internal fun DelayPill(
                     base
                 }
             }
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .sizeIn(minWidth = 30.dp, minHeight = height),
         contentAlignment = Alignment.Center,
     ) {
         if (isLoading) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = text,
-                    style = textStyle,
-                    color = color,
-                    maxLines = 1,
-                    modifier = Modifier.alpha(0f),
-                )
+            Box(
+                modifier = Modifier.size(width = height, height = height),
+                contentAlignment = Alignment.Center
+            ) {
                 LoadingDots(color = color)
             }
         } else {
-            Text(text = text, style = textStyle, color = color, maxLines = 1)
+            Text(
+                text = text,
+                style = textStyle,
+                color = color,
+                maxLines = 1,
+                modifier = Modifier.height(height)
+            )
         }
     }
 }
@@ -122,6 +137,7 @@ internal fun DelayPill(
 private fun LoadingDots(
     color: Color,
     modifier: Modifier = Modifier,
+    height: Dp = 18.dp,
 ) {
     val transition = rememberInfiniteTransition(label = "DelayPillDots")
     val shift1 by transition.animateFloat(
@@ -143,26 +159,30 @@ private fun LoadingDots(
         label = "shift2",
     )
 
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        modifier = modifier.size(width = height, height = height),
+        contentAlignment = Alignment.Center
     ) {
-        val amplitude = 3.dp
-        Box(
-            Modifier
-                .size(4.dp)
-                .graphicsLayer { translationY = shift1 * amplitude.toPx() }
-                .clip(CircleShape)
-                .background(color)
-        )
-        Box(
-            Modifier
-                .size(4.dp)
-                .graphicsLayer { translationY = shift2 * amplitude.toPx() }
-                .clip(CircleShape)
-                .background(color)
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            val amplitude = 3.dp
+            Box(
+                Modifier
+                    .size(4.dp)
+                    .graphicsLayer { translationY = shift1 * amplitude.toPx() }
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Box(
+                Modifier
+                    .size(4.dp)
+                    .graphicsLayer { translationY = shift2 * amplitude.toPx() }
+                    .clip(CircleShape)
+                    .background(color)
+            )
+        }
     }
 }
 
@@ -173,12 +193,6 @@ internal fun ProxySelectableCard(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val backgroundColor = if (isSelected) {
-        MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
-    } else {
-        MiuixTheme.colorScheme.background
-    }
-
     val interactionSource = remember { MutableInteractionSource() }
 
     Card(modifier = modifier.fillMaxWidth()) {
@@ -186,7 +200,11 @@ internal fun ProxySelectableCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = backgroundColor,
+                    color = if (isSelected) {
+                        MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    } else {
+                        MiuixTheme.colorScheme.background
+                    },
                     shape = RoundedCornerShape(ProxyCardDefaults.CornerRadius)
                 )
                 .clip(RoundedCornerShape(ProxyCardDefaults.CornerRadius))
@@ -221,101 +239,95 @@ fun ProxyNodeCard(
     onDelayClick: (() -> Unit)? = null,
     isDelayTesting: Boolean = false,
 ) {
-    val backgroundColor = if (isSelected) {
-        MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
-    } else {
-        MiuixTheme.colorScheme.background
-    }
-
-    val textColor = if (isSelected) {
-        MiuixTheme.colorScheme.primary
-    } else {
-        MiuixTheme.colorScheme.onSurface
-    }
-
     ProxySelectableCard(
         isSelected = isSelected,
         onClick = onClick,
         modifier = modifier,
     ) {
-            if (isSingleColumn) {
+        val textColor = if (isSelected) {
+            MiuixTheme.colorScheme.primary
+        } else {
+            MiuixTheme.colorScheme.onSurface
+        }
+        if (isSingleColumn) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = proxy.name,
+                        style = MiuixTheme.textStyles.body1,
+                        color = textColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (showDetail) {
+                        Spacer(modifier = Modifier.height(ProxyCardDefaults.TextSpacing))
+                        Text(
+                            text = proxy.type.name,
+                            style = MiuixTheme.textStyles.footnote1,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        )
+                    }
+                }
+                DelayPill(
+                    delay = proxy.delay,
+                    onClick = onDelayClick,
+                    isLoading = isDelayTesting,
+                    textStyle = MiuixTheme.textStyles.body2,
+                    height = 22.dp,
+                )
+            }
+        } else if (showDetail) {
+            Column {
+                Text(
+                    text = proxy.name,
+                    style = MiuixTheme.textStyles.body2,
+                    color = textColor,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(ProxyCardDefaults.TextSpacing))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = proxy.name,
-                            style = MiuixTheme.textStyles.body1,
-                            color = textColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (showDetail) {
-                            Spacer(modifier = Modifier.height(ProxyCardDefaults.TextSpacing))
-                            Text(
-                                text = proxy.type.name,
-                                style = MiuixTheme.textStyles.footnote1,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                            )
-                        }
-                    }
+                    Text(
+                        text = proxy.type.name,
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
                     DelayPill(
                         delay = proxy.delay,
                         onClick = onDelayClick,
                         isLoading = isDelayTesting,
-                        textStyle = MiuixTheme.textStyles.body2,
                     )
-                }
-            } else if (showDetail) {
-                Column {
-                    Text(
-                        text = proxy.name,
-                        style = MiuixTheme.textStyles.body2,
-                        color = textColor,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.height(ProxyCardDefaults.TextSpacing))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = proxy.type.name,
-                            style = MiuixTheme.textStyles.footnote1,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        DelayPill(
-                            delay = proxy.delay,
-                            onClick = onDelayClick,
-                            isLoading = isDelayTesting,
-                        )
-                    }
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = proxy.name,
-                        style = MiuixTheme.textStyles.body2,
-                        color = textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    DelayPill(delay = proxy.delay, onClick = onDelayClick, isLoading = isDelayTesting)
                 }
             }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = proxy.name,
+                    style = MiuixTheme.textStyles.body2,
+                    color = textColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                DelayPill(delay = proxy.delay, onClick = onDelayClick, isLoading = isDelayTesting)
+            }
+        }
     }
 }

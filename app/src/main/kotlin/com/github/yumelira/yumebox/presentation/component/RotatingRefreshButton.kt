@@ -34,7 +34,6 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Refresh
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun RotatingRefreshButton(
@@ -61,12 +60,7 @@ fun RotatingRefreshButton(
         Icon(
             imageVector = MiuixIcons.Refresh,
             contentDescription = contentDescription,
-            modifier = if (isRotating) Modifier.rotate(rotation) else Modifier,
-            tint = if (isRotating) {
-                MiuixTheme.colorScheme.primary
-            } else {
-                MiuixTheme.colorScheme.onSurfaceVariantActions
-            }
+            modifier = if (isRotating) Modifier.rotate(rotation) else Modifier
         )
     }
 }
