@@ -57,6 +57,7 @@ Thumbs.db
 
 # Project specific
 /app/src/androidMain/assets/
+/app/src/main/assets/
 /core/src/foss/golang/mihomo/
 /.claude
 /.qoder
@@ -66,3 +67,4 @@ Thumbs.db
 /google-services.json
 /app/google-services.json
 /desktop.ini
+/app/src/main/assets/ASN.mmdb
