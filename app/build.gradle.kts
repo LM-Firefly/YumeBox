@@ -265,7 +265,7 @@ dependencies {
     implementation("com.caoccao.javet:javet-node-android:5.0.3")
     implementation("com.highcapable.pangutext:pangutext-android:1.0.5")
     implementation("org.apache.commons:commons-compress:1.28.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
     // Firebase
     // implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
