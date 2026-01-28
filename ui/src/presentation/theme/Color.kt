@@ -268,14 +268,8 @@ private fun deriveThemeColors(
     val primary = if (dark) seed else seed.mix(Color.Black, 0.05f)
     val primaryVariant = if (dark) seed.mix(Color.White, 0.36f) else seed.mix(Color.White, 0.25f)
 
-    val onPrimary = primary.autoOnColor(
-        threshold = if (dark) 0.72f else 0.52f,
-        invert = invertOnPrimaryColors,
-    )
-    val onPrimaryVariant = primaryVariant.autoOnColor(
-        threshold = if (dark) 0.68f else 0.52f,
-        invert = invertOnPrimaryColors,
-    )
+    val defaultOnPrimary = primary.autoOnColor(threshold = if (dark) 0.72f else 0.52f)
+    val defaultOnPrimaryVariant = primaryVariant.autoOnColor(threshold = if (dark) 0.68f else 0.52f)
 
     val disabledPrimary = if (dark) {
         base.disabledPrimary.mix(seed, 0.18f)
@@ -321,8 +315,20 @@ private fun deriveThemeColors(
         base.tertiaryContainerVariant.mix(seed, 0.13f)
     }
 
-    val onPrimaryContainer = primaryContainer.autoOnColor(invert = invertOnPrimaryColors)
-    val onTertiaryContainer = tertiaryContainer.autoOnColor(invert = invertOnPrimaryColors)
+    val defaultOnPrimaryContainer = primaryContainer.autoOnColor()
+    val onTertiaryContainer = tertiaryContainer.autoOnColor()
+
+    val onPrimary = if (invertOnPrimaryColors) defaultOnPrimary.invertBlackWhite() else defaultOnPrimary
+    val onPrimaryVariant = if (invertOnPrimaryColors) {
+        defaultOnPrimaryVariant.invertBlackWhite()
+    } else {
+        defaultOnPrimaryVariant
+    }
+    val onPrimaryContainer = if (invertOnPrimaryColors) {
+        defaultOnPrimaryContainer.invertBlackWhite()
+    } else {
+        defaultOnPrimaryContainer
+    }
 
     return base.copy(
         primary = primary,
@@ -353,13 +359,8 @@ private fun Color.mix(other: Color, ratio: Float): Color {
     )
 }
 
-private fun Color.autoOnColor(
-    threshold: Float = 0.52f,
-    invert: Boolean = false,
-): Color {
-    val defaultOnColor = if (luminance() > threshold) Color.Black else Color.White
-    if (!invert) {
-        return defaultOnColor
-    }
-    return if (defaultOnColor == Color.Black) Color.White else Color.Black
-}
+private fun Color.autoOnColor(threshold: Float = 0.52f): Color =
+    if (luminance() > threshold) Color.Black else Color.White
+
+private fun Color.invertBlackWhite(): Color =
+    if (this == Color.Black) Color.White else Color.Black

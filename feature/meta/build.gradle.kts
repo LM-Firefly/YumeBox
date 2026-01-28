@@ -60,4 +60,3 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
 }
-

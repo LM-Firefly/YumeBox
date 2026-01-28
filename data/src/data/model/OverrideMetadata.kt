@@ -29,44 +29,28 @@ data class OverrideMetadata(
     val id: String,
     val name: String,
     val description: String? = null,
-    val isSystem: Boolean = false,
+    val contentType: OverrideContentType = OverrideContentType.Yaml,
     val createdAt: Long,
     val updatedAt: Long,
     val sortOrder: Long = 0L,
 ) {
     companion object {
         const val ID_PREFIX = "cfg-"
-        const val SYSTEM_PREFIX = "preset-"
-        const val SYSTEM_PRESET_ID = "preset-default"
+        const val LEGACY_SYSTEM_PREFIX = "preset-"
 
         fun generateId(): String = "$ID_PREFIX${System.currentTimeMillis()}-${(1000..9999).random()}"
 
         fun create(
             name: String,
             description: String? = null,
-            isSystem: Boolean = false,
+            contentType: OverrideContentType = OverrideContentType.Yaml,
         ): OverrideMetadata {
             val now = System.currentTimeMillis()
             return OverrideMetadata(
-                id = if (isSystem) name.lowercase().replace(" ", "-") else generateId(),
+                id = generateId(),
                 name = name,
                 description = description,
-                isSystem = isSystem,
-                createdAt = now,
-                updatedAt = now,
-            )
-        }
-
-        fun createSystemPreset(
-            name: String = "默认预设",
-            description: String? = null,
-        ): OverrideMetadata {
-            val now = System.currentTimeMillis()
-            return OverrideMetadata(
-                id = SYSTEM_PRESET_ID,
-                name = name,
-                description = description,
-                isSystem = true,
+                contentType = contentType,
                 createdAt = now,
                 updatedAt = now,
             )
@@ -76,10 +60,12 @@ data class OverrideMetadata(
     fun update(
         name: String = this.name,
         description: String? = this.description,
+        contentType: OverrideContentType = this.contentType,
     ): OverrideMetadata {
         return copy(
             name = name,
             description = description,
+            contentType = contentType,
             updatedAt = System.currentTimeMillis(),
             sortOrder = sortOrder,
         )
@@ -91,7 +77,7 @@ data class OverrideMetadata(
             id = generateId(),
             name = "$name (副本)",
             description = description,
-            isSystem = false,
+            contentType = contentType,
             createdAt = now,
             updatedAt = now,
             sortOrder = 0L,
@@ -114,9 +100,28 @@ data class MetadataIndex(
         return copy(configs = configs - id)
     }
 
+    fun removeOverrideFromProfileChains(overrideId: String): MetadataIndex {
+        return copy(
+            profileChains = profileChains.mapValues { (_, binding) ->
+                binding.removeOverride(overrideId)
+            },
+        )
+    }
+
+    fun sanitizeProfileChains(
+        predicate: (String) -> Boolean,
+    ): MetadataIndex {
+        return copy(
+            profileChains = profileChains.mapValues { (_, binding) ->
+                binding.copy(
+                    overrideIds = binding.overrideIds.filter(predicate),
+                )
+            },
+        )
+    }
+
     fun sortedUserMetadata(): List<OverrideMetadata> {
         return configs.values
-            .filterNot(OverrideMetadata::isSystem)
             .sortedWith(
                 compareBy<OverrideMetadata> { if (it.sortOrder > 0L) 0 else 1 }
                     .thenBy { if (it.sortOrder > 0L) it.sortOrder else Long.MAX_VALUE }

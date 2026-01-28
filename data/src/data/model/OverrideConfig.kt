@@ -22,7 +22,6 @@
 
 package com.github.yumelira.yumebox.data.model
 
-import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,8 +29,11 @@ data class OverrideConfig(
     val id: String,
     val name: String,
     val description: String? = null,
-    val config: ConfigurationOverride,
-    val isSystem: Boolean = false,
+    val contentType: OverrideContentType,
+    val content: String,
     val createdAt: Long,
     val updatedAt: Long,
-)
+) {
+    val fileName: String
+        get() = "$id.${contentType.extension}"
+}
