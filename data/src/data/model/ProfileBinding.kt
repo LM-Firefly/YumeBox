@@ -28,7 +28,6 @@ import kotlinx.serialization.Serializable
 data class ProfileBinding(
     val profileId: String,
     val overrideIds: List<String> = emptyList(),
-    val enabled: Boolean = false,
 ) {
     companion object {
 
@@ -36,7 +35,6 @@ data class ProfileBinding(
             return ProfileBinding(
                 profileId = profileId,
                 overrideIds = emptyList(),
-                enabled = false,
             )
         }
 
@@ -44,7 +42,6 @@ data class ProfileBinding(
             return ProfileBinding(
                 profileId = profileId,
                 overrideIds = overrideIds,
-                enabled = false,
             )
         }
 
@@ -52,7 +49,6 @@ data class ProfileBinding(
             return ProfileBinding(
                 profileId = profileId,
                 overrideIds = listOf(overrideId),
-                enabled = false,
             )
         }
     }
@@ -92,17 +88,5 @@ data class ProfileBinding(
 
     fun clearOverrides(): ProfileBinding {
         return copy(overrideIds = emptyList())
-    }
-
-    fun setEnabled(enabled: Boolean): ProfileBinding {
-        return copy(enabled = enabled)
-    }
-
-    fun enableSystemPreset(): ProfileBinding {
-        return copy(enabled = true)
-    }
-
-    fun disableSystemPreset(): ProfileBinding {
-        return copy(enabled = false)
     }
 }

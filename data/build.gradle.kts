@@ -25,6 +25,9 @@ plugins {
 
 android {
     namespace = "com.github.yumelira.yumebox.data"
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -35,6 +38,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
+    implementation("com.github.bmoliveira:snake-yaml:v1.18-android")
     implementation("io.ktor:ktor-client-core:${gropify.dep.version.ktor}")
     implementation("io.ktor:ktor-client-android:${gropify.dep.version.ktor}")
     implementation("io.ktor:ktor-client-content-negotiation:${gropify.dep.version.ktor}")
@@ -47,4 +51,8 @@ dependencies {
     val injectedAbi = findProperty("android.injected.build.abi") as? String
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     implementation("com.tencent:mmkv:$mmkvVersion")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("org.robolectric:robolectric:4.14.1")
 }

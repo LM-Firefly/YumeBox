@@ -23,13 +23,21 @@
 package com.github.yumelira.yumebox.core.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
+
+@Serializable
+data class OverrideSpec(
+    val path: String,
+    val ext: String,
+)
 
 @Serializable
 data class CompileRequest(
+    val schemaVersion: Int = 1,
     val profileUuid: String,
     val profileDir: String,
     val profilePath: String,
-    val overridePaths: List<String> = emptyList(),
+    val overrides: List<OverrideSpec> = emptyList(),
     val outputPath: String,
 )
 
