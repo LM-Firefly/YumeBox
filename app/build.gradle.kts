@@ -238,8 +238,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Additional Compose libraries
-    implementation("top.yukonga.miuix.kmp:miuix:0.8.0-rc06")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0-rc06")
+    implementation("top.yukonga.miuix.kmp:miuix:0.8.0-rc07")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0-rc07")
     implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
 
     // Storage
