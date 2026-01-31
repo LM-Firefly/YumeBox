@@ -278,11 +278,11 @@ dependencies {
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // Camera
-    implementation("androidx.camera:camera-camera2:1.5.2")
-    implementation("androidx.camera:camera-lifecycle:1.5.2")
-    implementation("androidx.camera:camera-view:1.5.2")
-    implementation("androidx.camera:camera-core:1.5.2")
-    implementation("androidx.camera:camera-video:1.5.2")
+    implementation("androidx.camera:camera-camera2:1.5.3")
+    implementation("androidx.camera:camera-lifecycle:1.5.3")
+    implementation("androidx.camera:camera-view:1.5.3")
+    implementation("androidx.camera:camera-core:1.5.3")
+    implementation("androidx.camera:camera-video:1.5.3")
 
     // Image Loading
     // implementation("io.coil-kt.coil3:coil-compose:3.3.0")
