@@ -104,6 +104,45 @@ object SystemDetector {
     }
 }
 
+class GitTools {
+    private val rustSubmodulePath = "lib/native/rust"
+
+    fun ensureRustSubmoduleReady() {
+        if (!File(".git").exists()) {
+            println("[Git] Skip rust submodule sync: .git not found")
+            return
+        }
+        if (!SystemDetector.checkCommandExists("git")) {
+            error("git not found, cannot sync rust submodule")
+        }
+
+        val syncResult = executeCommand(
+            command = listOf("git", "submodule", "sync", "--", rustSubmodulePath),
+            stderrIsError = false,
+            stderrPrefix = "[Git]"
+        )
+        if (!syncResult.success) {
+            val reason = syncResult.error.ifBlank { syncResult.output }.trim()
+            error("Failed to sync rust submodule metadata: $reason")
+        }
+
+        val updateResult = executeCommand(
+            command = listOf("git", "submodule", "update", "--init", "--recursive", "--", rustSubmodulePath),
+            stderrIsError = false,
+            stderrPrefix = "[Git]"
+        )
+        if (!updateResult.success) {
+            val reason = updateResult.error.ifBlank { updateResult.output }.trim()
+            error("Failed to update rust submodule: $reason")
+        }
+
+        val cargoToml = File("$rustSubmodulePath/Cargo.toml")
+        if (!cargoToml.isFile) {
+            error("Rust submodule is not ready: missing ${cargoToml.absolutePath}")
+        }
+    }
+}
+
 data class CommandResult(
     val success: Boolean,
     val output: String = "",
@@ -375,12 +414,14 @@ class RustBuilder(private val config: ProjectConfig) {
     private val sourceDir = File("lib/native/rust")
     private val outputDir = File("build/native/rust")
     private val appJniRoot = File("jniLibs")
-    private val outputLibraryName = "libyume_override.so"
+    private val outputLibraryName = "liboverride.so"
+    private val gitTools = GitTools()
 
     fun buildAll() {
+        gitTools.ensureRustSubmoduleReady()
+
         if (!sourceDir.exists()) {
-            println("[Rust] Source directory not found: ${sourceDir.absolutePath}")
-            return
+            error("[Rust] Source directory not found: ${sourceDir.absolutePath}")
         }
 
         val abis = config.getCsv("abi.app.list", "armeabi-v7a,arm64-v8a,x86,x86_64")
@@ -414,11 +455,11 @@ class RustBuilder(private val config: ProjectConfig) {
                 copyToAppJni(abi, sourceLib)
                 println("[building] Successfully built $abi (Rust)")
             } else {
-                println("[building] Output library not found: ${sourceLib.absolutePath}")
+                error("[building] Output library not found: ${sourceLib.absolutePath}")
             }
         } else {
             val reason = result.error.ifBlank { result.output }.trim()
-            println("[building] Failed to build $abi (Rust): $reason")
+            error("[building] Failed to build $abi (Rust): $reason")
         }
     }
 

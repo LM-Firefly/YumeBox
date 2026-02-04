@@ -58,6 +58,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
+import java.io.File
 
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
@@ -102,12 +103,12 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
-        val groupNames = Clash.queryGroupNames(excludeNotSelectable)
-        return groupNames.map { groupName -> Clash.queryGroup(groupName, ProxySort.Default) }
+        val groupNames = resolveRuntimeProxyGroupNames(excludeNotSelectable)
+        return groupNames.mapNotNull(::queryRuntimeProxyGroupOrNull)
     }
 
     override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return Clash.queryGroupNames(excludeNotSelectable)
+        return resolveRuntimeProxyGroupNames(excludeNotSelectable)
     }
 
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
@@ -184,6 +185,66 @@ class ClashManager(private val context: Context) : IClashManager,
     private fun configuredProxyMode(): ProxyMode {
         val raw = networkSettings.decodeString("proxyMode", ProxyMode.Tun.name) ?: ProxyMode.Tun.name
         return runCatching { ProxyMode.valueOf(raw) }.getOrDefault(ProxyMode.Tun)
+    }
+
+    private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        val runtimeNames = Clash.queryGroupNames(excludeNotSelectable)
+        val activeProfile = store.activeProfile ?: return runtimeNames
+        val spec = when (configuredProxyMode()) {
+            ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
+            ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
+            ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
+        }
+        if (spec.profileUuid != activeProfile.toString()) {
+            return runtimeNames
+        }
+
+        val runtimeFile = File(spec.runtimeConfigPath)
+        if (!runtimeFile.isFile) {
+            return runtimeNames
+        }
+        val expectedNames = runCatching {
+            Clash.inspectCompiledGroups(
+                runtimeFile.readText(),
+                File(spec.profileDir),
+                excludeNotSelectable,
+            ).map(ProxyGroup::name)
+        }.getOrDefault(emptyList())
+        if (expectedNames.isEmpty()) {
+            return runtimeNames
+        }
+
+        return buildList(expectedNames.size + runtimeNames.size) {
+            expectedNames.forEach { groupName ->
+                if (groupName.isBlank()) return@forEach
+                if (groupName !in this) {
+                    add(groupName)
+                }
+            }
+            runtimeNames.forEach { groupName ->
+                if (groupName.isBlank()) return@forEach
+                if (groupName !in this) {
+                    add(groupName)
+                }
+            }
+        }
+    }
+
+    private fun queryRuntimeProxyGroupOrNull(groupName: String): ProxyGroup? {
+        val group = Clash.queryGroup(groupName, ProxySort.Default)
+        if (group.name.isBlank()) {
+            return null
+        }
+        return if (
+            group.type == Proxy.Type.Unknown &&
+            group.proxies.isEmpty() &&
+            group.now.isBlank() &&
+            group.icon.isNullOrBlank()
+        ) {
+            null
+        } else {
+            group
+        }
     }
 
     override fun setLogObserver(observer: ILogObserver?) {
