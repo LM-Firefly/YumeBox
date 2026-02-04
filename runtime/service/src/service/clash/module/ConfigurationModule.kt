@@ -24,6 +24,7 @@ package com.github.yumelira.yumebox.service.clash.module
 
 import android.app.Service
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.core.model.ProxySort
@@ -37,6 +38,7 @@ import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
+import java.io.File
 import java.util.*
 
 class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadException>(service) {
@@ -87,7 +89,8 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 Clash.loadCompiledConfig(service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")).await()
 
                 val restoreSelections = SelectionDao.queryRestorableSelections(active.uuid)
-                val runtimeGroups = Clash.queryGroupNames(false).map { Clash.queryGroup(it, ProxySort.Default) }
+                val runtimeFile = service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")
+                val runtimeGroups = resolveRuntimeProxyGroups(runtimeFile, spec.profileDir)
                 SelectionRestoreExecutor.restore(
                     profileUuid = active.uuid,
                     selections = restoreSelections,
@@ -100,6 +103,51 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 service.sendProfileLoaded(current)
             } catch (e: Exception) {
                 return enqueueEvent(LoadException(e.message ?: "Unknown"))
+            }
+        }
+    }
+
+    private fun resolveRuntimeProxyGroups(runtimeFile: File, profileDir: String): List<ProxyGroup> {
+        val runtimeNames = Clash.queryGroupNames(false)
+        val expectedNames = runCatching {
+            if (!runtimeFile.isFile) {
+                emptyList()
+            } else {
+                Clash.inspectCompiledGroups(
+                    runtimeFile.readText(),
+                    File(profileDir),
+                    excludeNotSelectable = false,
+                ).map(ProxyGroup::name)
+            }
+        }.getOrDefault(emptyList())
+
+        val mergedNames = buildList(expectedNames.size + runtimeNames.size) {
+            expectedNames.forEach { groupName ->
+                if (groupName.isBlank()) return@forEach
+                if (groupName !in this) {
+                    add(groupName)
+                }
+            }
+            runtimeNames.forEach { groupName ->
+                if (groupName.isBlank()) return@forEach
+                if (groupName !in this) {
+                    add(groupName)
+                }
+            }
+        }
+
+        return mergedNames.mapNotNull { groupName ->
+            val group = Clash.queryGroup(groupName, ProxySort.Default)
+            if (
+                group.name.isBlank() ||
+                (group.type == com.github.yumelira.yumebox.core.model.Proxy.Type.Unknown &&
+                    group.proxies.isEmpty() &&
+                    group.now.isBlank() &&
+                    group.icon.isNullOrBlank())
+            ) {
+                null
+            } else {
+                group
             }
         }
     }
