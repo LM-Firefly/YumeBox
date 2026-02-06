@@ -608,7 +608,7 @@ class ClashManager(
         if (active) {
             proxyStateRepository.start()
         } else {
-            proxyStateRepository.stopAutoSync()
+            proxyStateRepository.stop()
         }
     }
 
