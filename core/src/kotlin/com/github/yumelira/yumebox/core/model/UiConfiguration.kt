@@ -32,6 +32,9 @@ data class UiConfiguration(
     @SerialName("mode")
     val mode: TunnelState.Mode = TunnelState.Mode.Rule,
 
+    @SerialName("sniffer")
+    val sniffer: ConfigurationOverride.Sniffer? = null,
+
     @SerialName("log-level")
     val logLevel: LogMessage.Level = LogMessage.Level.Info,
 

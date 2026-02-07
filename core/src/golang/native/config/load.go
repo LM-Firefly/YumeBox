@@ -16,6 +16,9 @@ import (
 	"github.com/metacubex/mihomo/log"
 )
 
+var CurrentConfig *config.Config
+var CurrentRawConfig *config.RawConfig
+
 func logDns(cfg *config.RawConfig) {
 	bytes, err := yaml.Marshal(&cfg.DNS)
 	if err != nil {
@@ -87,7 +90,8 @@ func Load(path string) error {
 	log.Infoln("ApplyConfig done in %s", time.Since(applyStart))
 
 	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
-
+	CurrentConfig = cfg
+	CurrentRawConfig = rawCfg
 	runtime.GC()
 
 	log.Infoln("Total config load time for %s: %s", path, time.Since(start))
@@ -95,10 +99,36 @@ func Load(path string) error {
 }
 
 func LoadDefault() {
-	cfg, err := config.Parse([]byte{})
+	rawCfg, err := config.UnmarshalRawConfig([]byte{})
 	if err != nil {
 		panic(err.Error())
 	}
-
+	CurrentRawConfig = rawCfg
+	cfg, err := config.ParseRawConfig(rawCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+	CurrentConfig = cfg
 	hub.ApplyConfig(cfg)
+}
+
+func GetUiConfiguration() map[string]any {
+	cfg := CurrentRawConfig
+	if cfg == nil {
+		return map[string]any{}
+	}
+	return map[string]any{
+		"port":                cfg.Port,
+		"socks-port":          cfg.SocksPort,
+		"redir-port":          cfg.RedirPort,
+		"tproxy-port":         cfg.TProxyPort,
+		"mixed-port":          cfg.MixedPort,
+		"allow-lan":           cfg.AllowLan,
+		"ipv6":                cfg.IPv6,
+		"mode":                cfg.Mode,
+		"log-level":           cfg.LogLevel,
+		"external-controller": cfg.ExternalController,
+		"secret":              cfg.Secret,
+		"sniffer":             cfg.Sniffer,
+	}
 }

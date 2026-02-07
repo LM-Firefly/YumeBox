@@ -35,19 +35,29 @@ type OverrideConfig struct {
 }
 
 func patchOverride(cfg *config.RawConfig, _ string) error {
-	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotPersist))).Decode(cfg); err != nil {
-		log.Warnln("Apply persist override: %s", err.Error())
+	persist := ReadOverride(OverrideSlotPersist)
+	if persist != "" {
+		if err := json.NewDecoder(strings.NewReader(persist)).Decode(cfg); err != nil {
+			log.Warnln("Apply persist override: %s", err.Error())
+		}
 	}
-	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotSession))).Decode(cfg); err != nil {
-		log.Warnln("Apply session override: %s", err.Error())
+	session := ReadOverride(OverrideSlotSession)
+	if session != "" {
+		if err := json.NewDecoder(strings.NewReader(session)).Decode(cfg); err != nil {
+			log.Warnln("Apply session override: %s", err.Error())
+		}
 	}
 
 	var override OverrideConfig
-	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotPersist))).Decode(&override); err != nil {
-		// ignore error
+	if persist != "" {
+		if err := json.NewDecoder(strings.NewReader(persist)).Decode(&override); err != nil {
+			// ignore error
+		}
 	}
-	if err := json.NewDecoder(strings.NewReader(ReadOverride(OverrideSlotSession))).Decode(&override); err != nil {
-		// ignore error
+	if session != "" {
+		if err := json.NewDecoder(strings.NewReader(session)).Decode(&override); err != nil {
+			// ignore error
+		}
 	}
 	defaultGlobalTimeout := 5000
 	globalTimeout := defaultGlobalTimeout
