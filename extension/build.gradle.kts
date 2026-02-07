@@ -19,13 +19,13 @@ if (isMergeBuild) {
 
 project.pluginManager.withPlugin("com.android.application") {
     dependencies {
-        add("implementation", "com.caoccao.javet:javet-node-android:5.0.3")
+        add("implementation", "com.caoccao.javet:javet-node-android:5.0.4")
     }
 }
 
 project.pluginManager.withPlugin("com.android.library") {
     dependencies {
-        add("implementation", "com.caoccao.javet:javet-node-android:5.0.3")
+        add("implementation", "com.caoccao.javet:javet-node-android:5.0.4")
     }
 }
 
