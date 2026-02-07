@@ -79,7 +79,7 @@ object DownloadUtil : KoinComponent {
         }.getOrNull()
     }
 
-    private fun parseSubscriptionInfo(headers: Headers): SubscriptionInfo {
+    fun parseSubscriptionInfo(headers: Headers): SubscriptionInfo {
 
         fun parseExpireDate(expireStr: String): Long? = runCatching {
             when {

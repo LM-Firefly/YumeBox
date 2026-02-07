@@ -81,47 +81,8 @@ class ProfilesViewModel(
 
     private fun cleanupOrphanedFiles() {
         runCatching {
-            val activeIds = profilesStore.profiles.value.map { it.id }.toSet()
-            val importedDir = getApplication<Application>().filesDir.resolve("imported")
-            if (!importedDir.exists() || !importedDir.isDirectory) return
-
-            importedDir.listFiles()?.forEach { file ->
-                when {
-                    file.isDirectory && file.name !in activeIds -> {
-                        file.deleteRecursively()
-                    }
-
-                    file.isDirectory && file.name in activeIds -> {
-                        val cfg = java.io.File(file, "config.yaml")
-                        val downloadMark = java.io.File(file, ".downloading")
-                        if (downloadMark.exists()) {
-                            return@forEach
-                        }
-                        if (!cfg.exists()) {
-                            file.listFiles()?.forEach { subFile ->
-                                if (subFile.name != ".downloading") {
-                                    subFile.delete()
-                                }
-                            }
-                        } else {
-                            file.listFiles()?.forEach { subFile ->
-                                if (subFile.name.endsWith(".tmp") || 
-                                    (subFile.isDirectory && subFile.name.endsWith(".tmp")) ||
-                                    subFile.name == ".downloading") {
-                                    subFile.deleteRecursively()
-                                }
-                            }
-                        }
-                    }
-
-                    file.isFile && (file.name.endsWith(".yaml") || file.name.endsWith(".yml")) -> {
-                        file.delete()
-                    }
-                    file.isFile && file.name.endsWith(".tmp") -> {
-                        file.delete()
-                    }
-                }
-            }
+            val workDir = getApplication<Application>().filesDir.resolve("clash")
+            com.github.yumelira.yumebox.clash.cleanupOrphanedConfigs(workDir, profilesStore.profiles.value)
         }.onFailure { timber.log.Timber.e(it, "cleanupOrphanedFiles failed") }
     }
 
@@ -165,70 +126,17 @@ class ProfilesViewModel(
         return try {
             _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
 
-            val subscriptionInfo = if (isUrl) {
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        com.github.yumelira.yumebox.common.util.DownloadUtil.downloadWithSubscriptionInfo(
-                            remoteUrl!!, java.io.File.createTempFile("temp_${profile.id}", ".yaml")
-                        ).second
-                    }.getOrNull()
-                }
-            } else null
-
-            val result = downloadProfile(
+            val result = com.github.yumelira.yumebox.clash.ProfileUpdateManager.updateProfile(
                 profile = profile,
-                workDir = getApplication<Application>().filesDir.resolve("clash"),
-                force = true,
-                onProgress = { msg, progress ->
-                    _downloadProgress.value = DownloadProgress(progress, msg)
+                saveToDb = saveToDb,
+                onProgress = { msg, percentage ->
+                    _downloadProgress.value = DownloadProgress(percentage, msg)
                 }
             )
 
             if (result.isSuccess) {
                 _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.DownloadComplete)
-                val configFilePath = result.getOrThrow()
-                val existingProfile = if (saveToDb) {
-                    profilesStore.profiles.value.find { it.id == profile.id }
-                } else null
-
-                var updated = existingProfile?.copy(updatedAt = System.currentTimeMillis(), config = configFilePath)
-                    ?: profile.copy(updatedAt = System.currentTimeMillis(), config = configFilePath)
-
-                subscriptionInfo?.filename?.let { fileName ->
-                    val nameWithoutExt = if (fileName.contains(".")) {
-                        fileName.substringBeforeLast(".")
-                    } else {
-                        fileName
-                    }
-
-                    val defaultNames = setOf(MLang.ProfilesPage.Input.NewProfile)
-                    if (updated.name.isBlank() || updated.name in defaultNames || updated.name.startsWith("temp_")) {
-                        updated = updated.copy(name = nameWithoutExt)
-                    }
-                }
-
-                subscriptionInfo?.let { info ->
-                    updated = updated.copy(
-                        provider = info.title ?: updated.provider,
-                        expireAt = info.expire ?: updated.expireAt,
-                        usedBytes = info.upload + info.download,
-                        totalBytes = if (info.total > 0) info.total else updated.totalBytes,
-                        lastUpdatedAt = System.currentTimeMillis()
-                    )
-                }
-
-                if (updated.lastUpdatedAt == null) {
-                    updated = updated.copy(lastUpdatedAt = System.currentTimeMillis())
-                }
-
-                if (saveToDb) {
-                    if (existingProfile != null) {
-                        profilesStore.updateProfile(updated)
-                    } else {
-                        profilesStore.addProfile(updated)
-                    }
-                }
-                updated
+                result.getOrThrow()
             } else {
                 _downloadProgress.value = null
                 val error = result.exceptionOrNull()

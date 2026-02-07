@@ -57,31 +57,22 @@ suspend fun performUpdate(profileId: String): Result<Boolean> = withContext(Disp
         if (profile.type != com.github.yumelira.yumebox.data.model.ProfileType.URL) {
             return@withContext Result.failure<Boolean>(IllegalArgumentException("Profile is not URL type: $profileId"))
         }
-        val workDir = com.github.yumelira.yumebox.core.Global.application.filesDir.resolve("clash")
         var lastError: Throwable? = null
         repeat(maxAttempts) { attempt ->
             if (attempt > 0) {
                 kotlinx.coroutines.delay(retryDelayMs * attempt)
             }
-            val result = runCatching {
-                downloadProfile(profile, workDir, force = true)
-            }.getOrElse { e ->
-                if (e is kotlinx.coroutines.CancellationException) {
-                    Timber.tag(TAG).d("performUpdate cancelled for %s (attempt %d)", profileId, attempt + 1)
-                    return@withContext Result.failure(e)
-                } else {
-                    Result.failure(e)
-                }
-            }
+            val result = ProfileUpdateManager.updateProfile(profile, saveToDb = true)
             if (result.isSuccess) {
-                val configPath = result.getOrThrow()
-                val updated = profile.copy(config = configPath, lastUpdatedAt = System.currentTimeMillis())
-                profilesStore.updateProfile(updated)
-                scheduleNext(updated)
                 Timber.tag(TAG).d("performUpdate succeeded for %s", profileId)
                 return@withContext Result.success(true)
             } else {
-                lastError = result.exceptionOrNull()
+                val e = result.exceptionOrNull()
+                if (e is kotlinx.coroutines.CancellationException) {
+                    Timber.tag(TAG).d("performUpdate cancelled for %s (attempt %d)", profileId, attempt + 1)
+                    return@withContext Result.failure(e)
+                }
+                lastError = e
                 Timber.tag(TAG).w(lastError, "performUpdate attempt %d failed for %s", attempt + 1, profileId)
             }
         }

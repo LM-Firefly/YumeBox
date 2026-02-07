@@ -37,6 +37,7 @@ class ImportService(private val workDir: File) {
 
     suspend fun importProfile(
         profile: Profile,
+        sourceFile: File? = null,
         force: Boolean = false,
         onProgress: ((ImportState) -> Unit)? = null
     ): Result<String> = coroutineScope {
@@ -53,9 +54,13 @@ class ImportService(private val workDir: File) {
 
             onProgress?.invoke(ImportState.Preparing("准备导入配置..."))
 
-            val configPath = when (profile.type) {
-                ProfileType.URL -> importFromUrl(profile, force, onProgress)
-                ProfileType.FILE -> importFromFile(profile, onProgress)
+            val configPath = if (sourceFile != null) {
+                importFromFile(profile.copy(type = ProfileType.FILE, config = sourceFile.absolutePath), onProgress)
+            } else {
+                when (profile.type) {
+                    ProfileType.URL -> importFromUrl(profile, force, onProgress)
+                    ProfileType.FILE -> importFromFile(profile, onProgress)
+                }
             }
 
             onProgress?.invoke(ImportState.Success(configPath))

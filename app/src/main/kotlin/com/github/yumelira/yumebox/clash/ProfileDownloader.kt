@@ -13,6 +13,7 @@ import java.io.File
 suspend fun downloadProfile(
     profile: Profile,
     workDir: File,
+    sourceFile: File? = null,
     force: Boolean = true,
     onProgress: ((String, Int) -> Unit)? = null
 ): Result<String> = withContext(Dispatchers.IO) {
@@ -21,6 +22,7 @@ suspend fun downloadProfile(
 
         val result = importService.importProfile(
             profile = profile,
+            sourceFile = sourceFile,
             force = force,
             onProgress = { state ->
                 val (message, progress) = mapStateToProgress(state)
