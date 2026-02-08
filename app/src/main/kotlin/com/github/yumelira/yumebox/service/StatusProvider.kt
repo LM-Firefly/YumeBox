@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import com.github.yumelira.yumebox.service.common.util.Global
+import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 
 class StatusProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
@@ -56,8 +57,7 @@ class StatusProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         runCatching {
             val app = context?.applicationContext as? android.app.Application ?: return@runCatching
-            com.github.yumelira.yumebox.service.common.Global.init(app)
-            com.github.yumelira.yumebox.service.common.util.Global.init(app)
+            initializeServiceGlobal(app)
         }
         return true
     }
