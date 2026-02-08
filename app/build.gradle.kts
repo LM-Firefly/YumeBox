@@ -39,13 +39,11 @@ plugins {
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
     id("com.google.devtools.ksp")
-//    id("com.mikepenz.aboutlibraries.plugin")
+    id("com.mikepenz.aboutlibraries.plugin")
 //    id("com.google.gms.google-services")
 //    id("com.google.firebase.crashlytics")
     id("dev.oom-wg.purejoy.fyl.fytxt")
 }
-
-apply(plugin = "com.mikepenz.aboutlibraries.plugin")
 
 fytxt {
     langSrcs = mapOf(
