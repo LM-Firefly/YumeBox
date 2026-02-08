@@ -13,8 +13,10 @@ import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.data.ImportedDao
+import com.github.yumelira.yumebox.service.data.PendingDao
 import com.github.yumelira.yumebox.service.store.ServiceStore
 import com.tencent.mmkv.MMKV
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -45,8 +47,8 @@ class ServiceNotificationManager(
         )
     }
 
-    fun createLoadingNotification(): Notification {
-        return buildNotification(service.getText(R.string.loading), service.getText(R.string.loading))
+    fun createInitialNotification(): Notification {
+        return buildRunningNotification()
     }
 
     fun startTrafficUpdate(scope: CoroutineScope): Job {
@@ -61,7 +63,7 @@ class ServiceNotificationManager(
     private fun buildRunningNotification(): Notification {
         val profileName = resolveProfileName()
         if (!shouldShowTrafficNotification()) {
-            return buildNotification(profileName, service.getText(R.string.running))
+            return buildNotification(profileName, MLang.Service.Notification.Running)
         }
 
         val now = runCatching { Clash.queryTrafficNow() }.getOrDefault(0L)
@@ -73,7 +75,7 @@ class ServiceNotificationManager(
         val downTotal = decodeTrafficHalf(total and 0xFFFFFFFFL)
 
         val speedStr = "↓ ${formatSpeed(downNow)} ↑ ${formatSpeed(upNow)}"
-        val totalStr = formatBytes(upTotal + downTotal)
+        val totalStr = MLang.Service.Notification.TrafficFormat.format(formatBytes(upTotal + downTotal))
         return buildNotification(profileName, "$speedStr | $totalStr")
     }
 
@@ -94,14 +96,16 @@ class ServiceNotificationManager(
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setShowWhen(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
 
     private fun resolveProfileName(): String {
-        val active = serviceStore.activeProfile ?: return service.getString(R.string.running)
-        return ImportedDao.queryByUUID(active)?.name?.takeIf { it.isNotBlank() }
-            ?: service.getString(R.string.running)
+        val active = serviceStore.activeProfile ?: return MLang.Service.Notification.UnknownProfile
+        return (PendingDao.queryByUUID(active)?.name ?: ImportedDao.queryByUUID(active)?.name)
+            ?.takeIf { it.isNotBlank() }
+            ?: MLang.Service.Notification.UnknownProfile
     }
 
     private fun shouldShowTrafficNotification(): Boolean {

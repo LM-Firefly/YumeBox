@@ -5,6 +5,7 @@ Service = {
         ActionDisconnect = "Disconnect"
         ConnectedWithProfile = "Connected: %s"
         Connected = "Connected"
+        Running = "Running"
         TrafficFormat = "Total: %s"
         UnknownProfile = "Unknown profile"
     }
