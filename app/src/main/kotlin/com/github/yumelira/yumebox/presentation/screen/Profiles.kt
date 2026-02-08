@@ -204,10 +204,9 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 navigationIcon = {
                     Row {
                         IconButton(
-                            modifier = Modifier.padding(start = 24.dp),
-                            onClick = {
+                            modifier = Modifier.padding(start = 24.dp), onClick = {
                                 if (links.isNotEmpty()) {
-                                    // 优先使用默认链接,如果没有设置默认链接则使用第一个
+                                    // 优先使用默认链接, 如果没有设置默认链接则使用第一个
                                     val link = if (defaultLinkId.isNotEmpty()) {
                                         links.find { it.id == defaultLinkId } ?: links.first()
                                     } else {
