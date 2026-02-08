@@ -47,7 +47,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.IntentController
+import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
 import com.github.yumelira.yumebox.presentation.component.BottomBar
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
@@ -67,6 +69,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.NavGraphs
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.tencent.mmkv.MMKV
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -75,9 +78,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.qualifier.named
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -96,9 +101,10 @@ class MainActivity : ComponentActivity() {
 
     private val appSettingsStorage: com.github.yumelira.yumebox.data.store.AppSettingsStorage by inject()
     private val networkSettingsStorage: com.github.yumelira.yumebox.data.store.NetworkSettingsStorage by inject()
-    private val profilesStore: com.github.yumelira.yumebox.data.store.ProfilesStore by inject()
-    private val clashManager: com.github.yumelira.yumebox.clash.manager.ClashManager by inject()
-    private val proxyConnectionService: com.github.yumelira.yumebox.data.repository.ProxyConnectionService by inject()
+    private val profilesRepository: com.github.yumelira.yumebox.domain.facade.ProfilesRepository by inject()
+    private val proxyFacade: com.github.yumelira.yumebox.domain.facade.ProxyFacade by inject()
+    private val serviceCache: MMKV by inject(qualifier = named("service_cache"))
+
 
     private lateinit var intentController: IntentController
 
@@ -153,16 +159,17 @@ class MainActivity : ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                kotlinx.coroutines.delay(com.github.yumelira.yumebox.common.AppConstants.Timing.AUTO_START_DELAY_MS)
-                com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper.checkAndAutoStart(
-                    proxyConnectionService = proxyConnectionService,
+                delay(AppConstants.Timing.AUTO_START_DELAY_MS)
+                ProxyAutoStartHelper.checkAndAutoStart(
+                    proxyFacade = proxyFacade,
+                    profilesRepository = profilesRepository,
                     appSettingsStorage = appSettingsStorage,
                     networkSettingsStorage = networkSettingsStorage,
-                    profilesStore = profilesStore,
-                    clashManager = clashManager,
+                    serviceCache = serviceCache,
                     isBootCompleted = false
                 )
             }
+
         }
     }
 
@@ -299,7 +306,11 @@ fun MainScreen(
             ) { page ->
                 when (page) {
                     0 -> HomePager(innerPadding)
-                    1 -> ProxyPager(innerPadding, navigator)
+                    1 -> ProxyPager(
+                        innerPadding,
+                        navigator,
+                        isActive = page == pagerState.currentPage
+                    )
                     2 -> ProfilesPager(innerPadding)
                     3 -> SettingPager(innerPadding)
                 }

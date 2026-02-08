@@ -14,14 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025.ff
  *
  */
 
 package com.github.yumelira.yumebox
 
 import android.app.Application
-import com.github.yumelira.yumebox.clash.cleanupOrphanedConfigs
 import com.github.yumelira.yumebox.common.native.NativeLibraryManager.initialize
 import com.github.yumelira.yumebox.common.util.AppUtil
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
@@ -30,13 +29,11 @@ import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.FeatureStore
-import com.github.yumelira.yumebox.data.store.ProfilesStore
 import com.github.yumelira.yumebox.di.appModule
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
@@ -61,6 +58,7 @@ class App : Application() {
 
         Global.init(this)
         MMKV.initialize(this)
+        initialize(this)
 
         val koinApp = startKoin {
             androidContext(this@App)
@@ -77,28 +75,14 @@ class App : Application() {
             featureStore.markFirstOpenHandled()
         }
 
-        initialize(this)
-
         // 恢复保存的自定义 User-Agent
         val appSettings: AppSettingsStorage = koinApp.koin.get()
         val savedUserAgent = appSettings.customUserAgent.value
-        if (savedUserAgent.isNotEmpty()) {
+        if (savedUserAgent.isNotBlank()) {
             Clash.setCustomUserAgent(savedUserAgent)
         }
 
         PlatformIdentifier.getPlatformIdentifier()
-
-        // 清理孤儿配置
-        applicationScope.launch {
-            try {
-                val profilesStore: ProfilesStore = koinApp.koin.get()
-                val profiles = profilesStore.getAllProfiles()
-                val clashWorkDir = File(filesDir, "clash")
-                cleanupOrphanedConfigs(clashWorkDir, profiles)
-            } catch (e: Exception) {
-                Timber.e(e, "清理孤儿配置失败")
-            }
-        }
     }
 
     private fun extractGeoFiles() {

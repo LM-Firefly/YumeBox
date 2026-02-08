@@ -46,8 +46,6 @@ class OverrideViewModel(
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _hasChanges = MutableStateFlow(false)
-
     init {
         loadConfiguration()
     }
@@ -70,7 +68,6 @@ class OverrideViewModel(
             val result = overrideRepository.clearPersist()
             result.onSuccess {
                 _configuration.value = ConfigurationOverride()
-                _hasChanges.value = false
             }.onFailure { e ->
                 Timber.tag(TAG).e(e, "重置覆写配置失败")
             }
@@ -365,16 +362,12 @@ class OverrideViewModel(
 
 
     private fun updateConfig(transform: (ConfigurationOverride) -> ConfigurationOverride) {
-        _configuration.value = transform(_configuration.value)
-        _hasChanges.value = true
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        if (_hasChanges.value) {
-            val result = overrideRepository.savePersist(_configuration.value)
+        val updated = transform(_configuration.value)
+        _configuration.value = updated
+        viewModelScope.launch {
+            val result = overrideRepository.savePersist(updated)
             result.onFailure { e ->
-                Timber.tag(TAG).e(e, "自动保存配置失败")
+                Timber.tag(TAG).e(e, "保存覆写配置失败")
             }
         }
     }

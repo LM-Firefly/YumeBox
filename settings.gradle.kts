@@ -1,4 +1,5 @@
 @file:Suppress("UnstableApiUsage")
+
 rootProject.name = "YumeBox"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
@@ -11,11 +12,13 @@ pluginManagement {
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/bootstrap")
         maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
+
         maven("https://jitpack.io")
         maven("https://oom-maven.sawahara.host") {
             content {
-                includeGroupByRegex("ren\\.shiror.*")
-                includeGroupByRegex("dev\\.oom-wg.*")
+                includeGroupAndSubgroups("ren.shiror")
+                includeGroupAndSubgroups("work.niggergo")
+                includeGroupAndSubgroups("dev.oom-wg")
             }
         }
         gradlePluginPortal()
@@ -32,10 +35,12 @@ dependencyResolutionManagement {
         maven("https://raw.githubusercontent.com/MetaCubeX/maven-backup/main/releases")
         maven("https://oom-maven.sawahara.host") {
             content {
-                includeGroupByRegex("ren\\.shiror.*")
-                includeGroupByRegex("dev\\.oom-wg.*")
+                includeGroupAndSubgroups("ren.shiror")
+                includeGroupAndSubgroups("work.niggergo")
+                includeGroupAndSubgroups("dev.oom-wg")
             }
         }
+        maven("https://maven.kr328.app/releases") // KAIDL 官方仓库
     }
 
     versionCatalogs {
@@ -74,6 +79,9 @@ gropify {
     projects(":core", ":extension") {
         android { isEnabled = false }
     }
+    projects(":hideapi") {
+        android { isEnabled = false }
+    }
 }
 
-include(":core", ":extension", ":app")
+include(":core", ":extension", ":hideapi", ":app")

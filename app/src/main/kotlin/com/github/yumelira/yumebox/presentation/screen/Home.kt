@@ -61,10 +61,10 @@ fun HomePager(mainInnerPadding: PaddingValues) {
     val isToggling by homeViewModel.isToggling.collectAsState()
     val trafficNow by homeViewModel.trafficNow.collectAsState()
     val profiles by homeViewModel.profiles.collectAsState()
+    val profilesLoaded by homeViewModel.profilesLoaded.collectAsState()
     val ipMonitoringState by homeViewModel.ipMonitoringState.collectAsState()
     val recommendedProfile by homeViewModel.recommendedProfile.collectAsState()
     val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsState(initial = false)
-    val tunnelState by homeViewModel.tunnelState.collectAsState()
     val currentProfile by homeViewModel.currentProfile.collectAsState()
     val oneWord by homeViewModel.oneWord.collectAsState()
     val oneWordAuthor by homeViewModel.oneWordAuthor.collectAsState()
@@ -125,9 +125,9 @@ fun HomePager(mainInnerPadding: PaddingValues) {
                                 )
 
                                 HomeDisplayState.Running -> HomeRunningContent(
-                                    trafficNow = trafficNow,
+                                    trafficNow = com.github.yumelira.yumebox.domain.model.TrafficData.from(trafficNow),
                                     profileName = currentProfile?.name,
-                                    tunnelMode = tunnelState?.mode,
+                                    tunnelMode = null,
                                     serverName = selectedServerName,
                                     serverPing = selectedServerPing,
                                     ipMonitoringState = ipMonitoringState,
@@ -148,17 +148,18 @@ fun HomePager(mainInnerPadding: PaddingValues) {
 
             ProxyControlButton(
                 isRunning = displayRunning,
-                isEnabled = profiles.isNotEmpty() && hasEnabledProfile && !isToggling,
+                isEnabled = profilesLoaded && profiles.isNotEmpty() && hasEnabledProfile && !isToggling,
                 hasEnabledProfile = hasEnabledProfile,
-                hasProfiles = profiles.isNotEmpty(),
+                hasProfiles = profilesLoaded && profiles.isNotEmpty(),
+                profilesLoaded = profilesLoaded,
                 onClick = {
                     handleProxyToggle(
                         isRunning = displayRunning,
                         recommendedProfile = recommendedProfile,
                         onStart = { profile ->
-                            pendingProfileId = profile.id
+                            pendingProfileId = profile.uuid.toString()
                             coroutineScope.launch {
-                                homeViewModel.startProxy(profileId = profile.id)
+                                homeViewModel.startProxy(profileId = profile.uuid.toString(), useTunMode = true)
                             }
                         },
                         onStop = {
@@ -213,8 +214,8 @@ private fun AnimatedContentTransitionScope<HomeDisplayState>.createHomeTransitio
 
 private fun handleProxyToggle(
     isRunning: Boolean,
-    recommendedProfile: com.github.yumelira.yumebox.data.model.Profile?,
-    onStart: (com.github.yumelira.yumebox.data.model.Profile) -> Unit,
+    recommendedProfile: com.github.yumelira.yumebox.service.data.model.Profile?,
+    onStart: (com.github.yumelira.yumebox.service.data.model.Profile) -> Unit,
     onStop: () -> Unit
 ) {
     if (!isRunning) {

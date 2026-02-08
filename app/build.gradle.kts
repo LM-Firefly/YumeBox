@@ -210,6 +210,7 @@ dependencies {
 
     // Project dependencies
     implementation(project(":core"))
+    implementation(project(":hideapi"))
 
     // Compose dependencies (using Jetpack Compose BOM for version management)
     val composeBom = platform("androidx.compose:compose-bom:2025.01.00")
@@ -222,8 +223,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Additional Compose libraries
-    implementation("top.yukonga.miuix.kmp:miuix:0.8.0-rc06")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0-rc06")
+    implementation("top.yukonga.miuix.kmp:miuix:0.8.0")
+    implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0")
     implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
 
     // Storage
@@ -233,40 +234,43 @@ dependencies {
     implementation("io.insert-koin:koin-core:4.1.1")
     implementation("io.insert-koin:koin-android:4.1.1")
     implementation("io.insert-koin:koin-androidx-compose:4.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:2.3.0")
     ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
 
     // Network
+    val ktorVersion = "3.4.0"
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
-    implementation("io.ktor:ktor-client-core:3.3.3")
-    implementation("io.ktor:ktor-client-android:3.3.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.3.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.3")
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-android:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
 
     // Utilities
     implementation("com.jakewharton.timber:timber:5.0.1")
-    implementation("com.caoccao.javet:javet-node-android:5.0.3")
+    implementation("com.caoccao.javet:javet-node-android:5.0.4")
     implementation("com.highcapable.pangutext:pangutext-android:1.0.5")
     implementation("org.apache.commons:commons-compress:1.28.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-crashlytics-ndk")
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.microsoft.clarity:clarity-compose:3.+")
+    implementation("com.microsoft.clarity:clarity-compose:3.8.1")
 
     // ML Kit
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // Camera
-    implementation("androidx.camera:camera-camera2:1.5.2")
-    implementation("androidx.camera:camera-lifecycle:1.5.2")
-    implementation("androidx.camera:camera-view:1.5.2")
-    implementation("androidx.camera:camera-core:1.5.2")
-    implementation("androidx.camera:camera-video:1.5.2")
+    val cameraVersion = "1.5.3"
+    implementation("androidx.camera:camera-camera2:$cameraVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraVersion")
+    implementation("androidx.camera:camera-view:$cameraVersion")
+    implementation("androidx.camera:camera-core:$cameraVersion")
+    implementation("androidx.camera:camera-video:$cameraVersion")
 
     // Image Loading
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
