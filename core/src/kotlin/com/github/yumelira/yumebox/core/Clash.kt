@@ -206,6 +206,7 @@ object Clash {
         )
     }
 
+
     fun clearOverride(slot: OverrideSlot) {
         Bridge.nativeClearOverride(slot.ordinal)
     }

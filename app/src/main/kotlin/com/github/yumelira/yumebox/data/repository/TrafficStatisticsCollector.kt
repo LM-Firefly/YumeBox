@@ -20,13 +20,13 @@
 
 package com.github.yumelira.yumebox.data.repository
 
-import com.github.yumelira.yumebox.clash.manager.ClashManager
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
 import kotlinx.coroutines.*
 import timber.log.Timber
 
 class TrafficStatisticsCollector(
-    private val clashManager: ClashManager,
+    private val proxyFacade: ProxyFacade,
     private val trafficStatisticsStore: TrafficStatisticsStore,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) {
@@ -47,7 +47,7 @@ class TrafficStatisticsCollector(
     private fun startCollection() {
         collectionJob?.cancel()
         collectionJob = scope.launch {
-            clashManager.isRunning.collect { isRunning ->
+            proxyFacade.isRunning.collect { isRunning ->
                 if (isRunning) {
                     startTrafficMonitoring()
                 } else {
@@ -63,7 +63,7 @@ class TrafficStatisticsCollector(
             lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
             lastProfileId = trafficStatisticsStore.getLastProfileId()
 
-            while (isActive && clashManager.isRunning.value) {
+            while (isActive && proxyFacade.isRunning.value) {
                 runCatching {
                     collectTrafficData()
                     delay(COLLECTION_INTERVAL_MS)
@@ -77,11 +77,12 @@ class TrafficStatisticsCollector(
     }
 
     private fun collectTrafficData() {
-        val trafficTotal = clashManager.trafficTotal.value
-        val currentUpload = trafficTotal.upload
-        val currentDownload = trafficTotal.download
-        val currentProfile = clashManager.currentProfile.value
-        val currentProfileId = currentProfile?.id
+        val trafficValue = proxyFacade.trafficTotal.value
+        val trafficData = com.github.yumelira.yumebox.domain.model.TrafficData.from(trafficValue)
+        val currentUpload = trafficData.upload
+        val currentDownload = trafficData.download
+        val currentProfile = proxyFacade.currentProfile.value
+        val currentProfileId = currentProfile?.uuid?.toString()
         val currentProfileName = currentProfile?.name
 
         if (lastTotalUpload == 0L && lastTotalDownload == 0L) {

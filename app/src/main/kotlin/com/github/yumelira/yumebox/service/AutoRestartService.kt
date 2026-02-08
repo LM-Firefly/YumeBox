@@ -10,15 +10,16 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import com.github.yumelira.yumebox.clash.manager.ClashManager
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
-import com.github.yumelira.yumebox.data.repository.ProxyConnectionService
 import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
-import com.github.yumelira.yumebox.data.store.ProfilesStore
+import com.github.yumelira.yumebox.domain.facade.ProfilesRepository
+import com.github.yumelira.yumebox.domain.facade.ProxyFacade
+import com.tencent.mmkv.MMKV
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import org.koin.android.ext.android.inject
+import org.koin.core.qualifier.named
 import timber.log.Timber
 
 class AutoRestartService : Service() {
@@ -26,14 +27,14 @@ class AutoRestartService : Service() {
     companion object {
         private const val TAG = "AutoRestartService"
         private const val NOTIFICATION_ID = 1101
-        private const val CHANNEL_ID = "auto_restart_channel"
+    private const val CHANNEL_ID = "auto_restart_channel"
     }
 
     private val appSettingsStorage: AppSettingsStorage by inject()
     private val networkSettingsStorage: NetworkSettingsStorage by inject()
-    private val profilesStore: ProfilesStore by inject()
-    private val clashManager: ClashManager by inject()
-    private val proxyConnectionService: ProxyConnectionService by inject()
+    private val profilesRepository: ProfilesRepository by inject()
+    private val proxyFacade: ProxyFacade by inject()
+    private val serviceCache: MMKV by inject(qualifier = named("service_cache"))
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -57,11 +58,11 @@ class AutoRestartService : Service() {
         serviceScope.launch {
             runCatching {
                 ProxyAutoStartHelper.checkAndAutoStart(
-                    proxyConnectionService = proxyConnectionService,
+                    proxyFacade = proxyFacade,
+                    profilesRepository = profilesRepository,
                     appSettingsStorage = appSettingsStorage,
                     networkSettingsStorage = networkSettingsStorage,
-                    profilesStore = profilesStore,
-                    clashManager = clashManager,
+                    serviceCache = serviceCache,
                     isBootCompleted = true
                 )
             }.onFailure { e ->

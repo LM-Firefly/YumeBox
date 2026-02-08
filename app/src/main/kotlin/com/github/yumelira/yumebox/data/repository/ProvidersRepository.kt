@@ -4,15 +4,17 @@ import android.content.Context
 import android.net.Uri
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.remote.ServiceClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class ProvidersRepository {
+class ProvidersRepository(private val context: Context) {
 
     suspend fun queryProviders(): Result<List<Provider>> {
         return try {
-            Result.success(Clash.queryProviders())
+            ServiceClient.connect(context)
+            Result.success(ServiceClient.clash().queryProviders())
         } catch (e: Exception) {
             Result.failure(e)
         }

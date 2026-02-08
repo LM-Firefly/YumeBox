@@ -62,6 +62,17 @@ class SelectionDao(context: Context) {
         }
     }
 
+    fun removeSelections(profileId: String, proxyGroups: Collection<String>) {
+        if (proxyGroups.isEmpty()) return
+        runCatching {
+            prefs.edit {
+                proxyGroups.forEach { group ->
+                    remove(makeKey(profileId, group))
+                }
+            }
+        }
+    }
+
     private fun makeKey(profileId: String, proxyGroup: String): String {
         return "${KEY_PREFIX}${profileId}_$proxyGroup"
     }
