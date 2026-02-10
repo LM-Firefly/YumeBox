@@ -1,4 +1,4 @@
-package com.github.yumelira.yumebox.service.model
+package com.github.yumelira.yumebox.service.runtime.config
 
 enum class AccessControlMode {
     AcceptAll,

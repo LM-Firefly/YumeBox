@@ -40,14 +40,14 @@ class ConfigProvider(private val project: Project) {
         return externalProperties.getProperty(key)?.takeIf { it.isNotBlank() }
     }
 
-    private fun fromGropify(key: String): String? {
-        return try {
-            val ext = project.extensions.findByName("gropify") ?: return null
-            val m = ext.javaClass.methods.firstOrNull { it.name == "getPropertyValue" } ?: return null
-            (m.invoke(ext, key) as? String)?.takeIf { it.isNotBlank() }
-        } catch (_: Exception) {
-            null
+    private fun invokeMethod(target: Any, name: String, vararg args: Any?): Any? =
+        target.javaClass.methods.firstOrNull { it.name == name }?.let { method ->
+            runCatching { method.invoke(target, *args) }.getOrNull()
         }
+
+    private fun fromGropify(key: String): String? {
+        val ext = project.extensions.findByName("gropify") ?: return null
+        return (invokeMethod(ext, "getPropertyValue", key) as? String)?.takeIf { it.isNotBlank() }
     }
 
     private fun fromGradleProperties(key: String): String? {
@@ -55,18 +55,11 @@ class ConfigProvider(private val project: Project) {
     }
 
     private fun fromCatalog(key: String): String? {
-        return try {
-            val libsClass = catalog?.javaClass ?: return null
-            val findVersion = libsClass.methods.firstOrNull { it.name == "findVersion" } ?: return null
-            val versionObj = findVersion.invoke(catalog, key) ?: return null
-            val reqVersion =
-                versionObj.javaClass.methods.firstOrNull { it.name == "get" }?.invoke(versionObj) ?: return null
-            val requiredVersion = reqVersion.javaClass.methods.firstOrNull { it.name == "getRequiredVersion" }
-                ?.invoke(reqVersion) as? String
-            requiredVersion?.takeIf { it.isNotBlank() }
-        } catch (_: Exception) {
-            null
-        }
+        val libs = catalog ?: return null
+        val versionObj = invokeMethod(libs, "findVersion", key) ?: return null
+        val reqVersion = invokeMethod(versionObj, "get") ?: return null
+        val requiredVersion = invokeMethod(reqVersion, "getRequiredVersion") as? String
+        return requiredVersion?.takeIf { it.isNotBlank() }
     }
 
     fun getString(key: String, fallback: String): String {
@@ -88,11 +81,9 @@ class ConfigProvider(private val project: Project) {
 
 fun Project.gropifyString(path: String, fallback: String): String {
     val ext = extensions.findByName("gropify") ?: return fallback
-    return try {
-        val method = ext.javaClass.methods.firstOrNull { it.name == "getPropertyValue" }
-        val value = method?.invoke(ext, path) as? String
-        if (value.isNullOrBlank()) fallback else value
-    } catch (_: Exception) {
-        fallback
-    }
+    val method = ext.javaClass.methods.firstOrNull { it.name == "getPropertyValue" } ?: return fallback
+    val value = runCatching {
+        method.invoke(ext, path) as? String
+    }.getOrNull()
+    return if (value.isNullOrBlank()) fallback else value
 }

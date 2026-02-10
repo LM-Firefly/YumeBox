@@ -20,20 +20,11 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.component.Card
@@ -48,6 +39,7 @@ import com.ramcosta.composedestinations.generated.destinations.LogDetailScreenDe
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -74,9 +66,9 @@ fun LogScreen(navigator: DestinationsNavigator) {
     val logFiles by viewModel.logFiles.collectAsState()
 
     LaunchedEffect(Unit) {
-        while (true) {
-            delay(1000)
+        while (isActive) {
             viewModel.refreshLogFiles()
+            delay(1000)
         }
     }
 
@@ -85,17 +77,11 @@ fun LogScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.Log.Title,
                 scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    NavigationBackIcon(navigator = navigator)
-                },
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     IconButton(
                         onClick = {
-                            if (isRecording) {
-                                viewModel.stopRecording()
-                            } else {
-                                viewModel.startRecording()
-                            }
+                            if (isRecording) viewModel.stopRecording() else viewModel.startRecording()
                         },
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
@@ -105,7 +91,7 @@ fun LogScreen(navigator: DestinationsNavigator) {
                         )
                     }
                     IconButton(
-                        onClick = { viewModel.deleteAllLogs() },
+                        onClick = viewModel::deleteAllLogs,
                         modifier = Modifier.padding(end = 24.dp)
                     ) {
                         Icon(
@@ -120,25 +106,25 @@ fun LogScreen(navigator: DestinationsNavigator) {
         if (logFiles.isEmpty()) {
             CenteredText(
                 firstLine = MLang.Log.Empty.NoLogs,
-                secondLine = MLang.Log.Empty.Hint
+                secondLine = MLang.Log.Empty.Hint,
             )
-        } else {
-            ScreenLazyColumn(
-                scrollBehavior = scrollBehavior,
-                innerPadding = innerPadding,
-                topPadding = 20.dp,
-            ) {
-                item {
-                    Card {
-                        logFiles.forEachIndexed { index, fileInfo ->
-                            LogFileItem(
-                                fileInfo = fileInfo,
-                                index = index,
-                                onClick = {
-                                    navigator.navigate(LogDetailScreenDestination(filePath = fileInfo.file.absolutePath))
-                                }
-                            )
-                        }
+            return@Scaffold
+        }
+
+        ScreenLazyColumn(
+            scrollBehavior = scrollBehavior,
+            innerPadding = innerPadding,
+            topPadding = 20.dp,
+        ) {
+            item {
+                Card {
+                    logFiles.forEach { fileInfo ->
+                        LogFileRow(
+                            fileInfo = fileInfo,
+                            onClick = {
+                                navigator.navigate(LogDetailScreenDestination(fileName = fileInfo.name))
+                            }
+                        )
                     }
                 }
             }
@@ -147,50 +133,27 @@ fun LogScreen(navigator: DestinationsNavigator) {
 }
 
 @Composable
-private fun LogFileItem(
+private fun LogFileRow(
     fileInfo: LogViewModel.LogFileInfo,
-    index: Int = 0,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    val summary = "${dateFormat.format(Date(fileInfo.createdAt))}  ·  ${formatFileSize(fileInfo.size)}"
 
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(index * 50L)
-        visible = true
-    }
-
-    rememberInfiniteTransition(label = "recording_pulse")
-
-    val animatedSize by animateFloatAsState(
-        targetValue = fileInfo.size.toFloat(),
-        animationSpec = tween(300),
-        label = "size_animation"
-    )
-
-    val sizeText = if (fileInfo.isRecording) formatFileSize(animatedSize.toLong()) else formatFileSize(fileInfo.size)
-    val summary = "${dateFormat.format(Date(fileInfo.createdAt))}  ·  $sizeText"
-
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(animationSpec = tween(300)) + slideInVertically(
-            animationSpec = tween(300),
-            initialOffsetY = { -it / 2 }
-        )
-    ) {
-        SuperArrow(
-            title = fileInfo.name, summary = summary, onClick = onClick,
-            startAction = {
-                if (fileInfo.isRecording) {
-                    Text(
-                        MLang.Log.Status.Recording,
-                        modifier = Modifier.padding(end = 16.dp),
-                        style = MiuixTheme.textStyles.body2,
-                    )
-                }
+    SuperArrow(
+        title = fileInfo.name,
+        summary = summary,
+        onClick = onClick,
+        startAction = {
+            if (fileInfo.isRecording) {
+                Text(
+                    text = MLang.Log.Status.Recording,
+                    modifier = Modifier.padding(end = 16.dp),
+                    style = MiuixTheme.textStyles.body2,
+                )
             }
-        )
-    }
+        }
+    )
 }
 
 private fun formatFileSize(size: Long): String {

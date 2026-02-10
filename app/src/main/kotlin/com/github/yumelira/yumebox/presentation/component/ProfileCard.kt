@@ -19,8 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.service.data.model.Profile
-import com.github.yumelira.yumebox.service.data.model.*
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.service.runtime.entity.*
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider

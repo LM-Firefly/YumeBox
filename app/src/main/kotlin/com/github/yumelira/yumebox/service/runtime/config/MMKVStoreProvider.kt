@@ -1,4 +1,4 @@
-package com.github.yumelira.yumebox.service.store
+package com.github.yumelira.yumebox.service.runtime.config
 
 import com.tencent.mmkv.MMKV
 

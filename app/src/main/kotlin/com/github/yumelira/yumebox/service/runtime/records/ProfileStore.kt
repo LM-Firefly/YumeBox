@@ -1,11 +1,11 @@
 @file:UseSerializers(UUIDSerializer::class)
 
-package com.github.yumelira.yumebox.service.data
+package com.github.yumelira.yumebox.service.runtime.records
 
-import com.github.yumelira.yumebox.service.data.model.Imported
-import com.github.yumelira.yumebox.service.data.model.Pending
-import com.github.yumelira.yumebox.service.data.model.Selection
-import com.github.yumelira.yumebox.service.util.UUIDSerializer
+import com.github.yumelira.yumebox.service.runtime.entity.Imported
+import com.github.yumelira.yumebox.service.runtime.entity.Pending
+import com.github.yumelira.yumebox.service.runtime.entity.Selection
+import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
 import com.tencent.mmkv.MMKV
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.builtins.ListSerializer

@@ -61,6 +61,13 @@ val appModule = module {
     single { TrafficStatisticsStore(get(named("traffic_statistics"))) }
 
     // Repositories
+    single { AppSettingsRepository(get()) }
+    single { NetworkSettingsRepository(get()) }
+    single { FeatureSettingsRepository(get()) }
+    single { ProxyDisplaySettingsRepository(get()) }
+    single { ProfileLinksRepository(get()) }
+    single { TrafficStatisticsRepository(get()) }
+    single { LogRepository(androidApplication()) }
     single { NetworkInfoService() }
     single { ProxyChainResolver() }
     single { OverrideRepository(androidContext()) }
@@ -80,7 +87,7 @@ val appModule = module {
     viewModel { AppSettingsViewModel(get()) }
     viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get(), get()) }
     viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
-    viewModel { ProxyViewModel(get(), get(), get(), get()) }
+    viewModel { ProxyViewModel(get(), get(), get()) }
     viewModel { ProvidersViewModel(get(), get()) }
     viewModel { SettingViewModel(get()) }
     viewModel { FeatureViewModel(get(), androidApplication()) }
@@ -88,4 +95,5 @@ val appModule = module {
     viewModel { AccessControlViewModel(androidApplication(), get()) }
     viewModel { OverrideViewModel(get()) }
     viewModel { TrafficStatisticsViewModel(androidApplication(), get()) }
+    viewModel { LogViewModel(get()) }
 }

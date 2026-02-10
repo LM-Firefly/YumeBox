@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.ff
+ * Copyright (c)  YumeLira 2025.
  *
  */
 
@@ -36,6 +36,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import timber.log.Timber
 import java.io.File
+import java.io.IOException
 
 class App : Application() {
 
@@ -50,7 +51,7 @@ class App : Application() {
         super.onCreate()
 
         instance = this
-        if (Timber.forest().isEmpty()) {
+        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
             Timber.plant(Timber.DebugTree())
         }
 
@@ -79,18 +80,25 @@ class App : Application() {
     private fun extractGeoFiles() {
         val clashDir = File(filesDir, "clash").apply { mkdirs() }
         val geoFiles = listOf("geoip.metadb", "geosite.dat", "ASN.mmdb")
+        val failedFiles = mutableListOf<String>()
 
         geoFiles.forEach { filename ->
             val targetFile = File(clashDir, filename)
             if (!targetFile.exists()) {
-                runCatching {
+                try {
                     assets.open(filename).use { input ->
                         targetFile.outputStream().use { output ->
                             input.copyTo(output)
                         }
                     }
+                } catch (_: IOException) {
+                    failedFiles += filename
                 }
             }
+        }
+
+        if (failedFiles.isNotEmpty()) {
+            Timber.w("Failed to extract geo files: ${failedFiles.joinToString()}")
         }
     }
 }
