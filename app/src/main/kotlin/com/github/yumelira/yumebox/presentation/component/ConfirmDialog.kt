@@ -52,19 +52,13 @@ fun ConfirmDialog(
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = onDismiss,
     ) {
-        Column {
-            Text(
-                text = message,
-                style = MiuixTheme.textStyles.body1,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            DialogButtonRow(
-                onCancel = onDismiss,
-                onConfirm = onConfirm,
-                cancelText = cancelText,
-                confirmText = confirmText,
-            )
-        }
+        ConfirmDialogContent(
+            message = message,
+            onCancel = onDismiss,
+            onConfirm = onConfirm,
+            cancelText = cancelText,
+            confirmText = confirmText,
+        )
     }
 }
 
@@ -77,21 +71,51 @@ fun ConfirmDialogSimple(
     cancelText: String = MLang.Component.Button.Cancel,
     confirmText: String = MLang.Component.Button.Confirm,
 ) {
+    val show = remember { mutableStateOf(true) }
     WindowBottomSheet(
-        show = remember { mutableStateOf(true) },
+        show = show,
         title = title,
         insideMargin = DpSize(32.dp, 16.dp),
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            show.value = false
+            onDismiss()
+        },
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = message, style = MiuixTheme.textStyles.body1)
-            Spacer(modifier = Modifier.height(16.dp))
-            DialogButtonRow(
-                onCancel = onDismiss,
-                onConfirm = onConfirm,
-                cancelText = cancelText,
-                confirmText = confirmText,
-            )
-        }
+        ConfirmDialogContent(
+            message = message,
+            onCancel = {
+                show.value = false
+                onDismiss()
+            },
+            onConfirm = {
+                show.value = false
+                onConfirm()
+            },
+            cancelText = cancelText,
+            confirmText = confirmText,
+        )
+    }
+}
+
+@Composable
+private fun ConfirmDialogContent(
+    message: String,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit,
+    cancelText: String,
+    confirmText: String,
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(
+            text = message,
+            style = MiuixTheme.textStyles.body1,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        DialogButtonRow(
+            onCancel = onCancel,
+            onConfirm = onConfirm,
+            cancelText = cancelText,
+            confirmText = confirmText,
+        )
     }
 }

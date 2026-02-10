@@ -329,9 +329,6 @@ private fun ProxyGroupSelectorContent(
     }
 
     val contentPadding = remember { PaddingValues(top = 12.dp, bottom = 16.dp) }
-    val onProxyCardClick: (Proxy) -> Unit = remember(onProxyClick) {
-        { proxy -> onProxyClick(proxy.name) }
-    }
 
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val (minSheetHeight, maxSheetHeight) = remember(screenHeightDp) {
@@ -365,9 +362,10 @@ private fun ProxyGroupSelectorContent(
                 proxies = group.proxies,
                 selectedProxyName = group.now,
                 displayMode = displayMode,
-                onProxyClick = onProxyCardClick,
+                onProxyClick = onProxyClick,
                 isDelayTesting = isDelayTesting,
                 onDelayTestClick = onTestDelay,
+                listStateKey = groupName,
                 contentPadding = contentPadding,
                 modifier = Modifier.fillMaxSize(),
             )
