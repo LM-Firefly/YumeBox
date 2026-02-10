@@ -10,6 +10,7 @@ import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import java.util.*
@@ -57,11 +58,22 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
                 Clash.load(service.importedDir.resolve(active.uuid.toString())).await()
 
-                val remove = SelectionDao.querySelections(active.uuid)
-                    .filterNot { Clash.patchSelector(it.proxy, it.selected) }
-                    .map { it.proxy }
-
-                SelectionDao.removeSelections(active.uuid, remove)
+                SelectionDao.querySelections(active.uuid).forEach { selection ->
+                    var restored = false
+                    repeat(3) { attempt ->
+                        if (restored) return@repeat
+                        if (Clash.patchSelector(selection.proxy, selection.selected)) {
+                            restored = true
+                            return@repeat
+                        }
+                        if (attempt < 2) {
+                            delay(150)
+                        }
+                    }
+                    if (!restored) {
+                        Log.w("Restore selector failed: group=${selection.proxy}, selected=${selection.selected}")
+                    }
+                }
 
                 StatusProvider.currentProfile = active.name
 

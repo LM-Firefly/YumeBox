@@ -15,11 +15,22 @@ import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.github.yumelira.yumebox.service.runtime.util.sendOverrideChanged
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
+import java.util.concurrent.ConcurrentHashMap
 
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
+    private data class ExternalSelectionCandidate(
+        val node: String,
+        val firstSeenAt: Long,
+    )
+
+    private companion object {
+        const val EXTERNAL_SELECTION_CONFIRM_MS = 1200L
+    }
+
     private val store = ServiceStore()
     private var logReceiver: ReceiveChannel<LogMessage>? = null
+    private val externalCandidates = ConcurrentHashMap<String, ExternalSelectionCandidate>()
 
     override fun queryTunnelState(): TunnelState {
         return Clash.queryTunnelState()
@@ -38,7 +49,9 @@ class ClashManager(private val context: Context) : IClashManager,
     }
 
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
-        return Clash.queryGroup(name, proxySort)
+        return Clash.queryGroup(name, proxySort).also { group ->
+            syncSelectionSnapshotSafely(name, group)
+        }
     }
 
     override fun queryConfiguration(): UiConfiguration {
@@ -59,8 +72,10 @@ class ClashManager(private val context: Context) : IClashManager,
 
             if (it) {
                 SelectionDao.setSelected(Selection(current, group, name))
+                externalCandidates.remove(selectionKey(current.toString(), group))
             } else {
                 SelectionDao.remove(current, group)
+                externalCandidates.remove(selectionKey(current.toString(), group))
             }
         }
     }
@@ -99,6 +114,54 @@ class ClashManager(private val context: Context) : IClashManager,
 
     override suspend fun updateProvider(type: Provider.Type, name: String) {
         return Clash.updateProvider(type, name).await()
+    }
+
+    private fun syncSelectionSnapshotSafely(group: String, proxyGroup: ProxyGroup) {
+        val current = store.activeProfile ?: return
+        val profileId = current.toString()
+        val key = selectionKey(profileId, group)
+        val node = proxyGroup.now.trim()
+        val fallbackNode = proxyGroup.proxies.firstOrNull()?.name?.trim().orEmpty()
+        val now = System.currentTimeMillis()
+        if (node.isEmpty()) return
+
+        val remembered = queryRememberedSelection(current, group)
+        if (remembered == null) {
+            SelectionDao.setSelected(Selection(current, group, node))
+            externalCandidates.remove(key)
+            return
+        }
+        if (remembered == node) {
+            externalCandidates.remove(key)
+            return
+        }
+        if (fallbackNode.isNotEmpty() && node == fallbackNode) {
+            // Prevent startup/default fallback from overwriting remembered node.
+            return
+        }
+
+        val candidate = externalCandidates[key]
+        if (candidate == null || candidate.node != node) {
+            externalCandidates[key] = ExternalSelectionCandidate(node = node, firstSeenAt = now)
+            return
+        }
+        if (now - candidate.firstSeenAt < EXTERNAL_SELECTION_CONFIRM_MS) {
+            return
+        }
+        SelectionDao.setSelected(Selection(current, group, node))
+        externalCandidates.remove(key)
+    }
+
+    private fun selectionKey(profileId: String, group: String): String {
+        return "$profileId::$group"
+    }
+
+    private fun queryRememberedSelection(profileId: java.util.UUID, group: String): String? {
+        return SelectionDao.querySelections(profileId)
+            .firstOrNull { it.proxy == group }
+            ?.selected
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
     }
 
     override fun setLogObserver(observer: ILogObserver?) {

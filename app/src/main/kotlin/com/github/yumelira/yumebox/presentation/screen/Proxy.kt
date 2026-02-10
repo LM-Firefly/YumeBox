@@ -103,9 +103,7 @@ fun ProxyPager(
     }
 
     LaunchedEffect(isActive) {
-        if (isActive) {
-            proxyViewModel.ensureCoreLoaded()
-        }
+        proxyViewModel.ensureCoreLoaded(isActive)
     }
 
     Scaffold(
