@@ -11,6 +11,7 @@ import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.Job
@@ -21,6 +22,10 @@ class ProxyViewModel(
     private val proxyFacade: ProxyFacade,
     private val proxyDisplaySettingsRepository: ProxyDisplaySettingsRepository,
 ) : ViewModel() {
+    private companion object {
+        const val PROXY_REFRESH_IDLE_MS = 1500L
+        const val PROXY_REFRESH_TESTING_MS = 400L
+    }
 
     private val _uiState = MutableStateFlow(ProxyUiState())
     val uiState: StateFlow<ProxyUiState> = _uiState.asStateFlow()
@@ -97,20 +102,25 @@ class ProxyViewModel(
         viewModelScope.launch {
             setLoading(true)
             clearError()
-            if (groupName != null) {
-                _testingGroupNames.update { it + groupName }
+            val currentGroups = proxyGroups.value
+            val testingTargets: Set<String> = if (groupName != null) {
+                setOf(groupName)
+            } else {
+                currentGroups.mapTo(linkedSetOf()) { it.name }
+            }
+            if (testingTargets.isNotEmpty()) {
+                _testingGroupNames.update { it + testingTargets }
             }
 
             val result = runCatching {
                 if (groupName != null) {
                     showMessage(MLang.Proxy.Testing.Group.format(groupName))
-                    proxyFacade.healthCheck(groupName, refreshAfter = true)
+                    proxyFacade.healthCheck(groupName, refreshAfter = false)
                     showMessage(MLang.Proxy.Testing.RequestSent)
                 } else {
                     showMessage(MLang.Proxy.Testing.All)
-                    val groups = proxyGroups.value
                     var firstError: Throwable? = null
-                    groups.forEach { group ->
+                    currentGroups.forEach { group ->
                         runCatching {
                             proxyFacade.healthCheck(group.name, refreshAfter = false)
                         }.onFailure { error ->
@@ -119,16 +129,12 @@ class ProxyViewModel(
                             }
                         }
                     }
-                    repeat(4) {
-                        delay(600)
-                        proxyFacade.refreshProxyGroups()
-                    }
                     firstError?.let { throw it }
                 }
             }
 
-            if (groupName != null) {
-                _testingGroupNames.update { it - groupName }
+            if (testingTargets.isNotEmpty()) {
+                _testingGroupNames.update { it - testingTargets }
             }
             setLoading(false)
 
@@ -187,8 +193,16 @@ class ProxyViewModel(
         if (externalSelectionSyncJob?.isActive == true) return
         externalSelectionSyncJob = viewModelScope.launch {
             while (true) {
-                proxyFacade.refreshProxyGroups()
-                delay(1500)
+                runCatching { proxyFacade.refreshProxyGroups() }
+                    .onFailure { error ->
+                        if (error is CancellationException) throw error
+                    }
+                val delayMillis = if (_testingGroupNames.value.isNotEmpty()) {
+                    PROXY_REFRESH_TESTING_MS
+                } else {
+                    PROXY_REFRESH_IDLE_MS
+                }
+                delay(delayMillis)
             }
         }
     }
