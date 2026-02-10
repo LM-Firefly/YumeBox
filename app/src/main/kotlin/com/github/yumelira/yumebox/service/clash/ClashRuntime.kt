@@ -15,7 +15,7 @@ interface ClashRuntimeScope {
 
 interface ClashRuntime {
     fun launch()
-    fun requestGc()
+    fun requestGc(force: Boolean = false)
 }
 
 fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): ClashRuntime {
@@ -50,6 +50,7 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
                         withContext(NonCancellable) {
                             Clash.reset()
                             Clash.clearOverride(Clash.OverrideSlot.Session)
+                            Clash.forceGc()
 
                             Log.d("ClashRuntime: destroyed")
                         }
@@ -58,8 +59,10 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
             }
         }
 
-        override fun requestGc() {
-            Clash.forceGc()
+        override fun requestGc(force: Boolean) {
+            launch(Dispatchers.Default) {
+                Clash.forceGc()
+            }
         }
     }
 }

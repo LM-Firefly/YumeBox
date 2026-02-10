@@ -24,10 +24,8 @@ import android.app.Application
 import com.github.yumelira.yumebox.common.native.NativeLibraryManager.initialize
 import com.github.yumelira.yumebox.common.util.AppUtil
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
-import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.data.repository.TrafficStatisticsCollector
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
 import com.tencent.mmkv.MMKV
@@ -73,13 +71,6 @@ class App : Application() {
         if (featureStore.isFirstTimeOpen()) {
             AppUtil.initFirstOpen()
             featureStore.markFirstOpenHandled()
-        }
-
-        // 恢复保存的自定义 User-Agent
-        val appSettings: AppSettingsStorage = koinApp.koin.get()
-        val savedUserAgent = appSettings.customUserAgent.value
-        if (savedUserAgent.isNotBlank()) {
-            Clash.setCustomUserAgent(savedUserAgent)
         }
 
         PlatformIdentifier.getPlatformIdentifier()
