@@ -1,4 +1,4 @@
-package com.github.yumelira.yumebox.service.util
+package com.github.yumelira.yumebox.service.runtime.util
 
 import android.os.Binder
 import android.os.Parcel

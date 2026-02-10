@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.data.model
+package com.github.yumelira.yumebox.service.runtime.entity
 
 import com.github.yumelira.yumebox.common.util.ByteFormatter
 import dev.oom_wg.purejoy.mlang.MLang

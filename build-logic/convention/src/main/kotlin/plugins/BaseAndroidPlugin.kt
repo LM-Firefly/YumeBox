@@ -6,6 +6,7 @@ import core.ConfigProvider
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
+import java.util.Properties
 
 class BaseAndroidPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -40,49 +41,54 @@ class BaseAndroidPlugin : Plugin<Project> {
 
             val signingFile = project.rootProject.file("signing.properties")
             if (signingFile.exists()) {
-                try {
-                    val props = java.util.Properties().apply { load(signingFile.inputStream()) }
-                    val storePath = props.getProperty("storeFile")
-                        ?: props.getProperty("signing.store.path")
-                        ?: props.getProperty("keystore.path")
-                    val storePassword = props.getProperty("storePassword")
-                        ?: props.getProperty("signing.store.password")
-                        ?: props.getProperty("keystore.password")
-                    val keyAlias = props.getProperty("keyAlias")
-                        ?: props.getProperty("signing.key.alias")
-                        ?: props.getProperty("key.alias")
-                    val keyPassword = props.getProperty("keyPassword")
-                        ?: props.getProperty("signing.key.password")
-                        ?: props.getProperty("key.password")
-                    if (!storePath.isNullOrBlank() && !storePassword.isNullOrBlank() && !keyAlias.isNullOrBlank() && !keyPassword.isNullOrBlank()) {
-                        val ks = project.rootProject.file(storePath)
-                        if (!ks.exists()) {
-                            project.logger.warn("[signing] Keystore path not found: ${ks.absolutePath}")
-                        } else {
-                            signingConfigs {
-                                val releaseCfg = signingConfigs.findByName("release") ?: create("release") {
-                                    storeFile = ks
-                                    this.storePassword = storePassword
-                                    this.keyAlias = keyAlias
-                                    this.keyPassword = keyPassword
-                                }
-                                project.logger.lifecycle("[signing] Using keystore '${releaseCfg.storeFile?.name}' for release signing")
-                            }
-                            buildTypes.configureEach {
-                                if (name == "release") {
-                                    signingConfig = signingConfigs.getByName("release")
-                                    project.logger.lifecycle("[signing] Applied signing to buildType 'release' in project ${project.path}")
-                                }
-                            }
-                        }
-                    } else {
-                        project.logger.warn("[signing] Incomplete signing.properties (storePath=$storePath, storePassword=$storePassword, keyAlias=$keyAlias, keyPassword=$keyPassword)")
-                    }
-                } catch (e: Exception) {
-                    project.logger.warn("[signing] Failed to load signing.properties: ${e.message}")
+                val props = Properties()
+                val loadResult = runCatching {
+                    signingFile.inputStream().use(props::load)
                 }
-            } else {
-                project.logger.lifecycle("[signing] signing.properties not found; release builds will be unsigned.")
+                if (loadResult.isFailure) {
+                    project.logger.warn("[signing] Failed to load signing.properties: ${loadResult.exceptionOrNull()?.message}")
+                    return@configure
+                }
+
+                val storePath = props.getProperty("storeFile")
+                    ?: props.getProperty("signing.store.path")
+                    ?: props.getProperty("keystore.path")
+                val storePassword = props.getProperty("storePassword")
+                    ?: props.getProperty("signing.store.password")
+                    ?: props.getProperty("keystore.password")
+                val keyAlias = props.getProperty("keyAlias")
+                    ?: props.getProperty("signing.key.alias")
+                    ?: props.getProperty("key.alias")
+                val keyPassword = props.getProperty("keyPassword")
+                    ?: props.getProperty("signing.key.password")
+                    ?: props.getProperty("key.password")
+
+                if (storePath.isNullOrBlank() || storePassword.isNullOrBlank() || keyAlias.isNullOrBlank() || keyPassword.isNullOrBlank()) {
+                    project.logger.warn("[signing] Incomplete signing.properties: require storePath/storePassword/keyAlias/keyPassword")
+                    return@configure
+                }
+
+                val keyStoreFile = project.rootProject.file(storePath)
+                if (!keyStoreFile.exists()) {
+                    project.logger.warn("[signing] Keystore path not found: ${keyStoreFile.absolutePath}")
+                    return@configure
+                }
+
+                signingConfigs {
+                    if (signingConfigs.findByName("release") == null) {
+                        create("release") {
+                            storeFile = keyStoreFile
+                            this.storePassword = storePassword
+                            this.keyAlias = keyAlias
+                            this.keyPassword = keyPassword
+                        }
+                    }
+                }
+                buildTypes.configureEach {
+                    if (name == "release") {
+                        signingConfig = signingConfigs.getByName("release")
+                    }
+                }
             }
         }
     }

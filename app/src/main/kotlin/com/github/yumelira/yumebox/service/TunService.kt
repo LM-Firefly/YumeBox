@@ -15,11 +15,11 @@ import com.github.yumelira.yumebox.service.common.compat.pendingIntentFlags
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
-import com.github.yumelira.yumebox.service.model.AccessControlMode
-import com.github.yumelira.yumebox.service.store.ServiceStore
-import com.github.yumelira.yumebox.service.util.parseCIDR
-import com.github.yumelira.yumebox.service.util.sendClashStarted
-import com.github.yumelira.yumebox.service.util.sendClashStopped
+import com.github.yumelira.yumebox.service.runtime.config.AccessControlMode
+import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.util.parseCIDR
+import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
+import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
 
@@ -138,7 +138,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
     }
 
     private fun TunModule.open() {
-        val store = ServiceStore(self)
+        val store = ServiceStore()
 
         val device = with(Builder()) {
             // Interface address

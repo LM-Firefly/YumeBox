@@ -5,20 +5,20 @@ import android.content.Intent
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.*
-import com.github.yumelira.yumebox.service.data.SelectionDao
-import com.github.yumelira.yumebox.service.data.model.Selection
+import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.ILogObserver
-import com.github.yumelira.yumebox.service.store.ServiceStore
-import com.github.yumelira.yumebox.service.util.sendBroadcastSelf
-import com.github.yumelira.yumebox.service.util.sendOverrideChanged
+import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
+import com.github.yumelira.yumebox.service.runtime.util.sendOverrideChanged
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 
 class ClashManager(private val context: Context) : IClashManager,
     CoroutineScope by CoroutineScope(Dispatchers.IO) {
-    private val store = ServiceStore(context)
+    private val store = ServiceStore()
     private var logReceiver: ReceiveChannel<LogMessage>? = null
 
     override fun queryTunnelState(): TunnelState {

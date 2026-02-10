@@ -1,4 +1,4 @@
-package com.github.yumelira.yumebox.service.util
+package com.github.yumelira.yumebox.service.runtime.util
 
 import android.content.Context
 import android.content.Intent

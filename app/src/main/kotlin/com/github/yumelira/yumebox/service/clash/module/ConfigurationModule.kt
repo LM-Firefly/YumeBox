@@ -5,11 +5,11 @@ import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.StatusProvider
-import com.github.yumelira.yumebox.service.data.ImportedDao
-import com.github.yumelira.yumebox.service.data.SelectionDao
-import com.github.yumelira.yumebox.service.store.ServiceStore
-import com.github.yumelira.yumebox.service.util.importedDir
-import com.github.yumelira.yumebox.service.util.sendProfileLoaded
+import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.service.runtime.util.importedDir
+import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import java.util.*
@@ -17,7 +17,7 @@ import java.util.*
 class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadException>(service) {
     data class LoadException(val message: String)
 
-    private val store = ServiceStore(service)
+    private val store = ServiceStore()
     private val reload = Channel<Unit>(Channel.CONFLATED)
 
     override suspend fun run() {
