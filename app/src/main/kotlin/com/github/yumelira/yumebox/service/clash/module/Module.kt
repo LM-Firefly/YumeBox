@@ -14,7 +14,8 @@ import kotlinx.coroutines.selects.SelectClause1
 import kotlinx.coroutines.withContext
 
 abstract class Module<E>(val service: Service) {
-    private val events: Channel<E> = Channel(Channel.UNLIMITED)
+    // Module events are state-like (close/error/network changed), keep only latest to avoid queue growth.
+    private val events: Channel<E> = Channel(Channel.CONFLATED)
     private val receivers: MutableList<BroadcastReceiver> = mutableListOf()
 
     val onEvent: SelectClause1<E>
