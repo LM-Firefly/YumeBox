@@ -26,7 +26,7 @@ abstract class Module<E>(val service: Service) {
     }
 
     protected fun receiveBroadcast(
-        capacity: Int = Channel.UNLIMITED,
+        capacity: Int = Channel.CONFLATED,
         configure: IntentFilter.() -> Unit
     ): ReceiveChannel<Intent> {
         val filter = IntentFilter().apply(configure)
