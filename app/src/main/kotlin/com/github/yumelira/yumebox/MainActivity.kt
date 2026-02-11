@@ -54,6 +54,8 @@ import com.github.yumelira.yumebox.presentation.component.BottomBar
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.LocalPagerState
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
+import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import com.github.yumelira.yumebox.presentation.component.rememberBottomBarScrollBehavior
 import com.github.yumelira.yumebox.presentation.screen.HomePager
 import com.github.yumelira.yumebox.presentation.screen.ProfilesPager
@@ -144,16 +146,29 @@ class MainActivity : ComponentActivity() {
                     themeMode = themeMode,
                     colorTheme = colorTheme,
                 ) {
+                    val topBarHazeState = remember { HazeState() }
+                    val topBarBackground = MiuixTheme.colorScheme.surface
+                    val topBarHazeStyle = remember(topBarBackground) {
+                        HazeStyle(
+                            backgroundColor = topBarBackground,
+                            tint = HazeTint(topBarBackground.copy(0.8f)),
+                        )
+                    }
                     val navController = rememberNavController()
 
-                    Surface(
-                        modifier = Modifier.fillMaxSize(), color = MiuixTheme.colorScheme.surface
+                    CompositionLocalProvider(
+                        LocalTopBarHazeState provides topBarHazeState,
+                        LocalTopBarHazeStyle provides topBarHazeStyle,
                     ) {
-                        DestinationsNavHost(
-                            navGraph = NavGraphs.root,
-                            navController = navController,
-                            defaultTransitions = NavigationTransitions.defaultStyle,
-                        )
+                        Surface(
+                            modifier = Modifier.fillMaxSize(), color = MiuixTheme.colorScheme.surface
+                        ) {
+                            DestinationsNavHost(
+                                navGraph = NavGraphs.root,
+                                navController = navController,
+                                defaultTransitions = NavigationTransitions.defaultStyle,
+                            )
+                        }
                     }
                 }
             }

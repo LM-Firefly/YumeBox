@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
+import dev.chrisbanes.haze.hazeSource
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -48,12 +49,16 @@ fun ScreenLazyColumn(
     content: LazyListScope.() -> Unit,
 ) {
     val bottomBarScrollBehavior = if (enableGlobalScroll) LocalBottomBarScrollBehavior.current else null
+    val topBarHazeState = LocalTopBarHazeState.current
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .scrollEndHaptic()
             .overScrollVertical()
+            .let { mod ->
+                if (topBarHazeState != null) mod.hazeSource(state = topBarHazeState) else mod
+            }
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .let { mod ->
                 if (enableGlobalScroll && bottomBarScrollBehavior != null) {

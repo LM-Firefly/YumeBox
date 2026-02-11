@@ -225,7 +225,7 @@ dependencies {
     // Additional Compose libraries
     implementation("top.yukonga.miuix.kmp:miuix:0.8.0")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0")
-    implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
+    implementation("dev.chrisbanes.haze:haze:1.7.2")
 
     // Storage
     implementation(mmkvDependency)
@@ -253,7 +253,7 @@ dependencies {
     implementation("com.caoccao.javet:javet-node-android:5.0.4")
     implementation("com.highcapable.pangutext:pangutext-android:1.0.5")
     implementation("org.apache.commons:commons-compress:1.28.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
@@ -276,10 +276,6 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation("io.coil-kt.coil3:coil-svg:3.3.0")
-    implementation("io.github.panpf.sketch4:sketch-compose-android:4.3.1")
-    implementation("io.github.panpf.sketch4:sketch-http-android:4.3.1")
-    implementation("io.github.panpf.sketch4:sketch-animated-gif-android:4.3.1")
-    implementation("io.github.panpf.sketch4:sketch-animated-webp-android:4.3.1")
 
     // About Libraries
     implementation("com.mikepenz:aboutlibraries-core:13.2.1")

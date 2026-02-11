@@ -15,6 +15,7 @@ class LogRepository(
 ) {
     companion object {
         private const val STOP_WAIT_MS = 300L
+        private const val DEFAULT_MAX_ENTRIES = 2000
         private val LOG_LINE_REGEX = """\[(.+?)] \[(.+?)] (.+)""".toRegex()
         private val LOG_LEVELS = enumValues<LogMessage.Level>().associateBy { it.name }
     }
@@ -56,10 +57,21 @@ class LogRepository(
         resolveLogFile(fileName)?.length()
     }
 
-    suspend fun readLogEntries(fileName: String): List<LogEntry> = withContext(Dispatchers.IO) {
+    suspend fun readLogEntries(fileName: String, maxEntries: Int = DEFAULT_MAX_ENTRIES): List<LogEntry> = withContext(Dispatchers.IO) {
         val file = resolveLogFile(fileName) ?: return@withContext emptyList()
+        if (maxEntries <= 0) return@withContext emptyList()
         try {
-            file.useLines { lines -> lines.mapNotNull(::parseLogLine).toList() }
+            file.useLines { lines ->
+                val ring = ArrayDeque<LogEntry>(maxEntries)
+                lines.forEach { line ->
+                    val entry = parseLogLine(line) ?: return@forEach
+                    if (ring.size == maxEntries) {
+                        ring.removeFirst()
+                    }
+                    ring.addLast(entry)
+                }
+                ring.toList()
+            }
         } catch (_: IOException) {
             emptyList()
         } catch (_: SecurityException) {
