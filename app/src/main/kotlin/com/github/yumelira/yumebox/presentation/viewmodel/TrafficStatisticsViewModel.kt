@@ -24,7 +24,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
-import com.github.yumelira.yumebox.data.model.ProfileTrafficUsage
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TimeSlot
 import com.github.yumelira.yumebox.data.repository.TrafficStatisticsRepository
@@ -45,6 +44,10 @@ class TrafficStatisticsViewModel(
     private val _selectedBarIndex = MutableStateFlow(-1)
     val selectedBarIndex: StateFlow<Int> = _selectedBarIndex.asStateFlow()
 
+    private val dailySummaries: StateFlow<List<DailyTrafficSummary>> = trafficStatisticsRepository.dailySummaries
+        .map { trafficStatisticsRepository.getDailySummaries(7) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val todaySummary: StateFlow<DailyTrafficSummary> = trafficStatisticsRepository.dailySummaries
         .map { trafficStatisticsRepository.getTodaySummary() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
@@ -53,10 +56,8 @@ class TrafficStatisticsViewModel(
         .map { trafficStatisticsRepository.getYesterdaySummary() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DailyTrafficSummary.EMPTY)
 
-    val weekSummary: StateFlow<Long> = trafficStatisticsRepository.dailySummaries
-        .map {
-            trafficStatisticsRepository.getDailySummaries(7).sumOf { it.total }
-        }
+    val weekSummary: StateFlow<Long> = dailySummaries
+        .map { summaries -> summaries.sumOf { it.total } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
 
     val trafficDifference: StateFlow<Long> = combine(todaySummary, yesterdaySummary) { today, yesterday ->
@@ -65,21 +66,13 @@ class TrafficStatisticsViewModel(
 
     val chartItems: StateFlow<List<BarChartItem>> = combine(
         _selectedTimeRange,
-        trafficStatisticsRepository.dailySummaries
-    ) { timeRange, _ ->
+        dailySummaries
+    ) { timeRange, summaries ->
         when (timeRange) {
             StatisticsTimeRange.TODAY -> getTodayHourlyChartItems()
-            StatisticsTimeRange.WEEK -> getDailyChartItems(7)
+            StatisticsTimeRange.WEEK -> getDailyChartItems(summaries)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val profileUsages: StateFlow<List<ProfileTrafficUsage>> = trafficStatisticsRepository.profileUsages
-        .map { usages ->
-            usages.values
-                .sortedByDescending { it.totalBytes }
-                .take(10)
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setTimeRange(range: StatisticsTimeRange) {
         _selectedTimeRange.value = range
@@ -105,8 +98,7 @@ class TrafficStatisticsViewModel(
         }
     }
 
-    private fun getDailyChartItems(days: Int): List<BarChartItem> {
-        val summaries = trafficStatisticsRepository.getDailySummaries(days)
+    private fun getDailyChartItems(summaries: List<DailyTrafficSummary>): List<BarChartItem> {
         val dateFormat = SimpleDateFormat("M/d", Locale.getDefault())
         val todayKey = getDayKey(Calendar.getInstance())
 
