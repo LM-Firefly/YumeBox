@@ -22,6 +22,13 @@ package com.github.yumelira.yumebox.domain.model
 
 import dev.oom_wg.purejoy.mlang.MLang
 
+const val PROXY_SHEET_HEIGHT_FRACTION_MIN = 0.5f
+const val PROXY_SHEET_HEIGHT_FRACTION_MAX = 0.8f
+const val PROXY_SHEET_HEIGHT_FRACTION_DEFAULT = 0.68f
+
+fun normalizeProxySheetHeightFraction(value: Float): Float =
+    value.coerceIn(PROXY_SHEET_HEIGHT_FRACTION_MIN, PROXY_SHEET_HEIGHT_FRACTION_MAX)
+
 enum class ProxyDisplayMode {
     SINGLE_DETAILED,
     SINGLE_SIMPLE,

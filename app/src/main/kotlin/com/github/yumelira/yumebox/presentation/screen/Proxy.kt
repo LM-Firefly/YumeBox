@@ -37,6 +37,8 @@ import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
+import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -51,7 +53,6 @@ import com.github.yumelira.yumebox.presentation.screen.node.NodeSortPopup
 import com.github.yumelira.yumebox.presentation.screen.node.NodeSheetContent
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
-import com.github.yumelira.yumebox.presentation.webview.WebViewActivity
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.ProxyNodeScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -63,6 +64,7 @@ import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import kotlin.math.roundToInt
 
 @Composable
 fun ProxyPager(
@@ -79,6 +81,7 @@ fun ProxyPager(
     val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
     val sortMode by proxyViewModel.sortMode.collectAsState()
     val groupOpenMode by proxyViewModel.groupOpenMode.collectAsState()
+    val sheetHeightFraction by proxyViewModel.sheetHeightFraction.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
     val scrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
@@ -201,6 +204,7 @@ fun ProxyPager(
                 },
                 isDelayTesting = testingGroupNames.contains(group.name),
                 onTestDelay = { proxyViewModel.testDelay(group.name) },
+                sheetHeightFraction = sheetHeightFraction,
             )
         }
     }
@@ -297,6 +301,7 @@ private fun ProxySettingsContent(
     val currentMode by proxyViewModel.currentMode.collectAsState()
     val displayMode by proxyViewModel.displayMode.collectAsState()
     val groupOpenMode by proxyViewModel.groupOpenMode.collectAsState()
+    val sheetHeightFraction by proxyViewModel.sheetHeightFraction.collectAsState()
 
     val modeTabs = remember { listOf(MLang.Proxy.Mode.Rule, MLang.Proxy.Mode.Global, MLang.Proxy.Mode.Direct) }
     val modeValues = remember { listOf(TunnelState.Mode.Rule, TunnelState.Mode.Global, TunnelState.Mode.Direct) }
@@ -311,7 +316,6 @@ private fun ProxySettingsContent(
             else -> displayMode
         }
     }
-
     Column {
         Text(
             text = MLang.Proxy.Settings.ProxyMode,
@@ -358,6 +362,24 @@ private fun ProxySettingsContent(
                     proxyViewModel.setGroupOpenMode(openModes[index])
                 }
             })
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = "节点弹窗高度 ${(sheetHeightFraction * 100f).roundToInt()}%",
+            style = MiuixTheme.textStyles.subtitle,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        var sliderValue by remember(sheetHeightFraction) {
+            mutableFloatStateOf(normalizeProxySheetHeightFraction(sheetHeightFraction))
+        }
+        Slider(
+            value = sliderValue,
+            onValueChange = { value ->
+                sliderValue = value
+                proxyViewModel.setSheetHeightFraction(value)
+            },
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

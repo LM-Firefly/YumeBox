@@ -11,6 +11,8 @@ import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupOpenMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
+import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_DEFAULT
+import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -45,6 +47,9 @@ class ProxyViewModel(
 
     val groupOpenMode: StateFlow<ProxyGroupOpenMode> = proxyDisplaySettingsRepository.groupOpenMode.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, ProxyGroupOpenMode.FULL_SCREEN)
+
+    val sheetHeightFraction: StateFlow<Float> = proxyDisplaySettingsRepository.sheetHeightFraction.state
+        .stateIn(viewModelScope, SharingStarted.Eagerly, PROXY_SHEET_HEIGHT_FRACTION_DEFAULT)
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
 
@@ -158,6 +163,10 @@ class ProxyViewModel(
 
     fun setGroupOpenMode(mode: ProxyGroupOpenMode) {
         proxyDisplaySettingsRepository.groupOpenMode.set(mode)
+    }
+
+    fun setSheetHeightFraction(value: Float) {
+        proxyDisplaySettingsRepository.sheetHeightFraction.set(normalizeProxySheetHeightFraction(value))
     }
 
     fun selectProxy(groupName: String, proxyName: String) {

@@ -201,12 +201,16 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                 addDnsServer(TUN_DNS6)
             }
 
-            // Open MainActivity
+            // Open notification proxy sheet activity
             setConfigureIntent(
                 PendingIntent.getActivity(
                     self,
                     R.id.nf_vpn_status,
-                    Intent().setComponent(Components.MAIN_ACTIVITY),
+                    Intent().setComponent(Components.PROXY_SHEET_ACTIVITY).addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                            Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    ),
                     pendingIntentFlags(PendingIntent.FLAG_UPDATE_CURRENT)
                 )
             )

@@ -277,6 +277,9 @@ dependencies {
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
     implementation("io.coil-kt.coil3:coil-svg:3.3.0")
+    implementation("io.github.panpf.sketch4:sketch-compose:4.3.1")
+    implementation("io.github.panpf.sketch4:sketch-http:4.3.1")
+    implementation("io.github.panpf.sketch4:sketch-animated-webp:4.3.1")
 
     // About Libraries
     implementation("com.mikepenz:aboutlibraries-core:13.2.1")
