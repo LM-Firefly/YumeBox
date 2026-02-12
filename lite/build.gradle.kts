@@ -32,8 +32,6 @@ plugins {
 val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
-val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
-
 android {
     namespace = "${gropify.project.namespace.base}.lite"
 
@@ -73,7 +71,6 @@ android {
                     listOf(
                         "assets",
                         "../app/assets",
-                        geoFilesAssetsDir.get().asFile.invariantSeparatorsPath,
                     )
                 )
             }

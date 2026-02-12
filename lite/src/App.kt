@@ -25,7 +25,6 @@ import com.github.yumelira.yumebox.lite.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
-import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
@@ -36,14 +35,10 @@ import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.qualifier.named
-import org.tukaani.xz.XZInputStream
 import timber.log.Timber
-import java.io.File
-import java.io.IOException
 
 class App : Application() {
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -69,9 +64,6 @@ class App : Application() {
             networkSettings = koin.get(),
             networkSettingsStore = koin.get(named("network_settings")),
         )
-        startupScope.launch(Dispatchers.IO) {
-            extractGeoFiles()
-        }
         scheduleWarmup(koin.get())
     }
 
@@ -94,51 +86,6 @@ class App : Application() {
         if (!appSettings.initialSetupCompleted.value) {
             appSettings.initialSetupCompleted.set(true)
             appSettings.privacyPolicyAccepted.set(true)
-        }
-    }
-
-    private fun extractGeoFiles() {
-        val mihomoDir = runtimeHomeDir.apply { mkdirs() }
-        val geoFiles = listOf("geoip.metadb", "geosite.dat", "ASN.mmdb")
-        val failedFiles = mutableListOf<String>()
-
-        geoFiles.forEach { filename ->
-            val targetFile = File(mihomoDir, filename)
-            if (!targetFile.exists()) {
-                try {
-                    if (!extractCompressedAssetIfExists("$filename.xz", targetFile)) {
-                        assets.open(filename).use { input ->
-                            targetFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                    }
-                } catch (_: IOException) {
-                    failedFiles += filename
-                }
-            }
-        }
-
-        if (failedFiles.isNotEmpty()) {
-            Timber.w("Failed to extract geo files: ${failedFiles.joinToString()}")
-        }
-    }
-
-    private fun extractCompressedAssetIfExists(
-        assetName: String,
-        targetFile: File,
-    ): Boolean {
-        return try {
-            assets.open(assetName).use { input ->
-                XZInputStream(input.buffered()).use { xzInput ->
-                    targetFile.outputStream().buffered().use { output ->
-                        xzInput.copyTo(output)
-                    }
-                }
-            }
-            true
-        } catch (_: IOException) {
-            false
         }
     }
 
