@@ -16,12 +16,6 @@ permissions:
   contents: read
 
 jobs:
-  build-geo-pr:
-    uses: ./.github/workflows/reusable-build-geo.yml
-    with:
-      channel: pr
-    secrets: inherit
-
   build-native-abi-pr-armeabi-v7a:
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
@@ -56,7 +50,6 @@ jobs:
 
   bundle-native-pr:
     needs:
-      - build-geo-pr
       - build-native-abi-pr-armeabi-v7a
       - build-native-abi-pr-arm64-v8a
       - build-native-abi-pr-x86
