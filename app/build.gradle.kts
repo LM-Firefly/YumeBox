@@ -238,7 +238,7 @@ dependencies {
     // Additional Compose libraries
     implementation("top.yukonga.miuix.kmp:miuix:0.8.0")
     implementation("top.yukonga.miuix.kmp:miuix-icons:0.8.0")
-    implementation("dev.chrisbanes.haze:haze-materials:1.7.1")
+    implementation("dev.chrisbanes.haze:haze-materials:1.7.2")
 
     // Storage
     implementation(mmkvDependency)
