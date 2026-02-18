@@ -185,6 +185,12 @@ fun AppSettingsScreen(
                             }
                         },
                     )
+                    SuperSwitch(
+                        title = MLang.AppSettings.Interface.IconWithSelectedLabelTitle,
+                        summary = MLang.AppSettings.Interface.IconWithSelectedLabelSummary,
+                        checked = viewModel.iconWithSelectedLabel.state.collectAsState().value,
+                        onCheckedChange = { viewModel.iconWithSelectedLabel.set(it) },
+                    )
                 }
                 SmallTitle(MLang.AppSettings.Section.Service)
                 Card {

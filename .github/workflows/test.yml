@@ -7,10 +7,15 @@ on:
       - '**.md'
       - 'docs/**'
       - '.gitignore'
+  schedule:
+    - cron: '40 18 * * *'
 
 concurrency:
   group: Build-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -33,7 +38,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
+          go-version: "1.26"
 
       - uses: actions/cache@v4
         with:
