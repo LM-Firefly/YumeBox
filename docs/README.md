@@ -9,6 +9,7 @@
 [![Latest release](https://img.shields.io/github/v/release/YumeLira/YumeBox?label=Release&logo=github)](https://github.com/YumeLira/YumeBox/releases/latest)
 [![GitHub License](https://img.shields.io/github/license/YumeLira/YumeBox?logo=gnu)](/LICENSE)
 ![Downloads](https://img.shields.io/github/downloads/YumeLira/YumeBox/total)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/d4e3ab7c51254da9959598e34f639e0d)](https://app.codacy.com/gh/YumeLira/YumeBox/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 **An open-source Android client based on the [mihomo](https://github.com/MetaCubeX/mihomo) kernel**
 
