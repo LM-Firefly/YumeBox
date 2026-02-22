@@ -34,7 +34,7 @@
             android:label="${appName}"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:theme="@style/Theme.YumeBox"
             android:usesCleartextTraffic="true">
         <activity
                 android:name=".MainActivity"
@@ -91,7 +91,7 @@
                 android:exported="false"
                 android:configChanges="orientation|screenSize|keyboardHidden"
                 android:hardwareAccelerated="true"
-                android:theme="@android:style/Theme.Material.Light.NoActionBar"/>
+                android:theme="@style/Theme.YumeBox"/>
 
         <service
                 android:name=".service.TunService"
