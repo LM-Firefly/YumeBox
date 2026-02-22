@@ -25,8 +25,8 @@ Proxy = {
     }
     
     Testing = {
-        Group = "Testing proxy group: %s"
-        All = "Testing all proxy groups..."
+        Group = "Testing node group: %s"
+        All = "Testing all node groups..."
         RequestSent = "Test request sent"
         Failed = "Test failed: %s"
         Tip = "You can also test the node by dragging."
@@ -42,6 +42,12 @@ Proxy = {
         PullToTest = "Pull to test delay"
         ReleaseToTest = "Release to test delay"
         DelaySuccess = "Delay test successful"
+        PullToTestAllGroups = "Pull to test all node groups"
+        ReleaseToTestAllGroups = "Release to test all node groups"
+        TestingAllGroups = "Testing all node groups..."
+        PullToTestCurrentGroup = "Pull to test current node group"
+        ReleaseToTestCurrentGroup = "Release to test current node group"
+        TestingCurrentGroup = "Testing current node group..."
     }
     
     Selection = {
@@ -55,6 +61,7 @@ Proxy = {
         ProxyMode = "Proxy Mode"
         SortMode = "Sort Mode"
         DisplayMode = "Display Mode"
+        SheetHeight = "Node sheet height %d%%"
     }
     
     SortMode = {

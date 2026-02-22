@@ -25,8 +25,8 @@ Proxy = {
     }
     
     Testing = {
-        Group = "正在测试代理组: %s"
-        All = "正在测试所有代理组..."
+        Group = "正在测试节点组: %s"
+        All = "正在测试所有节点组..."
         RequestSent = "测试请求已发送"
         Failed = "测试失败: %s"
         Tip = "下拉也可以测试节点 ᓚᘏᗢ"
@@ -42,6 +42,12 @@ Proxy = {
         PullToTest = "下拉测试延迟"
         ReleaseToTest = "松开测试延迟"
         DelaySuccess = "刷新延迟成功"
+        PullToTestAllGroups = "下拉测试全部节点组"
+        ReleaseToTestAllGroups = "松开测试全部节点组"
+        TestingAllGroups = "正在测试全部节点组..."
+        PullToTestCurrentGroup = "下拉测试当前节点组"
+        ReleaseToTestCurrentGroup = "松开测试当前节点组"
+        TestingCurrentGroup = "正在测试当前节点组..."
     }
     
     Selection = {
@@ -55,6 +61,7 @@ Proxy = {
         ProxyMode = "分流模式"
         SortMode = "排序方式"
         DisplayMode = "显示模式"
+        SheetHeight = "节点弹窗高度 %d%%"
     }
     
     SortMode = {

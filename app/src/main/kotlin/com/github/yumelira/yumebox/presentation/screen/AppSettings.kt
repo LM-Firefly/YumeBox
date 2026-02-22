@@ -75,6 +75,7 @@ fun AppSettingsScreen(
 
     val automaticRestart = viewModel.automaticRestart.state.collectAsState().value
     val hideAppIcon = viewModel.hideAppIcon.state.collectAsState().value
+    val excludeFromRecents = viewModel.excludeFromRecents.state.collectAsState().value
     val showTrafficNotification = viewModel.showTrafficNotification.state.collectAsState().value
     val bottomBarFloating = viewModel.bottomBarFloating.state.collectAsState().value
     val showDivider = viewModel.showDivider.state.collectAsState().value
@@ -133,17 +134,17 @@ fun AppSettingsScreen(
                 Card {
                     BasicComponent(
                         title = MLang.AppSettings.Home.OneWordTitle,
-                        summary = viewModel.oneWord.value,
+                        summary = oneWord,
                         onClick = {
-                            oneWordTextFieldState.value = TextFieldValue(viewModel.oneWord.value)
+                            oneWordTextFieldState.value = TextFieldValue(oneWord)
                             showEditOneWordDialog.value = true
                         }
                     )
                     BasicComponent(
                         title = MLang.AppSettings.Home.OneWordAuthorTitle,
-                        summary = viewModel.oneWordAuthor.value,
+                        summary = oneWordAuthor,
                         onClick = {
-                            oneWordAuthorTextFieldState.value = TextFieldValue(viewModel.oneWordAuthor.value)
+                            oneWordAuthorTextFieldState.value = TextFieldValue(oneWordAuthor)
                             showEditOneWordAuthorDialog.value = true
                         }
                     )
@@ -230,6 +231,12 @@ fun AppSettingsScreen(
                                 AppIconHelper.toggleIcon(context, false)
                             }
                         },
+                    )
+                    SuperSwitch(
+                        title = MLang.AppSettings.Interface.HideFromRecentsTitle,
+                        summary = MLang.AppSettings.Interface.HideFromRecentsSummary,
+                        checked = excludeFromRecents,
+                        onCheckedChange = { viewModel.onExcludeFromRecentsChange(it) },
                     )
                     SuperSwitch(
                         title = MLang.AppSettings.Interface.IconWithSelectedLabelTitle,

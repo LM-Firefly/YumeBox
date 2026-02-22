@@ -39,6 +39,7 @@ class AppSettingsViewModel(
     val themeSeedColorArgb: Preference<Long> = repository.themeSeedColorArgb
     val automaticRestart: Preference<Boolean> = repository.automaticRestart
     val hideAppIcon: Preference<Boolean> = repository.hideAppIcon
+    val excludeFromRecents: Preference<Boolean> = repository.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = repository.showTrafficNotification
     val bottomBarFloating: Preference<Boolean> = repository.bottomBarFloating
     val showDivider: Preference<Boolean> = repository.showDivider
@@ -58,6 +59,7 @@ class AppSettingsViewModel(
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
     fun onAutomaticRestartChange(enabled: Boolean) = automaticRestart.set(enabled)
     fun onHideAppIconChange(hide: Boolean) = hideAppIcon.set(hide)
+    fun onExcludeFromRecentsChange(exclude: Boolean) = excludeFromRecents.set(exclude)
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)
     fun onBottomBarFloatingChange(floating: Boolean) = bottomBarFloating.set(floating)
     fun onShowDividerChange(show: Boolean) = showDivider.set(show)
