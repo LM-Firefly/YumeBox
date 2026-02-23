@@ -312,7 +312,7 @@ private fun ProxyContent(
     }
 
     PullToRefresh(
-        modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
+        modifier = Modifier.fillMaxSize(),
         isRefreshing = pullRefreshing,
         onRefresh = {
             if (pullRefreshing) return@PullToRefresh
@@ -321,6 +321,7 @@ private fun ProxyContent(
             onPullRefresh()
         },
         pullToRefreshState = pullToRefreshState,
+        contentPadding = PaddingValues(top = innerPadding.calculateTopPadding()),
         topAppBarScrollBehavior = scrollBehavior,
         refreshTexts = refreshTexts,
     ) {
@@ -333,7 +334,7 @@ private fun ProxyContent(
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
-                top = 12.dp,
+                top = innerPadding.calculateTopPadding() + 12.dp,
                 bottom = mainInnerPadding.calculateBottomPadding(),
             ),
             overscrollEffect = null,
