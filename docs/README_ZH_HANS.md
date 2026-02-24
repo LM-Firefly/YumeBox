@@ -27,8 +27,8 @@
 
 ## 使用方法
 
-- **安装**：前往 [安装](https://yumebox.mintlify.app/guide/install)
-- **构建**：[跳转至构建章节](https://yumebox.mintlify.app/guide/building)
+- **[安装](https://yumebox.oom-wg.dev/cn/guide/install)**
+- **[历史版本](https://yumebox.oom-wg.dev//cn/update/history)**
 
 
 
@@ -38,7 +38,7 @@
 
 ## 参与翻译
 
-如果您希望将 YumeBox 翻译为更多语言，或改进现有翻译，请 Fork 本项目，并在 `lang` 目录下创建或更新对应的翻译文件。
+如果您希望将 YumeBox 翻译为更多语言，或改进现有翻译，请 Fork 本项目，并在 `locale/lang` 目录下创建或更新对应的翻译文件。
 
 
 ## 特别
@@ -54,3 +54,4 @@
 - [SubCase](https://github.com/sion-codin/SubCase)
 - [Yacd-meta](https://github.com/MetaCubeX/Yacd-meta)
 - [Zashboard](https://github.com/Zephyruso/zashboard)
+

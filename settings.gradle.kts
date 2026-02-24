@@ -85,4 +85,23 @@ gropify {
     }
 }
 
-include(":core", ":extension", ":app")
+include(
+    ":core",
+    ":platform",
+    ":common",
+    ":di",
+    ":locale",
+    ":ui",
+    ":extension",
+    ":app",
+    ":feature:update",
+    ":feature:web",
+    ":feature:substore",
+    ":feature:proxy",
+    ":data:log",
+    ":data:settings",
+    ":data:proxy",
+    ":runtime:api",
+    ":runtime:client",
+    ":runtime:service",
+)
