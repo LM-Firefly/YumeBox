@@ -68,9 +68,6 @@ class HomeViewModel(
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
 
-    val oneWord: StateFlow<String> = appSettingsStorage.oneWord.state
-    val oneWordAuthor: StateFlow<String> = appSettingsStorage.oneWordAuthor.state
-
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -79,6 +76,9 @@ class HomeViewModel(
 
     private val _isToggling = MutableStateFlow(false)
     val isToggling: StateFlow<Boolean> = _isToggling.asStateFlow()
+
+    private val _isTunMode = MutableStateFlow(true)
+    val isTunMode: StateFlow<Boolean> = _isTunMode.asStateFlow()
 
     private val _vpnPrepareIntent = MutableSharedFlow<Intent>(
         replay = 0, extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST
@@ -205,6 +205,7 @@ class HomeViewModel(
                 
                 // 启动代理
                 val useTun = useTunMode ?: false
+                _isTunMode.value = useTun
                 proxyFacade.startProxy(useTun)
                 
                 _uiState.update { it.copy(isStartingProxy = false, loadingProgress = null) }

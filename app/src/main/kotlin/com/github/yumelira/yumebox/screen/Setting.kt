@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.WebViewActivity
-import com.github.yumelira.yumebox.common.util.DeviceUtil.is32BitDevice
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
@@ -36,18 +34,16 @@ import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.Atom
 import com.github.yumelira.yumebox.presentation.icon.yume.`Chart-column`
+import com.github.yumelira.yumebox.presentation.icon.yume.FlaskConical
 import com.github.yumelira.yumebox.presentation.icon.yume.`Git-merge`
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.Meta
-import com.github.yumelira.yumebox.presentation.icon.yume.Rocket
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Wifi-cog`
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.ActivationWizardScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.FeatureScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.LogScreenDestination
@@ -79,7 +75,7 @@ private fun CircularIcon(
     ) {
         Box(modifier = Modifier
             .layout { measurable, _ ->
-                val containerSize = 32.dp.roundToPx()
+                val containerSize = 36.dp.roundToPx()
                 val parentSize = 24.dp.roundToPx()
                 val offset = (containerSize - parentSize) / 2
 
@@ -90,8 +86,8 @@ private fun CircularIcon(
                     placeable.place(-offset, -offset)
                 }
             }
-            .size(32.dp)
-            .clip(CircleShape)
+            .size(36.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(MiuixTheme.colorScheme.primary),
             contentAlignment = Alignment.Center) {
             Icon(
@@ -99,7 +95,7 @@ private fun CircularIcon(
                 contentDescription = contentDescription,
                 tint = MiuixTheme.colorScheme.onPrimary,
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(22.dp)
                     .graphicsLayer(
                         scaleX = iconSize,
                         scaleY = iconSize,
@@ -149,6 +145,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                 Card {
                     SuperArrow(
                         title = MLang.Settings.UiSettings.App,
+                        summary = MLang.Settings.UiSettings.AppSummary,
                         onClick = { navigator.navigate(AppSettingsScreenDestination) { launchSingleTop = true } },
                         startAction = {
                             CircularIcon(
@@ -158,6 +155,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     )
                     SuperArrow(
                         title = MLang.Settings.UiSettings.Network,
+                        summary = MLang.Settings.UiSettings.NetworkSummary,
                         onClick = { navigator.navigate(NetworkSettingsScreenDestination) { launchSingleTop = true } },
                         startAction = {
                             CircularIcon(
@@ -167,6 +165,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     )
                     SuperArrow(
                         title = MLang.Settings.UiSettings.Override,
+                        summary = MLang.Settings.UiSettings.OverrideSummary,
                         onClick = { navigator.navigate(OverrideScreenDestination) { launchSingleTop = true } },
                         startAction = {
                             CircularIcon(
@@ -176,6 +175,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     )
                     SuperArrow(
                         title = MLang.Settings.UiSettings.MetaFeatures,
+                        summary = MLang.Settings.UiSettings.MetaFeaturesSummary,
                         onClick = {
                             navigator.navigate(MetaFeatureScreenDestination) {
                                 launchSingleTop = true
@@ -190,38 +190,24 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                 }
             }
             item {
-                SmallTitle(MLang.Settings.Section.Function)
+                SmallTitle(MLang.Settings.Section.More)
+
                 Card {
                     SuperArrow(
-                        title = MLang.Settings.Function.SubStore,
-                        onClick = { viewModel.onSubStoreCardClicked() },
-                        enabled = !is32BitDevice() && viewModel.isSubStoreRunning,
-                        startAction = {
-                            CircularIcon(
-                                imageVector = Yume.Atom, contentDescription = null
-                            )
-                        },
-                    )
-                    SuperArrow(
-                        title = MLang.Settings.Function.FeatureManagement,
+                        title = MLang.Settings.More.Lab,
+                        summary = MLang.Settings.More.LabSummary,
                         onClick = {
                             navigator.navigate(FeatureScreenDestination) { launchSingleTop = true }
                         },
                         startAction = {
                             CircularIcon(
-                                imageVector = Yume.Rocket, contentDescription = null
+                                imageVector = Yume.FlaskConical, contentDescription = null
                             )
                         },
                     )
-
-                }
-            }
-            item {
-                SmallTitle(MLang.Settings.Section.More)
-
-                Card {
                     SuperArrow(
                         title = MLang.Settings.More.Logs,
+                        summary = MLang.Settings.More.LogsSummary,
                         onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },
                         startAction = {
                             CircularIcon(
@@ -231,6 +217,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     )
                     SuperArrow(
                         title = MLang.Settings.More.About,
+                        summary = MLang.Settings.More.AboutSummary,
                         onClick = { navigator.navigate(AboutScreenDestination) { launchSingleTop = true } },
                         startAction = {
                             CircularIcon(

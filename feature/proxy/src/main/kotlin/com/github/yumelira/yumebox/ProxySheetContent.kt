@@ -167,13 +167,8 @@ fun ProxySheetContent(
             if (group == null) {
                 NodeGroupSheetContent(
                     groups = proxyGroups,
-                    displayMode = displayMode,
-                    onRefreshAllGroups = { proxyViewModel.testDelay() },
                     onGroupClick = { targetGroup ->
                         selectedGroupName = targetGroup.name
-                    },
-                    onGroupDelayClick = { targetGroup ->
-                        proxyViewModel.testDelay(targetGroup.name)
                     },
                     testingGroupNames = testingGroupNames,
                     sheetHeightFraction = sheetHeightFraction,

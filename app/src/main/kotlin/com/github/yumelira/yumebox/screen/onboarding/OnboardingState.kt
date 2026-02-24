@@ -47,11 +47,16 @@ internal fun rememberWizardState(
     context: Context,
     lifecycleOwner: androidx.lifecycle.LifecycleOwner,
     appSettingsViewModel: AppSettingsViewModel,
+    resetPrivacyAcceptedOnOpen: Boolean = true,
 ): WizardState {
     val privacyAccepted by appSettingsViewModel.privacyPolicyAccepted.state.collectAsState()
+    val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
+    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
 
-    LaunchedEffect(Unit) {
-        appSettingsViewModel.setPrivacyPolicyAccepted(false)
+    LaunchedEffect(resetPrivacyAcceptedOnOpen) {
+        if (resetPrivacyAcceptedOnOpen) {
+            appSettingsViewModel.setPrivacyPolicyAccepted(false)
+        }
     }
 
     val miuiDynamicSupported = remember {
@@ -92,7 +97,7 @@ internal fun rememberWizardState(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val (pagerState, flingBehavior) = rememberPagerAndFling(pageCount = 4)
+    val (pagerState, flingBehavior) = rememberPagerAndFling(pageCount = 5)
 
     val permissionState = PermissionState(
         notificationGranted = notificationGranted,
@@ -121,6 +126,11 @@ internal fun rememberWizardState(
         privacyAccepted = privacyAccepted,
         onPrivacyAcceptedChange = appSettingsViewModel::setPrivacyPolicyAccepted,
         permissionState = permissionState,
+        themeMode = themeMode,
+        onThemeModeChange = appSettingsViewModel::onThemeModeChange,
+        themeSeedColorArgb = themeSeedColorArgb,
+        onThemeSeedColorChange = appSettingsViewModel::onThemeSeedColorChange,
+        onResetThemeSeedColor = appSettingsViewModel::resetThemeSeedColor,
     )
 }
 
@@ -176,4 +186,3 @@ private fun isNotificationGranted(context: Context): Boolean {
     return context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
         PackageManager.PERMISSION_GRANTED
 }
-

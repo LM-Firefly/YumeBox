@@ -41,14 +41,10 @@ class AppSettingsViewModel(
     val hideAppIcon: Preference<Boolean> = repository.hideAppIcon
     val excludeFromRecents: Preference<Boolean> = repository.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = repository.showTrafficNotification
-    val bottomBarFloating: Preference<Boolean> = repository.bottomBarFloating
-    val showDivider: Preference<Boolean> = repository.showDivider
     val bottomBarAutoHide: Preference<Boolean> = repository.bottomBarAutoHide
+    val topBarBlurEnabled: Preference<Boolean> = repository.topBarBlurEnabled
+    val pageScale: Preference<Float> = repository.pageScale
 
-    val iconWithSelectedLabel: Preference<Boolean> = repository.iconWithSelectedLabel
-
-    val oneWord: Preference<String> = repository.oneWord
-    val oneWordAuthor: Preference<String> = repository.oneWordAuthor
     val customUserAgent: Preference<String> = repository.customUserAgent
 
 
@@ -57,17 +53,13 @@ class AppSettingsViewModel(
     fun onThemeSeedColorChange(argb: Long) = themeSeedColorArgb.set(argb)
     fun resetThemeSeedColor() = themeSeedColorArgb.set(0xFFFFFFFFL)
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
+    fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
+    fun onPageScaleChange(scale: Float) = pageScale.set(scale)
     fun onAutomaticRestartChange(enabled: Boolean) = automaticRestart.set(enabled)
     fun onHideAppIconChange(hide: Boolean) = hideAppIcon.set(hide)
     fun onExcludeFromRecentsChange(exclude: Boolean) = excludeFromRecents.set(exclude)
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)
-    fun onBottomBarFloatingChange(floating: Boolean) = bottomBarFloating.set(floating)
-    fun onShowDividerChange(show: Boolean) = showDivider.set(show)
 
-    fun onOneWordChange(text: String) = oneWord.set(text)
-    fun onOneWordAuthorChange(author: String) = oneWordAuthor.set(author)
-    fun resetOneWordToDefault() = repository.resetOneWordToDefault()
-    fun resetOneWordAuthorToDefault() = repository.resetOneWordAuthorToDefault()
     fun applyCustomUserAgent(userAgent: String) = repository.applyCustomUserAgent(userAgent)
 
     fun setOnboardingCompleted(completed: Boolean) = onboardingCompleted.set(completed)

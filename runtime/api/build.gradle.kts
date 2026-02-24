@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.library")
     kotlin("plugin.serialization")
@@ -15,5 +16,7 @@ android {
 dependencies {
     implementation(project(":core"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
 }
+
+

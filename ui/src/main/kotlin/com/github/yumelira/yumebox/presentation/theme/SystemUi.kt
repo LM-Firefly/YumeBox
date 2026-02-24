@@ -22,12 +22,12 @@ package com.github.yumelira.yumebox.presentation.theme
 
 import android.app.Activity
 import android.os.Build
+import android.content.res.Configuration
 import android.view.WindowInsetsController
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -39,17 +39,23 @@ private val AndroidSystemUiEffect: @Composable () -> Unit = {
         SideEffect {
             val window = (view.context as Activity).window
             WindowCompat.setDecorFitsSystemWindows(window, false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced = false
+            }
+
+            val isDarkMode = (view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            val useLightNavigationBarIcons = !isDarkMode
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 window.insetsController?.setSystemBarsAppearance(
-                    if (navBarColor.luminance() > 0.5f) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
+                    if (useLightNavigationBarIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
                     WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
                 )
             } else {
                 @Suppress("DEPRECATION")
                 window.navigationBarColor = navBarColor.toArgb()
                 WindowCompat.getInsetsController(window, view)
-                    .isAppearanceLightNavigationBars = navBarColor.luminance() > 0.5f
+                    .isAppearanceLightNavigationBars = useLightNavigationBarIcons
             }
         }
     }

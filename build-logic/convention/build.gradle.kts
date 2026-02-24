@@ -64,6 +64,7 @@ dependencies {
         "org.jetbrains.compose:compose-gradle-plugin:1.9.3",
         "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.3.3",
     ).forEach(::compileOnly)
+    implementation("org.tukaani:xz:1.10")
 }
 
 gradlePlugin {

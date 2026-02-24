@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.library")
     id("yumebox.base.android")
@@ -13,5 +14,7 @@ android {
 
 dependencies {
     implementation(project(":core"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
 }
+
+

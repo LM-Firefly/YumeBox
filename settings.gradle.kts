@@ -46,10 +46,6 @@ dependencyResolutionManagement {
         }
         maven("https://maven.kr328.app/releases") // KAIDL 官方仓库
     }
-
-    versionCatalogs {
-        create("libs")
-    }
 }
 
 plugins {
