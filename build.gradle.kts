@@ -7,7 +7,7 @@ tasks.register("assembleReleaseWithExtension") {
 }
 plugins {
     id("com.android.application") version "9.2.0-alpha01" apply false
-    id("com.android.library") version "9.2.0-alpha01" apply false
+    id("com.android.library") version "9.2.0-alpha02" apply false
     kotlin("plugin.serialization") version "2.3.10" apply false
     kotlin("plugin.compose") version "2.3.10" apply false
     id("org.jetbrains.compose") version "1.10.1" apply false
