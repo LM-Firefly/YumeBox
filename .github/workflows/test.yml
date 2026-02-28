@@ -109,13 +109,13 @@ jobs:
           cp app/build/outputs/apk/release/*.apk release_artifacts/
 
       - name: Upload all APKs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: yumebox-apks
           path: release_artifacts/*
 
       - name: Upload mappings
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: mappings
           path: app/build/outputs/mapping/release/
