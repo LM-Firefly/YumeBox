@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -294,7 +294,7 @@ private fun InnerChevron() {
         }
         drawPath(
             path = path,
-            color = androidx.compose.ui.graphics.Color(0xFFC7C7CC),
+            color = Color(0xFFC7C7CC),
             style = androidx.compose.ui.graphics.drawscope.Stroke(
                 width = 2.dp.toPx(),
                 cap = androidx.compose.ui.graphics.StrokeCap.Round,

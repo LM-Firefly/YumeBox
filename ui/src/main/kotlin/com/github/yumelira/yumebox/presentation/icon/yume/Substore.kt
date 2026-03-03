@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -13,7 +33,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
-public val Yume.Substore: ImageVector
+val Yume.Substore: ImageVector
     get() {
         if (_substore != null) {
             return _substore!!
@@ -22,7 +42,8 @@ public val Yume.Substore: ImageVector
                 viewportWidth = 108.0f, viewportHeight = 108.0f).apply {
             path(fill = SolidColor(Color(0xFF000000)), stroke = SolidColor(Color(0xFF000000)),
                     strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Companion.Round, strokeLineMiter = 4.0f, pathFillType = NonZero) {
+                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
+            ) {
                 moveTo(21.9f, 39.21f)
                 curveTo(18.5f, 28.91f, 28.4f, 18.61f, 38.7f, 21.71f)
                 curveTo(41.3f, 22.51f, 45.1f, 25.51f, 50.5f, 30.91f)
@@ -41,7 +62,8 @@ public val Yume.Substore: ImageVector
             }
             path(fill = SolidColor(Color(0xFF000000)), stroke = SolidColor(Color(0xFF000000)),
                     fillAlpha = 0.96f, strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin
-                    = StrokeJoin.Companion.Round, strokeLineMiter = 4.0f, pathFillType = NonZero) {
+                = StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
+            ) {
                 moveTo(49.4f, 48.11f)
                 lineTo(43.6f, 54.0f)
                 lineTo(46.5f, 57.0f)
@@ -57,7 +79,8 @@ public val Yume.Substore: ImageVector
             }
             path(fill = SolidColor(Color(0xFF000000)), stroke = SolidColor(Color(0xFF000000)),
                     fillAlpha = 0.96f, strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin
-                    = StrokeJoin.Companion.Round, strokeLineMiter = 4.0f, pathFillType = NonZero) {
+                = StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
+            ) {
                 moveTo(58.4f, 48.11f)
                 lineTo(64.2f, 54.0f)
                 lineTo(61.3f, 57.0f)
@@ -73,7 +96,8 @@ public val Yume.Substore: ImageVector
             }
             path(fill = SolidColor(Color(0xFF000000)), stroke = SolidColor(Color(0xFF000000)),
                     strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Companion.Round, strokeLineMiter = 4.0f, pathFillType = NonZero) {
+                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
+            ) {
                 moveTo(31.0f, 66.7f)
                 curveTo(27.5f, 70.7f, 27.1f, 75.1f, 30.0f, 78.0f)
                 curveTo(33.1f, 81.1f, 38.0f, 80.6f, 41.5f, 77.0f)
@@ -91,7 +115,8 @@ public val Yume.Substore: ImageVector
             }
             path(fill = SolidColor(Color(0xFF000000)), stroke = SolidColor(Color(0xFF000000)),
                     strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Companion.Round, strokeLineMiter = 4.0f, pathFillType = NonZero) {
+                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
+            ) {
                 moveTo(77.0f, 41.21f)
                 curveTo(80.5f, 37.21f, 80.9f, 32.81f, 78.0f, 29.91f)
                 curveTo(74.9f, 26.81f, 70.0f, 27.31f, 66.5f, 30.91f)
@@ -109,7 +134,8 @@ public val Yume.Substore: ImageVector
             }
             path(fill = SolidColor(Color(0xFF000000)), stroke = SolidColor(Color(0xFF000000)),
                     strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Companion.Round, strokeLineMiter = 4.0f, pathFillType = NonZero) {
+                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
+            ) {
                 moveTo(86.1f, 68.7f)
                 curveTo(89.5f, 79.0f, 79.6f, 89.3f, 69.3f, 86.2f)
                 curveTo(66.7f, 85.4f, 62.9f, 82.4f, 57.5f, 77.0f)

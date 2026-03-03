@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -33,6 +33,7 @@ class AppSettingsStorage(externalMmkv: MMKV) : MMKVPreference(externalMmkv = ext
     val colorTheme by enumFlow(AppColorTheme.ClassicMonochrome)
     val themeSeedColorArgb by longFlow(0xFFFFFFFFL)
     val automaticRestart by boolFlow(false)
+    val autoUpdateCurrentProfileOnStart by boolFlow(true)
     val hideAppIcon by boolFlow(false)
     val excludeFromRecents by boolFlow(false)
     val showTrafficNotification by boolFlow(true)
