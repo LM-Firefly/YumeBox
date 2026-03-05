@@ -92,8 +92,6 @@ class ClashService : BaseService() {
 
         StatusProvider.serviceRunning = true
 
-        Log.i("ClashService created in pid=${android.os.Process.myPid()}")
-
         CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
 
         notificationManager.createChannel()

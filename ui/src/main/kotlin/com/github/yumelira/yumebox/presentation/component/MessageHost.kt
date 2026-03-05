@@ -23,11 +23,7 @@ package com.github.yumelira.yumebox.presentation.component
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -70,7 +66,7 @@ fun MessageHost(
         WindowDialog(
             title = getTitle(message.type, message.title),
             summary = message.content,
-            show = showDialog,
+            show = showDialog.value,
             onDismissRequest = dismissDialog,
         ) {
             Box(

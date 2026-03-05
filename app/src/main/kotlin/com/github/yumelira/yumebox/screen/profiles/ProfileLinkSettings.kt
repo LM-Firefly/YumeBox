@@ -31,6 +31,7 @@ import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.BottomSheetDefaults
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.extra.WindowDropdown
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -65,116 +66,133 @@ internal fun LinkSettingsDialog(
     }
 
     WindowBottomSheet(
-        title = MLang.ProfilesPage.LinkSettings.Title, show = show, onDismissRequest = {
+        show = show.value,
+        modifier = Modifier,
+        title = MLang.ProfilesPage.LinkSettings.Title,
+        startAction = null,
+        endAction = null,
+        backgroundColor = BottomSheetDefaults.backgroundColor(),
+        enableWindowDim = true,
+        cornerRadius = BottomSheetDefaults.cornerRadius,
+        sheetMaxWidth = BottomSheetDefaults.maxWidth,
+        onDismissRequest = {
             show.value = false
-        }) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // 打开方式选择
-            top.yukonga.miuix.kmp.basic.Card {
-                WindowDropdown(
-                    title = MLang.ProfilesPage.LinkSettings.OpenMode,
-                    items = openModeOptions,
-                    selectedIndex = openModeIndex,
-                    onSelectedIndexChange = { index ->
-                        val mode = when (index) {
-                            0 -> LinkOpenMode.IN_APP
-                            1 -> LinkOpenMode.EXTERNAL_BROWSER
-                            else -> LinkOpenMode.IN_APP
-                        }
-                        onOpenModeChange(mode)
-                    })
-            }
-
-            // 默认链接选择
-            if (links.isNotEmpty()) {
+        },
+        onDismissFinished = null,
+        outsideMargin = BottomSheetDefaults.outsideMargin,
+        insideMargin = BottomSheetDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+        allowDismiss = true,
+        enableNestedScroll = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 打开方式选择
                 top.yukonga.miuix.kmp.basic.Card {
                     WindowDropdown(
-                        title = MLang.ProfilesPage.LinkSettings.DefaultLink,
-                        summary = MLang.ProfilesPage.LinkSettings.DefaultLinkSummary,
-                        items = links.map { it.name },
-                        selectedIndex = defaultLinkIndex,
+                        title = MLang.ProfilesPage.LinkSettings.OpenMode,
+                        items = openModeOptions,
+                        selectedIndex = openModeIndex,
                         onSelectedIndexChange = { index ->
-                            if (index in links.indices) {
-                                onDefaultLinkChange(links[index].id)
+                            val mode = when (index) {
+                                0 -> LinkOpenMode.IN_APP
+                                1 -> LinkOpenMode.EXTERNAL_BROWSER
+                                else -> LinkOpenMode.IN_APP
                             }
+                            onOpenModeChange(mode)
                         })
                 }
-            }
 
-            // 链接列表
-            if (links.isNotEmpty()) {
-                top.yukonga.miuix.kmp.basic.Card {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        links.forEachIndexed { index, link ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onOpenLink(link) }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = link.name, style = MiuixTheme.textStyles.body1
-                                    )
-                                    Text(
-                                        text = link.url,
-                                        style = MiuixTheme.textStyles.body2,
-                                        color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                // 默认链接选择
+                if (links.isNotEmpty()) {
+                    top.yukonga.miuix.kmp.basic.Card {
+                        WindowDropdown(
+                            title = MLang.ProfilesPage.LinkSettings.DefaultLink,
+                            summary = MLang.ProfilesPage.LinkSettings.DefaultLinkSummary,
+                            items = links.map { it.name },
+                            selectedIndex = defaultLinkIndex,
+                            onSelectedIndexChange = { index ->
+                                if (index in links.indices) {
+                                    onDefaultLinkChange(links[index].id)
+                                }
+                            })
+                    }
+                }
+
+                // 链接列表
+                if (links.isNotEmpty()) {
+                    top.yukonga.miuix.kmp.basic.Card {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            links.forEachIndexed { index, link ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onOpenLink(link) }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = link.name, style = MiuixTheme.textStyles.body1
+                                        )
+                                        Text(
+                                            text = link.url,
+                                            style = MiuixTheme.textStyles.body2,
+                                            color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { onDeleteLink(link.id) }) {
+                                        Icon(
+                                            imageVector = MiuixIcons.Delete,
+                                            contentDescription = MLang.Component.ProfileCard.Delete,
+                                            tint = MiuixTheme.colorScheme.error
+                                        )
+                                    }
                                 }
 
-                                IconButton(
-                                    onClick = { onDeleteLink(link.id) }) {
-                                    Icon(
-                                        imageVector = MiuixIcons.Delete,
-                                        contentDescription = MLang.Component.ProfileCard.Delete,
-                                        tint = MiuixTheme.colorScheme.error
+                                if (index < links.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        thickness = 0.5.dp,
+                                        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.3f)
                                     )
                                 }
-                            }
-
-                            if (index < links.size - 1) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    thickness = 0.5.dp,
-                                    color = MiuixTheme.colorScheme.outline.copy(alpha = 0.3f)
-                                )
                             }
                         }
                     }
                 }
-            }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                TextButton(
-                    text = MLang.ProfilesPage.LinkSettings.Close,
-                    onClick = { show.value = false },
-                    modifier = Modifier.weight(1f)
-                )
-                Button(
-                    onClick = onAddLink,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        MLang.ProfilesPage.LinkSettings.AddLink,
-                        color = MiuixTheme.colorScheme.surface
+                    TextButton(
+                        text = MLang.ProfilesPage.LinkSettings.Close,
+                        onClick = { show.value = false },
+                        modifier = Modifier.weight(1f)
                     )
+                    Button(
+                        onClick = onAddLink,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary()
+                    ) {
+                        Text(
+                            MLang.ProfilesPage.LinkSettings.AddLink,
+                            color = MiuixTheme.colorScheme.surface
+                        )
+                    }
                 }
             }
-        }
-    }
+        })
 }
 
 @Composable
@@ -206,70 +224,84 @@ internal fun AddLinkDialog(
     }
 
     WindowBottomSheet(
+        show = show.value,
+        modifier = Modifier,
         title = if (linkToEdit != null) MLang.ProfilesPage.LinkSettings.EditLink else MLang.ProfilesPage.LinkSettings.AddLink,
-        show = show,
-        onDismissRequest = onDismiss
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            TextField(
-                value = currentName, onValueChange = {
-                    currentName = it
-                    error = ""
-                }, label = MLang.ProfilesPage.LinkSettings.Name, modifier = Modifier.fillMaxWidth()
-            )
-
-            TextField(
-                value = currentUrl, onValueChange = {
-                    currentUrl = it
-                    error = ""
-                }, label = MLang.ProfilesPage.LinkSettings.Url, modifier = Modifier.fillMaxWidth()
-            )
-
-            if (error.isNotEmpty()) {
-                Text(
-                    text = error,
-                    color = MiuixTheme.colorScheme.error,
-                    style = MiuixTheme.textStyles.body2
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        startAction = null,
+        endAction = null,
+        backgroundColor = BottomSheetDefaults.backgroundColor(),
+        enableWindowDim = true,
+        cornerRadius = BottomSheetDefaults.cornerRadius,
+        sheetMaxWidth = BottomSheetDefaults.maxWidth,
+        onDismissRequest = onDismiss,
+        onDismissFinished = null,
+        outsideMargin = BottomSheetDefaults.outsideMargin,
+        insideMargin = BottomSheetDefaults.insideMargin,
+        defaultWindowInsetsPadding = true,
+        dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+        allowDismiss = true,
+        enableNestedScroll = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(
-                    onClick = onDismiss, modifier = Modifier.weight(1f)
-                ) {
-                    Text(MLang.ProfilesPage.Button.Cancel)
+                TextField(
+                    value = currentName, onValueChange = {
+                        currentName = it
+                        error = ""
+                    }, label = MLang.ProfilesPage.LinkSettings.Name, modifier = Modifier.fillMaxWidth()
+                )
+
+                TextField(
+                    value = currentUrl, onValueChange = {
+                        currentUrl = it
+                        error = ""
+                    }, label = MLang.ProfilesPage.LinkSettings.Url, modifier = Modifier.fillMaxWidth()
+                )
+
+                if (error.isNotEmpty()) {
+                    Text(
+                        text = error,
+                        color = MiuixTheme.colorScheme.error,
+                        style = MiuixTheme.textStyles.body2
+                    )
                 }
-                Button(
-                    onClick = {
-                        when {
-                            currentName.isBlank() -> error =
-                                MLang.ProfilesPage.LinkSettings.Validation.EnterName
 
-                            currentUrl.isBlank() -> error =
-                                MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
-
-                            !currentUrl.startsWith("http", ignoreCase = true) -> error =
-                                MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
-
-                            else -> {
-                                onNameChange(currentName)
-                                onUrlChange(currentUrl)
-                                onConfirm()
-                            }
-                        }
-                    }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.surface)
+                    Button(
+                        onClick = onDismiss, modifier = Modifier.weight(1f)
+                    ) {
+                        Text(MLang.ProfilesPage.Button.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            when {
+                                currentName.isBlank() -> error =
+                                    MLang.ProfilesPage.LinkSettings.Validation.EnterName
+
+                                currentUrl.isBlank() -> error =
+                                    MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
+
+                                !currentUrl.startsWith("http", ignoreCase = true) -> error =
+                                    MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
+
+                                else -> {
+                                    onNameChange(currentName)
+                                    onUrlChange(currentUrl)
+                                    onConfirm()
+                                }
+                            }
+                        }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
+                    ) {
+                        Text(MLang.ProfilesPage.Button.Confirm, color = MiuixTheme.colorScheme.surface)
+                    }
                 }
             }
-        }
-    }
+        })
 }

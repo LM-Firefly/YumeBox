@@ -29,9 +29,6 @@ import java.util.*
 val Context.importedDir: File
     get() = filesDir.resolve("imported")
 
-val Context.pendingDir: File
-    get() = filesDir.resolve("pending")
-
 val Context.processingDir: File
     get() = filesDir.resolve("processing")
 

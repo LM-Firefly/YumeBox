@@ -20,12 +20,7 @@
 
 package com.github.yumelira.yumebox.presentation.component
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
@@ -51,7 +46,7 @@ fun TextEditBottomSheet(
     onSecondaryClick: () -> Unit = onDismiss,
 ) {
     WindowBottomSheet(
-        show = show, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
+        show = show.value, title = title, insideMargin = DpSize(32.dp, 16.dp), onDismissRequest = onDismiss
     ) {
         Column {
             TextField(
@@ -85,7 +80,7 @@ fun WarningBottomSheet(
     onDismiss: () -> Unit = { show.value = false },
 ) {
     WindowBottomSheet(
-        show = show,
+        show = show.value,
         title = title,
         insideMargin = DpSize(32.dp, 16.dp),
         onDismissRequest = onDismiss,

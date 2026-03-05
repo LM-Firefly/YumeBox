@@ -22,8 +22,8 @@ package com.github.yumelira.yumebox.runtime.client
 
 import android.content.Context
 import com.github.yumelira.yumebox.remote.ServiceClient
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import timber.log.Timber
 import java.util.*
 
@@ -105,16 +105,9 @@ class ProfilesRepository(private val context: Context) {
     suspend fun setActiveProfile(uuid: UUID) {
         Timber.d("Setting active profile: uuid=$uuid")
         ServiceClient.connect(context)
-        
+
         val profile = ServiceClient.profile().queryByUUID(uuid)
             ?: error("Profile not found: $uuid")
-
-        // 允许“立即启用”：如果当前 profile 还在 pending（例如刚导入/编辑但未应用），
-        // 在启动代理前先尝试 apply 到 imported，避免 UI 落后和切换到旧配置。
-        if (profile.pending && !profile.imported) {
-            ServiceClient.profile().commit(profile.uuid, null)
-        }
-        
         ServiceClient.profile().setActive(profile)
     }
 
@@ -157,27 +150,6 @@ class ProfilesRepository(private val context: Context) {
         Timber.d("Patching profile: uuid=$uuid")
         ServiceClient.connect(context)
         ServiceClient.profile().patch(uuid, name, source, interval)
-    }
-
-    /**
-     * Commit profile changes
-     * @param uuid Profile UUID
-     * @param callback Fetch progress observer
-     */
-    suspend fun commitProfile(uuid: UUID, callback: IFetchObserver? = null) {
-        Timber.d("Committing profile: uuid=$uuid")
-        ServiceClient.connect(context)
-        ServiceClient.profile().commit(uuid, callback)
-    }
-
-    /**
-     * Release profile (unlock editing)
-     * @param uuid Profile UUID
-     */
-    suspend fun releaseProfile(uuid: UUID) {
-        Timber.d("Releasing profile: uuid=$uuid")
-        ServiceClient.connect(context)
-        ServiceClient.profile().release(uuid)
     }
 
     /**

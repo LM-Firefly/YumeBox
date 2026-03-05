@@ -22,6 +22,7 @@ package com.github.yumelira.yumebox.core.util
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.net.InetAddress
 import java.net.NetworkInterface
 
@@ -44,6 +45,7 @@ object NetworkInterfaces {
             }
             null
         } catch (e: Exception) {
+            Timber.w(e, "Failed to get local IP address")
             null
         }
     }

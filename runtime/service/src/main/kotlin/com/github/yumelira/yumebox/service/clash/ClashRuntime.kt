@@ -20,7 +20,6 @@
 
 package com.github.yumelira.yumebox.service.clash
 
-import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.clash.module.Module
 import kotlinx.coroutines.*
@@ -43,8 +42,6 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
         override fun launch() {
             launch(Dispatchers.IO) {
                 globalLock.withLock {
-                    Log.d("ClashRuntime: initialize")
-
                     try {
                         val modules = mutableListOf<Module<*>>()
 
@@ -71,8 +68,6 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
                             Clash.reset()
                             Clash.clearOverride(Clash.OverrideSlot.Session)
                             Clash.forceGc()
-
-                            Log.d("ClashRuntime: destroyed")
                         }
                     }
                 }

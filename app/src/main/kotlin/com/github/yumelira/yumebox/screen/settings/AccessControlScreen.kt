@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -66,6 +67,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.extra.BottomSheetDefaults
 import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.extra.WindowBottomSheet
 import top.yukonga.miuix.kmp.extra.WindowDropdown
@@ -180,149 +182,162 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
             }
 
             WindowBottomSheet(
-                show = showSettingsSheet,
+                show = showSettingsSheet.value,
+                modifier = Modifier,
                 title = MLang.AccessControl.Settings.Title,
+                startAction = null,
+                endAction = null,
+                backgroundColor = BottomSheetDefaults.backgroundColor(),
+                enableWindowDim = true,
+                cornerRadius = BottomSheetDefaults.cornerRadius,
+                sheetMaxWidth = BottomSheetDefaults.maxWidth,
                 onDismissRequest = { showSettingsSheet.value = false },
+                onDismissFinished = null,
+                outsideMargin = BottomSheetDefaults.outsideMargin,
                 insideMargin = DpSize(32.dp, 16.dp),
-            ) {
-                val context = LocalContext.current
-                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                defaultWindowInsetsPadding = true,
+                dragHandleColor = BottomSheetDefaults.dragHandleColor(),
+                allowDismiss = true,
+                enableNestedScroll = true,
+                content = {
+                    val context = LocalContext.current
+                    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
-                Column {
-                    top.yukonga.miuix.kmp.basic.Card {
-                        SuperSwitch(
-                            title = MLang.AccessControl.Settings.ShowSystemApps,
-                            checked = uiState.showSystemApps,
-                            onCheckedChange = { viewModel.onShowSystemAppsChange(it) }
-                        )
-                        SuperSwitch(
-                            title = MLang.AccessControl.Settings.SelectedFirst,
-                            checked = uiState.selectedFirst,
-                            onCheckedChange = { viewModel.onSelectedFirstChange(it) }
-                        )
-                        WindowDropdown(
-                            title = MLang.AccessControl.Settings.SortMode,
-                            summary = MLang.AccessControl.Settings.SortModeCurrent.format(uiState.sortMode.displayName),
-                            items = AccessControlViewModel.SortMode.entries.map { it.displayName },
-                            selectedIndex = AccessControlViewModel.SortMode.entries
-                                .indexOf(uiState.sortMode)
-                                .coerceAtLeast(0),
-                            onSelectedIndexChange = { index ->
-                                AccessControlViewModel.SortMode.entries.getOrNull(index)
-                                    ?.let { viewModel.onSortModeChange(it) }
-                            }
-                        )
-                        WindowDropdown(
-                            title = MLang.AccessControl.Settings.BatchOperation,
-                            items = listOf(
-                                MLang.AccessControl.Settings.SelectAll,
-                                MLang.AccessControl.Settings.DeselectAll,
-                                MLang.AccessControl.Settings.Invert
-                            ),
-                            selectedIndex = 0,
-                            onSelectedIndexChange = { index ->
-                                when (index) {
-                                    0 -> viewModel.selectAll()
-                                    1 -> viewModel.deselectAll()
-                                    2 -> viewModel.invertSelection()
+                    Column {
+                        top.yukonga.miuix.kmp.basic.Card {
+                            SuperSwitch(
+                                title = MLang.AccessControl.Settings.ShowSystemApps,
+                                checked = uiState.showSystemApps,
+                                onCheckedChange = { viewModel.onShowSystemAppsChange(it) }
+                            )
+                            SuperSwitch(
+                                title = MLang.AccessControl.Settings.SelectedFirst,
+                                checked = uiState.selectedFirst,
+                                onCheckedChange = { viewModel.onSelectedFirstChange(it) }
+                            )
+                            WindowDropdown(
+                                title = MLang.AccessControl.Settings.SortMode,
+                                summary = MLang.AccessControl.Settings.SortModeCurrent.format(uiState.sortMode.displayName),
+                                items = AccessControlViewModel.SortMode.entries.map { it.displayName },
+                                selectedIndex = AccessControlViewModel.SortMode.entries
+                                    .indexOf(uiState.sortMode)
+                                    .coerceAtLeast(0),
+                                onSelectedIndexChange = { index ->
+                                    AccessControlViewModel.SortMode.entries.getOrNull(index)
+                                        ?.let { viewModel.onSortModeChange(it) }
                                 }
-                            }
-                        )
-                        WindowDropdown(
-                            title = MLang.AccessControl.Settings.RegionQuickSelect,
-                            items = listOf(
-                                MLang.AccessControl.Settings.ChinaApps,
-                                MLang.AccessControl.Settings.OverseasApps,
-                            ),
-                            selectedIndex = 0,
-                            onSelectedIndexChange = { index ->
-                                val selectedCount = when (index) {
-                                    0 -> viewModel.selectChinaAppsInCurrentList()
-                                    1 -> viewModel.selectNonChinaAppsInCurrentList()
-                                    else -> 0
+                            )
+                            WindowDropdown(
+                                title = MLang.AccessControl.Settings.BatchOperation,
+                                items = listOf(
+                                    MLang.AccessControl.Settings.SelectAll,
+                                    MLang.AccessControl.Settings.DeselectAll,
+                                    MLang.AccessControl.Settings.Invert
+                                ),
+                                selectedIndex = 0,
+                                onSelectedIndexChange = { index ->
+                                    when (index) {
+                                        0 -> viewModel.selectAll()
+                                        1 -> viewModel.deselectAll()
+                                        2 -> viewModel.invertSelection()
+                                    }
                                 }
-                                val label = when (index) {
-                                    0 -> MLang.AccessControl.Settings.ChinaApps
-                                    1 -> MLang.AccessControl.Settings.OverseasApps
-                                    else -> ""
+                            )
+                            WindowDropdown(
+                                title = MLang.AccessControl.Settings.RegionQuickSelect,
+                                items = listOf(
+                                    MLang.AccessControl.Settings.ChinaApps,
+                                    MLang.AccessControl.Settings.OverseasApps,
+                                ),
+                                selectedIndex = 0,
+                                onSelectedIndexChange = { index ->
+                                    val selectedCount = when (index) {
+                                        0 -> viewModel.selectChinaAppsInCurrentList()
+                                        1 -> viewModel.selectNonChinaAppsInCurrentList()
+                                        else -> 0
+                                    }
+                                    val label = when (index) {
+                                        0 -> MLang.AccessControl.Settings.ChinaApps
+                                        1 -> MLang.AccessControl.Settings.OverseasApps
+                                        else -> ""
+                                    }
+                                    Toast.makeText(
+                                        context,
+                                        MLang.AccessControl.Settings.RegionSelectResult.format(
+                                            label,
+                                            selectedCount
+                                        ),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
-                                Toast.makeText(
-                                    context,
-                                    MLang.AccessControl.Settings.RegionSelectResult.format(
-                                        label,
-                                        selectedCount
-                                    ),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        )
-                        WindowDropdown(
-                            title = MLang.AccessControl.Settings.ImportExport,
-                            items = listOf(
-                                MLang.AccessControl.Settings.Import,
-                                MLang.AccessControl.Settings.Export
-                            ),
-                            selectedIndex = 0,
-                            onSelectedIndexChange = { index ->
-                                when (index) {
-                                    0 -> {
-                                        val clipData = clipboardManager.primaryClip
-                                        val text = if (clipData != null && clipData.itemCount > 0) {
-                                            clipData.getItemAt(0)?.text?.toString() ?: ""
-                                        } else {
-                                            ""
+                            )
+                            WindowDropdown(
+                                title = MLang.AccessControl.Settings.ImportExport,
+                                items = listOf(
+                                    MLang.AccessControl.Settings.Import,
+                                    MLang.AccessControl.Settings.Export
+                                ),
+                                selectedIndex = 0,
+                                onSelectedIndexChange = { index ->
+                                    when (index) {
+                                        0 -> {
+                                            val clipData = clipboardManager.primaryClip
+                                            val text = if (clipData != null && clipData.itemCount > 0) {
+                                                clipData.getItemAt(0)?.text?.toString() ?: ""
+                                            } else {
+                                                ""
+                                            }
+                                            if (text.isNotEmpty()) {
+                                                val count = viewModel.importPackages(text)
+                                                Toast.makeText(
+                                                    context,
+                                                    MLang.AccessControl.Settings.ImportSuccess.format(count),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            } else {
+                                                Toast.makeText(
+                                                    context,
+                                                    MLang.AccessControl.Settings.ImportFailed,
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
                                         }
-                                        if (text.isNotEmpty()) {
-                                            val count = viewModel.importPackages(text)
+
+                                        1 -> {
+                                            val exportText = viewModel.exportPackages()
+                                            val clip = ClipData.newPlainText("packages", exportText)
+                                            clipboardManager.setPrimaryClip(clip)
                                             Toast.makeText(
                                                 context,
-                                                MLang.AccessControl.Settings.ImportSuccess.format(count),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                MLang.AccessControl.Settings.ImportFailed,
+                                                MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
                                     }
-
-                                    1 -> {
-                                        val exportText = viewModel.exportPackages()
-                                        val clip = ClipData.newPlainText("packages", exportText)
-                                        clipboardManager.setPrimaryClip(clip)
-                                        Toast.makeText(
-                                            context,
-                                            MLang.AccessControl.Settings.ExportSuccess.format(uiState.selectedPackages.size),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
-                }
 
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = { showSettingsSheet.value = false },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(MLang.AccessControl.Button.Cancel)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Button(
+                            onClick = { showSettingsSheet.value = false },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(MLang.AccessControl.Button.Cancel)
+                        }
+                        Button(
+                            onClick = { showSettingsSheet.value = false },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColorsPrimary()
+                        ) {
+                            Text(MLang.AccessControl.Button.Confirm, color = MiuixTheme.colorScheme.background)
+                        }
                     }
-                    Button(
-                        onClick = { showSettingsSheet.value = false },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColorsPrimary()
-                    ) {
-                        Text(MLang.AccessControl.Button.Confirm, color = MiuixTheme.colorScheme.background)
-                    }
-                }
-            }
+                })
         }
     }
 
@@ -408,9 +423,9 @@ private fun ExpandedSearchOverlay(
                         },
                         endActions = {
                             Checkbox(
-                                checked = app.isSelected,
-                                onCheckedChange = { checked ->
-                                    onAppSelectionChange(app.packageName, checked)
+                                state = ToggleableState(app.isSelected),
+                                onClick = {
+                                    onAppSelectionChange(app.packageName, !app.isSelected)
                                 }
                             )
                         },
@@ -445,8 +460,8 @@ private fun AppCard(
             },
             endActions = {
                 Checkbox(
-                    checked = app.isSelected,
-                    onCheckedChange = onSelectionChange
+                    state = ToggleableState(app.isSelected),
+                    onClick = { onSelectionChange(!app.isSelected) }
                 )
             },
             onClick = onClick

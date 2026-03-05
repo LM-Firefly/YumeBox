@@ -89,8 +89,6 @@ class ProfilesViewModel(
 
                 _profiles.value = allProfiles
                 _activeProfile.value = active
-
-                Timber.d("Profiles refreshed: count=${allProfiles.size} active=${active?.name}")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to refresh profiles")
                 showError(MLang.ProfilesVM.Message.UpdateFailed.format(e.message ?: "Unknown"))
@@ -137,12 +135,12 @@ class ProfilesViewModel(
                     )
                 }
 
-                // 对于文件类型，需要先复制文件到pending目录
+                // 对于文件类型，需要先复制文件到imported目录
                 if (type == Profile.Type.File && fileUri != null) {
-                    copyFileToPendingDir(fileUri, uuid)
+                    copyFileToImportedDir(fileUri, uuid)
                 }
 
-                profilesRepository.commitProfile(uuid, observer)
+                profilesRepository.updateProfile(uuid, observer)
                 _downloadProgress.value = DownloadProgress(100, MLang.ProfilesVM.Progress.ImportComplete)
 
                 showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(name))
@@ -159,18 +157,18 @@ class ProfilesViewModel(
     }
 
     /**
-     * 复制文件到pending目录
+     * 复制文件到imported目录
      */
-    private suspend fun copyFileToPendingDir(uri: Uri, uuid: UUID) {
+    private suspend fun copyFileToImportedDir(uri: Uri, uuid: UUID) {
         withContext(Dispatchers.IO) {
             val context = getApplication<Application>()
-            val pendingDir = File(context.filesDir, "pending/${uuid}")
-            pendingDir.mkdirs()
+            val importedDir = File(context.filesDir, "imported/${uuid}")
+            importedDir.mkdirs()
 
             val inputFile = context.contentResolver.openInputStream(uri)
                 ?: throw IllegalArgumentException("Failed to open file: $uri")
 
-            val outputFile = File(pendingDir, "config.yaml")
+            val outputFile = File(importedDir, "config.yaml")
             outputFile.outputStream().use { output ->
                 inputFile.copyTo(output)
             }

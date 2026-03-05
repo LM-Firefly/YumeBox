@@ -20,6 +20,7 @@
 
 package com.github.yumelira.yumebox.screen.home
 
+import dev.oom_wg.purejoy.mlang.MLang
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -299,7 +300,7 @@ private fun ProxyStatusCapsule(isRunning: Boolean) {
                     modifier = Modifier.size(12.dp)
                 )
                 Text(
-                    text = if (running) "运行中" else "轻触启动",
+                    text = if (running) MLang.Home.Status.Running else MLang.Home.Status.TapToStart,
                     style = MiuixTheme.textStyles.footnote1.copy(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold

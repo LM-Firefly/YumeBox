@@ -33,4 +33,9 @@ Home = {
         Failed = "获取失败"
         NotFetched = "未获取"
     }
+
+    Status = {
+        Running = "运行中"
+        TapToStart = "轻触启动"
+    }
 }

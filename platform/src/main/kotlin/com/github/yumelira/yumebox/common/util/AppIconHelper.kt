@@ -29,36 +29,24 @@ object AppIconHelper {
     private const val MAIN_ACTIVITY_ALIAS = "com.github.yumelira.yumebox.MainActivityAlias"
 
     fun hideIcon(context: Context) {
-        runCatching {
-            val componentName = ComponentName(context.packageName, MAIN_ACTIVITY_ALIAS)
-            val currentState = context.packageManager.getComponentEnabledSetting(componentName)
-            if (currentState == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-                return
-            }
-
-            val mainActivityComponent =
-                ComponentName(context.packageName, "com.github.yumelira.yumebox.MainActivity")
-            context.packageManager.setComponentEnabledSetting(
-                mainActivityComponent,
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                PackageManager.DONT_KILL_APP,
-            )
-
-            context.packageManager.setComponentEnabledSetting(
-                componentName,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP,
-            )
-        }.onFailure { e ->
-            Timber.w(e, "Failed to hide app icon")
-        }
+        setIconState(context, hide = true)
     }
 
     fun showIcon(context: Context) {
+        setIconState(context, hide = false)
+    }
+
+    private fun setIconState(context: Context, hide: Boolean) {
         runCatching {
             val componentName = ComponentName(context.packageName, MAIN_ACTIVITY_ALIAS)
             val currentState = context.packageManager.getComponentEnabledSetting(componentName)
-            if (currentState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED || currentState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
+            val targetState = if (hide) {
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+            } else {
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            }
+
+            if (currentState == targetState || (!hide && currentState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT)) {
                 return
             }
 
@@ -72,11 +60,11 @@ object AppIconHelper {
 
             context.packageManager.setComponentEnabledSetting(
                 componentName,
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                targetState,
                 PackageManager.DONT_KILL_APP,
             )
         }.onFailure { e ->
-            Timber.w(e, "Failed to show app icon")
+            Timber.w(e, "Failed to ${if (hide) "hide" else "show"} app icon")
         }
     }
 

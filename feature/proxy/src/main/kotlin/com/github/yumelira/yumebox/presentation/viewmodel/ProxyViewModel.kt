@@ -26,18 +26,15 @@ import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.repository.OverrideRepository
 import com.github.yumelira.yumebox.data.repository.ProxyDisplaySettingsRepository
+import com.github.yumelira.yumebox.domain.model.*
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.domain.model.ProxyDisplayMode
-import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.domain.model.ProxySortMode
-import com.github.yumelira.yumebox.domain.model.PROXY_SHEET_HEIGHT_FRACTION_DEFAULT
-import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class ProxyViewModel(
     private val overrideRepository: OverrideRepository,
@@ -138,7 +135,7 @@ class ProxyViewModel(
                 return@launch
             }
 
-            delay(500)
+            delay(500.milliseconds)
             showMessage(MLang.Proxy.Mode.Switched.format(mode.toModeName()))
         }
     }
