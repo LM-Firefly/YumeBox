@@ -45,7 +45,6 @@ class ClashService : BaseService() {
         ServiceNotificationManager(this, ServiceNotificationManager.HTTP_CONFIG)
     }
     private var notificationJob: Job? = null
-    private var periodicGcJob: Job? = null
 
     private val runtime = clashRuntime {
         val close = install(CloseModule(self))
@@ -122,8 +121,6 @@ class ClashService : BaseService() {
     override fun onDestroy() {
         notificationJob?.cancel()
         notificationJob = null
-        periodicGcJob?.cancel()
-        periodicGcJob = null
 
         StatusProvider.serviceRunning = false
 

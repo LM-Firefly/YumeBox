@@ -31,6 +31,7 @@ class SubStoreService : Service() {
 
     companion object {
         var caseEngine: CaseEngine? = null
+        @Volatile
         var isRunning: Boolean = false
             private set
 
@@ -56,6 +57,7 @@ class SubStoreService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (isRunning) return START_STICKY
         return runCatching {
             val frontendPort = intent?.getIntExtra("frontendPort", 8080) ?: 8080
             val backendPort = intent?.getIntExtra("backendPort", 8081) ?: 8081

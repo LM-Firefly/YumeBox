@@ -3,6 +3,7 @@ package config
 import (
 	"io"
 	"os"
+	"sync"
 
 	"github.com/metacubex/mihomo/constant"
 )
@@ -17,7 +18,10 @@ const (
 const defaultPersistOverride = `{}`
 const defaultSessionOverride = `{}`
 
-var sessionOverride = defaultSessionOverride
+var (
+	sessionOverride     = defaultSessionOverride
+	sessionOverrideMu   sync.RWMutex
+)
 
 func overridePersistPath() string {
 	return constant.Path.Resolve("override.json")
@@ -30,6 +34,7 @@ func ReadOverride(slot OverrideSlot) string {
 		if err != nil {
 			return defaultPersistOverride
 		}
+		defer file.Close()
 
 		buf, err := io.ReadAll(file)
 		if err != nil {
@@ -38,6 +43,8 @@ func ReadOverride(slot OverrideSlot) string {
 
 		return string(buf)
 	case OverrideSlotSession:
+		sessionOverrideMu.RLock()
+		defer sessionOverrideMu.RUnlock()
 		return sessionOverride
 	}
 
@@ -51,10 +58,13 @@ func WriteOverride(slot OverrideSlot, content string) {
 		if err != nil {
 			return
 		}
+		defer file.Close()
 
-		_, err = file.Write([]byte(content))
+		_, _ = file.Write([]byte(content))
 	case OverrideSlotSession:
+		sessionOverrideMu.Lock()
 		sessionOverride = content
+		sessionOverrideMu.Unlock()
 	}
 }
 
@@ -63,6 +73,8 @@ func ClearOverride(slot OverrideSlot) {
 	case OverrideSlotPersist:
 		_ = os.Remove(overridePersistPath())
 	case OverrideSlotSession:
+		sessionOverrideMu.Lock()
 		sessionOverride = defaultSessionOverride
+		sessionOverrideMu.Unlock()
 	}
 }

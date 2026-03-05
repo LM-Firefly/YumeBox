@@ -3,10 +3,125 @@ Override = {
     Title = "覆写设置"
     
     Section = {
+        Inbound = "入站"
         General = "通用"
         AuthHosts = "认证与Hosts"
         ExternalController = "外部控制器"
+        Geo = "GEO"
         Dns = "DNS"
+        Sniffer = "嗅探"
+        Rules = "路由规则"
+        Tools = "工具"
+    }
+
+    Nav = {
+        NodePageSwitch = "配置分组"
+    }
+
+    Summary = {
+        Inbound = "入站端口与局域网"
+        General = "模式、日志与 IPv6"
+        Api = "控制器与 CORS"
+        Geo = "Geo 数据源"
+        Dns = "DNS 与 FakeIP"
+        Sniffer = "嗅探与跳过项"
+        Rules = "追加与覆盖规则"
+        Tools = "导入与导出"
+        RouteObjects = "路由对象维护"
+    }
+
+    Preset = {
+        RouteRulesA = "内置覆写 A"
+        RouteRulesASummary = "规则集 A"
+        RouteRulesB = "内置覆写 B"
+        RouteRulesBSummary = "规则集 B"
+    }
+
+    Label = {
+        BindAddress = "绑定地址"
+        LanAllowedIps = "LAN 允许网段"
+        LanDisallowedIps = "LAN 禁止网段"
+        SkipAuthPrefixes = "跳过认证前缀"
+        UnifiedDelay = "统一延迟"
+        TcpConcurrent = "TCP 并发"
+        FindProcessMode = "进程匹配模式"
+        KeepAliveInterval = "Keep Alive 间隔"
+        KeepAliveIdle = "Keep Alive 空闲阈值"
+        GeoDataMode = "GeoData 模式"
+        GeoIpUrl = "GeoIP 地址"
+        MmdbUrl = "MMDB 地址"
+        GeoSiteUrl = "GeoSite 地址"
+        UseSystemHosts = "使用系统 Hosts"
+        RespectRules = "遵循路由规则"
+        CacheAlgorithm = "缓存算法"
+        FakeIpRange = "FakeIP 地址段"
+        FallbackGeosite = "Fallback Geosite"
+        ProxyServerNameserver = "代理服务器 DNS"
+        Enable = "启用"
+        ForceDnsMapping = "强制 DNS 映射"
+        ParsePureIp = "解析纯 IP"
+        OverrideDestination = "覆写目标地址"
+        HttpPorts = "HTTP 端口"
+        HttpOverride = "HTTP 覆写"
+        TlsPorts = "TLS 端口"
+        TlsOverride = "TLS 覆写"
+        QuicPorts = "QUIC 端口"
+        QuicOverride = "QUIC 覆写"
+        ForceDomain = "强制嗅探域名"
+        SkipDomain = "跳过嗅探域名"
+        SkipSrcAddress = "跳过源地址"
+        SkipDstAddress = "跳过目标地址"
+        PrependRules = "追加规则"
+        RulesReplace = "覆盖规则"
+        RouteObjects = "路由对象（Rule Providers / Proxy Groups / Sub Rules）"
+    }
+
+    Tool = {
+        ExportClipboard = "导出 Override JSON 到剪贴板"
+        ExportClipboardSummary = "分享/备份当前覆写"
+        ImportMerge = "从剪贴板导入（Merge）"
+        ImportMergeSummary = "导入 JSON 并合并到当前覆写"
+        ImportReplace = "从剪贴板导入（Replace）"
+        ImportReplaceSummary = "导入 JSON 并替换当前覆写"
+        Preview = "预览当前配置"
+        PreviewSummary = "查看 JSON 快照 + 基础规则校验"
+
+        ImportTypeTitle = "导入/导出类型"
+        ImportModeTitle = "导入模式"
+        ImportModeAppend = "追加（Merge）"
+        ImportModeOverride = "覆盖（Replace）"
+        TypeRuleProviders = "Rule Providers"
+        TypeProxyGroups = "Proxy Groups"
+        TypeRules = "路由规则（追加 + 覆盖）"
+        TypeSubRules = "Sub Rules"
+
+        ImportClipboardSimple = "从剪贴板导入"
+        ImportClipboardSimpleSummary = "使用当前模式"
+        ImportFileSimple = "从文件导入"
+        ImportFileSimpleSummary = "选择 JSON 文件"
+        ExportClipboardSimple = "导出到剪贴板"
+        ExportClipboardSimpleSummary = "导出当前配置"
+        ExportFileSimple = "导出到文件"
+        ExportFileSimpleSummary = "导出 JSON 文件"
+    }
+
+    Dialog = {
+        ImportTitle = "导入 Override JSON"
+        ImportLabel = "粘贴 JSON"
+        PreviewTitle = "Override 预览"
+        RuleValidation = "规则校验"
+        JsonSnapshot = "JSON 快照"
+    }
+
+    Message = {
+        Copied = "已复制到剪贴板"
+        ImportSuccess = "导入成功"
+        ReplaceSuccess = "替换成功"
+        ImportFailed = "导入失败: %s"
+        ReplaceFailed = "替换失败: %s"
+        ExportSuccess = "导出成功"
+        ExportFailed = "导出失败: %s"
+        NoWarnings = "无警告"
     }
     
     General = {

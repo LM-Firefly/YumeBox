@@ -115,5 +115,17 @@ Component = {
             KeyEmpty = "键不能为空"
             KeyExists = "键已存在"
         }
+        Rule = {
+            Type = "规则类型"
+            Target = "目标"
+            Content = "规则内容"
+            Src = "源IP"
+            NoResolve = "不解析"
+            TargetReject = "REJECT"
+            TargetDirect = "DIRECT"
+            TargetMatch = "MATCH"
+            ErrorTargetRequired = "请选择目标"
+            ErrorContentRequired = "规则内容不能为空"
+        }
     }
 }

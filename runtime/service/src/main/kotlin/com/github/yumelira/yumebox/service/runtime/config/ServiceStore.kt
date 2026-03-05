@@ -27,6 +27,28 @@ class ServiceStore {
     private val store = Store(
         MMKV.mmkvWithID("service", MMKV.MULTI_PROCESS_MODE).asStoreProvider()
     )
+    private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
+
+    private fun readBoolean(newKey: String, legacyKey: String, defaultValue: Boolean): Boolean {
+        return when {
+            networkSettings.containsKey(newKey) -> networkSettings.decodeBool(newKey, defaultValue)
+            else -> store.provider.getBoolean(legacyKey, defaultValue)
+        }
+    }
+
+    private fun readString(newKey: String, legacyKey: String, defaultValue: String): String {
+        return when {
+            networkSettings.containsKey(newKey) -> networkSettings.decodeString(newKey, defaultValue) ?: defaultValue
+            else -> store.provider.getString(legacyKey, defaultValue)
+        }
+    }
+
+    private fun readStringSet(newKey: String, legacyKey: String, defaultValue: Set<String>): Set<String> {
+        return when {
+            networkSettings.containsKey(newKey) -> networkSettings.decodeStringSet(newKey, defaultValue) ?: defaultValue
+            else -> store.provider.getStringSet(legacyKey, defaultValue)
+        }
+    }
 
     var activeProfile: UUID? by store.typedString(
         key = "active_profile",
@@ -34,46 +56,127 @@ class ServiceStore {
         to = { it?.toString() ?: "" }
     )
 
-    var bypassPrivateNetwork: Boolean by store.boolean(
-        key = "bypass_private_network",
-        defaultValue = true
-    )
+    var bypassPrivateNetwork: Boolean
+        get() = readBoolean(
+            newKey = "bypassPrivateNetwork",
+            legacyKey = "bypass_private_network",
+            defaultValue = true
+        )
+        set(value) {
+            networkSettings.encode("bypassPrivateNetwork", value)
+            store.provider.setBoolean("bypass_private_network", value)
+        }
 
-    var accessControlMode: AccessControlMode by store.enum(
-        key = "access_control_mode",
-        defaultValue = AccessControlMode.AcceptAll,
-        values = AccessControlMode.values()
-    )
+    private var accessControlModeRaw: String
+        get() = readString(
+            newKey = "accessControlMode",
+            legacyKey = "access_control_mode",
+            defaultValue = AccessControlMode.AcceptAll.name
+        )
+        set(value) {
+            networkSettings.encode("accessControlMode", value)
+            store.provider.setString("access_control_mode", value)
+        }
 
-    var accessControlPackages by store.stringSet(
-        key = "access_control_packages",
-        defaultValue = emptySet()
-    )
+    var accessControlMode: AccessControlMode
+        get() = when (accessControlModeRaw) {
+            AccessControlMode.AcceptAll.name,
+            "ALLOW_ALL" -> AccessControlMode.AcceptAll
 
-    var dnsHijacking by store.boolean(
-        key = "dns_hijacking",
-        defaultValue = true
-    )
+            AccessControlMode.AcceptSelected.name,
+            "ALLOW_SPECIFIC" -> AccessControlMode.AcceptSelected
 
-    var systemProxy by store.boolean(
-        key = "system_proxy",
-        defaultValue = true
-    )
+            AccessControlMode.RejectAll.name,
+            "DENY_ALL" -> AccessControlMode.RejectAll
 
-    var allowBypass by store.boolean(
-        key = "allow_bypass",
-        defaultValue = true
-    )
+            AccessControlMode.RejectSelected.name,
+            "DENY_SPECIFIC" -> AccessControlMode.RejectSelected
 
-    var allowIpv6 by store.boolean(
-        key = "allow_ipv6",
-        defaultValue = false
-    )
+            else -> AccessControlMode.AcceptAll
+        }
+        set(value) {
+            accessControlModeRaw = value.name
+        }
 
-    var tunStackMode by store.string(
-        key = "tun_stack_mode",
-        defaultValue = "system"
-    )
+    var accessControlPackages: Set<String>
+        get() = readStringSet(
+            newKey = "accessControlPackages",
+            legacyKey = "access_control_packages",
+            defaultValue = emptySet()
+        )
+        set(value) {
+            networkSettings.encode("accessControlPackages", value)
+            store.provider.setStringSet("access_control_packages", value)
+        }
+
+    var dnsHijacking: Boolean
+        get() = readBoolean(
+            newKey = "dnsHijack",
+            legacyKey = "dns_hijacking",
+            defaultValue = true
+        )
+        set(value) {
+            networkSettings.encode("dnsHijack", value)
+            store.provider.setBoolean("dns_hijacking", value)
+        }
+
+    var systemProxy: Boolean
+        get() = readBoolean(
+            newKey = "systemProxy",
+            legacyKey = "system_proxy",
+            defaultValue = true
+        )
+        set(value) {
+            networkSettings.encode("systemProxy", value)
+            store.provider.setBoolean("system_proxy", value)
+        }
+
+    var allowBypass: Boolean
+        get() = readBoolean(
+            newKey = "allowBypass",
+            legacyKey = "allow_bypass",
+            defaultValue = true
+        )
+        set(value) {
+            networkSettings.encode("allowBypass", value)
+            store.provider.setBoolean("allow_bypass", value)
+        }
+
+    var allowIpv6: Boolean
+        get() = when {
+            networkSettings.containsKey("enableIPv6") -> networkSettings.decodeBool("enableIPv6", false)
+            else -> store.provider.getBoolean("allow_ipv6", false)
+        }
+        set(value) {
+            networkSettings.encode("enableIPv6", value)
+            store.provider.setBoolean("allow_ipv6", value)
+        }
+
+    var tunStackMode: String
+        get() {
+            if (networkSettings.containsKey("tunStack")) {
+                return when (networkSettings.decodeString("tunStack", "System")) {
+                    "System", "system" -> "system"
+                    "GVisor", "gvisor" -> "gvisor"
+                    "Mixed", "mixed" -> "mixed"
+                    else -> "system"
+                }
+            }
+            return store.provider.getString("tun_stack_mode", "system")
+        }
+        set(value) {
+            val normalized = value.lowercase()
+            store.provider.setString("tun_stack_mode", normalized)
+            networkSettings.encode(
+                "tunStack",
+                when (normalized) {
+                    "system" -> "System"
+                    "gvisor" -> "GVisor"
+                    "mixed" -> "Mixed"
+                    else -> "System"
+                }
+            )
+        }
 
     var showTrafficNotification by store.boolean(
         key = "show_traffic_notification",

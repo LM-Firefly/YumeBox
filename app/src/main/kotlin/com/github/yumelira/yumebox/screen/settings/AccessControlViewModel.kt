@@ -2,7 +2,6 @@
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
  *
@@ -26,9 +25,14 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.data.model.AccessControlMode
+import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.repository.NetworkSettingsRepository
+import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +44,7 @@ import kotlinx.coroutines.withContext
 class AccessControlViewModel(
     application: Application,
     private val repository: NetworkSettingsRepository,
+    private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
 
     data class AppInfo(
@@ -81,6 +86,7 @@ class AccessControlViewModel(
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+    private var applyPackagesJob: Job? = null
 
     init {
         checkAndLoad()
@@ -293,8 +299,7 @@ class AccessControlViewModel(
         }
 
 
-        val packagesToSave = _uiState.value.selectedPackages
-        repository.accessControlPackages.set(packagesToSave)
+        persistSelectionAndApply()
     }
 
     fun selectAll() {
@@ -323,7 +328,7 @@ class AccessControlViewModel(
             )
         }
 
-        repository.accessControlPackages.set(_uiState.value.selectedPackages)
+        persistSelectionAndApply()
     }
 
     fun deselectAll() {
@@ -352,7 +357,7 @@ class AccessControlViewModel(
             )
         }
 
-        repository.accessControlPackages.set(_uiState.value.selectedPackages)
+        persistSelectionAndApply()
     }
 
     fun invertSelection() {
@@ -381,7 +386,7 @@ class AccessControlViewModel(
                 )
             )
         }
-        repository.accessControlPackages.set(_uiState.value.selectedPackages)
+        persistSelectionAndApply()
     }
 
     fun selectChinaAppsInCurrentList(): Int {
@@ -425,7 +430,7 @@ class AccessControlViewModel(
                 )
             )
         }
-        repository.accessControlPackages.set(_uiState.value.selectedPackages)
+        persistSelectionAndApply()
         return selectedCount
     }
 
@@ -464,8 +469,26 @@ class AccessControlViewModel(
             )
         }
 
-        repository.accessControlPackages.set(_uiState.value.selectedPackages)
+        persistSelectionAndApply()
         return packages.intersect(_uiState.value.apps.map { it.packageName }.toSet()).size
+    }
+
+    private fun persistSelectionAndApply() {
+        repository.accessControlPackages.set(_uiState.value.selectedPackages)
+
+        applyPackagesJob?.cancel()
+        applyPackagesJob = viewModelScope.launch {
+            delay(350L)
+
+            if (!proxyFacade.isRunning.value) return@launch
+            if (repository.accessControlMode.value == AccessControlMode.ALLOW_ALL) return@launch
+
+            runCatching {
+                proxyFacade.stopProxy()
+                delay(500L)
+                proxyFacade.startProxy(repository.proxyMode.value == ProxyMode.Tun)
+            }
+        }
     }
 
     private fun isChinaPackage(packageName: String): Boolean {

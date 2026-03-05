@@ -25,9 +25,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.WindowBottomSheet
+import top.yukonga.miuix.kmp.extra.WindowDialog
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 
 @Composable
@@ -147,30 +151,47 @@ private fun ConfigTextInputDialog(
     onConfirm: () -> Unit,
 ) {
     if (!show.value) return
-    WindowBottomSheet(
+    WindowDialog(
         show = show,
         title = title,
         onDismissRequest = { show.value = false },
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             TextField(
                 value = textValue,
                 onValueChange = onTextValueChange,
                 label = label,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            DialogButtonRow(
-                onCancel = {
-                    onClear()
-                    show.value = false
-                },
-                onConfirm = {
-                    onConfirm()
-                    show.value = false
-                },
-                cancelText = MLang.Component.Button.Clear,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = {
+                        onClear()
+                        show.value = false
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(MLang.Component.Button.Clear)
+                }
+                Button(
+                    onClick = {
+                        onConfirm()
+                        show.value = false
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColorsPrimary(),
+                ) {
+                    Text(
+                        MLang.Component.Button.Confirm,
+                        color = MiuixTheme.colorScheme.surface,
+                    )
+                }
+            }
         }
     }
 }

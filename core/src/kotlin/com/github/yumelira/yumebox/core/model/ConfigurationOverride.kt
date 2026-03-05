@@ -25,6 +25,7 @@ import android.os.Parcelable
 import com.github.yumelira.yumebox.core.util.Parcelizer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class ConfigurationOverride(
@@ -88,6 +89,27 @@ data class ConfigurationOverride(
     @SerialName("find-process-mode")
     var findProcessMode: FindProcessMode? = null,
 
+    @SerialName("keep-alive-interval")
+    var keepAliveInterval: Int? = null,
+
+    @SerialName("keep-alive-idle")
+    var keepAliveIdle: Int? = null,
+
+    @SerialName("rule-providers")
+    var ruleProviders: Map<String, Map<String, JsonElement>>? = null,
+
+    @SerialName("proxy-groups")
+    var proxyGroups: List<Map<String, JsonElement>>? = null,
+
+    @SerialName("prepend-rules")
+    var prependRules: List<String>? = null,
+
+    @SerialName("rules")
+    var rules: List<String>? = null,
+
+    @SerialName("sub-rules")
+    var subRules: Map<String, List<String>>? = null,
+
     @SerialName("dns")
     val dns: Dns = Dns(),
 
@@ -105,6 +127,9 @@ data class ConfigurationOverride(
         @SerialName("enable")
         var enable: Boolean? = null,
 
+        @SerialName("cache-algorithm")
+        var cacheAlgorithm: String? = null,
+
         @SerialName("prefer-h3")
         var preferH3: Boolean? = null,
 
@@ -116,6 +141,12 @@ data class ConfigurationOverride(
 
         @SerialName("use-hosts")
         var useHosts: Boolean? = null,
+
+        @SerialName("use-system-hosts")
+        var useSystemHosts: Boolean? = null,
+
+        @SerialName("respect-rules")
+        var respectRules: Boolean? = null,
 
         @SerialName("enhanced-mode")
         var enhancedMode: DnsEnhancedMode? = null,
@@ -132,11 +163,17 @@ data class ConfigurationOverride(
         @SerialName("fake-ip-filter")
         var fakeIpFilter: List<String>? = null,
 
+        @SerialName("fake-ip-range")
+        var fakeIpRange: String? = null,
+
         @SerialName("fake-ip-filter-mode")
         var fakeIPFilterMode: FilterMode? = null,
 
         @SerialName("fallback-filter")
         val fallbackFilter: DnsFallbackFilter = DnsFallbackFilter(),
+
+        @SerialName("proxy-server-nameserver")
+        var proxyServerNameserver: List<String>? = null,
 
         @SerialName("nameserver-policy")
         var nameserverPolicy: Map<String, String>? = null,
@@ -152,6 +189,9 @@ data class ConfigurationOverride(
 
         @SerialName("ipcidr")
         var ipcidr: List<String>? = null,
+
+        @SerialName("geosite")
+        var geosite: List<String>? = null,
 
         @SerialName("domain")
         var domain: List<String>? = null,
@@ -194,6 +234,9 @@ data class ConfigurationOverride(
 
         @SerialName("whitelist")
         WhiteList,
+
+        @SerialName("rule")
+        Rule,
     }
 
     @Serializable
@@ -250,17 +293,17 @@ data class ConfigurationOverride(
     @Serializable
     data class Sniff(
         @SerialName("HTTP")
-        var http: ProtocolConig = ProtocolConig(),
+        var http: ProtocolConfig = ProtocolConfig(),
 
         @SerialName("TLS")
-        var tls: ProtocolConig = ProtocolConig(),
+        var tls: ProtocolConfig = ProtocolConfig(),
 
         @SerialName("QUIC")
-        var quic: ProtocolConig = ProtocolConig(),
+        var quic: ProtocolConfig = ProtocolConfig(),
     )
 
     @Serializable
-    data class ProtocolConig(
+    data class ProtocolConfig(
         @SerialName("ports")
         var ports: List<String>? = null,
 
