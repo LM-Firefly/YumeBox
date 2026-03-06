@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
@@ -51,15 +53,17 @@ fun PortInputContent(
     onValueChange: (Int?) -> Unit,
 ) {
     val showDialog = remember { mutableStateOf(false) }
-    var textValue by remember { mutableStateOf(value?.toString() ?: "") }
-    var inputValue by remember { mutableStateOf("") }
+    val textFieldValueState = remember { mutableStateOf(TextFieldValue()) }
 
     ArrowPreference(
         title = title,
         summary = if (value != null) "$value" else MLang.Component.Selector.NotModify,
         onClick = {
-            textValue = value?.toString() ?: ""
-            inputValue = textValue
+            val currentText = value?.toString().orEmpty()
+            textFieldValueState.value = TextFieldValue(
+                text = currentText,
+                selection = TextRange(currentText.length),
+            )
             showDialog.value = true
         },
     )
@@ -67,21 +71,14 @@ fun PortInputContent(
     ConfigTextInputDialog(
         show = showDialog,
         title = title,
-        textValue = inputValue,
+        textFieldValue = textFieldValueState,
         label = MLang.Component.ConfigInput.PortLabel,
-        onTextValueChange = { input ->
-            inputValue = input
-        },
         onClear = { onValueChange(null) },
         onConfirm = {
-            val port = inputValue.filter(Char::isDigit).toIntOrNull()
+            val port = textFieldValueState.value.text.filter(Char::isDigit).toIntOrNull()
             if (port == null || (port in 1..65535)) {
                 onValueChange(port)
             }
-            textValue = port?.toString() ?: ""
-        },
-        onDismiss = {
-            textValue = value?.toString() ?: ""
         },
     )
 }
@@ -94,13 +91,17 @@ fun StringInputContent(
     onValueChange: (String?) -> Unit,
 ) {
     val showDialog = remember { mutableStateOf(false) }
-    var textValue by remember { mutableStateOf(value ?: "") }
+    val textFieldValueState = remember { mutableStateOf(TextFieldValue()) }
 
     ArrowPreference(
         title = title,
         summary = value?.takeIf { it.isNotEmpty() } ?: MLang.Component.Selector.NotModify,
         onClick = {
-            textValue = value ?: ""
+            val currentText = value.orEmpty()
+            textFieldValueState.value = TextFieldValue(
+                text = currentText,
+                selection = TextRange(currentText.length),
+            )
             showDialog.value = true
         },
     )
@@ -108,11 +109,12 @@ fun StringInputContent(
     ConfigTextInputDialog(
         show = showDialog,
         title = title,
-        textValue = textValue,
+        textFieldValue = textFieldValueState,
         label = placeholder,
-        onTextValueChange = { textValue = it },
         onClear = { onValueChange(null) },
-        onConfirm = { onValueChange(textValue.takeIf { it.isNotEmpty() }) },
+        onConfirm = {
+            onValueChange(textFieldValueState.value.text.takeIf { it.isNotEmpty() })
+        },
     )
 }
 
@@ -160,9 +162,8 @@ fun StringMapInputContent(
 private fun ConfigTextInputDialog(
     show: MutableState<Boolean>,
     title: String,
-    textValue: String,
+    textFieldValue: MutableState<TextFieldValue>,
     label: String,
-    onTextValueChange: (String) -> Unit,
     onClear: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: (() -> Unit)? = null,
@@ -183,8 +184,10 @@ private fun ConfigTextInputDialog(
             verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             TextField(
-                value = textValue,
-                onValueChange = onTextValueChange,
+                value = textFieldValue.value,
+                onValueChange = { updatedTextFieldValue ->
+                    textFieldValue.value = updatedTextFieldValue
+                },
                 label = label,
                 modifier = Modifier.fillMaxWidth(),
             )

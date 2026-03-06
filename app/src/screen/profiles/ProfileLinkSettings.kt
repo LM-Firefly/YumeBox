@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
@@ -193,17 +195,21 @@ internal fun AddLinkDialog(
     onConfirm: () -> Unit
 ) {
     var error by remember { mutableStateOf("") }
-    var currentName by remember { mutableStateOf(linkName) }
-    var currentUrl by remember { mutableStateOf(linkUrl) }
+    var currentName by remember {
+        mutableStateOf(TextFieldValue(linkName, TextRange(linkName.length)))
+    }
+    var currentUrl by remember {
+        mutableStateOf(TextFieldValue(linkUrl, TextRange(linkUrl.length)))
+    }
 
     LaunchedEffect(show.value, linkToEdit) {
         if (show.value) {
             if (linkToEdit != null) {
-                currentName = linkToEdit.name
-                currentUrl = linkToEdit.url
+                currentName = TextFieldValue(linkToEdit.name, TextRange(linkToEdit.name.length))
+                currentUrl = TextFieldValue(linkToEdit.url, TextRange(linkToEdit.url.length))
             } else {
-                currentName = ""
-                currentUrl = ""
+                currentName = TextFieldValue()
+                currentUrl = TextFieldValue()
             }
             error = ""
         }
@@ -215,14 +221,14 @@ internal fun AddLinkDialog(
         onDismissRequest = onDismiss,
         onConfirm = {
             error = when {
-                currentName.isBlank() -> MLang.ProfilesPage.LinkSettings.Validation.EnterName
-                currentUrl.isBlank() -> MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
-                !currentUrl.startsWith("http", ignoreCase = true) -> MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
+                currentName.text.isBlank() -> MLang.ProfilesPage.LinkSettings.Validation.EnterName
+                currentUrl.text.isBlank() -> MLang.ProfilesPage.LinkSettings.Validation.EnterUrl
+                !currentUrl.text.startsWith("http", ignoreCase = true) -> MLang.ProfilesPage.LinkSettings.Validation.InvalidUrl
                 else -> ""
             }
             if (error.isEmpty()) {
-                onNameChange(currentName)
-                onUrlChange(currentUrl)
+                onNameChange(currentName.text)
+                onUrlChange(currentUrl.text)
                 onConfirm()
             }
         },
@@ -237,6 +243,7 @@ internal fun AddLinkDialog(
                 error = ""
             },
             label = MLang.ProfilesPage.LinkSettings.Name,
+            useLabelAsPlaceholder = true,
             modifier = Modifier.fillMaxWidth(),
         )
         TextField(
@@ -246,6 +253,7 @@ internal fun AddLinkDialog(
                 error = ""
             },
             label = MLang.ProfilesPage.LinkSettings.Url,
+            useLabelAsPlaceholder = true,
             modifier = Modifier.fillMaxWidth(),
         )
     }

@@ -98,7 +98,6 @@ fun ImportConfigScreen(
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            context.toast(it)
             viewModel.clearError()
             isDownloading = false
         }

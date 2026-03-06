@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.data.model.OverrideConfig
@@ -56,16 +58,19 @@ internal fun EditProfileNameDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
-    var editName by remember { mutableStateOf(currentName) }
+    var editName by remember(show, currentName) {
+        mutableStateOf(TextFieldValue(currentName, TextRange(currentName.length)))
+    }
 
     AppTextFieldDialog(
         show = show,
         title = MLang.ProfilesPage.EditDialog.Title,
-        value = editName,
-        onValueChange = { editName = it },
+        textFieldValue = editName,
+        onTextFieldValueChange = { editName = it },
         onDismissRequest = onDismiss,
-        onConfirm = { onConfirm(editName) },
+        onConfirm = { onConfirm(editName.text) },
         label = MLang.ProfilesPage.Input.ProfileName,
+        useLabelAsPlaceholder = true,
         singleLine = true,
     )
 }
@@ -183,15 +188,17 @@ internal fun ProfileSettingsDialog(
         ?.overrideIds
         .orEmpty()
         .filter { it != OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID }
-    var editName by remember { mutableStateOf(profile.name) }
-    var editSource by remember { mutableStateOf("") }
+    var editName by remember {
+        mutableStateOf(TextFieldValue(profile.name, TextRange(profile.name.length)))
+    }
+    var editSource by remember { mutableStateOf(TextFieldValue()) }
     var customRoutingSelected by remember { mutableStateOf(initialCustomRoutingEnabled) }
     var pendingSelectedUserOverrideIds by remember { mutableStateOf(emptyList<String>()) }
 
     LaunchedEffect(show, profile.uuid, profile.name, binding?.overrideIds) {
         if (show) {
-            editName = profile.name
-            editSource = ""
+            editName = TextFieldValue(profile.name, TextRange(profile.name.length))
+            editSource = TextFieldValue()
             customRoutingSelected = initialCustomRoutingEnabled
             pendingSelectedUserOverrideIds = initialOverrideIds
         }
@@ -202,8 +209,8 @@ internal fun ProfileSettingsDialog(
             toggleOverrideIdSelection(pendingSelectedUserOverrideIds, overrideId, isSelected)
     }
     val saveSettings = {
-        val trimmedName = editName.trim()
-        val trimmedSource = editSource.trim()
+        val trimmedName = editName.text.trim()
+        val trimmedSource = editSource.text.trim()
         val targetSource = if (profile.type == Profile.Type.Url && trimmedSource.isNotEmpty()) {
             trimmedSource
         } else {
@@ -262,6 +269,7 @@ internal fun ProfileSettingsDialog(
                     value = editName,
                     onValueChange = { editName = it },
                     label = MLang.ProfilesPage.Input.ProfileName,
+                    useLabelAsPlaceholder = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -270,6 +278,7 @@ internal fun ProfileSettingsDialog(
                         value = editSource,
                         onValueChange = { editSource = it },
                         label = MLang.ProfilesPage.SettingsDialog.ChangeLink,
+                        useLabelAsPlaceholder = true,
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 2,
                     )

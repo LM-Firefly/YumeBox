@@ -20,6 +20,7 @@
 
 
 package com.github.yumelira.yumebox.presentation.component
+
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
@@ -68,6 +69,7 @@ fun TopBar(
     actionIconPadding: Dp = UiDp.dp24,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
+    bottomContent: @Composable () -> Unit = {},
 ) {
     val hazeState = LocalTopBarHazeState.current
     val hazeStyle = LocalTopBarHazeStyle.current
@@ -83,6 +85,7 @@ fun TopBar(
         navigationIcon = navigationIcon,
         actions = actions,
         scrollBehavior = scrollBehavior,
+        bottomContent = bottomContent,
     )
 }
 
@@ -96,6 +99,7 @@ fun SmallTopBar(
     actionIconPadding: Dp = UiDp.dp24,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
+    bottomContent: @Composable () -> Unit = {},
 ) {
     val hazeState = LocalTopBarHazeState.current
     val hazeStyle = LocalTopBarHazeStyle.current
@@ -111,5 +115,6 @@ fun SmallTopBar(
         navigationIcon = navigationIcon,
         actions = actions,
         scrollBehavior = scrollBehavior,
+        bottomContent = bottomContent,
     )
 }

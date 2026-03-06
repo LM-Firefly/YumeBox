@@ -329,6 +329,16 @@ private fun deriveThemeColors(
     } else {
         defaultOnPrimaryContainer
     }
+    val disabledOnPrimaryFinal = if (invertOnPrimaryColors) {
+        disabledOnPrimary.invertLuminance()
+    } else {
+        disabledOnPrimary
+    }
+    val disabledOnPrimaryButtonFinal = if (invertOnPrimaryColors) {
+        disabledOnPrimaryButton.invertLuminance()
+    } else {
+        disabledOnPrimaryButton
+    }
 
     return base.copy(
         primary = primary,
@@ -336,9 +346,9 @@ private fun deriveThemeColors(
         primaryVariant = primaryVariant,
         onPrimaryVariant = onPrimaryVariant,
         disabledPrimary = disabledPrimary,
-        disabledOnPrimary = disabledOnPrimary,
+        disabledOnPrimary = disabledOnPrimaryFinal,
         disabledPrimaryButton = disabledPrimaryButton,
-        disabledOnPrimaryButton = disabledOnPrimaryButton,
+        disabledOnPrimaryButton = disabledOnPrimaryButtonFinal,
         disabledPrimarySlider = disabledPrimarySlider,
         primaryContainer = primaryContainer,
         onPrimaryContainer = onPrimaryContainer,
@@ -364,3 +374,6 @@ private fun Color.autoOnColor(threshold: Float = 0.52f): Color =
 
 private fun Color.invertBlackWhite(): Color =
     if (this == Color.Black) Color.White else Color.Black
+
+private fun Color.invertLuminance(): Color =
+    Color(1f - red, 1f - green, 1f - blue, alpha)

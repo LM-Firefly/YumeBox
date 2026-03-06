@@ -20,6 +20,7 @@
 
 
 package com.github.yumelira.yumebox.screen.settings
+
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.content.Intent
 import android.net.Uri
@@ -28,11 +29,10 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -41,6 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -307,11 +309,10 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
             checked = exitUiWhenBackground,
             onCheckedChange = viewModel::onExitUiWhenBackgroundChange,
         )
-        PreferenceSwitchItem(
+        PreferenceArrowItem(
             title = MLang.AppSettings.ServiceSection.BatteryOptimizationTitle,
             summary = batteryOptimizationSummary,
-            checked = batteryOptimizationIgnored,
-            onCheckedChange = {
+            onClick = {
                 if (!openBatteryOptimizationSettings(context, batteryOptimizationIgnored)) {
                     context.toast(MLang.Util.Error.UnknownError)
                 }
@@ -658,23 +659,54 @@ private fun CustomUserAgentPreferenceItem(
             MLang.AppSettings.Network.CustomUserAgentSummaryDefault
         }
     }
-    val showEditCustomUserAgentDialogState = remember { mutableStateOf(false) }
-    val customUserAgentTextFieldState = remember { mutableStateOf(TextFieldValue()) }
+    val showEditCustomUserAgentDialog = remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    var localTextFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = customUserAgent,
+                selection = TextRange(customUserAgent.length),
+            ),
+        )
+    }
 
-    PreferenceValueItem(
+    PreferenceArrowItem(
         title = MLang.AppSettings.Network.CustomUserAgentTitle,
         summary = customUserAgentSummary,
         onClick = {
-            customUserAgentTextFieldState.value = TextFieldValue(customUserAgent)
-            showEditCustomUserAgentDialogState.value = true
+            localTextFieldValue = TextFieldValue(
+                text = customUserAgent,
+                selection = TextRange(customUserAgent.length),
+            )
+            showEditCustomUserAgentDialog.value = true
         },
+        holdDownState = showEditCustomUserAgentDialog.value,
     )
 
-    TextEditBottomSheet(
-        show = showEditCustomUserAgentDialogState,
+    AppTextFieldDialog(
+        show = showEditCustomUserAgentDialog.value,
         title = MLang.AppSettings.EditDialog.UserAgentTitle,
-        textFieldValue = customUserAgentTextFieldState,
-        onConfirm = onConfirm,
+        textFieldValue = localTextFieldValue,
+        onTextFieldValueChange = { updatedTextFieldValue ->
+            localTextFieldValue = updatedTextFieldValue
+        },
+        onDismissRequest = {
+            showEditCustomUserAgentDialog.value = false
+            focusManager.clearFocus()
+        },
+        onConfirm = {
+            onConfirm(localTextFieldValue.text)
+            focusManager.clearFocus()
+            showEditCustomUserAgentDialog.value = false
+        },
+        singleLine = true,
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onConfirm(localTextFieldValue.text)
+                focusManager.clearFocus()
+                showEditCustomUserAgentDialog.value = false
+            },
+        ),
     )
 }
 

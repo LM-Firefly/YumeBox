@@ -215,13 +215,9 @@ class CompiledConfigPipeline(
     }
 
     private fun validateCompiledProviderPaths(finalYaml: String, profileDir: File) {
-        val acceptedPrefixes = listOf(
-            "./providers/rules/",
-            "./providers/proxies/",
-            "providers/rules/",
-            "providers/proxies/",
-        )
         val invalidPaths = mutableListOf<String>()
+        val expectedRuleBase = profileDir.resolve("providers/rules").absolutePath.replace('\\', '/')
+        val expectedProxyBase = profileDir.resolve("providers/proxies").absolutePath.replace('\\', '/')
         PATH_PATTERN.findAll(finalYaml).forEach { match ->
             val pathValue = match.groupValues[1].replace('\\', '/').trim()
             if (!pathValue.endsWith(".yaml") && !pathValue.endsWith(".yml") && !pathValue.endsWith(".mrs")) {
@@ -230,7 +226,8 @@ class CompiledConfigPipeline(
             val isLegacyPath = pathValue.startsWith("./ruleset/") ||
                 pathValue.startsWith("ruleset/") ||
                 pathValue.contains("/clash/")
-            val inProfileProviders = acceptedPrefixes.any(pathValue::startsWith)
+            val inProfileProviders = pathValue.startsWith("$expectedRuleBase/") ||
+                pathValue.startsWith("$expectedProxyBase/")
             if (isLegacyPath || !inProfileProviders) {
                 invalidPaths += pathValue
             }
@@ -244,7 +241,7 @@ class CompiledConfigPipeline(
         if (PATH_PATTERN.containsMatchIn(finalYaml)) {
             Log.i(
                 TAG,
-                "Compiled provider paths validated: profile=${profileDir.absolutePath} prefixes=$acceptedPrefixes",
+                "Compiled provider paths validated: profile=${profileDir.absolutePath} ruleBase=$expectedRuleBase proxyBase=$expectedProxyBase",
             )
         }
     }

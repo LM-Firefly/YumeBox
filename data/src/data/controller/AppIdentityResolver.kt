@@ -131,10 +131,10 @@ class AppIdentityResolver(
         return installedApps().firstOrNull { app ->
             candidates.any { candidate ->
                 candidate.equals(app.packageName, ignoreCase = true) ||
-                    candidate.equals(app.processName, ignoreCase = true) ||
-                    candidate.equals(app.label, ignoreCase = true) ||
-                    candidate.startsWith("${app.packageName}:", ignoreCase = true) ||
-                    candidate.startsWith("${app.processName}:", ignoreCase = true)
+                        candidate.equals(app.processName, ignoreCase = true) ||
+                        candidate.equals(app.label, ignoreCase = true) ||
+                        candidate.startsWith("${app.packageName}:", ignoreCase = true) ||
+                        candidate.startsWith("${app.processName}:", ignoreCase = true)
             }
         }?.packageName
     }
