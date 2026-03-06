@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -87,9 +89,12 @@ internal fun AddProfileSheet(
     val keyboardController = LocalSoftwareKeyboardController.current
     var selectedTypeIndex by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
+    var nameTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var url by remember { mutableStateOf("") }
+    var urlTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var filePath by remember { mutableStateOf("") }
     var fileName by remember { mutableStateOf("") }
+    var fileNameTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
 
@@ -109,6 +114,19 @@ internal fun AddProfileSheet(
         Regex(
             pattern = "^https?://\\S+$", options = setOf(RegexOption.IGNORE_CASE)
         )
+    }
+
+    val applyNameText: (String) -> Unit = { updatedText ->
+        name = updatedText
+        nameTextFieldValue = textFieldValueAtEnd(updatedText)
+    }
+    val applyUrlText: (String) -> Unit = { updatedText ->
+        url = updatedText
+        urlTextFieldValue = textFieldValueAtEnd(updatedText)
+    }
+    val applyFileNameText: (String) -> Unit = { updatedText ->
+        fileName = updatedText
+        fileNameTextFieldValue = textFieldValueAtEnd(updatedText)
     }
 
     val readClipboardAndCheckUrl: () -> String? = {
@@ -134,10 +152,10 @@ internal fun AddProfileSheet(
     }
 
     val clearAllState = {
-        name = ""
-        url = ""
+        applyNameText("")
+        applyUrlText("")
         filePath = ""
-        fileName = ""
+        applyFileNameText("")
         error = ""
         isDownloading = false
         hasShownCompleteAnimation = false
@@ -146,10 +164,10 @@ internal fun AddProfileSheet(
 
     val clearCurrentTypeState = {
         when (selectedTypeIndex) {
-            0 -> url = ""
+            0 -> applyUrlText("")
             1 -> {
                 filePath = ""
-                fileName = ""
+                applyFileNameText("")
             }
 
             2 -> {
@@ -193,24 +211,26 @@ internal fun AddProfileSheet(
         if (show.value) {
             clearAllState()
             if (profileToEdit != null) {
-                name = profileToEdit.name
+                applyNameText(profileToEdit.name)
                 if (profileToEdit.type == Profile.Type.Url) {
                     selectedTypeIndex = 0
-                    url = profileToEdit.source
+                    applyUrlText(profileToEdit.source)
                 } else {
                     selectedTypeIndex = 1
                     filePath = profileToEdit.source
-                    fileName = if (profileToEdit.source.isNotEmpty()) File(profileToEdit.source).name else ""
+                    applyFileNameText(
+                        if (profileToEdit.source.isNotEmpty()) File(profileToEdit.source).name else ""
+                    )
                 }
             } else if (!importUrl.isNullOrBlank()) {
                 selectedTypeIndex = 0
-                url = importUrl
+                applyUrlText(importUrl)
             } else {
                 selectedTypeIndex = 0
                 try {
                     val clipboardUrl = readClipboardAndCheckUrl()
                     if (clipboardUrl != null) {
-                        url = clipboardUrl
+                        applyUrlText(clipboardUrl)
                     }
                 } catch (_: Exception) {
                 }
@@ -268,11 +288,11 @@ internal fun AddProfileSheet(
 
             filePath = it.toString()
             error = ""
-            fileName = actualFileName
+            applyFileNameText(actualFileName)
 
             val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
             if (name.isBlank() || name == actualFileName) {
-                name = fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile }
+                applyNameText(fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile })
             }
         }
     }
@@ -284,7 +304,7 @@ internal fun AddProfileSheet(
                     try {
                         val result = readQrFromImage(context, it)
                         if (result != null) {
-                            url = result
+                            applyUrlText(result)
                             selectedTypeIndex = 0
                             context.toast(MLang.ProfilesPage.QrScanner.RecognizeSuccess)
                         } else {
@@ -308,7 +328,7 @@ internal fun AddProfileSheet(
         if (selectedTypeIndex == 2 || isDownloading) {
             return
         }
-        if (selectedTypeIndex == 0 && url.isBlank()) {
+        if (selectedTypeIndex == 0 && urlTextFieldValue.text.isBlank()) {
             error = MLang.ProfilesPage.Validation.EnterUrl
             return
         }
@@ -326,14 +346,14 @@ internal fun AddProfileSheet(
             if (profileToEdit != null) {
                 onUpdateProfile(
                     profileToEdit.uuid,
-                    name,
-                    url,
+                    nameTextFieldValue.text,
+                    urlTextFieldValue.text,
                     profileToEdit.interval
                 )
             } else {
                 onAddProfile(
-                    name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
-                    url,
+                    nameTextFieldValue.text.ifBlank { MLang.ProfilesPage.Input.NewProfile },
+                    urlTextFieldValue.text,
                     Profile.Type.Url,
                     0L,
                     null
@@ -349,7 +369,7 @@ internal fun AddProfileSheet(
                 )
             } else {
                 onAddProfile(
-                    name.ifBlank { MLang.ProfilesPage.Input.NewProfile },
+                    nameTextFieldValue.text.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                     filePath,
                     Profile.Type.File,
                     0L,
@@ -421,9 +441,9 @@ internal fun AddProfileSheet(
                     ProfileFormContent(
                         selectedTypeIndex = selectedTypeIndex,
                         profileLocked = profileToEdit != null,
-                        name = name,
-                        url = url,
-                        fileName = fileName,
+                        nameTextFieldValue = nameTextFieldValue,
+                        urlTextFieldValue = urlTextFieldValue,
+                        fileNameTextFieldValue = fileNameTextFieldValue,
                         error = error,
                         hasCameraPermission = hasCameraPermission,
                         showCameraPreview = showCameraPreview,
@@ -432,18 +452,20 @@ internal fun AddProfileSheet(
                             selectedTypeIndex = it
                             clearCurrentTypeState()
                         },
-                        onNameChange = {
-                            name = it
+                        onNameChange = { updatedTextFieldValue ->
+                            nameTextFieldValue = updatedTextFieldValue
+                            name = updatedTextFieldValue.text
                             error = ""
                         },
-                        onUrlChange = {
-                            url = it
+                        onUrlChange = { updatedTextFieldValue ->
+                            urlTextFieldValue = updatedTextFieldValue
+                            url = updatedTextFieldValue.text
                             error = ""
                         },
                         onPickFile = { launcher.launch("*/*") },
                         onSelectQrImage = { qrImageLauncher.launch("image/*") },
                         onQrScanned = { scannedUrl ->
-                            url = scannedUrl
+                            applyUrlText(scannedUrl)
                             selectedTypeIndex = 0
                         },
                     )
@@ -522,16 +544,16 @@ private fun DownloadProgressContent(
 private fun ProfileFormContent(
     selectedTypeIndex: Int,
     profileLocked: Boolean,
-    name: String,
-    url: String,
-    fileName: String,
+    nameTextFieldValue: TextFieldValue,
+    urlTextFieldValue: TextFieldValue,
+    fileNameTextFieldValue: TextFieldValue,
     error: String,
     hasCameraPermission: Boolean,
     showCameraPreview: Boolean,
     onContainerMeasured: (androidx.compose.ui.unit.IntSize) -> Unit,
     onTypeSelected: (Int) -> Unit,
-    onNameChange: (String) -> Unit,
-    onUrlChange: (String) -> Unit,
+    onNameChange: (TextFieldValue) -> Unit,
+    onUrlChange: (TextFieldValue) -> Unit,
     onPickFile: () -> Unit,
     onSelectQrImage: () -> Unit,
     onQrScanned: (String) -> Unit,
@@ -564,9 +586,9 @@ private fun ProfileFormContent(
                 else -> ManualProfileContent(
                     typeIndex = typeIndex,
                     profileLocked = profileLocked,
-                    name = name,
-                    url = url,
-                    fileName = fileName,
+                    nameTextFieldValue = nameTextFieldValue,
+                    urlTextFieldValue = urlTextFieldValue,
+                    fileNameTextFieldValue = fileNameTextFieldValue,
                     error = error,
                     onNameChange = onNameChange,
                     onUrlChange = onUrlChange,
@@ -651,12 +673,12 @@ private fun QrScannerContent(
 private fun ManualProfileContent(
     typeIndex: Int,
     profileLocked: Boolean,
-    name: String,
-    url: String,
-    fileName: String,
+    nameTextFieldValue: TextFieldValue,
+    urlTextFieldValue: TextFieldValue,
+    fileNameTextFieldValue: TextFieldValue,
     error: String,
-    onNameChange: (String) -> Unit,
-    onUrlChange: (String) -> Unit,
+    onNameChange: (TextFieldValue) -> Unit,
+    onUrlChange: (TextFieldValue) -> Unit,
     onPickFile: () -> Unit,
 ) {
     Column(
@@ -664,17 +686,19 @@ private fun ManualProfileContent(
         verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
     ) {
         TextField(
-            value = name,
+            value = nameTextFieldValue,
             onValueChange = onNameChange,
             label = MLang.ProfilesPage.Input.ProfileName,
+            useLabelAsPlaceholder = true,
             modifier = Modifier.fillMaxWidth(),
         )
 
         if (typeIndex == 0) {
             TextField(
-                value = url,
+                value = urlTextFieldValue,
                 onValueChange = onUrlChange,
                 label = MLang.ProfilesPage.Input.SubscriptionUrl,
+                useLabelAsPlaceholder = true,
                 maxLines = 2,
                 readOnly = profileLocked,
                 enabled = !profileLocked,
@@ -682,9 +706,10 @@ private fun ManualProfileContent(
             )
         } else {
             TextField(
-                value = fileName,
+                value = fileNameTextFieldValue,
                 onValueChange = {},
                 label = MLang.ProfilesPage.Input.SelectFile,
+                useLabelAsPlaceholder = true,
                 readOnly = true,
                 enabled = false,
                 modifier = Modifier
@@ -705,4 +730,8 @@ private fun ManualProfileContent(
             )
         }
     }
+}
+
+private fun textFieldValueAtEnd(text: String): TextFieldValue {
+    return TextFieldValue(text = text, selection = TextRange(text.length))
 }

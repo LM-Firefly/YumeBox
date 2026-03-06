@@ -189,7 +189,13 @@ private fun SearchBoxContentLayer(
         exit = fadeOut(tween(300, easing = LinearOutSlowInEasing)) +
             slideOutVertically(tween(300, easing = LinearOutSlowInEasing)) { -offsetY },
     ) {
-        content(boxHeight)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(0f),
+        ) {
+            content(boxHeight)
+        }
     }
 }
 

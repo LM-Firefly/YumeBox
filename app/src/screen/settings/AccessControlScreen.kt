@@ -28,20 +28,58 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.state.ToggleableState
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
+import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.OverrideAnimatedFab
+import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
+import com.github.yumelira.yumebox.presentation.component.SearchPager
+import com.github.yumelira.yumebox.presentation.component.SearchStatus
+import com.github.yumelira.yumebox.presentation.component.Title
+import com.github.yumelira.yumebox.presentation.component.TopAppBarAnim
+import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberOverrideFabController
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
@@ -53,7 +91,17 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
-import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.InputField
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.basic.Search
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -61,15 +109,14 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 @Destination<RootGraph>
 fun AccessControlScreen(navigator: DestinationsNavigator) {
-    val layoutDirection = LocalLayoutDirection.current
+    val density = LocalDensity.current
     val scrollBehavior = MiuixScrollBehavior()
     val spacing = spacing
-    val componentSizes = AppTheme.sizes
     val mainLikePadding = rememberStandalonePageMainPadding()
-    val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.space12
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val filteredApps by viewModel.filteredApps.collectAsState()
+    val settingsFabController = rememberOverrideFabController()
 
     var showSettingsSheet by remember { mutableStateOf(false) }
     var searchStatus by remember {
@@ -93,6 +140,9 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 else -> SearchStatus.ResultStatus.SHOW
             }
         )
+    }
+    val showSettingsFab by remember(currentSearchStatus, showSettingsSheet) {
+        derivedStateOf { currentSearchStatus.isCollapsed() && !showSettingsSheet }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -124,82 +174,109 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            floatingActionButton = {
+                OverrideAnimatedFab(
+                    controller = settingsFabController,
+                    visible = showSettingsFab,
+                    imageVector = Yume.`Settings-2`,
+                    contentDescription = MLang.AccessControl.Settings.Title,
+                    onClick = { showSettingsSheet = true },
+                )
+            },
             topBar = {
                 currentSearchStatus.TopAppBarAnim {
                     TopBar(
                         title = MLang.AccessControl.Title,
                         scrollBehavior = scrollBehavior,
-                        actions = {
-                            IconButton(
-                                onClick = { showSettingsSheet = true }
+                        bottomContent = {
+                            Box(
+                                modifier = Modifier
+                                    .alpha(if (currentSearchStatus.isCollapsed()) 1f else 0f)
+                                    .onGloballyPositioned { coordinates ->
+                                        with(density) {
+                                            val collapsedBarOffset = coordinates.positionInWindow().y.toDp()
+                                            if (currentSearchStatus.offsetY != collapsedBarOffset) {
+                                                searchStatus = currentSearchStatus.copy(offsetY = collapsedBarOffset)
+                                            }
+                                        }
+                                    }
+                                    .then(
+                                        if (currentSearchStatus.isCollapsed()) {
+                                            Modifier.pointerInput(currentSearchStatus.current) {
+                                                detectTapGestures {
+                                                    searchStatus = currentSearchStatus.copy(
+                                                        current = SearchStatus.Status.EXPANDING,
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            Modifier
+                                        }
+                                    ),
                             ) {
-                                Icon(Yume.`Settings-2`, contentDescription = MLang.AccessControl.Settings.Title)
+                                AccessControlCollapsedSearchBar(
+                                    label = currentSearchStatus.label,
+                                    topPadding = dynamicTopPadding,
+                                    startPadding = listStartPadding,
+                                    endPadding = listEndPadding,
+                                )
                             }
-                        }
+                        },
                     )
                 }
             },
         ) { innerPadding ->
-        val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)
-        currentSearchStatus.SearchBox(
-            onSearchStatusChange = { searchStatus = it },
-            searchBarTopPadding = dynamicTopPadding,
-            startPadding = listStartPadding,
-            endPadding = listEndPadding,
-            contentPadding = PaddingValues(
-                top = combinedInnerPadding.calculateTopPadding(),
-                start = combinedInnerPadding.calculateStartPadding(layoutDirection),
-                end = combinedInnerPadding.calculateEndPadding(layoutDirection),
-                ),
-            ) { boxHeight ->
-                if (uiState.isLoading) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = boxHeight + spacing.space6,
-                                start = listStartPadding,
-                                end = listEndPadding,
-                                bottom = combinedBottomPadding,
-                            ),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
-                    }
-                } else {
-                    ScreenLazyColumn(
-                        scrollBehavior = scrollBehavior,
-                        innerPadding = combinedInnerPadding,
-                        contentPadding = PaddingValues(
-                            top = boxHeight + spacing.space6,
-                            bottom = combinedBottomPadding,
+            val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)
+            val listBottomPadding = combinedInnerPadding.calculateBottomPadding()
+
+            if (uiState.isLoading) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = combinedInnerPadding.calculateTopPadding(),
                             start = listStartPadding,
                             end = listEndPadding,
+                            bottom = listBottomPadding,
                         ),
-                    ) {
-                        item {
-                            Title(MLang.AccessControl.AppList.Title.format(uiState.selectedPackages.size))
-                        }
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(MLang.AccessControl.AppList.Loading, color = MiuixTheme.colorScheme.onSurface)
+                }
+            } else if (currentSearchStatus.isCollapsed()) {
+                ScreenLazyColumn(
+                    scrollBehavior = scrollBehavior,
+                    innerPadding = combinedInnerPadding,
+                    onScrollDirectionChanged = settingsFabController::onScrollDirectionChanged,
+                    contentPadding = PaddingValues(
+                        top = combinedInnerPadding.calculateTopPadding() + spacing.space6,
+                        bottom = listBottomPadding,
+                        start = listStartPadding,
+                        end = listEndPadding,
+                    ),
+                ) {
+                    item {
+                        Title(MLang.AccessControl.AppList.Title.format(uiState.selectedPackages.size))
+                    }
 
-                        items(
-                            items = filteredApps,
-                            key = { it.packageName }
-                        ) { app ->
-                            AppCard(
-                                app = app,
-                                selected = app.packageName in uiState.selectedPackages,
-                                onSelectionChange = { checked ->
-                                    viewModel.onAppSelectionChange(app.packageName, checked)
-                                },
-                                onClick = {
-                                    viewModel.onAppSelectionChange(
-                                        app.packageName,
-                                        app.packageName !in uiState.selectedPackages,
-                                    )
-                                }
-                            )
-                        }
+                    items(
+                        items = filteredApps,
+                        key = { it.packageName }
+                    ) { app ->
+                        AppCard(
+                            app = app,
+                            selected = app.packageName in uiState.selectedPackages,
+                            onSelectionChange = { checked ->
+                                viewModel.onAppSelectionChange(app.packageName, checked)
+                            },
+                            onClick = {
+                                viewModel.onAppSelectionChange(
+                                    app.packageName,
+                                    app.packageName !in uiState.selectedPackages,
+                                )
+                            }
+                        )
                     }
                 }
             }
@@ -229,16 +306,19 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
             emptyResult = {
                 SearchEmptyState(
                     text = MLang.AccessControl.Search.Empty,
-                    modifier = Modifier.padding(bottom = combinedBottomPadding),
+                    modifier = Modifier.padding(bottom = mainLikePadding.calculateBottomPadding()),
                 )
             },
         ) {
-            val searchListState = androidx.compose.foundation.lazy.rememberLazyListState()
+            val searchListState = rememberLazyListState()
+            val imeBottomPadding = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+
             LaunchedEffect(currentSearchStatus.searchText) {
                 if (currentSearchStatus.searchText.isNotBlank()) {
                     searchListState.scrollToItem(0)
                 }
             }
+
             LazyColumn(
                 state = searchListState,
                 modifier = Modifier.fillMaxSize(),
@@ -246,7 +326,7 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     start = listStartPadding,
                     end = listEndPadding,
                     top = spacing.space6,
-                    bottom = combinedBottomPadding,
+                    bottom = maxOf(mainLikePadding.calculateBottomPadding(), imeBottomPadding),
                 ),
             ) {
                 items(
@@ -270,6 +350,38 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
             }
         }
     }
+}
+
+@Composable
+private fun AccessControlCollapsedSearchBar(
+    label: String,
+    topPadding: androidx.compose.ui.unit.Dp,
+    startPadding: androidx.compose.ui.unit.Dp,
+    endPadding: androidx.compose.ui.unit.Dp,
+) {
+    InputField(
+        query = "",
+        onQueryChange = {},
+        label = label,
+        leadingIcon = {
+            Icon(
+                imageVector = MiuixIcons.Basic.Search,
+                contentDescription = MLang.Component.Editor.Action.Search,
+                modifier = Modifier
+                    .size(AppTheme.sizes.searchIconTouchTarget)
+                    .padding(start = spacing.space16, end = spacing.space8),
+                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            )
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = startPadding, end = endPadding)
+            .padding(top = topPadding, bottom = AppTheme.sizes.searchBarBottomPadding),
+        onSearch = {},
+        enabled = false,
+        expanded = false,
+        onExpandedChange = {},
+    )
 }
 
 @Composable
@@ -300,6 +412,7 @@ private fun AccessControlSettingsSheet(
         title = MLang.AccessControl.Settings.Title,
         onDismissRequest = onDismiss,
         enableNestedScroll = true,
+        renderInRootScaffold = false,
     ) {
         Column {
             top.yukonga.miuix.kmp.basic.Card {

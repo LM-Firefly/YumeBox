@@ -249,16 +249,19 @@ fun ConnectionScreen(
                     }
                 }
             } else {
-
                 items(
                     items = filteredConnections,
                     key = { it.id },
+                    contentType = { "connection" },
                 ) { connection ->
                     ConnectionCard(
                         connectionInfo = connection,
                         onClick = {
-                            selectedConnection = connection
-                            showDetailSheet = true
+                            val isSameConnection = selectedConnection?.id == connection.id
+                            if (!isSameConnection || !showDetailSheet) {
+                                selectedConnection = connection
+                                showDetailSheet = true
+                            }
                         },
                         modifier = Modifier.padding(vertical = spacing.space6),
                     )

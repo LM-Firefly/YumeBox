@@ -166,23 +166,6 @@ fun CustomRoutingScreen(
             scrollBehavior = scrollBehavior,
             innerPadding = combinePaddingValues(paddingValues, mainPadding),
         ) {
-            item(key = "custom-routing-description") {
-                Card(modifier = Modifier.padding(top = 16.dp)) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = MLang.MetaFeature.CustomRouting.Description,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            style = MiuixTheme.textStyles.body2,
-                        )
-                    }
-                }
-            }
-
             item(key = "group-type") {
                 RoutingSwitchCard(
                     title = MLang.MetaFeature.CustomRouting.GroupTypeTitle,

@@ -20,7 +20,6 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
-import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -59,13 +58,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -114,7 +110,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
 private val overrideConfigItemGap = Spacing().space12
@@ -222,23 +217,6 @@ fun OverrideListScreen(
             lazyListState = listState,
             onScrollDirectionChanged = createFabController::onScrollDirectionChanged,
         ) {
-            item(key = "override-docs-tip", contentType = "override-docs-tip") {
-                OverrideDocsTipCard(
-                    onClick = {
-                        runCatching {
-                            context.startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    "https://wiki.metacubex.one/".toUri(),
-                                ),
-                            )
-                        }.onFailure { error ->
-                            context.toast(error.message ?: "无法打开 Mihomo Docs")
-                        }
-                    },
-                )
-            }
-
             when {
                 userConfigs.isEmpty() -> {
                     item(key = "override-empty", contentType = "override-empty") {
@@ -324,7 +302,6 @@ fun OverrideListScreen(
             },
             onConfirmImport = { content, sourceName ->
                 viewModel.importConfig(content, sourceName).onSuccess {
-                    context.toast(MLang.Override.Import.Success.format(sourceName.ifBlank { it.name }, 1))
                     showCreateDialog.value = false
                 }.onFailure { error ->
                     context.toast(error.message ?: MLang.Override.Import.ReadError)
@@ -347,32 +324,6 @@ fun OverrideListScreen(
                 showDeleteDialog.value = false
             },
         )
-    }
-}
-
-@Composable
-private fun OverrideDocsTipCard(
-    onClick: () -> Unit,
-) {
-    Card(modifier = Modifier.padding(top = 16.dp)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = buildAnnotatedString {
-                    append("如果你不知道什么是覆写. 请阅读 ")
-                    pushStyle(SpanStyle(color = colorScheme.primary))
-                    append("Mihomo Docs")
-                    pop()
-                },
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                style = MiuixTheme.textStyles.body2,
-            )
-        }
     }
 }
 
@@ -534,13 +485,13 @@ private fun CreateConfigDialog(
     val density = LocalDensity.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var inputMode by remember(show.value, initialMode) { mutableStateOf(initialMode) }
-    var name by remember(show.value) { mutableStateOf("") }
+    val nameTextFieldValueState = remember(show.value) { mutableStateOf(TextFieldValue()) }
     var contentType by remember(show.value) { mutableStateOf(OverrideContentType.Yaml) }
     var selectedImportUri by remember(show.value) { mutableStateOf<Uri?>(null) }
     var selectedImportFileName by remember(show.value) { mutableStateOf("") }
     var stableContentHeightPx by remember(show.value) { mutableStateOf(0) }
     val canConfirm = when (inputMode) {
-        OverrideConfigInputMode.CreateNew -> name.isNotBlank()
+        OverrideConfigInputMode.CreateNew -> nameTextFieldValueState.value.text.isNotBlank()
         OverrideConfigInputMode.LocalFile -> selectedImportUri != null && selectedImportFileName.isNotBlank()
     }
     val stableContentHeight = remember(stableContentHeightPx, density) {
@@ -582,7 +533,7 @@ private fun CreateConfigDialog(
                     keyboardController?.hide()
                     when (inputMode) {
                         OverrideConfigInputMode.CreateNew -> {
-                            onConfirmCreate(name, contentType)
+                            onConfirmCreate(nameTextFieldValueState.value.text, contentType)
                         }
 
                         OverrideConfigInputMode.LocalFile -> {
@@ -640,8 +591,10 @@ private fun CreateConfigDialog(
                                 verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
                             ) {
                                 TextField(
-                                    value = name,
-                                    onValueChange = { name = it },
+                                    value = nameTextFieldValueState.value,
+                                    onValueChange = { updatedTextFieldValue ->
+                                        nameTextFieldValueState.value = updatedTextFieldValue
+                                    },
                                     label = MLang.Override.Dialog.Create.Name,
                                 )
                             }

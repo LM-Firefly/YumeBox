@@ -35,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import com.github.yumelira.yumebox.presentation.component.AppConfirmDialog
 import com.github.yumelira.yumebox.presentation.component.AppFormDialog
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
@@ -510,15 +512,24 @@ private fun SimpleTextEditorDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var value by remember(initialValue) { mutableStateOf(initialValue) }
+    var textFieldValue by remember(initialValue) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialValue,
+                selection = TextRange(initialValue.length),
+            ),
+        )
+    }
     AppTextFieldDialog(
         show = true,
         title = title,
-        value = value,
-        onValueChange = { value = it },
+        textFieldValue = textFieldValue,
+        onTextFieldValueChange = { updatedTextFieldValue ->
+            textFieldValue = updatedTextFieldValue
+        },
         onDismissRequest = onDismiss,
         onConfirm = {
-            val normalizedValue = value.trim()
+            val normalizedValue = textFieldValue.text.trim()
             if (normalizedValue.isNotBlank()) {
                 onConfirm(normalizedValue)
             }
@@ -539,8 +550,22 @@ private fun KeyValueFormDialog(
     initialValue: String,
     currentEditingKey: String? = null,
 ) {
-    var key by remember(initialKey) { mutableStateOf(initialKey) }
-    var value by remember(initialValue) { mutableStateOf(initialValue) }
+    var keyTextFieldValue by remember(initialKey) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialKey,
+                selection = TextRange(initialKey.length),
+            ),
+        )
+    }
+    var valueTextFieldValue by remember(initialValue) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialValue,
+                selection = TextRange(initialValue.length),
+            ),
+        )
+    }
     var error by remember { mutableStateOf<String?>(null) }
 
     AppFormDialog(
@@ -548,8 +573,8 @@ private fun KeyValueFormDialog(
         title = title,
         onDismissRequest = onDismiss,
         onConfirm = {
-            val normalizedKey = key.trim()
-            val normalizedValue = value.trim()
+            val normalizedKey = keyTextFieldValue.text.trim()
+            val normalizedValue = valueTextFieldValue.text.trim()
             error = when {
                 normalizedKey.isBlank() -> MLang.Component.Editor.Error.KeyEmpty
                 normalizedKey != currentEditingKey && normalizedKey in existingKeys -> MLang.Component.Editor.Error.KeyExists
@@ -562,17 +587,19 @@ private fun KeyValueFormDialog(
         error = error,
     ) {
         TextField(
-            value = key,
-            onValueChange = {
-                key = it
+            value = keyTextFieldValue,
+            onValueChange = { updatedTextFieldValue ->
+                keyTextFieldValue = updatedTextFieldValue
                 error = null
             },
             label = keyPlaceholder,
             modifier = Modifier.fillMaxWidth(),
         )
         TextField(
-            value = value,
-            onValueChange = { value = it },
+            value = valueTextFieldValue,
+            onValueChange = { updatedTextFieldValue ->
+                valueTextFieldValue = updatedTextFieldValue
+            },
             label = valuePlaceholder,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -586,7 +613,7 @@ private fun RuleEditorDialog(
     onConfirm: (String) -> Unit,
 ) {
     var ruleType by remember { mutableStateOf("DOMAIN-SUFFIX") }
-    var payload by remember { mutableStateOf("") }
+    var payloadTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var target by remember { mutableStateOf(MLang.Component.Editor.Rule.TargetReject) }
     var useSrc by remember { mutableStateOf(false) }
     var useNoResolve by remember { mutableStateOf(false) }
@@ -612,7 +639,7 @@ private fun RuleEditorDialog(
         onDismissRequest = onDismiss,
         onConfirm = {
             val normalizedType = ruleType.trim().uppercase()
-            val normalizedPayload = payload.trim()
+            val normalizedPayload = payloadTextFieldValue.text.trim()
 
             if (target != MLang.Component.Editor.Rule.TargetMatch && normalizedPayload.isBlank()) {
                 error = MLang.Component.Editor.Rule.ErrorContentRequired
@@ -655,9 +682,9 @@ private fun RuleEditorDialog(
             },
         )
         TextField(
-            value = payload,
-            onValueChange = {
-                payload = it
+            value = payloadTextFieldValue,
+            onValueChange = { updatedTextFieldValue ->
+                payloadTextFieldValue = updatedTextFieldValue
                 error = null
             },
             label = MLang.Component.Editor.Rule.Content,
