@@ -26,15 +26,20 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
+import com.github.yumelira.yumebox.core.model.GeoFileType
+import com.github.yumelira.yumebox.core.model.GeoXItem
+import com.github.yumelira.yumebox.core.model.geoXItems
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideViewModel
 import com.github.yumelira.yumebox.screen.navigation.EditorDataHolder
+import com.github.yumelira.yumebox.substore.util.DownloadUtil
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.KeyValueEditorScreenDestination
@@ -45,13 +50,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.extra.DialogDefaults
 import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.extra.WindowDialog
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Reset
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
 import java.io.FileOutputStream
 
@@ -65,6 +78,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
 
     val configuration by viewModel.configuration.collectAsState()
     val showResetDialog = remember { mutableStateOf(false) }
+    val showGeoXDownloadSheet = remember { mutableStateOf(false) }
 
     @Composable
     fun StringInput(
@@ -307,6 +321,18 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                             filePickerLauncher.launch("*/*")
                         },
                     )
+
+
+                }
+            }
+            item {
+                SmallTitle(MLang.MetaFeature.GeoX.OnlineUpdateTitle)
+                Card {
+                    SuperArrow(
+                        title = MLang.MetaFeature.GeoX.OnlineUpdateTitle,
+                        summary = MLang.MetaFeature.GeoX.OnlineUpdateSummary,
+                        onClick = { showGeoXDownloadSheet.value = true },
+                    )
                 }
             }
         }
@@ -322,10 +348,102 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
         },
         onDismiss = { showResetDialog.value = false },
     )
+
+    GeoXDownloadSheet(
+        show = showGeoXDownloadSheet,
+        context = context,
+        scope = scope,
+    )
 }
 
-private enum class GeoFileType {
-    GeoIP, GeoSite, Country, ASN, Model
+@Composable
+private fun GeoXDownloadSheet(
+    show: MutableState<Boolean>,
+    context: android.content.Context,
+    scope: kotlinx.coroutines.CoroutineScope,
+) {
+    val selectedItems = remember { mutableStateMapOf<GeoFileType, Boolean>() }
+
+    WindowDialog(
+        show = show.value,
+        modifier = Modifier,
+        title = MLang.MetaFeature.Download.DialogTitle,
+        titleColor = DialogDefaults.titleColor(),
+        summary = null,
+        enableWindowDim = true,
+        onDismissRequest = { show.value = false },
+        content = {
+            Column {
+                geoXItems.forEach { item ->
+                    BasicComponent(
+                        title = item.title,
+                        endActions = {
+                            Checkbox(
+                                state = ToggleableState(selectedItems[item.type] ?: false),
+                                onClick = {
+                                    selectedItems[item.type] = !(selectedItems[item.type] ?: false)
+                                }
+                            )
+                        },
+                        onClick = {
+                            selectedItems[item.type] = !(selectedItems[item.type] ?: false)
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = { show.value = false },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(MLang.MetaFeature.Download.Cancel)
+                    }
+                    Button(
+                        onClick = {
+                            val itemsToDownload = geoXItems.filter { selectedItems[it.type] == true }
+                            if (itemsToDownload.isEmpty()) {
+                                Toast.makeText(context, MLang.MetaFeature.Download.SelectFiles, Toast.LENGTH_SHORT)
+                                    .show()
+                                return@Button
+                            }
+                            show.value = false
+                            downloadGeoXFiles(context, scope, itemsToDownload)
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColorsPrimary()
+                    ) {
+                        Text(MLang.MetaFeature.Download.Download, color = MiuixTheme.colorScheme.background)
+                    }
+                }
+            }
+        })
+}
+
+private fun downloadGeoXFiles(
+    context: android.content.Context,
+    scope: kotlinx.coroutines.CoroutineScope,
+    items: List<GeoXItem>,
+) {
+    scope.launch {
+        var successCount = 0
+        withContext(Dispatchers.IO) {
+            val clashDir = context.filesDir.resolve("clash")
+            clashDir.mkdirs()
+            items.forEach { item ->
+                val targetFile = File(clashDir, item.fileName)
+                if (DownloadUtil.download(item.url, targetFile)) {
+                    successCount++
+                }
+            }
+        }
+        Toast.makeText(
+            context,
+            MLang.MetaFeature.Download.DownloadComplete.format(successCount, items.size),
+            Toast.LENGTH_SHORT
+        ).show()
+    }
 }
 
 @Composable

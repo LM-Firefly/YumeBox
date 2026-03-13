@@ -6,6 +6,7 @@ MetaFeature = {
         CoreSettings = "核心设置"
         Sniffer = "嗅探器"
         GeoXFiles = "GeoX 文件"
+        GeoXUpdate = "GeoX 更新"
     }
     
     Core = {
@@ -60,6 +61,16 @@ MetaFeature = {
         ImportAsnSummary = "导入自定义 ASN 数据库"
         ImportModelTitle = "导入 Model 文件"
         ImportModelSummary = "导入自定义 Model 数据库"
+        OnlineUpdateTitle = "更新 GeoX"
+        OnlineUpdateSummary = "下载 GeoIP、GeoSite、Country.mmdb、ASN.mmdb"
+    }
+
+    Download = {
+        DialogTitle = "更新 GeoX"
+        Cancel = "取消"
+        Download = "下载"
+        SelectFiles = "请选择要更新的文件"
+        DownloadComplete = "下载完成: %d/%d"
     }
     
     Message = {

@@ -6,6 +6,7 @@ MetaFeature = {
         CoreSettings = "Core Settings"
         Sniffer = "Sniffer"
         GeoXFiles = "GeoX Files"
+        GeoXUpdate = "GeoX Update"
     }
     
     Core = {
@@ -60,6 +61,16 @@ MetaFeature = {
         ImportAsnSummary = "Import custom ASN database"
         ImportModelTitle = "Import Model file"
         ImportModelSummary = "Import Custom Model Database"
+        OnlineUpdateTitle = "Update GeoX"
+        OnlineUpdateSummary = "Download GeoIP, GeoSite, Country.mmdb, ASN.mmdb"
+    }
+
+    Download = {
+        DialogTitle = "Update GeoX Online"
+        Cancel = "Cancel"
+        Download = "Download"
+        SelectFiles = "Please select files to update"
+        DownloadComplete = "Download complete: %d/%d"
     }
     
     Message = {
