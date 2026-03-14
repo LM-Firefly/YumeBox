@@ -229,7 +229,7 @@ dependencies {
     }
     
     // Compose dependencies (using Jetpack Compose BOM for version management)
-    implementation(platform("androidx.compose:compose-bom:2026.02.01"))
+    implementation(platform("androidx.compose:compose-bom:2026.03.00"))
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
