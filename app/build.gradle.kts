@@ -241,7 +241,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     // Additional Compose libraries
-    val miuixVersion = "0.8.6"
+    val miuixVersion = "0.8.7"
     implementation("top.yukonga.miuix.kmp:miuix:$miuixVersion")
     implementation("top.yukonga.miuix.kmp:miuix-icons:$miuixVersion")
     implementation("dev.chrisbanes.haze:haze:1.7.2")
