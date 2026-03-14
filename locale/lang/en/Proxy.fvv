@@ -30,6 +30,7 @@ Proxy = {
         RequestSent = "Test request sent"
         Failed = "Test failed: %s"
         Tip = "You can also test the node by dragging."
+        InProgress = "Testing the node"
     }
     
     Refresh = {

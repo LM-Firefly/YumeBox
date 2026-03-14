@@ -27,7 +27,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.VpnService
 import android.os.Build
-import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.Traffic
+import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
@@ -362,6 +365,16 @@ class ProxyFacade(private val context: Context) {
             repeat(4) {
                 delay(600.milliseconds)
                 refreshProxyGroups()
+            }
+        } else {
+            // 即使不立即刷新，也在后台异步更新延迟结果（不阻塞调用方）
+            scope.launch {
+                delay(300.milliseconds)  // 等待第一批结果
+                repeat(3) {
+                    runCatching { refreshProxyGroups() }
+                        .onFailure { Timber.d(it, "Health check refresh failed") }
+                    delay(500.milliseconds)
+                }
             }
         }
     }

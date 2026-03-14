@@ -21,6 +21,8 @@
 package com.github.yumelira.yumebox.presentation.screen.node
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,7 +32,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,16 +47,13 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
-import com.github.yumelira.yumebox.presentation.util.usePullToRefreshTesting
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.PullToRefresh
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollHorizontal
 import top.yukonga.miuix.kmp.utils.overScrollVertical
@@ -187,34 +188,50 @@ fun NodeSheetContent(
     sheetHeightFraction: Float,
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
-    val refreshTexts = remember {
-        listOf(
-            MLang.Proxy.PullToRefresh.PullToTestCurrentGroup,
-            MLang.Proxy.PullToRefresh.ReleaseToTestCurrentGroup,
-            MLang.Proxy.PullToRefresh.TestingCurrentGroup,
-            MLang.Proxy.Testing.RequestSent,
-        )
-    }
-    val pullToRefreshState = rememberPullToRefreshState()
-    val (pullRefreshing, pullRefreshObservedTesting) = usePullToRefreshTesting(setOf(group.name))
 
-    PullToRefresh(
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .height(sheetHeight),
-        isRefreshing = pullRefreshing.value,
-        onRefresh = {
-            if (pullRefreshing.value) return@PullToRefresh
-            pullRefreshObservedTesting.value = false
-            pullRefreshing.value = true
-            onTestDelay()
-        },
-        pullToRefreshState = pullToRefreshState,
-        refreshTexts = refreshTexts,
+            .height(sheetHeight)
+            .overScrollVertical(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = NodeSheetContentPadding,
+        overscrollEffect = null,
     ) {
-        NodeList(
-            group = group,
-            displayMode = displayMode,
+        item(key = "__refresh_indicator__") {
+            AnimatedVisibility(
+                visible = isDelayTesting,
+                enter = expandVertically(
+                    animationSpec = tween(durationMillis = 200),
+                    expandFrom = Alignment.Top,
+                ) + fadeIn(animationSpec = tween(durationMillis = 150)),
+                exit = shrinkVertically(
+                    animationSpec = tween(durationMillis = 200),
+                    shrinkTowards = Alignment.Top,
+                ) + fadeOut(animationSpec = tween(durationMillis = 150)),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    InfiniteProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        text = MLang.Proxy.Testing.InProgress,
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    )
+                }
+            }
+        }
+
+        nodeGridItems(
+            proxies = group.proxies,
+            selectedProxyName = group.now,
             onProxyClick = { proxyName ->
                 if (group.type == Proxy.Type.Selector) {
                     onSelectProxy(proxyName)
@@ -223,10 +240,7 @@ fun NodeSheetContent(
                 }
             },
             isDelayTesting = isDelayTesting,
-            onTestDelay = onTestDelay,
-            listStateKeyPrefix = "node_sheet:${group.name}",
-            contentPadding = NodeSheetContentPadding,
-            modifier = Modifier.fillMaxSize(),
+            onDelayTestClick = onTestDelay,
         )
     }
 }
