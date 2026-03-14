@@ -148,6 +148,9 @@ android {
         buildTypes.named("release").configure {
             signingConfig = signingConfigs.getByName("release")
         }
+        buildTypes.named("debug").configure {
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
 
     //noinspection WrongGradleMethod

@@ -18,6 +18,8 @@
  *
  */
 
+@file:Suppress("TYPE_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
+
 package com.github.yumelira.yumebox.service.runtime.util
 
 import java.math.BigInteger

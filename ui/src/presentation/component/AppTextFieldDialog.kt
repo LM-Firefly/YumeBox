@@ -147,20 +147,34 @@ fun AppTextFieldDialog(
         renderInRootScaffold = renderInRootScaffold,
     ) {
         AppDialogColumn {
-            TextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = if (supportingContent == null) UiDp.dp0 else UiDp.dp8),
-                value = textFieldValue,
-                onValueChange = onTextFieldValueChange,
-                label = label,
-                useLabelAsPlaceholder = useLabelAsPlaceholder,
-                singleLine = singleLine,
-                maxLines = maxLines,
-                keyboardOptions = keyboardOptions,
-                keyboardActions = keyboardActions,
-                trailingIcon = trailingIcon,
-            )
+            val textFieldModifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (supportingContent == null) UiDp.dp0 else UiDp.dp8)
+            if (label.isBlank()) {
+                TextField(
+                    modifier = textFieldModifier,
+                    value = textFieldValue,
+                    onValueChange = onTextFieldValueChange,
+                    singleLine = singleLine,
+                    maxLines = maxLines,
+                    keyboardOptions = keyboardOptions,
+                    keyboardActions = keyboardActions,
+                    trailingIcon = trailingIcon,
+                )
+            } else {
+                TextField(
+                    modifier = textFieldModifier,
+                    value = textFieldValue,
+                    onValueChange = onTextFieldValueChange,
+                    label = label,
+                    useLabelAsPlaceholder = useLabelAsPlaceholder,
+                    singleLine = singleLine,
+                    maxLines = maxLines,
+                    keyboardOptions = keyboardOptions,
+                    keyboardActions = keyboardActions,
+                    trailingIcon = trailingIcon,
+                )
+            }
             supportingContent?.invoke()
             DialogButtonRow(
                 onCancel = onDismissRequest,
