@@ -33,6 +33,7 @@ import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.service.common.util.Global
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.tencent.mmkv.MMKV
+import kotlin.enums.enumEntries
 
 enum class LocalRuntimePhase {
     Idle,
@@ -45,12 +46,13 @@ enum class LocalRuntimePhase {
         get() = this != Idle
 }
 
+@Suppress("DEPRECATION")
 class StatusProvider : ContentProvider() {
     override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
         return when (method) {
             METHOD_CURRENT_PROFILE -> {
                 syncCachedRuntimeState()
-                return if (serviceRunning)
+                if (serviceRunning)
                     Bundle().apply {
                         putString("name", currentProfile)
                     }
@@ -151,14 +153,6 @@ class StatusProvider : ContentProvider() {
 
         fun markRuntimeIdle(mode: ProxyMode) {
             markRuntimePhase(mode, LocalRuntimePhase.Idle)
-        }
-
-        fun markRuntimeStarted(mode: ProxyMode) {
-            markRuntimeRunning(mode)
-        }
-
-        fun markRuntimeStopped(mode: ProxyMode) {
-            markRuntimeIdle(mode)
         }
 
         fun isRuntimeActive(mode: ProxyMode): Boolean {
@@ -290,10 +284,10 @@ class StatusProvider : ContentProvider() {
         private fun readPersistedRuntimeState(): Pair<ProxyMode?, LocalRuntimePhase> {
             val cache = serviceCache()
             val phase = cache.decodeString(KEY_RUNTIME_PHASE)
-                ?.let { value -> enumValues<LocalRuntimePhase>().firstOrNull { it.name == value } }
+                ?.let { value -> enumEntries<LocalRuntimePhase>().firstOrNull { it.name == value } }
                 ?: LocalRuntimePhase.Idle
             val mode = cache.decodeString(KEY_RUNTIME_MODE)
-                ?.let { value -> enumValues<ProxyMode>().firstOrNull { it.name == value } }
+                ?.let { value -> enumEntries<ProxyMode>().firstOrNull { it.name == value } }
                 ?.takeIf { phase.isActive }
             return mode to phase
         }
