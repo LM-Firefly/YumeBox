@@ -24,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
 import com.github.yumelira.yumebox.data.repository.OverrideRepository
 import com.github.yumelira.yumebox.data.repository.ProxyDisplaySettingsRepository
 import com.github.yumelira.yumebox.domain.model.*
@@ -40,6 +41,7 @@ class ProxyViewModel(
     private val overrideRepository: OverrideRepository,
     private val proxyFacade: ProxyFacade,
     private val proxyDisplaySettingsRepository: ProxyDisplaySettingsRepository,
+    private val appSettingsRepository: AppSettingsRepository,
 ) : ViewModel() {
     private companion object {
         const val PROXY_REFRESH_IDLE_MS = 1500L
@@ -54,6 +56,9 @@ class ProxyViewModel(
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
 
+    private val _testingProxyNames = MutableStateFlow<Set<String>>(emptySet())
+    val testingProxyNames: StateFlow<Set<String>> = _testingProxyNames.asStateFlow()
+
     private val _groupOriginalOrder = MutableStateFlow<Map<String, List<String>>>(emptyMap())
 
     val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsRepository.proxyMode.state
@@ -67,6 +72,9 @@ class ProxyViewModel(
 
     val sheetHeightFraction: StateFlow<Float> = proxyDisplaySettingsRepository.sheetHeightFraction.state
         .stateIn(viewModelScope, SharingStarted.Eagerly, PROXY_SHEET_HEIGHT_FRACTION_DEFAULT)
+
+    val singleNodeTest: StateFlow<Boolean> = appSettingsRepository.singleNodeTest.state
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
 
@@ -214,6 +222,17 @@ class ProxyViewModel(
             }.onFailure { error ->
                 showError(MLang.Proxy.Selection.Error.format(error.message))
             }
+        }
+    }
+
+    fun testProxyDelay(proxyName: String) {
+        viewModelScope.launch {
+            _testingProxyNames.update { it + proxyName }
+            runCatching {
+                proxyFacade.healthCheckProxy(proxyName)
+            }
+            delay(500.milliseconds)
+            _testingProxyNames.update { it - proxyName }
         }
     }
 

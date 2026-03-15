@@ -58,6 +58,7 @@ fun ProxySheetContent(
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
     val displayMode by proxyViewModel.displayMode.collectAsState()
     val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
+    val testingProxyNames by proxyViewModel.testingProxyNames.collectAsState()
     val sortMode by proxyViewModel.sortMode.collectAsState()
     val sheetHeightFraction by proxyViewModel.sheetHeightFraction.collectAsState()
 
@@ -197,6 +198,7 @@ fun ProxySheetContent(
                     group = group,
                     displayMode = displayMode,
                     isDelayTesting = testingGroupNames.contains(group.name),
+                    testingProxyNames = testingProxyNames,
                     onSelectProxy = { proxyName ->
                         if (group.type == Proxy.Type.Selector) {
                             proxyViewModel.selectProxy(group.name, proxyName)
@@ -206,6 +208,9 @@ fun ProxySheetContent(
                     },
                     onTestDelay = {
                         proxyViewModel.testDelay(group.name)
+                    },
+                    onTestProxyDelay = { proxyName ->
+                        proxyViewModel.testProxyDelay(proxyName)
                     },
                     sheetHeightFraction = sheetHeightFraction,
                 )

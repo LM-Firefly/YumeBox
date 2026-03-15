@@ -43,6 +43,7 @@ class AppSettingsRepository(
     val bottomBarAutoHide: Preference<Boolean> = storage.bottomBarAutoHide
     val topBarBlurEnabled: Preference<Boolean> = storage.topBarBlurEnabled
     val pageScale: Preference<Float> = storage.pageScale
+    val singleNodeTest: Preference<Boolean> = storage.singleNodeTest
 
     val customUserAgent: Preference<String> = storage.customUserAgent
 

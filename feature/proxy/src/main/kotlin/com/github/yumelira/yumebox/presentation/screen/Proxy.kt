@@ -94,7 +94,9 @@ fun ProxyPager(
     val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
     val displayMode by proxyViewModel.displayMode.collectAsState()
     val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
+    val testingProxyNames by proxyViewModel.testingProxyNames.collectAsState()
     val sortMode by proxyViewModel.sortMode.collectAsState()
+    val singleNodeTest by proxyViewModel.singleNodeTest.collectAsState()
     val groupScrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
 
@@ -228,6 +230,7 @@ fun ProxyPager(
                         displayMode = displayMode,
                         sortMode = sortMode,
                         testingGroupNames = testingGroupNames,
+                        testingProxyNames = testingProxyNames,
                         mainInnerPadding = mainInnerPadding,
                         outerInnerPadding = innerPadding,
                         scrollBehavior = groupScrollBehavior,
@@ -235,7 +238,9 @@ fun ProxyPager(
                             proxyViewModel.selectProxy(groupName, proxyName)
                         },
                         onTestDelay = { groupName -> proxyViewModel.testDelay(groupName) },
+                        onTestProxyDelay = { proxyName -> proxyViewModel.testProxyDelay(proxyName) },
                         onScrollDirectionChanged = { hidden -> fabHidden = hidden },
+                        singleNodeTestEnabled = singleNodeTest,
                     )
                 }
             }
@@ -319,12 +324,15 @@ private fun NodeListPage(
     displayMode: ProxyDisplayMode,
     sortMode: ProxySortMode,
     testingGroupNames: Set<String>,
+    testingProxyNames: Set<String>,
     mainInnerPadding: PaddingValues,
     outerInnerPadding: PaddingValues,
     scrollBehavior: ScrollBehavior,
     onSelectProxy: (groupName: String, proxyName: String) -> Unit,
     onTestDelay: (groupName: String) -> Unit,
+    onTestProxyDelay: (proxyName: String) -> Unit,
     onScrollDirectionChanged: (Boolean) -> Unit,
+    singleNodeTestEnabled: Boolean = true,
 ) {
     if (group == null) {
         CenteredText(
@@ -428,9 +436,11 @@ private fun NodeListPage(
                 }
             },
             isDelayTesting = isTesting,
-            onDelayTestClick = { onTestDelay(group.name) },
+            testingProxyNames = testingProxyNames,
+            onSingleNodeTestClick = { onTestProxyDelay(it) },
             outerHorizontalPadding = 0.dp,
             itemVerticalPadding = ProxyPageSpacing.ItemVertical,
+            singleNodeTestEnabled = singleNodeTestEnabled,
         )
     }
 }
