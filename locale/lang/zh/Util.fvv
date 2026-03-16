@@ -1,14 +1,14 @@
 <Util>
 Util = {
     Profile = {
-        Preparing = "准备加载配置..."
-        Loading = "正在加载配置..."
-        Parsing = "正在解析配置..."
+        Preparing = "准备加载"
+        Loading = "加载中"
+        Parsing = "解析中"
         LoadComplete = "加载完成"
-        DownloadPreparing = "准备下载配置..."
-        FetchingConfig = "正在下载配置文件..."
-        FetchingProviders = "正在更新外部资源..."
-        Verifying = "正在验证配置..."
+        DownloadPreparing = "准备下载"
+        FetchingConfig = "正在下载配置文件"
+        FetchingProviders = "外部资源"
+        Verifying = "正在验证配置"
         ReadingConfig = "正在读取配置文件..."
         NotExist = "配置文件不存在: %s"
         NoCurrent = "没有当前配置"
@@ -19,7 +19,7 @@ Util = {
     }
     
     State = {
-        Preparing = "正在准备..."
+        Preparing = "正在准备"
         Idle = "空闲"
     }
 

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2026.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -27,7 +27,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
 pluginManagement {
-    includeBuild("build-logic")
     repositories {
         google()
         mavenCentral()
@@ -64,7 +63,7 @@ dependencyResolutionManagement {
                 includeGroupAndSubgroups("dev.oom-wg")
             }
         }
-        maven("https://maven.kr328.app/releases") // KAIDL 官方仓库
+        maven("https://maven.kr328.app/releases")
     }
 }
 
@@ -111,6 +110,8 @@ include(
     ":feature:substore",
     ":feature:proxy",
     ":feature:override",
+    ":feature:editor",
+    ":feature:meta",
     ":data:log",
     ":data:settings",
     ":data:proxy",

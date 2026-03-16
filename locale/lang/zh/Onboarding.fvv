@@ -1,18 +1,20 @@
 <Onboarding>
 Onboarding = {
     Navigation = {
+        Back = "返回"
         Next = "下一步"
-        Start = "开始使用"
+        Start = "开始设置"
+        Enter = "进入应用"
     }
 
     Welcome = {
-        Title = "欢迎使用 YumeBox"
-        Subtitle = "开源、自由、美观的代理工具"
+        Title = "YumeBox"
+        Subtitle = "依次确认通知权限和主题即可开始使用"
     }
 
     Permission = {
-        Title = "授予应用权限"
-        Subtitle = "为了更好的体验，建议授予以下权限"
+        Title = "确认运行权限"
+        Subtitle = "权限会影响通知和分应用代理等功能"
 
         Common = {
             Granted = "已授权"
@@ -31,30 +33,45 @@ Onboarding = {
     }
 
     Privacy = {
-        Title = "隐私与协议"
-        Subtitle = "我们重视您的隐私，请仔细阅读"
+        Title = "确认隐私与协议"
+        Subtitle = "阅读并同意协议后方可继续"
+        RichTextLead = "在开始使用前需要同意隐私协议，才能继续使用 YumeBox。"
+        RichTextPrefix = "继续前请先阅读并同意 "
+        RichTextConnector = " 与 "
+        RichTextSuffix = "。"
+        TermsLink = "《使用条款》"
+        PolicyLink = "《隐私政策》"
         Policy = {
             Title = "隐私政策"
             Summary = "点击查看"
         }
         Accept = {
             Title = "我已阅读并同意隐私政策"
+            Summary = "确认后即可继续，后续也可以在设置里再次查看相关内容"
         }
         Error = {
             NotAccepted = "请先阅读并同意协议"
         }
     }
 
+    Personalize = {
+        Title = "调整界面风格"
+        Subtitle = "主题模式和主色可随时在设置中修改"
+    }
+
+    Finish = {
+        Title = "准备完成"
+        Subtitle = "基础设置已就绪即将进入主页"
+    }
+
     Project = {
-        Title = "关于项目"
-        Subtitle = "开源、自由，感谢您的支持"
         Github = {
             Title = "GitHub 仓库"
             Summary = "github.com/YumeLira/YumeBox"
         }
         Community = {
-            Title = "反馈群组"
-            Summary = "加入我们的社区讨论"
+            Title = "社区频道"
+            Summary = "加入频道或群组继续反馈"
         }
     }
 
@@ -64,4 +81,3 @@ Onboarding = {
         LoadFailed = "无法加载协议内容"
     }
 }
-

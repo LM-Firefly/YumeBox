@@ -13,7 +13,7 @@ Log = {
     
     Empty = {
         NoLogs = "暂无日志记录"
-        Hint = "点击右上角开始记录日志"
+        StartRecordingHint = "点击右下角按钮开始记录日志"
     }
     
     Status = {

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.telephony" android:required="false"/>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:ignore="ForegroundServicesPolicy"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="com.android.permission.GET_INSTALLED_APPS"/>
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="PackageVisibilityPolicy,QueryAllPackagesPermission"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+                     tools:ignore="RequestInstallPackagesPolicy"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                     android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+                     tools:ignore="AllFilesAccessPolicy,ScopedStorage"/>
+    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" tools:ignore="SmsAndCallLogPolicy"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+
+    <application
+            android:name=".App"
+            android:allowBackup="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="${appName}"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:theme="@style/Theme.YumeBox"
+            android:usesCleartextTraffic="true">
+        <activity
+                android:name=".MainActivity"
+                android:exported="true"
+                android:launchMode="singleTop"
+                android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:host="install-config" android:scheme="clash"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:host="install-config" android:scheme="clashmeta"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.github.yumelira.yumebox.action.START_CLASH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.github.yumelira.yumebox.action.STOP_CLASH"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+
+        <activity
+                android:name=".screen.onboarding.OnboardingStartupActivity"
+                android:exported="false"
+                android:theme="@style/Theme.YumeBox"/>
+
+        <activity
+                android:name=".screen.onboarding.OnboardingPermissionsActivity"
+                android:exported="false"
+                android:theme="@style/Theme.YumeBox"/>
+
+        <activity
+                android:name=".screen.onboarding.OnboardingTermsActivity"
+                android:exported="false"
+                android:theme="@style/Theme.YumeBox"/>
+
+        <activity
+                android:name=".screen.onboarding.OnboardingPersonalizeActivity"
+                android:exported="false"
+                android:theme="@style/Theme.YumeBox"/>
+
+        <activity
+                android:name=".screen.onboarding.OnboardingFinishActivity"
+                android:exported="false"
+                android:theme="@style/Theme.YumeBox"/>
+
+        <activity
+                android:name=".ProxySheetActivity"
+                android:excludeFromRecents="true"
+                android:exported="false"
+                android:finishOnTaskLaunch="true"
+                android:launchMode="singleInstance"
+                android:taskAffinity=""
+                android:theme="@style/Theme.YumeBox.Translucent.Popup"/>
+
+        <activity
+            android:name=".WebViewActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:hardwareAccelerated="true"/>
+
+        <activity-alias
+                android:name=".MainActivityAlias"
+                android:exported="true"
+                android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+
+        <meta-data
+                android:name="org.chromium.webapk.shell_apk"
+                android:value=""/>
+        <meta-data
+                android:name="com.android.stamp.type"
+                android:value="STAMP_TYPE_DISTRIBUTION_APK"/>
+        <meta-data
+                android:name="com.android.stamp.source"
+                android:value="https://play.google.com/store"/>
+
+        <provider
+                android:name=".service.StatusProvider"
+                android:authorities="${applicationId}.status"
+                android:enabled="true"
+                android:exported="false"/>
+
+        <provider
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="${applicationId}.fileprovider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/file_paths"/>
+        </provider>
+
+        <provider
+                android:name="com.taobao.update.provider.UpdateProvider"
+                android:authorities="${applicationId}.update.provider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/apk_paths"/>
+        </provider>
+
+    
+    <!-- Required: set your sentry.io project identifier (DSN) -->
+    <meta-data android:name="io.sentry.dsn" android:value="https://8ce12871b091d04720803611da50d4bc@o4510968700993536.ingest.de.sentry.io/4510968723013712" />
+
+    <!-- enable automatic breadcrumbs for user interactions (clicks, swipes, scrolls) -->
+    <meta-data android:name="io.sentry.traces.user-interaction.enable" android:value="true" />
+    <!-- enable screenshot for crashes (could contain sensitive/PII data) -->
+    <meta-data android:name="io.sentry.attach-screenshot" android:value="true" />
+    <!-- enable view hierarchy for crashes -->
+    <meta-data android:name="io.sentry.attach-view-hierarchy" android:value="true" />
+
+    <!-- enable the performance API by setting a sample-rate, adjust in production env -->
+    <meta-data android:name="io.sentry.traces.sample-rate" android:value="1.0" />
+</application>
+</manifest>

@@ -95,6 +95,14 @@
 -dontwarn javax.lang.model.element.Modifier
 
 # ========================================
+# Sentry SDK (uses kotlinx.serialization internally)
+# ========================================
+-keep class io.sentry.** { *; }
+-keep interface io.sentry.** { *; }
+-keepclassmembers class io.sentry.** { *; }
+-dontwarn io.sentry.**
+
+# ========================================
 # EMAS / Taobao Update SDK (reflection heavy)
 # ========================================
 # Scope reflection-based constructor/event keeps to update SDK packages only
@@ -143,3 +151,23 @@
 
 -dontwarn mtopsdk.mtop.intf.Mtop
 -dontwarn com.taobao.update.**
+
+# ========================================
+# ML Kit (Google) - Reflection for Component Registration
+# ========================================
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit** { *; }
+
+# Keep ComponentRegistrar implementations for ML Kit
+-keep class * implements com.google.firebase.components.ComponentRegistrar { *; }
+-keep @com.google.firebase.components.ComponentRegistrar class * { *; }
+
+# ========================================
+# Koin Dependency Injection
+# ========================================
+-keep class org.koin.** { *; }
+-keep interface org.koin.** { *; }
+-keep class * extends org.koin.core.component.KoinComponent { *; }
+-keepclassmembers class * {
+    @org.koin.core.inject *** inject(...);
+}

@@ -1,7 +1,3 @@
-@file:Suppress("UnstableApiUsage")
-
-import com.android.build.gradle.tasks.PackageAndroidArtifact
-
 /*
  * This file is part of YumeBox.
  *
@@ -18,25 +14,30 @@ import com.android.build.gradle.tasks.PackageAndroidArtifact
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c) YumeYuka & YumeLira 2025.
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
+@file:Suppress("UnstableApiUsage")
+
+import com.android.build.gradle.tasks.PackageAndroidArtifact
+
 plugins {
     id("com.android.application")
-    id("yumebox.base.android")
 }
 
 dependencies {
     implementation("com.caoccao.javet:javet-node-android:${gropify.dep.version.javetNodeAndroid}")
 }
 
-val extensionJvmTarget = gropify.project.jvm.toString()
-val extensionAbiList = gropify.abi.extension.list.split(",").map { it.trim() }
-
 android {
     namespace = gropify.project.namespace.extension
     compileSdk = gropify.android.compileSdk
+
+    val ndkVersionValue = gropify.android.ndkVersion
+    if (ndkVersionValue.isNotBlank()) {
+        ndkVersion = ndkVersionValue
+    }
 
     defaultConfig {
         applicationId = gropify.project.namespace.extension
@@ -46,10 +47,42 @@ android {
         versionName = gropify.project.version.name
     }
 
-    //noinspection WrongGradleMethod
-    tasks.withType<PackageAndroidArtifact> {
+    compileOptions {
+        val javaVer = gropify.android.jvm ?: gropify.project.jvm ?: "17"
+        sourceCompatibility = JavaVersion.toVersion(javaVer)
+        targetCompatibility = JavaVersion.toVersion(javaVer)
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src")
+            res.srcDirs("res")
+            assets.srcDirs("assets")
+            aidl.srcDirs("aidl")
+            resources.srcDirs("resources")
+            jniLibs.srcDirs("jniLibs")
+            if (project.file("AndroidManifest.xml").isFile) {
+                manifest.srcFile("AndroidManifest.xml")
+            }
+        }
+        getByName("test") {
+            java.setSrcDirs(emptyList<String>())
+            resources.setSrcDirs(emptyList<String>())
+            assets.setSrcDirs(emptyList<String>())
+        }
+        getByName("androidTest") {
+            java.setSrcDirs(emptyList<String>())
+            res.setSrcDirs(emptyList<String>())
+            assets.setSrcDirs(emptyList<String>())
+            aidl.setSrcDirs(emptyList<String>())
+            resources.setSrcDirs(emptyList<String>())
+        }
+    }
+
+    tasks.withType<PackageAndroidArtifact>().configureEach {
         doFirst { appMetadata.asFile.orNull?.writeText("") }
     }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true
@@ -58,10 +91,12 @@ android {
             excludes += listOf("META-INF/**")
         }
     }
+
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
     }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -78,11 +113,10 @@ android {
         abi {
             isEnable = true
             reset()
-            //noinspection ChromeOsAbiSupport
-            include(*extensionAbiList.toTypedArray())
+            val abiList = (gropify.abi.extension.list ?: "arm64-v8a,x86_64")
+                .split(',').map { it.trim() }.filter { it.isNotEmpty() }
+            include(*abiList.toTypedArray())
             isUniversalApk = false
         }
     }
 }
-
-

@@ -13,7 +13,7 @@ Log = {
     
     Empty = {
         NoLogs = "No log records"
-        Hint = "Click top-right to start recording"
+        StartRecordingHint = "Click the bottom-right button to start recording logs"
     }
     
     Status = {
