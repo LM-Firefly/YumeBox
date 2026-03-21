@@ -10,7 +10,7 @@ plugins {
     id("com.android.library") version "9.2.0-alpha04" apply false
     kotlin("plugin.serialization") version "2.3.10" apply false
     kotlin("plugin.compose") version "2.3.10" apply false
-    id("org.jetbrains.compose") version "1.10.2" apply false
+    id("org.jetbrains.compose") version "1.10.3" apply false
     id("com.google.devtools.ksp") version "2.3.6" apply false
     id("com.mikepenz.aboutlibraries.plugin.android") version "14.0.0-b02" apply false
 //    id("com.google.gms.google-services") version "4.4.4" apply false
