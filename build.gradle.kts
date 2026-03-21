@@ -6,7 +6,7 @@ tasks.register("assembleReleaseWithExtension") {
     dependsOn(":app:assembleRelease")
 }
 plugins {
-    id("com.android.application") version "9.2.0-alpha04" apply false
+    id("com.android.application") version "9.2.0-alpha05" apply false
     id("com.android.library") version "9.2.0-alpha04" apply false
     kotlin("plugin.serialization") version "2.3.10" apply false
     kotlin("plugin.compose") version "2.3.10" apply false
