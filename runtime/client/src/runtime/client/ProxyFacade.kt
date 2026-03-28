@@ -591,13 +591,9 @@ class ProxyFacade(
             return persisted
         }
 
-        return runCatching {
-            runBlocking { RootTunController.queryStatus(appContext) }
-        }.onFailure { error ->
-            Timber.w(error, "RootTun status probe failed during init")
-        }.getOrElse {
-            rootTunStateStore.snapshot()
-        }
+
+        rootTunStateStore.markIdle("app restart cleanup")
+        return rootTunStateStore.snapshot()
     }
 
     private fun isRootSessionActive(): Boolean {
