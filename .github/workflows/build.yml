@@ -56,7 +56,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Cache NDK
         id: cache-ndk
