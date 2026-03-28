@@ -260,7 +260,7 @@ dependencies {
     ksp("io.github.raamcosta.compose-destinations:ksp:2.3.0")
 
     // Network
-    val ktorVersion = "3.4.1"
+    val ktorVersion = "3.4.2"
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-android:$ktorVersion")
