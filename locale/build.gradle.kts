@@ -70,7 +70,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src", "build/generated/fytxt/kotlin/commonMain/kotlin")
+            kotlin.srcDirs("src", "build/generated/fytxt/kotlin/commonMain/kotlin")
             res.srcDirs("res")
             assets.srcDirs("assets")
             aidl.srcDirs("aidl")
@@ -80,12 +80,12 @@ android {
             }
         }
         getByName("test") {
-            java.setSrcDirs(emptyList<String>())
+            kotlin.setSrcDirs(emptyList<String>())
             resources.setSrcDirs(emptyList<String>())
             assets.setSrcDirs(emptyList<String>())
         }
         getByName("androidTest") {
-            java.setSrcDirs(emptyList<String>())
+            kotlin.setSrcDirs(emptyList<String>())
             res.setSrcDirs(emptyList<String>())
             assets.setSrcDirs(emptyList<String>())
             aidl.setSrcDirs(emptyList<String>())

@@ -28,7 +28,7 @@ android {
     compileSdk = gropify.android.compileSdk
 
     val ndkVersionValue = gropify.android.ndkVersion
-    if (ndkVersionValue != null && ndkVersionValue.isNotBlank()) {
+    if (ndkVersionValue.isNotBlank()) {
         ndkVersion = ndkVersionValue
     }
 
@@ -57,7 +57,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("src")
+            kotlin.srcDirs("src")
             res.srcDirs("res")
             assets.srcDirs("assets")
             aidl.srcDirs("aidl")
@@ -67,12 +67,12 @@ android {
             }
         }
         getByName("test") {
-            java.setSrcDirs(emptyList<String>())
+            kotlin.setSrcDirs(emptyList<String>())
             resources.setSrcDirs(emptyList<String>())
             assets.setSrcDirs(emptyList<String>())
         }
         getByName("androidTest") {
-            java.setSrcDirs(emptyList<String>())
+            kotlin.setSrcDirs(emptyList<String>())
             res.setSrcDirs(emptyList<String>())
             assets.setSrcDirs(emptyList<String>())
             aidl.setSrcDirs(emptyList<String>())
@@ -98,3 +98,6 @@ dependencies {
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     compileOnly("com.tencent:mmkv:$mmkvVersion")
 }
+
+
+
