@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.UserKey
@@ -32,6 +33,12 @@ internal class OnboardingPermissionsActivity : OnboardingBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                navigateBackwardTo(OnboardingStartupActivity::class.java)
+            }
+        })
 
         setOnboardingContent {
             val lifecycleOwner = LocalLifecycleOwner.current
@@ -56,9 +63,5 @@ internal class OnboardingPermissionsActivity : OnboardingBaseActivity() {
                 PermissionContent(permissionState)
             }
         }
-    }
-
-    override fun onBackPressed() {
-        navigateBackwardTo(OnboardingStartupActivity::class.java)
     }
 }

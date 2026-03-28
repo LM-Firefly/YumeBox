@@ -8,9 +8,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"cfa/native/app"
 
 	"github.com/metacubex/mihomo/config"
+	"github.com/metacubex/mihomo/hub"
 	"github.com/metacubex/mihomo/log"
 )
 
@@ -76,9 +76,7 @@ func Load(path string) error {
 	}
 
 	// like hub.Parse()
-	applyConfigWithoutAutoDownloadUI(cfg)
-
-	app.ApplySubtitlePattern(rawCfg.ClashForAndroid.UiSubtitlePattern)
+	hub.ApplyConfig(cfg)
 
 	runtime.GC()
 
@@ -91,5 +89,5 @@ func LoadDefault() {
 		panic(err.Error())
 	}
 
-	applyConfigWithoutAutoDownloadUI(cfg)
+	hub.ApplyConfig(cfg)
 }
