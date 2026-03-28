@@ -1,16 +1,16 @@
 <Access Control Page>
 AccessControl = {
     Title = "Access Control"
-    
+
     Search = {
         Placeholder = "Search apps..."
     }
-    
+
     AppList = {
         Title = "App List (%d selected)"
         Loading = "loading..."
     }
-    
+
     Settings = {
         Title = "Access Control Settings"
         ShowSystemApps = "Show System Apps"
@@ -33,14 +33,14 @@ AccessControl = {
         OverseasApps = "Non-China Apps"
         RegionSelectResult = "Quick selected by \"%s\", total %d"
     }
-    
+
     SortMode = {
         PackageName = "Package Name"
         Label = "App Name"
         InstallTime = "Install Time"
         UpdateTime = "Update Time"
     }
-    
+
     Button = {
         Cancel = "Cancel"
         Confirm = "Confirm"

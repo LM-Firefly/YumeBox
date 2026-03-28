@@ -33,6 +33,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
 import com.github.yumelira.yumebox.presentation.util.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.*
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -87,7 +88,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
     val title = remember {
-        OverrideStructuredEditorStore.keyedObjectDraftEditorTitle.ifBlank { "对象" }
+        OverrideStructuredEditorStore.keyedObjectDraftEditorTitle.ifBlank { MLang.Override.Draft.Object }
     }
     val editorType = remember { OverrideStructuredEditorStore.keyedObjectDraftEditorType }
     val initialValue = remember { OverrideStructuredEditorStore.keyedObjectDraftEditorValue }
@@ -143,7 +144,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
     var showHealthCheckExtraFieldDialog by remember { mutableStateOf(false) }
     var showOverrideExtraFieldDialog by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf<String?>(null) }
-    val keyLabel = "名称"
+    val keyLabel = MLang.Override.Draft.Name
 
     DisposableEffect(Unit) {
         onDispose {
@@ -157,10 +158,10 @@ fun OverrideKeyedObjectDraftEditorScreen(
                 controller = saveFabController,
                 visible = true,
                 imageVector = Yume.Save,
-                contentDescription = "保存${editorType.itemLabel}",
+                contentDescription = MLang.Override.Draft.Save + editorType.itemLabel,
                 onClick = {
                     if (key.trim().isBlank()) {
-                        errorText = "名称不能为空"
+                        errorText = MLang.Override.Draft.NameRequired
                         return@OverrideAnimatedFab
                     }
                     OverrideStructuredEditorStore.submitKeyedObjectDraft(
@@ -234,7 +235,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
             onScrollDirectionChanged = saveFabController::onScrollDirectionChanged,
         ) {
             item {
-                OverridePlainFormSection("基础身份") {
+                OverridePlainFormSection(MLang.Override.Draft.BasicIdentity) {
                     OverrideFormField(
                         value = key,
                         onValueChange = {
@@ -242,7 +243,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                             errorText = null
                         },
                         label = keyLabel,
-                        errorText = errorText?.takeIf { it.contains("名称") },
+                        errorText = errorText?.takeIf { it.contains(MLang.Override.Draft.Name) },
                     )
                     OverrideFormField(
                         value = type,
@@ -257,7 +258,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                 }
             }
             item {
-                OverridePlainFormSection("核心来源") {
+                OverridePlainFormSection(MLang.Override.Draft.CoreSource) {
                     OverrideFormField(
                         value = path,
                         onValueChange = { path = it },
@@ -286,7 +287,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                 }
             }
             item {
-                OverridePlainFormSection("网络与认证") {
+                OverridePlainFormSection(MLang.Override.Draft.NetworkAuth) {
                     OverrideFormField(
                         value = behavior,
                         onValueChange = { behavior = it },
@@ -306,7 +307,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                         value = headerText,
                         onValueChange = { headerText = it },
                         label = "header",
-                        supportText = "每行一个 header，格式：Key: value1 | value2",
+                        supportText = MLang.Override.Draft.HeaderHint,
                         modifier = Modifier.height(120.dp),
                         maxLines = 8,
                     )
@@ -338,7 +339,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                     }
                 }
                 item {
-                    OverrideCardSection("Health Check 开关") {
+                    OverrideCardSection(MLang.Override.Draft.HealthCheckSwitch) {
                         NullableBooleanSelector(
                             title = "health-check.enable",
                             value = healthCheckEnable,
@@ -352,9 +353,9 @@ fun OverrideKeyedObjectDraftEditorScreen(
                     }
                 }
                 item {
-                    OverrideSection("Health Check 额外字段") {
+                    OverrideSection(MLang.Override.Draft.HealthCheckFields) {
                         OverrideExtraFieldsCard(
-                            title = "health-check 额外字段",
+                            title = MLang.Override.Draft.HealthCheckFields,
                             fields = healthCheckExtraFields,
                             onAddClick = {
                                 editingHealthCheckExtraKey = null
@@ -415,7 +416,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                     }
                 }
                 item {
-                    OverrideCardSection("Override 开关") {
+                    OverrideCardSection(MLang.Override.Draft.OverrideSwitch) {
                         NullableBooleanSelector(
                             title = "override.tfo",
                             value = overrideTfo,
@@ -444,9 +445,9 @@ fun OverrideKeyedObjectDraftEditorScreen(
                     }
                 }
                 item {
-                    OverrideSection("Override 额外字段") {
+                    OverrideSection(MLang.Override.Draft.OverrideFields) {
                         OverrideExtraFieldsCard(
-                            title = "override 额外字段",
+                            title = MLang.Override.Draft.OverrideFields,
                             fields = providerOverrideExtraFields,
                             onAddClick = {
                                 editingOverrideExtraKey = null
@@ -488,7 +489,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                     }
                 }
                 item {
-                    OverrideCardSection("Health Check 开关") {
+                    OverrideCardSection(MLang.Override.Draft.HealthCheckSwitch) {
                         NullableBooleanSelector(
                             title = "health-check.enable",
                             value = healthCheckEnable,
@@ -503,7 +504,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
                 }
             }
             item {
-                OverrideCardSection("布尔选项") {
+                OverrideCardSection(MLang.Override.Draft.BooleanOptions) {
                     NullableBooleanSelector(
                         title = "enable",
                         value = enable,
@@ -517,9 +518,9 @@ fun OverrideKeyedObjectDraftEditorScreen(
                 }
             }
             item {
-                OverrideSection("额外字段") {
+                OverrideSection(MLang.Override.Draft.ExtraFields) {
                     OverrideExtraFieldsCard(
-                        title = "额外字段",
+                        title = MLang.Override.Draft.ExtraFields,
                         fields = extraFields,
                         onAddClick = {
                             editingExtraKey = null
@@ -541,7 +542,7 @@ fun OverrideKeyedObjectDraftEditorScreen(
         }
         OverrideExtraFieldDialog(
             show = showExtraFieldDialog,
-            title = if (editingExtraKey == null) "新增额外字段" else "编辑额外字段",
+            title = if (editingExtraKey == null) MLang.Override.Draft.AddExtraField else MLang.Override.Draft.EditExtraField,
             initialValue = editingExtraKey?.let(extraFields::toExtraFieldDraft),
             onConfirm = { draft: OverrideExtraFieldDraft ->
                 extraFields = extraFields.updateExtraField(editingExtraKey, draft)
@@ -556,9 +557,9 @@ fun OverrideKeyedObjectDraftEditorScreen(
         OverrideExtraFieldDialog(
             show = showHealthCheckExtraFieldDialog,
             title = if (editingHealthCheckExtraKey == null) {
-                "新增 health-check 额外字段"
+                MLang.Override.Draft.AddHealthCheckField
             } else {
-                "编辑 health-check 额外字段"
+                MLang.Override.Draft.EditHealthCheckField
             },
             initialValue = editingHealthCheckExtraKey?.let(healthCheckExtraFields::toExtraFieldDraft),
             onConfirm = { draft: OverrideExtraFieldDraft ->
@@ -577,9 +578,9 @@ fun OverrideKeyedObjectDraftEditorScreen(
         OverrideExtraFieldDialog(
             show = showOverrideExtraFieldDialog,
             title = if (editingOverrideExtraKey == null) {
-                "新增 override 额外字段"
+                MLang.Override.Draft.AddOverrideField
             } else {
-                "编辑 override 额外字段"
+                MLang.Override.Draft.EditOverrideField
             },
             initialValue = editingOverrideExtraKey?.let(providerOverrideExtraFields::toExtraFieldDraft),
             onConfirm = { draft: OverrideExtraFieldDraft ->

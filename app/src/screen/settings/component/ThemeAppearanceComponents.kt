@@ -38,7 +38,6 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Palette
 import com.github.yumelira.yumebox.presentation.theme.colorFromArgb
 import com.github.yumelira.yumebox.presentation.theme.colorToArgbLong
-import com.github.yumelira.yumebox.presentation.theme.isDefaultThemeSeedArgb
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -49,7 +48,6 @@ internal fun ThemeModeAndColorItems(
     onThemeModeChange: (ThemeMode) -> Unit,
     themeSeedColorArgb: Long,
     onThemeSeedColorChange: (Long) -> Unit,
-    onResetThemeSeedColor: () -> Unit,
 ) {
     ThemeModeSelectorItem(
         themeMode = themeMode,
@@ -58,7 +56,6 @@ internal fun ThemeModeAndColorItems(
     ThemeColorPickerItem(
         themeSeedColorArgb = themeSeedColorArgb,
         onThemeSeedColorChange = onThemeSeedColorChange,
-        onResetThemeSeedColor = onResetThemeSeedColor,
     )
 }
 
@@ -85,12 +82,10 @@ internal fun ThemeModeSelectorItem(
 internal fun ThemeColorPickerItem(
     themeSeedColorArgb: Long,
     onThemeSeedColorChange: (Long) -> Unit,
-    onResetThemeSeedColor: () -> Unit,
 ) {
     ThemeColorPickerItem(
         themeSeedColorArgb = themeSeedColorArgb,
         onThemeSeedColorChange = onThemeSeedColorChange,
-        onResetThemeSeedColor = onResetThemeSeedColor,
         showBottomSheetInPlace = true,
     )
 }
@@ -99,7 +94,6 @@ internal fun ThemeColorPickerItem(
 internal fun ThemeColorPickerItem(
     themeSeedColorArgb: Long,
     onThemeSeedColorChange: (Long) -> Unit,
-    onResetThemeSeedColor: () -> Unit,
     showBottomSheetInPlace: Boolean,
     onOpenPickerRequest: (() -> Unit)? = null,
 ) {
@@ -113,13 +107,9 @@ internal fun ThemeColorPickerItem(
 
     BasicComponent(
         title = MLang.AppSettings.Interface.ColorThemeTitle,
-        summary = if (isDefaultThemeSeedArgb(themeSeedColorArgb)) {
-            MLang.AppSettings.Interface.ColorThemeDefaultSummary
-        } else {
-            MLang.AppSettings.Interface.ColorThemeCustomSummary.format(
-                formatThemeSeedHex(themeSeedColorArgb)
-            )
-        },
+        summary = MLang.AppSettings.Interface.ColorThemeCustomSummary.format(
+            formatThemeSeedHex(themeSeedColorArgb)
+        ),
         onClick = {
             editingThemeSeedColor.value = runCatching { colorFromArgb(themeSeedColorArgb) }
                 .getOrDefault(Color.White)
@@ -154,19 +144,16 @@ internal fun ThemeColorPickerItem(
                 editingThemeSeedHex.value = formatThemeSeedHex(colorToArgbLong(it))
             },
             onEditingThemeSeedHexChange = { raw ->
-                val normalized = normalizeThemeHexInput(raw)
-                editingThemeSeedHex.value = normalized
-                parseThemeHexColorOrNull(normalized)?.let {
+                // 不立即 normalize，让用户自由输入
+                editingThemeSeedHex.value = raw.uppercase()
+                // 尝试解析颜色，成功则更新预览
+                parseThemeHexColorOrNull(raw)?.let {
                     editingThemeSeedColor.value = it
                 }
             },
             onConfirm = {
                 val argb = colorToArgbLong(editingThemeSeedColor.value)
-                if (isDefaultThemeSeedArgb(argb)) {
-                    onResetThemeSeedColor()
-                } else {
-                    onThemeSeedColorChange(argb)
-                }
+                onThemeSeedColorChange(argb)
                 showThemeColorPicker.value = false
             },
         )
@@ -221,16 +208,8 @@ private fun formatThemeSeedHex(argb: Long): String {
     return "#$rgb"
 }
 
-private fun normalizeThemeHexInput(input: String): String {
-    val body = input
-        .uppercase()
-        .filter { it in '0'..'9' || it in 'A'..'F' }
-        .take(6)
-    return "#$body"
-}
-
 private fun parseThemeHexColorOrNull(input: String): Color? {
-    val body = input.removePrefix("#")
+    val body = input.removePrefix("#").removePrefix("0x").uppercase()
     if (body.length != 6) return null
     val rgb = body.toLongOrNull(16) ?: return null
     return colorFromArgb(0xFF000000L or rgb)

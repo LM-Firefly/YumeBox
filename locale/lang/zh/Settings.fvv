@@ -1,12 +1,12 @@
 <Settings Page>
 Settings = {
     Title = "设置"
-    
+
     Section = {
         UiSettings = "界面设置"
         More = "更多"
     }
-    
+
     UiSettings = {
         App = "应用"
         AppSummary = "外观 · 语言 · 主题"
@@ -17,11 +17,8 @@ Settings = {
         MetaFeatures = "Meta 功能"
         MetaFeaturesSummary = "Meta 扩展"
     }
-    
+
     More = {
-        TrafficStatistics = "流量统计"
-        OnboardingWizard = "初始化向导"
-        OnboardingWizardSummary = "重新体验新的引导页"
         Lab = "实验室"
         LabSummary = "SubStore · 实验功能"
         Logs = "日志"
@@ -29,8 +26,8 @@ Settings = {
         About = "关于"
         AboutSummary = "版本与许可"
     }
-    
+
     Error = {
-        WebviewFailed = "无法打开 WebView: %s"
+        WebviewFailed = "无法打开 WebView：%s"
     }
 }

@@ -154,7 +154,7 @@ fun ProxyPager(
                 ) {
                     Icon(
                         imageVector = Yume.Speed,
-                        contentDescription = MLang.Proxy.Action.Test,
+                        contentDescription = "Test",
                         tint = MiuixTheme.colorScheme.onPrimary,
                     )
                 }
@@ -269,7 +269,7 @@ private fun ProxyTopBar(
                     modifier = Modifier.padding(start = 24.dp),
                     onClick = onBack,
                 ) {
-                    Icon(MiuixIcons.Back, contentDescription = MLang.Component.Navigation.Back)
+                    Icon(MiuixIcons.Back, contentDescription = "Back")
                 }
             } else {
                 IconButton(
@@ -278,13 +278,13 @@ private fun ProxyTopBar(
                 ) {
                     Icon(
                         Yume.Folders,
-                        contentDescription = MLang.Providers.Title,
+                        contentDescription = "Providers",
                     )
                 }
                 IconButton(
                     onClick = onOpenPanel,
                 ) {
-                    Icon(Yume.Chromium, contentDescription = MLang.Proxy.Action.Panel)
+                    Icon(Yume.Chromium, contentDescription = "Panel")
                 }
             }
         }
@@ -293,7 +293,7 @@ private fun ProxyTopBar(
             IconButton(
                 modifier = Modifier.padding(end = 16.dp), onClick = { onTestDelay.invoke() }
             ) {
-                Icon(Yume.Speed, contentDescription = MLang.Proxy.Action.Test)
+                Icon(Yume.Speed, contentDescription = "Test")
             }
         }
         Box {
@@ -303,7 +303,7 @@ private fun ProxyTopBar(
             ) {
                 Icon(
                     Yume.`List-chevrons-up-down`,
-                    contentDescription = MLang.Proxy.Settings.SortMode,
+                    contentDescription = "Sort mode",
                 )
             }
             NodeSortPopup(

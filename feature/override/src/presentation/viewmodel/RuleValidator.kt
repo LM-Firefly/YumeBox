@@ -23,6 +23,7 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
+import dev.oom_wg.purejoy.mlang.MLang
 
 internal object RuleValidator {
 
@@ -32,16 +33,16 @@ internal object RuleValidator {
         rules.forEachIndexed { index, raw ->
             val rule = raw.trim()
             if (rule.isEmpty()) {
-                warnings += "规则 #${index + 1} 为空"
+                warnings += MLang.Override.Rule.EmptyWarning.format(index + 1)
                 return@forEachIndexed
             }
             val parts = rule.split(',').map { it.trim() }
             if (parts.size < 2) {
-                warnings += "规则 #${index + 1} 格式可能不正确: $rule"
+                warnings += MLang.Override.Rule.InvalidFormatWarning.format(index + 1, rule)
                 return@forEachIndexed
             }
             if (parts.first().equals("RULE-SET", ignoreCase = true) && parts.size < 3) {
-                warnings += "规则 #${index + 1} 缺少策略组目标: $rule"
+                warnings += MLang.Override.Rule.MissingTargetWarning.format(index + 1, rule)
             }
         }
         return warnings

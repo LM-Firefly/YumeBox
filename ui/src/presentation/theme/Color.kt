@@ -25,7 +25,6 @@ package com.github.yumelira.yumebox.presentation.theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
-import com.github.yumelira.yumebox.data.model.AppColorTheme
 import top.yukonga.miuix.kmp.theme.darkColorScheme
 import top.yukonga.miuix.kmp.theme.lightColorScheme
 
@@ -53,8 +52,6 @@ private data class ThemePalette(
 )
 
 const val DEFAULT_THEME_SEED_ARGB: Long = 0xFFFFFFFFL
-
-private val DefaultColorTheme = AppColorTheme.ClassicMonochrome
 
 private fun ThemeColors.toLightScheme() = lightColorScheme(
     primary = primary,
@@ -96,49 +93,43 @@ private fun ThemeColors.toDarkScheme() = darkColorScheme(
 private fun ThemePalette.toColorScheme(isDark: Boolean) =
     if (isDark) dark.toDarkScheme() else light.toLightScheme()
 
-private val themePalettes = mapOf(
 
-    AppColorTheme.ClassicMonochrome to ThemePalette(
-        light = ThemeColors(
-            primary = Color(0xFF000000),
-            onPrimary = Color.White,
-            primaryVariant = Color(0xFF222222),
-            onPrimaryVariant = Color(0xFFAAAAAA),
-            disabledPrimary = Color(0xFFBDBDBD),
-            disabledOnPrimary = Color(0xFFE0E0E0),
-            disabledPrimaryButton = Color(0xFFBDBDBD),
-            disabledOnPrimaryButton = Color(0xFFEEEEEE),
-            disabledPrimarySlider = Color(0xFFDCDCDC),
-            primaryContainer = Color(0xFFF0F0F0),
-            onPrimaryContainer = Color(0xFF000000),
-            tertiaryContainer = Color(0xFFF8F8F8),
-            onTertiaryContainer = Color(0xFF000000),
-            tertiaryContainerVariant = Color(0xFFF8F8F8),
-            onBackgroundVariant = Color(0xFF000000),
-        ),
-        dark = ThemeColors(
-            primary = Color.White,
-            onPrimary = Color(0xFF000000),
-            primaryVariant = Color(0xFFE0E0E0),
-            onPrimaryVariant = Color(0xFF555555),
-            disabledPrimary = Color(0xFF333333),
-            disabledOnPrimary = Color(0xFF757575),
-            disabledPrimaryButton = Color(0xFF333333),
-            disabledOnPrimaryButton = Color(0xFF757575),
-            disabledPrimarySlider = Color(0xFF444444),
-            primaryContainer = Color(0xFF252525),
-            onPrimaryContainer = Color.White,
-            tertiaryContainer = Color(0xFF1C1C1C),
-            onTertiaryContainer = Color.White,
-            tertiaryContainerVariant = Color(0xFF303030),
-            onBackgroundVariant = Color(0xFFE0E0E0),
-        ),
+private val basePalette = ThemePalette(
+    light = ThemeColors(
+        primary = Color(0xFF000000),
+        onPrimary = Color.White,
+        primaryVariant = Color(0xFF222222),
+        onPrimaryVariant = Color(0xFFAAAAAA),
+        disabledPrimary = Color(0xFFBDBDBD),
+        disabledOnPrimary = Color(0xFFE0E0E0),
+        disabledPrimaryButton = Color(0xFFBDBDBD),
+        disabledOnPrimaryButton = Color(0xFFEEEEEE),
+        disabledPrimarySlider = Color(0xFFDCDCDC),
+        primaryContainer = Color(0xFFF0F0F0),
+        onPrimaryContainer = Color(0xFF000000),
+        tertiaryContainer = Color(0xFFF8F8F8),
+        onTertiaryContainer = Color(0xFF000000),
+        tertiaryContainerVariant = Color(0xFFF8F8F8),
+        onBackgroundVariant = Color(0xFF000000),
+    ),
+    dark = ThemeColors(
+        primary = Color.White,
+        onPrimary = Color(0xFF000000),
+        primaryVariant = Color(0xFFE0E0E0),
+        onPrimaryVariant = Color(0xFF555555),
+        disabledPrimary = Color(0xFF333333),
+        disabledOnPrimary = Color(0xFF757575),
+        disabledPrimaryButton = Color(0xFF333333),
+        disabledOnPrimaryButton = Color(0xFF757575),
+        disabledPrimarySlider = Color(0xFF444444),
+        primaryContainer = Color(0xFF252525),
+        onPrimaryContainer = Color.White,
+        tertiaryContainer = Color(0xFF1C1C1C),
+        onTertiaryContainer = Color.White,
+        tertiaryContainerVariant = Color(0xFF303030),
+        onBackgroundVariant = Color(0xFFE0E0E0),
     ),
 )
-
-private val defaultPalette = themePalettes.getValue(DefaultColorTheme)
-fun colorSchemeForTheme(theme: AppColorTheme, isDark: Boolean) =
-    (themePalettes[theme] ?: defaultPalette).toColorScheme(isDark)
 
 fun colorSchemeFromSeed(seed: Color, isDark: Boolean) =
     derivePaletteFromSeed(seed).toColorScheme(isDark)
@@ -147,17 +138,10 @@ fun colorFromArgb(argb: Long): Color = Color(argb.toInt())
 
 fun colorToArgbLong(color: Color): Long = color.toArgb().toLong()
 
-fun isDefaultThemeSeedArgb(argb: Long): Boolean {
-    val rgb = argb and 0x00FFFFFFL
-    return rgb == 0x000000L || rgb == 0xFFFFFFL
-}
-
 private fun derivePaletteFromSeed(seed: Color): ThemePalette {
-    val lightBase = themePalettes.getValue(AppColorTheme.ClassicMonochrome).light
-    val darkBase = themePalettes.getValue(AppColorTheme.ClassicMonochrome).dark
     return ThemePalette(
-        light = deriveThemeColors(base = lightBase, seed = seed, dark = false),
-        dark = deriveThemeColors(base = darkBase, seed = seed, dark = true),
+        light = deriveThemeColors(base = basePalette.light, seed = seed, dark = false),
+        dark = deriveThemeColors(base = basePalette.dark, seed = seed, dark = true),
     )
 }
 

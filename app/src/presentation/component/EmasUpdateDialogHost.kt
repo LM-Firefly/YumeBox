@@ -197,7 +197,7 @@ private fun UpdateDetailContent(
 private fun UpdateCover() {
     Image(
         painter = painterResource(id = R.drawable.update),
-        contentDescription = MLang.Component.Update.Message.CoverDesc,
+        contentDescription = "Update cover image",
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .fillMaxWidth()

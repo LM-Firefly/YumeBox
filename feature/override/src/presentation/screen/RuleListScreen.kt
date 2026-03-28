@@ -38,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.util.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -65,7 +66,7 @@ fun OverrideRuleListEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = OverrideStructuredEditorStore.ruleEditorTitle.ifBlank { "规则" }
+    val title = OverrideStructuredEditorStore.ruleEditorTitle.ifBlank { MLang.Override.Editor.Rules }
     val availableModes = OverrideStructuredEditorStore.ruleEditorAvailableModes
     var showResetDialog by remember { mutableStateOf(false) }
     val addFabController = rememberOverrideFabController()
@@ -100,9 +101,9 @@ fun OverrideRuleListEditorScreen(
                 controller = addFabController,
                 visible = showAddFab,
                 imageVector = Yume.`Badge-plus`,
-                contentDescription = "新增规则",
+                contentDescription = MLang.Override.Editor.NewRule,
                 onClick = {
-                    onOpenRuleDraftEditor("新增规则", null) { createdDraft ->
+                    onOpenRuleDraftEditor(MLang.Override.Editor.NewRule, null) { createdDraft ->
                         val latestValues = OverrideStructuredEditorStore.ruleEditorDraftValues
                         val mode = OverrideStructuredEditorStore.ruleEditorSelectedMode
                         val updatedValues = latestValues.update(
@@ -129,7 +130,7 @@ fun OverrideRuleListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Cancel,
-                                contentDescription = "取消删除",
+                                contentDescription = MLang.Override.Editor.CancelDelete,
                             )
                         }
                         IconButton(
@@ -150,7 +151,7 @@ fun OverrideRuleListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "删除已选规则",
+                                contentDescription = MLang.Override.Editor.DeleteSelectedRules,
                             )
                         }
                     } else {
@@ -160,7 +161,7 @@ fun OverrideRuleListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Undo,
-                                contentDescription = "清空当前模式",
+                                contentDescription = MLang.Override.Editor.ClearMode,
                             )
                         }
                         IconButton(
@@ -172,7 +173,7 @@ fun OverrideRuleListEditorScreen(
                         ) {
                             Icon(
                                 imageVector = Yume.Delete,
-                                contentDescription = "进入删除模式",
+                                contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             )
                         }
                     }
@@ -191,7 +192,7 @@ fun OverrideRuleListEditorScreen(
             item(key = "modifier-card") {
                 Card {
                     WindowDropdown(
-                        title = "修饰符模式",
+                        title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
@@ -215,7 +216,7 @@ fun OverrideRuleListEditorScreen(
                 ) { index ->
                     val ruleDraft = currentRules[index]
                     val ruleTitle = formatRuleDraft(ruleDraft).ifBlank {
-                        ruleDraft.type.ifBlank { "未命名规则" }
+                        ruleDraft.type.ifBlank { MLang.Override.Editor.UnnamedRule }
                     }
                     ReorderableItem(
                         state = reorderState,
@@ -232,7 +233,7 @@ fun OverrideRuleListEditorScreen(
                                 } else {
                                     val ruleUiId = ruleDraft.uiId
                                     val editMode = selectedMode
-                                    onOpenRuleDraftEditor("编辑规则", ruleDraft) { updatedDraft ->
+                                    onOpenRuleDraftEditor(MLang.Override.Editor.EditRule, ruleDraft) { updatedDraft ->
                                         val latestValues = OverrideStructuredEditorStore.ruleEditorDraftValues
                                         val updatedValues = latestValues.update(
                                             editMode,
@@ -267,8 +268,8 @@ fun OverrideRuleListEditorScreen(
 
     AppDialog(
             show = showResetDialog,
-            title = "清空规则",
-            summary = "清空后将移除当前模式内的所有规则。",
+            title = MLang.Override.Editor.ClearDialog.Title.format(MLang.Override.Editor.Rules),
+            summary = MLang.Override.Editor.ClearDialog.Summary.format(MLang.Override.Editor.Rules),
             onDismissRequest = { showResetDialog = false },
         ) {
             DialogButtonRow(
@@ -280,8 +281,8 @@ fun OverrideRuleListEditorScreen(
                     val mode = OverrideStructuredEditorStore.ruleEditorSelectedMode
                     applyRuleValues(OverrideStructuredEditorStore.ruleEditorDraftValues.update(mode, emptyList()))
                 },
-                cancelText = "取消",
-                confirmText = "清空",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Clear,
             )
         }
     }
@@ -312,7 +313,7 @@ private fun ReorderableCollectionItemScope.RuleListCard(
             ) {
                 Icon(
                     imageVector = Yume.List,
-                    contentDescription = "拖拽排序",
+                    contentDescription = MLang.Override.Editor.DragToSort,
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 Column(
@@ -335,7 +336,7 @@ private fun ReorderableCollectionItemScope.RuleListCard(
                     } else {
                         Icon(
                             imageVector = Yume.chevron,
-                            contentDescription = "编辑规则",
+                            contentDescription = MLang.Override.Editor.EditRule,
                             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }

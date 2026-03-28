@@ -116,11 +116,7 @@ internal class OnboardingPersonalizeActivity : OnboardingBaseActivity() {
                 },
                 onConfirm = {
                     val argb = colorToArgbLong(editingThemeSeedColor)
-                    if (com.github.yumelira.yumebox.presentation.theme.isDefaultThemeSeedArgb(argb)) {
-                        themeState.onResetThemeSeedColor()
-                    } else {
-                        themeState.onThemeSeedColorChange(argb)
-                    }
+                    themeState.onThemeSeedColorChange(argb)
                     showThemeColorPicker = false
                 },
             )

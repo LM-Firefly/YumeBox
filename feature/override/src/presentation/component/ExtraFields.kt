@@ -33,6 +33,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
 import com.github.yumelira.yumebox.presentation.icon.yume.Delete
 import com.github.yumelira.yumebox.presentation.util.*
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
@@ -59,14 +60,14 @@ fun OverrideExtraFieldsCard(
             BasicComponent(
                 title = title,
                 summary = if (fields.isEmpty()) {
-                    "点击添加额外字段"
+                    MLang.Override.Draft.ClickToAddExtraField
                 } else {
                     "已配置 ${fields.size} 个额外字段"
                 },
                 endActions = {
                     OverrideCardActionIconButton(
                         imageVector = Yume.`Badge-plus`,
-                        contentDescription = "新增额外字段",
+                        contentDescription = MLang.Override.Draft.AddExtraField,
                         onClick = onAddClick,
                         tone = OverrideActionTone.Primary,
                     )
@@ -83,7 +84,7 @@ fun OverrideExtraFieldsCard(
                         endActions = {
                             OverrideCardActionIconButton(
                                 imageVector = Yume.Delete,
-                                contentDescription = "删除额外字段",
+                                contentDescription = MLang.Override.Draft.DeleteExtraField,
                                 onClick = { onDeleteClick(entry.key) },
                             )
                         },
@@ -125,7 +126,7 @@ fun OverrideExtraFieldDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             WindowDropdown(
-                title = "值类型",
+                title = MLang.Override.Draft.ValueType,
                 items = valueTypeItems,
                 selectedIndex = selectedTypeIndex,
                 onSelectedIndexChange = { index ->
@@ -139,7 +140,7 @@ fun OverrideExtraFieldDialog(
                     keyText = it
                     errorText = null
                 },
-                label = "键名",
+                label = MLang.Override.Editor.KeyName,
                 modifier = Modifier.fillMaxWidth(),
             )
             if (selectedType != OverrideExtraFieldValueType.Null) {
@@ -150,12 +151,12 @@ fun OverrideExtraFieldDialog(
                         errorText = null
                     },
                     label = when (selectedType) {
-                        OverrideExtraFieldValueType.String -> "字符串值"
+                        OverrideExtraFieldValueType.String -> MLang.Override.Draft.StringValue
                         OverrideExtraFieldValueType.Boolean -> "true / false"
-                        OverrideExtraFieldValueType.Int -> "整数值"
-                        OverrideExtraFieldValueType.Double -> "浮点数值"
+                        OverrideExtraFieldValueType.Int -> MLang.Override.Draft.IntValue
+                        OverrideExtraFieldValueType.Double -> MLang.Override.Draft.DoubleValue
                         OverrideExtraFieldValueType.Null -> ""
-                        OverrideExtraFieldValueType.JsonFragment -> "单个 JSON 片段"
+                        OverrideExtraFieldValueType.JsonFragment -> MLang.Override.Draft.JsonFragment
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -178,18 +179,18 @@ fun OverrideExtraFieldDialog(
                         value = valueText.trim(),
                     )
                     if (normalizedDraft.key.isBlank()) {
-                        errorText = "键名不能为空"
+                        errorText = MLang.Override.Draft.KeyNameEmpty
                         return@DialogButtonRow
                     }
                     val parsedValue = extraFieldDraftToJsonElement(normalizedDraft)
                     if (parsedValue == null) {
-                        errorText = "当前值与所选类型不匹配"
+                        errorText = MLang.Override.Draft.ValueTypeMismatch
                         return@DialogButtonRow
                     }
                     onConfirm(normalizedDraft)
                 },
-                cancelText = "取消",
-                confirmText = "确定",
+                cancelText = MLang.Override.Dialog.Button.Cancel,
+                confirmText = MLang.Override.Editor.Confirm,
             )
         }
     }

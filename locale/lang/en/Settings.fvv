@@ -1,12 +1,12 @@
 <Settings Page>
 Settings = {
     Title = "Settings"
-    
+
     Section = {
         UiSettings = "UI Settings"
         More = "More"
     }
-    
+
     UiSettings = {
         App = "App"
         AppSummary = "Appearance · Language · Theme"
@@ -17,11 +17,8 @@ Settings = {
         MetaFeatures = "Meta Features"
         MetaFeaturesSummary = "Meta Extensions"
     }
-    
+
     More = {
-        TrafficStatistics = "Traffic Statistics"
-        OnboardingWizard = "Onboarding Wizard"
-        OnboardingWizardSummary = "Replay the redesigned onboarding flow"
         Lab = "Lab"
         LabSummary = "SubStore · Experiments"
         Logs = "Logs"
@@ -29,7 +26,7 @@ Settings = {
         About = "About"
         AboutSummary = "Version & License"
     }
-    
+
     Error = {
         WebviewFailed = "Unable to open WebView: %s"
     }

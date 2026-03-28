@@ -47,6 +47,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
@@ -83,6 +84,7 @@ fun OverrideListScreen(
     val showCreateDialog = remember { mutableStateOf(false) }
     val showDeleteDialog = remember { mutableStateOf(false) }
     val showEditOptionsDialog = remember { mutableStateOf<OverrideConfig?>(null) }
+    val isEditOptionsDialogVisible = remember { mutableStateOf(false) }
     val deleteTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
     val exportTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
     val listState = rememberLazyListState()
@@ -123,7 +125,7 @@ fun OverrideListScreen(
             context.contentResolver.openInputStream(uri)
                 ?.bufferedReader()
                 ?.use { reader -> reader.readText() }
-                ?: error("无法读取导入文件")
+                ?: error(MLang.Override.Import.ReadError)
         }.onSuccess { jsonText ->
             val importResult = viewModel.importConfigsFromJson(
                 jsonString = jsonText,
@@ -132,17 +134,17 @@ fun OverrideListScreen(
             if (importResult.isSuccess) {
                 val importedCount = importResult.getOrNull() ?: 0
                 val importMessage = if (displayName.isNotBlank()) {
-                    "已从 $displayName 导入 $importedCount 个配置"
+                    MLang.Override.Import.Success.format(displayName, importedCount)
                 } else {
-                    "已导入 $importedCount 个配置"
+                    MLang.Override.Import.SuccessDefault.format(importedCount)
                 }
                 context.toast(importMessage)
                 showCreateDialog.value = false
             } else {
-                context.toast("导入失败: ${importResult.exceptionOrNull()?.message}")
+                context.toast(MLang.Override.Import.Failed.format(importResult.exceptionOrNull()?.message))
             }
         }.onFailure { throwable ->
-            context.toast("读取文件失败: ${throwable.message}")
+            context.toast(MLang.Override.Import.FileError.format(throwable.message))
         }
     }
 
@@ -157,7 +159,7 @@ fun OverrideListScreen(
 
         val exportedConfig = viewModel.exportConfig(targetConfig.id)
         if (exportedConfig == null) {
-            context.toast("导出失败：${targetConfig.name}")
+            context.toast(MLang.Override.Export.Failed.format(targetConfig.name))
             exportTargetConfig.value = null
             return@rememberLauncherForActivityResult
         }
@@ -166,11 +168,11 @@ fun OverrideListScreen(
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                 outputStream.write(exportedConfig.toByteArray())
                 outputStream.flush()
-            } ?: error("无法写入导出文件")
+            } ?: error(MLang.Override.Export.Failed.format(targetConfig.name))
         }.onSuccess {
-            context.toast("已导出配置：${targetConfig.name}")
+            context.toast(MLang.Override.Export.Success.format(targetConfig.name))
         }.onFailure { throwable ->
-            context.toast("导出失败: ${throwable.message}")
+            context.toast(MLang.Override.Export.Failed.format(throwable.message))
         }
 
         exportTargetConfig.value = null
@@ -194,13 +196,13 @@ fun OverrideListScreen(
                 controller = createFabController,
                 visible = !showCreateDialog.value,
                 imageVector = Yume.`Badge-plus`,
-                contentDescription = "创建配置",
+                contentDescription = MLang.Override.Action.Create,
                 onClick = { showCreateDialog.value = true },
             )
         },
         topBar = {
             TopBar(
-                title = "覆写配置",
+                title = MLang.Override.Title,
                 scrollBehavior = scrollBehavior
             )
         },
@@ -226,8 +228,8 @@ fun OverrideListScreen(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                             ) {
                                 CenteredText(
-                                    firstLine = "暂无覆写配置",
-                                    secondLine = "点击下方按钮创建新配置，或导入 JSON",
+                                    firstLine = MLang.Override.Empty.Title,
+                                    secondLine = MLang.Override.Empty.Hint,
                                 )
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -235,14 +237,14 @@ fun OverrideListScreen(
                                     Button(
                                         onClick = { showCreateDialog.value = true },
                                     ) {
-                                        Text("新建配置")
+                                        Text(MLang.Override.Action.New)
                                     }
                                     Button(
                                         onClick = { importConfigLauncher.launch("*/*") },
                                         colors = ButtonDefaults.buttonColorsPrimary(),
                                     ) {
                                         Text(
-                                            text = "导入 JSON",
+                                            text = MLang.Override.Action.Import,
                                             color = colorScheme.background,
                                         )
                                     }
@@ -269,13 +271,16 @@ fun OverrideListScreen(
                                 isInUse = isInUse,
                                 onCopy = {
                                     viewModel.duplicateConfig(config.id)
-                                    context.toast("已复制配置：${config.name}")
+                                    context.toast(MLang.Override.Card.Copy + "：" + config.name)
                                 },
                                 onExport = {
                                     exportTargetConfig.value = config
                                     exportConfigLauncher.launch("${config.name}.json")
                                 },
-                                onEdit = { showEditOptionsDialog.value = config },
+                                onEdit = {
+                                    showEditOptionsDialog.value = config
+                                    isEditOptionsDialogVisible.value = true
+                                },
                                 onDelete = {
                                     deleteTargetConfig.value = config
                                     showDeleteDialog.value = true
@@ -323,16 +328,17 @@ fun OverrideListScreen(
         // 编辑选项对话框
         showEditOptionsDialog.value?.let { config ->
             EditOptionsDialog(
-                show = showEditOptionsDialog,
+                show = isEditOptionsDialogVisible.value,
                 onVisualEdit = {
-                    showEditOptionsDialog.value = null
+                    isEditOptionsDialogVisible.value = false
                     onEditConfig(config.id)
                 },
                 onCodeEditor = {
-                    showEditOptionsDialog.value = null
+                    isEditOptionsDialogVisible.value = false
                     onOpenCodeEditor(config.id, config.name)
                 },
-                onDismiss = { showEditOptionsDialog.value = null },
+                onDismiss = { isEditOptionsDialogVisible.value = false },
+                onDismissFinished = { showEditOptionsDialog.value = null },
             )
         }
     }
@@ -350,7 +356,7 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
 ) {
     val colorScheme = MiuixTheme.colorScheme
     val accentTintColor = colorScheme.primary
-    val descriptionText = config.description?.takeIf(String::isNotBlank) ?: "未填写描述"
+    val descriptionText = config.description?.takeIf(String::isNotBlank) ?: MLang.Override.Card.NoDescription
 
     Card(
         modifier = Modifier
@@ -401,13 +407,13 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OverrideCardActionIconButton(
                         imageVector = Yume.Copy,
-                        contentDescription = "复制配置",
+                        contentDescription = MLang.Override.Card.Copy,
                         onClick = onCopy,
                     )
 
                     OverrideCardActionIconButton(
                         imageVector = Yume.Share,
-                        contentDescription = "导出配置",
+                        contentDescription = MLang.Override.Card.Export,
                         onClick = onExport,
                     )
                 }
@@ -430,11 +436,11 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
                             modifier = Modifier.size(20.dp),
                             imageVector = Yume.Edit,
                             tint = accentTintColor,
-                            contentDescription = "编辑配置",
+                            contentDescription = MLang.Override.Card.Edit,
                         )
                         Text(
                             modifier = Modifier.padding(end = 3.dp),
-                            text = "编辑",
+                            text = MLang.Override.Card.EditButton,
                             color = accentTintColor,
                             fontWeight = FontWeight.Medium,
                             fontSize = 15.sp,
@@ -456,11 +462,11 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
                             modifier = Modifier.size(20.dp),
                             imageVector = Yume.Delete,
                             tint = colorScheme.onSurface.copy(alpha = 0.85f),
-                            contentDescription = "删除配置",
+                            contentDescription = MLang.Override.Card.Delete,
                         )
                         Text(
                             modifier = Modifier.padding(start = 4.dp, end = 3.dp),
-                            text = "删除",
+                            text = MLang.Override.Card.DeleteButton,
                             color = colorScheme.onSurface.copy(alpha = 0.85f),
                             fontWeight = FontWeight.Medium,
                             fontSize = 15.sp,
@@ -482,7 +488,7 @@ private fun OverrideConfigStateIndicator(inUse: Boolean) {
 
     OverrideStatusBadge(
         imageVector = if (inUse) Yume.ShieldCheck else Yume.ShieldMinus,
-        contentDescription = if (inUse) "使用中" else "未使用",
+        contentDescription = if (inUse) MLang.Override.Status.InUse else MLang.Override.Status.NotInUse,
         tint = tint,
         backgroundColor = if (inUse) colorScheme.primary.copy(alpha = 0.1f) else colorScheme.secondaryContainer.copy(
             alpha = 0.78f
@@ -504,14 +510,14 @@ private fun CreateConfigDialog(
 
     AppActionBottomSheet(
         show = show.value,
-        title = "添加配置",
+        title = MLang.Override.Dialog.Create.Title,
         startAction = {
             AppBottomSheetCloseAction(onClick = onDismiss)
         },
         endAction = {
             AppBottomSheetConfirmAction(
                 enabled = canConfirm,
-                contentDescription = "创建",
+                contentDescription = MLang.Override.Action.Create,
                 onClick = {
                     if (canConfirm) {
                         keyboardController?.hide()
@@ -529,24 +535,24 @@ private fun CreateConfigDialog(
             TextField(
                 value = name,
                 onValueChange = { name = it },
-                label = "配置名称"
+                label = MLang.Override.Dialog.Create.Name
             )
 
             TextField(
                 value = description,
                 onValueChange = { description = it },
-                label = "配置描述"
+                label = MLang.Override.Dialog.Create.Description
             )
 
             Card(applyHorizontalPadding = false) {
                 BasicComponent(
-                    title = "导入配置文件",
-                    summary = "选择 JSON 文件导入覆写配置",
+                    title = MLang.Override.Action.ImportFile,
+                    summary = MLang.Override.Dialog.Create.ImportHint,
                     startAction = {
                         Icon(
                             modifier = Modifier.padding(end = 16.dp),
                             imageVector = Yume.Share,
-                            contentDescription = "导入配置文件",
+                            contentDescription = MLang.Override.Action.ImportFile,
                             tint = MiuixTheme.colorScheme.onBackground,
                         )
                     },
@@ -580,13 +586,13 @@ private fun DeleteConfirmDialog(
 
     val summary = when {
         config == null -> ""
-        isInUse -> "配置 ${config.name} 正在被订阅使用，删除后将解除绑定关系。确定要删除吗？此操作不可恢复。"
-        else -> "确定要删除配置 ${config.name} 吗？此操作不可恢复。"
+        isInUse -> MLang.Override.Dialog.Delete.InUseMessage.format(config.name)
+        else -> MLang.Override.Dialog.Delete.Message.format(config.name)
     }
 
     AppDialog(
         show = show.value,
-        title = "删除配置",
+        title = MLang.Override.Dialog.Delete.Title,
         summary = summary,
         onDismissRequest = onDismiss,
     ) {
@@ -597,7 +603,7 @@ private fun DeleteConfirmDialog(
                 modifier = Modifier.weight(1f),
                 onClick = onDismiss,
             ) {
-                Text("取消")
+                Text(MLang.Override.Dialog.Button.Cancel)
             }
 
             Button(
@@ -606,7 +612,7 @@ private fun DeleteConfirmDialog(
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
                 Text(
-                    text = "删除",
+                    text = MLang.Override.Dialog.Button.Delete,
                     color = MiuixTheme.colorScheme.onPrimary,
                 )
             }
@@ -616,15 +622,17 @@ private fun DeleteConfirmDialog(
 
 @Composable
 private fun EditOptionsDialog(
-    show: MutableState<OverrideConfig?>,
+    show: Boolean,
     onVisualEdit: () -> Unit,
     onCodeEditor: () -> Unit,
     onDismiss: () -> Unit,
+    onDismissFinished: () -> Unit,
 ) {
     AppDialog(
-        show = show.value != null,
-        title = "编辑配置",
+        show = show,
+        title = MLang.Override.Dialog.EditOptions.Title,
         onDismissRequest = onDismiss,
+        onDismissFinished = onDismissFinished,
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -632,20 +640,19 @@ private fun EditOptionsDialog(
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onCodeEditor,
-                colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
-                Text(
-                    text = "代码编辑器",
-                    color = MiuixTheme.colorScheme.onPrimary,
-                )
+                Text(MLang.Override.Dialog.EditOptions.CodeEditor)
             }
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onVisualEdit,
+                colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
-                Text("可视化编辑")
+                Text(
+                    text = MLang.Override.Dialog.EditOptions.VisualEditor,
+                    color = colorScheme.onPrimary,
+                )
             }
-
         }
     }
 }

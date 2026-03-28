@@ -241,7 +241,7 @@ internal fun ProfileSettingsDialog(
     AppActionBottomSheet(
         show = show.value,
         modifier = Modifier,
-        title = "订阅设置",
+        title = MLang.ProfilesPage.SettingsDialog.Title,
         startAction = {
             AppBottomSheetCloseAction(
                 onClick = onDismiss,
@@ -282,7 +282,7 @@ internal fun ProfileSettingsDialog(
                     TextField(
                         value = editSource,
                         onValueChange = { editSource = it },
-                        label = "更改订阅链接",
+                        label = MLang.ProfilesPage.SettingsDialog.ChangeLink,
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 2,
                     )
@@ -291,8 +291,8 @@ internal fun ProfileSettingsDialog(
                 if (systemPreset != null) {
                     Card {
                         SuperSwitch(
-                            title = "预设覆写",
-                            summary = "如果不知道什么是分流,推荐打开",
+                            title = MLang.ProfilesPage.SettingsDialog.SystemPreset,
+                            summary = MLang.ProfilesPage.SettingsDialog.SystemPresetSummary,
                             checked = systemPresetSelected,
                             onCheckedChange = { systemPresetSelected = it },
                         )
@@ -310,7 +310,7 @@ internal fun ProfileSettingsDialog(
                                 val isSelected = config.id in pendingSelectedUserOverrideIds
                                 BasicComponent(
                                     title = config.name,
-                                    summary = config.description?.takeIf { it.isNotBlank() } ?: "未设置说明",
+                                    summary = config.description?.takeIf { it.isNotBlank() } ?: MLang.ProfilesPage.SettingsDialog.NoDescription,
                                     endActions = {
                                         Checkbox(
                                             state = ToggleableState(isSelected),
