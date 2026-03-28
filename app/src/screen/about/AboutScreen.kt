@@ -44,6 +44,7 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.OpenSourceLicensesScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import okio.`-DeprecatedOkio`.source
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.extra.SuperArrow
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -106,7 +107,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                 Card {
                     BasicComponent(
                         title = "YumeBox",
-                        summary = MLang.About.App.Description,
+                        summary = An open-source Android client based Mihomo,
                     )
                 }
 
