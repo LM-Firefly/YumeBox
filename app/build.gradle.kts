@@ -244,6 +244,7 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${gropify.dep.version.lifecycle}")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:${gropify.dep.version.hiddenApiBypass}")
 
     implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
     implementation("androidx.biometric:biometric:${gropify.dep.version.biometric}")

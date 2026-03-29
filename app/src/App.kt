@@ -27,6 +27,7 @@ import android.content.res.Configuration
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
+import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
@@ -71,6 +72,7 @@ class App : Application() {
         }
         val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
         AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
+        PredictiveBackCompat.apply(applicationInfo, appSettingsStorage.predictiveBackEnabled.value)
 
         val featureStore: FeatureStore = koinApp.koin.get()
         featureStore.syncAppVersion(BuildConfig.VERSION_CODE)

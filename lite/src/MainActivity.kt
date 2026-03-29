@@ -96,6 +96,7 @@ class MainActivity : FragmentActivity() {
             val themeMode by appSettingsStorage.themeMode.state.collectAsState()
             val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsState()
             val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
+            val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsState()
             val pendingImportValue by pendingImportUrl.collectAsState()
             val navController = rememberNavController()
 
@@ -112,6 +113,7 @@ class MainActivity : FragmentActivity() {
                     themeMode = themeMode,
                     themeSeedColorArgb = themeSeedColorArgb,
                     invertOnPrimaryColors = invertOnPrimaryColors,
+                    smoothCornerEnabled = smoothCornerEnabled,
                 ) {
                     Surface(
                         modifier = Modifier.fillMaxSize(),

@@ -39,6 +39,7 @@
             android:usesCleartextTraffic="true">
         <activity
                 android:name=".MainActivity"
+                android:enableOnBackInvokedCallback="false"
                 android:exported="true"
                 android:launchMode="singleTop"
                 android:windowSoftInputMode="adjustResize">
