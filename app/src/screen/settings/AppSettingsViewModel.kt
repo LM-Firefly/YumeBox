@@ -54,6 +54,8 @@ class AppSettingsViewModel(
     val bottomBarAutoHide: Preference<Boolean> = settings.bottomBarAutoHide
     val bottomBarUseLegacyStyle: Preference<Boolean> = settings.bottomBarUseLegacyStyle
     val topBarBlurEnabled: Preference<Boolean> = settings.topBarBlurEnabled
+    val predictiveBackEnabled: Preference<Boolean> = settings.predictiveBackEnabled
+    val smoothCornerEnabled: Preference<Boolean> = settings.smoothCornerEnabled
     val acgMainUiEnabled: Preference<Boolean> = settings.acgMainUiEnabled
     val acgWallpaperUri: Preference<String> = settings.acgWallpaperUri
     val acgWallpaperZoom: Preference<Float> = settings.acgWallpaperZoom
@@ -79,6 +81,8 @@ class AppSettingsViewModel(
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
     fun onBottomBarUseLegacyStyleChange(enabled: Boolean) = bottomBarUseLegacyStyle.set(enabled)
     fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
+    fun onPredictiveBackEnabledChange(enabled: Boolean) = predictiveBackEnabled.set(enabled)
+    fun onSmoothCornerEnabledChange(enabled: Boolean) = smoothCornerEnabled.set(enabled)
     fun onAcgMainUiEnabledChange(enabled: Boolean) = acgMainUiEnabled.set(enabled)
     fun onAcgWallpaperUriChange(uri: String) = acgWallpaperUri.set(uri)
     fun onAcgWallpaperCropChange(zoom: Float, biasX: Float, biasY: Float) {

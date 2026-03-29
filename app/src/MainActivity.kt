@@ -137,6 +137,7 @@ class MainActivity : FragmentActivity() {
             val themeMode = appSettingsViewModel.themeMode.state.collectAsState().value
             val themeSeedColorArgb = appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
             val invertOnPrimaryColors = appSettingsViewModel.invertOnPrimaryColors.state.collectAsState().value
+            val smoothCornerEnabled = appSettingsViewModel.smoothCornerEnabled.state.collectAsState().value
             val excludeFromRecents = appSettingsViewModel.excludeFromRecents.state.collectAsState().value
             val topBarBlurEnabled = appSettingsViewModel.topBarBlurEnabled.state.collectAsState().value
             val pageScale = appSettingsViewModel.pageScale.state.collectAsState().value
@@ -166,6 +167,7 @@ class MainActivity : FragmentActivity() {
                         themeMode = themeMode,
                         themeSeedColorArgb = themeSeedColorArgb,
                         invertOnPrimaryColors = invertOnPrimaryColors,
+                        smoothCornerEnabled = smoothCornerEnabled,
                     ) {
                         if (!biometricGateState.isAuthenticated) {
                             Surface(
