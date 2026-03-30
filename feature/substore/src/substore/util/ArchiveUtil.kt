@@ -22,7 +22,6 @@
 
 package com.github.yumelira.yumebox.substore.util
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import java.io.File
@@ -105,7 +104,7 @@ object ArchiveUtil {
                         writeEntry(tis, outFile)
                     }
 
-                    entry = tis.nextEntry as TarArchiveEntry?
+                    entry = tis.nextEntry
                 }
             }
             true
@@ -124,7 +123,7 @@ object ArchiveUtil {
             FileInputStream(tarGzFile).use { fis ->
                 GzipCompressorInputStream(fis).use { gzip ->
                     TarArchiveInputStream(gzip).use { tis ->
-                        var entry = tis.nextEntry as TarArchiveEntry?
+                        var entry = tis.nextEntry
                         while (entry != null) {
                             val outFile = resolveEntryTarget(destination, entry.name)
 
@@ -134,7 +133,7 @@ object ArchiveUtil {
                                 writeEntry(tis, outFile)
                             }
 
-                            entry = tis.nextEntry as TarArchiveEntry?
+                            entry = tis.nextEntry
                         }
                     }
                 }

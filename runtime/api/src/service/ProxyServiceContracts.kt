@@ -22,28 +22,41 @@
 
 package com.github.yumelira.yumebox.service
 
+import com.github.yumelira.yumebox.service.common.constants.Intents
+
 object ProxyServiceContracts {
-    const val ACTION_PROXY_STARTED = "com.github.yumelira.yumebox.action.PROXY_STARTED"
-    const val ACTION_PROXY_STOPPED = "com.github.yumelira.yumebox.action.PROXY_STOPPED"
-    const val ACTION_PROXY_GROUPS_UPDATED = "com.github.yumelira.yumebox.action.PROXY_GROUPS_UPDATED"
-    const val ACTION_PROFILE_LOADED = "com.github.yumelira.yumebox.action.PROFILE_LOADED"
-    const val ACTION_PROFILE_CHANGED = "com.github.yumelira.yumebox.action.PROFILE_CHANGED"
-    const val ACTION_REQUEST_STOP = "com.github.yumelira.yumebox.action.REQUEST_STOP"
+    val ACTION_PROXY_STARTED: String
+        get() = Intents.ACTION_CLASH_STARTED
+    val ACTION_PROXY_STOPPED: String
+        get() = Intents.ACTION_CLASH_STOPPED
+    val ACTION_PROXY_GROUPS_UPDATED: String
+        get() = Intents.ACTION_PROXY_GROUPS_UPDATED
+    val ACTION_PROFILE_LOADED: String
+        get() = Intents.ACTION_PROFILE_LOADED
+    val ACTION_PROFILE_CHANGED: String
+        get() = Intents.ACTION_PROFILE_CHANGED
+    val ACTION_REQUEST_STOP: String
+        get() = Intents.ACTION_CLASH_REQUEST_STOP
 
-    const val ACTION_PATCH_SELECTOR = "com.github.yumelira.yumebox.action.PATCH_SELECTOR"
-    const val EXTRA_GROUP_NAME = "group_name"
-    const val EXTRA_PROXY_NAME = "proxy_name"
-    const val EXTRA_PROFILE_ID = "profile_id"
-    const val EXTRA_START_PROXY = "start_proxy"
+    val ACTION_PATCH_SELECTOR: String
+        get() = Intents.ACTION_PATCH_SELECTOR
+    const val EXTRA_GROUP_NAME = Intents.EXTRA_GROUP_NAME
+    const val EXTRA_PROXY_NAME = Intents.EXTRA_PROXY_NAME
+    const val EXTRA_PROFILE_ID = Intents.EXTRA_PROFILE_ID
+    const val EXTRA_START_PROXY = Intents.EXTRA_START_PROXY
 
-    const val ACTION_PATCH_OVERRIDE = "com.github.yumelira.yumebox.action.PATCH_OVERRIDE"
-    const val ACTION_CLEAR_OVERRIDE = "com.github.yumelira.yumebox.action.CLEAR_OVERRIDE"
-    const val EXTRA_OVERRIDE_SLOT = "override_slot"
-    const val EXTRA_OVERRIDE_CONFIG = "override_config"
+    val ACTION_PATCH_OVERRIDE: String
+        get() = Intents.ACTION_PATCH_OVERRIDE
+    val ACTION_CLEAR_OVERRIDE: String
+        get() = Intents.ACTION_CLEAR_OVERRIDE
+    const val EXTRA_OVERRIDE_SLOT = Intents.EXTRA_OVERRIDE_SLOT
+    const val EXTRA_OVERRIDE_CONFIG = Intents.EXTRA_OVERRIDE_CONFIG
 
-    const val ACTION_HEALTH_CHECK = "com.github.yumelira.yumebox.action.HEALTH_CHECK"
-    const val ACTION_HEALTH_CHECK_ALL = "com.github.yumelira.yumebox.action.HEALTH_CHECK_ALL"
-    const val EXTRA_HEALTH_CHECK_GROUP = "health_check_group"
+    val ACTION_HEALTH_CHECK: String
+        get() = Intents.ACTION_HEALTH_CHECK
+    val ACTION_HEALTH_CHECK_ALL: String
+        get() = Intents.ACTION_HEALTH_CHECK_ALL
+    const val EXTRA_HEALTH_CHECK_GROUP = Intents.EXTRA_HEALTH_CHECK_GROUP
 
     fun intentSelf(action: String, packageName: String? = null): android.content.Intent {
         return android.content.Intent(action).apply {

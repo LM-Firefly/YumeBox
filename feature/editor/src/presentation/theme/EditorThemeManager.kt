@@ -22,23 +22,25 @@
 
 package com.github.yumelira.yumebox.feature.editor.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.luminance
+import com.github.yumelira.yumebox.feature.editor.language.TextMateInitializer
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
 import io.github.rosemoe.sora.langs.textmate.registry.ThemeRegistry
 import io.github.rosemoe.sora.widget.CodeEditor
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 object EditorThemeManager {
 
     @Composable
     fun rememberEditorTheme(): EditorThemeState {
-        val isDark = isSystemInDarkTheme()
+        val isDark = MiuixTheme.colorScheme.surface.luminance() < 0.5f
 
         return remember(isDark) {
             EditorThemeState(
                 isDark = isDark,
-                themeName = if (isDark) "ayu-dark" else "quietlight"
+                themeName = if (isDark) "dark-high-contrast" else "light"
             )
         }
     }
@@ -54,10 +56,8 @@ object EditorThemeManager {
     }
 
     fun updateTheme(editor: CodeEditor, isDark: Boolean) {
-        val themeName = if (isDark) "ayu-dark" else "quietlight"
-
         try {
-            ThemeRegistry.getInstance().setTheme(themeName)
+            TextMateInitializer.setTheme(isDark)
 
             editor.colorScheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
         } catch (e: Exception) {

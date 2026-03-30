@@ -31,7 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 typealias OpenStringListModifiersEditor = (
@@ -55,7 +55,7 @@ fun PortInputContent(
     var textValue by remember { mutableStateOf(value?.toString() ?: "") }
     var inputValue by remember { mutableStateOf("") }
 
-    SuperArrow(
+    ArrowPreference(
         title = title,
         summary = if (value != null) "$value" else MLang.Component.Selector.NotModify,
         onClick = {
@@ -97,7 +97,7 @@ fun StringInputContent(
     val showDialog = remember { mutableStateOf(false) }
     var textValue by remember { mutableStateOf(value ?: "") }
 
-    SuperArrow(
+    ArrowPreference(
         title = title,
         summary = value?.takeIf { it.isNotEmpty() } ?: MLang.Component.Selector.NotModify,
         onClick = {
@@ -130,7 +130,7 @@ fun StringListInputContent(
         MLang.Component.Selector.NotModify
     }
 
-    SuperArrow(
+    ArrowPreference(
         title = title,
         summary = displayValue,
         onClick = onClick,
@@ -150,7 +150,7 @@ fun StringMapInputContent(
         MLang.Component.Selector.NotModify
     }
 
-    SuperArrow(
+    ArrowPreference(
         title = title,
         summary = displayValue,
         onClick = onClick,
@@ -237,7 +237,7 @@ fun StringListWithModifiersInput(
         }.joinToString(" · ").ifEmpty { MLang.Component.Selector.NotModify }
     }
 
-    SuperArrow(
+    ArrowPreference(
         title = title,
         summary = summary,
         onClick = {
@@ -276,7 +276,7 @@ fun StringMapWithModifiersInput(
     }
 
     Column {
-        SuperArrow(
+        ArrowPreference(
             title = title,
             summary = summary,
             holdDownState = expanded,

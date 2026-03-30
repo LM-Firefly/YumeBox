@@ -26,11 +26,11 @@ import android.app.Service
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.records.SelectionRestoreExecutor
-import com.github.yumelira.yumebox.service.runtime.records.SelectionRestoreScope
 import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
@@ -86,11 +86,12 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 compiledConfigPipeline.applyOverrideToRuntimeFile(spec)
                 Clash.loadCompiledConfig(service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")).await()
 
-                val scopeKey = SelectionRestoreScope.localScopeKey(active.uuid)
-                val restoreResult = SelectionDao.querySelectionsForRestore(active.uuid, scopeKey)
+                val restoreSelections = SelectionDao.queryRestorableSelections(active.uuid)
+                val runtimeGroups = Clash.queryGroupNames(false).map { Clash.queryGroup(it, ProxySort.Default) }
                 SelectionRestoreExecutor.restore(
                     profileUuid = active.uuid,
-                    selections = restoreResult.selections,
+                    selections = restoreSelections,
+                    runtimeGroups = runtimeGroups,
                     tag = "LOCAL",
                 )
 

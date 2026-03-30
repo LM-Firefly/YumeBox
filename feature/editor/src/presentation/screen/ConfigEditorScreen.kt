@@ -26,12 +26,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditorState
+import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.language.TextMateInitializer
-import com.github.yumelira.yumebox.feature.editor.theme.EditorThemeManager
 import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigType
 import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigEditorViewModel
 import com.github.yumelira.yumebox.presentation.component.*
@@ -49,33 +46,31 @@ fun ConfigEditorScreen(
     language: LanguageScope = LanguageScope.Yaml,
 ) {
     val viewModel: ConfigEditorViewModel = koinViewModel()
-    val context = LocalContext.current
-
-    val editorState = remember(configId, initialContent) {
-        CodeEditorState(
-            initialContent = initialContent,
-            language = language,
-            readOnly = false
-        )
-    }
-
-    val editorThemeState = EditorThemeManager.rememberEditorTheme()
+    val session by viewModel.session.collectAsState()
+    val editorState = rememberConfiguredCodeEditorState(
+        initialContent = initialContent,
+        language = language,
+        readOnly = false,
+    )
     val showDiscardDialog = remember { mutableStateOf(false) }
     val scrollBehavior = MiuixScrollBehavior()
 
     LaunchedEffect(configId) {
-        TextMateInitializer.initialize(context)
-        viewModel.loadConfig(configId, configType)
+        viewModel.loadConfig(
+            configId = configId,
+            configType = configType,
+            initialContent = initialContent,
+        )
     }
 
-    LaunchedEffect(editorThemeState.isDark) {
-        editorState.editor?.let { editor ->
-            TextMateInitializer.setTheme(editorThemeState.isDark)
+    LaunchedEffect(session.configId, session.savedContent) {
+        if (session.configId == configId) {
+            editorState.loadContent(session.draftContent)
         }
     }
 
     BackHandler {
-        if (editorState.isModified) {
+        if (session.isDirty || editorState.isModified) {
             showDiscardDialog.value = true
         } else {
             navigator.navigateUp()
@@ -113,6 +108,7 @@ fun ConfigEditorScreen(
                 onCancel = { showDiscardDialog.value = false },
                 onConfirm = {
                     showDiscardDialog.value = false
+                    viewModel.discardDraft()
                     navigator.navigateUp()
                 },
                 cancelText = "取消",

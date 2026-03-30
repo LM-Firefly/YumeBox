@@ -30,6 +30,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.service.RootTunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.topjohnwu.superuser.ipc.RootService
@@ -38,6 +40,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -112,6 +116,27 @@ internal object RootTunServiceBridge {
         return remoteCall(context) { service -> service.queryTrafficTotal() }
     }
 
+    suspend fun queryProxyGroupNames(context: Context, excludeNotSelectable: Boolean = false): List<String> {
+        return remoteCall(context) { service ->
+            RootTunJson.Default.decodeFromString(
+                ListSerializer(String.serializer()),
+                service.queryProxyGroupNamesJson(excludeNotSelectable),
+            )
+        }
+    }
+
+    suspend fun queryProxyGroup(
+        context: Context,
+        name: String,
+        sort: ProxySort = ProxySort.Default,
+    ): ProxyGroup? {
+        return remoteCall(context) { service ->
+            service.queryProxyGroupJson(name, sort.name)?.let {
+                RootTunJson.Default.decodeFromString(ProxyGroup.serializer(), it)
+            }
+        }
+    }
+
     suspend fun queryConnections(context: Context): ConnectionSnapshot {
         return remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
@@ -145,13 +170,17 @@ internal object RootTunServiceBridge {
                         val remote = IRootTunService.Stub.asInterface(service)
                         if (remote == null) {
                             invalidateConnection(appContext, "root tun binder is null")
-                            continuation.resumeWithException(IllegalStateException("root tun binder is null"))
+                            if (continuation.isActive) {
+                                continuation.resumeWithException(IllegalStateException("root tun binder is null"))
+                            }
                             return
                         }
 
                         binder = remote
                         connection = this
-                        continuation.resume(remote)
+                        if (continuation.isActive) {
+                            continuation.resume(remote)
+                        }
                     }
 
                     override fun onServiceDisconnected(name: ComponentName?) {
@@ -190,7 +219,9 @@ internal object RootTunServiceBridge {
                     }.onFailure { error ->
                         connection = null
                         binder = null
-                        continuation.resumeWithException(error)
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(error)
+                        }
                     }
                 }
             }

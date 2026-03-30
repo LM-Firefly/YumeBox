@@ -27,9 +27,17 @@ import java.util.*
 object LocaleUtil {
 
     private val NORMALIZED_REGION_CODES = setOf("TW")
+    @Volatile
+    private var currentLocaleOverride: Locale? = null
+
+    fun setCurrentLocale(locale: Locale?) {
+        currentLocaleOverride = locale
+    }
+
+    fun currentLocale(): Locale = currentLocaleOverride ?: Locale.getDefault()
 
     fun isChineseLocale(): Boolean {
-        val locale = Locale.getDefault()
+        val locale = currentLocale()
         return locale.language == "zh"
     }
 

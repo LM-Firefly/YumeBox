@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.theme.horizontalPadding
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardColors
+import top.yukonga.miuix.kmp.basic.CardDefaults
 
 @Composable
 fun Card(
@@ -35,6 +37,7 @@ fun Card(
     cornerRadius: Int = 24,
     insideMargin: PaddingValues = PaddingValues(0.dp),
     applyHorizontalPadding: Boolean = true,
+    colors: CardColors = CardDefaults.defaultColors(),
     content: @Composable () -> Unit,
 ) {
     Card(
@@ -44,7 +47,8 @@ fun Card(
             modifier
         },
         cornerRadius = cornerRadius.dp,
-        insideMargin = insideMargin
+        insideMargin = insideMargin,
+        colors = colors,
     ) {
         content()
     }

@@ -25,12 +25,10 @@ package com.github.yumelira.yumebox.feature.editor.component
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditorState
+import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.language.TextMateInitializer
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import top.yukonga.miuix.kmp.basic.Text
@@ -47,18 +45,11 @@ fun CodeEditorDialog(
     onValueChange: (String?) -> Unit,
     onDismiss: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-    val editorState = remember(value, language) {
-        CodeEditorState(
-            initialContent = value ?: "",
-            language = language,
-            readOnly = false
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        TextMateInitializer.initialize(context)
-    }
+    val editorState = rememberConfiguredCodeEditorState(
+        initialContent = value ?: "",
+        language = language,
+        readOnly = false,
+    )
 
     if (show) {
         AppDialog(

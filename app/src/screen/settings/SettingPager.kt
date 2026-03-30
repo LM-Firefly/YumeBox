@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +61,7 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -120,9 +119,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
 
-    val versionInfo = remember { BuildConfig.VERSION_NAME }
+    val versionInfo = BuildConfig.VERSION_NAME
 
-    LaunchedEffect(viewModel, context) {
+    LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is SettingEvent.OpenWebView -> {
@@ -147,9 +146,9 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
         ) {
 
             item {
-                SmallTitle(MLang.Settings.Section.UiSettings)
+                Title(MLang.Settings.Section.UiSettings)
                 Card {
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.UiSettings.App,
                         summary = MLang.Settings.UiSettings.AppSummary,
                         onClick = { navigator.navigate(AppSettingsScreenDestination) { launchSingleTop = true } },
@@ -159,7 +158,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             )
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.UiSettings.Network,
                         summary = MLang.Settings.UiSettings.NetworkSummary,
                         onClick = { navigator.navigate(NetworkSettingsScreenDestination) { launchSingleTop = true } },
@@ -169,7 +168,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             )
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.UiSettings.Override,
                         summary = MLang.Settings.UiSettings.OverrideSummary,
                         onClick = { navigator.navigate(OverrideScreenDestination) { launchSingleTop = true } },
@@ -179,7 +178,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             )
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.UiSettings.MetaFeatures,
                         summary = MLang.Settings.UiSettings.MetaFeaturesSummary,
                         onClick = {
@@ -196,10 +195,10 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                 }
             }
             item {
-                SmallTitle(MLang.Settings.Section.More)
+                Title(MLang.Settings.Section.More)
 
                 Card {
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.More.Lab,
                         summary = MLang.Settings.More.LabSummary,
                         onClick = {
@@ -211,7 +210,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             )
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.More.Logs,
                         summary = MLang.Settings.More.LogsSummary,
                         onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },
@@ -221,7 +220,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             )
                         },
                     )
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.Settings.More.About,
                         summary = MLang.Settings.More.AboutSummary,
                         onClick = { navigator.navigate(AboutScreenDestination) { launchSingleTop = true } },

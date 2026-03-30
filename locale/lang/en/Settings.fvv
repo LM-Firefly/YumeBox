@@ -20,7 +20,7 @@ Settings = {
 
     More = {
         Lab = "Lab"
-        LabSummary = "SubStore · Experiments"
+        LabSummary = "Sub-Store · Experiments"
         Logs = "Logs"
         LogsSummary = "Runtime Logs"
         About = "About"

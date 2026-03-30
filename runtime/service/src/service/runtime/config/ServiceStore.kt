@@ -209,6 +209,12 @@ class ServiceStore {
             )
         }
 
+    var tunRouteExcludeAddress: List<String>
+        get() = readStringList("tunRouteExcludeAddress", emptyList())
+        set(value) {
+            networkSettings.encode("tunRouteExcludeAddress", json.encodeToString(value))
+        }
+
     var rootTunIfName: String
         get() = readString("rootTunIfName", "root_tun_if_name", "Yume")
         set(value) {

@@ -42,17 +42,24 @@ import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
 import com.github.yumelira.yumebox.presentation.component.AppDialog
+import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
+import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
+import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
+import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
 import com.github.yumelira.yumebox.presentation.component.Card
-import com.github.yumelira.yumebox.presentation.component.EnumSelector
+import com.github.yumelira.yumebox.presentation.component.Title
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
-import com.github.yumelira.yumebox.presentation.component.SmallTitle
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.theme.horizontalPadding
+import com.github.yumelira.yumebox.service.root.RootAccessSupport
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.AccessControlScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -60,8 +67,6 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.SuperSwitch
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -73,6 +78,7 @@ fun NetworkSettingsScreen(
     val viewModel = koinViewModel<NetworkSettingsViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val proxyMode by viewModel.currentProxyMode.collectAsState()
     val bypassPrivateNetwork by viewModel.bypassPrivateNetwork.state.collectAsState()
@@ -118,14 +124,15 @@ fun NetworkSettingsScreen(
             TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior)
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item {
-                SmallTitle(MLang.NetworkSettings.Section.VpnService)
+                Title(MLang.NetworkSettings.Section.VpnService)
                 Card {
-                    EnumSelector(
+                    PreferenceEnumItem(
                         title = MLang.NetworkSettings.VpnService.RouteTrafficTitle,
                         summary = MLang.NetworkSettings.VpnService.RouteTrafficSummary,
                         currentValue = proxyMode,
@@ -140,24 +147,46 @@ fun NetworkSettingsScreen(
                             ProxyMode.RootTun,
                         ),
                         onValueChange = { mode ->
-                            if (mode == ProxyMode.Tun && !VpnUtils.checkVpnPermission(context)) {
-                                VpnUtils.getVpnPermissionIntent(context)?.let(vpnPermissionLauncher::launch)
-                                    ?: viewModel.onProxyModeChange(mode)
-                            } else {
-                                viewModel.onProxyModeChange(mode)
+                            when (mode) {
+                                ProxyMode.Tun -> {
+                                    if (!VpnUtils.checkVpnPermission(context)) {
+                                        VpnUtils.getVpnPermissionIntent(context)?.let(vpnPermissionLauncher::launch)
+                                            ?: viewModel.onProxyModeChange(mode)
+                                    } else {
+                                        viewModel.onProxyModeChange(mode)
+                                    }
+                                }
+
+                                ProxyMode.RootTun -> {
+                                    coroutineScope.launch {
+                                        val rootStatus = RootAccessSupport.evaluateAsync(context)
+                                        if (!rootStatus.canStartRootTun) {
+                                            context.toast(rootStatus.rootTunBlockedMessage())
+                                            return@launch
+                                        }
+                                        viewModel.onProxyModeChange(mode)
+                                    }
+                                }
+
+                                ProxyMode.Http -> {
+                                    viewModel.onProxyModeChange(mode)
+                                }
                             }
                         },
                     )
                 }
-
+            }
+            item {
                 AnimatedVisibility(
                     visible = uiState.showServiceOptions,
                     enter = if (enableModeTransition) fadeIn() + expandVertically() else EnterTransition.None,
                     exit = if (enableModeTransition) fadeOut() + shrinkVertically() else ExitTransition.None,
                 ) {
                     Column {
-                        SmallTitle(MLang.NetworkSettings.Section.VpnOptions)
-                        Card(modifier = Modifier.animateContentSize()) {
+                        Title(MLang.NetworkSettings.Section.VpnOptions)
+                        Card(
+                            modifier = Modifier.animateContentSize(),
+                        ) {
                             AnimatedContent(
                                 targetState = uiState.configuredMode,
                                 transitionSpec = {
@@ -222,11 +251,12 @@ fun NetworkSettingsScreen(
                         }
                     }
                 }
-
-                SmallTitle(MLang.NetworkSettings.Section.ProxyOptions)
+            }
+            item {
+                Title(MLang.NetworkSettings.Section.ProxyOptions)
                 Card {
                     if (uiState.showAccessControlMode) {
-                        EnumSelector(
+                        PreferenceEnumItem(
                             title = MLang.NetworkSettings.ProxyOptions.AccessControlModeTitle,
                             currentValue = accessControlMode,
                             items = listOf(
@@ -238,7 +268,7 @@ fun NetworkSettingsScreen(
                             onValueChange = viewModel::onAccessControlModeChange,
                         )
                     }
-                    SuperArrow(
+                    PreferenceArrowItem(
                         title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,
                         summary = MLang.NetworkSettings.ProxyOptions.ManageAccessControlSummary,
                         onClick = {
@@ -246,8 +276,6 @@ fun NetworkSettingsScreen(
                         },
                     )
                 }
-
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
@@ -278,13 +306,13 @@ private fun TunServiceOptions(
         onEnableIPv6Change = onEnableIPv6Change,
         onTunStackChange = onTunStackChange,
         extraOptions = {
-            SuperSwitch(
+            PreferenceSwitchItem(
                 title = MLang.NetworkSettings.VpnOptions.AllowBypassTitle,
                 summary = MLang.NetworkSettings.VpnOptions.AllowBypassSummary,
                 checked = allowBypass,
                 onCheckedChange = onAllowBypassChange,
             )
-            SuperSwitch(
+            PreferenceSwitchItem(
                 title = MLang.NetworkSettings.VpnOptions.SystemProxyTitle,
                 summary = MLang.NetworkSettings.VpnOptions.SystemProxySummary,
                 checked = systemProxy,
@@ -394,35 +422,35 @@ private fun RootTunAdvancedOptions(
             .fillMaxWidth()
             .padding(bottom = 4.dp),
     ) {
-        SuperArrow(
+        PreferenceArrowItem(
             title = MLang.NetworkSettings.RootTun.IfNameTitle,
             summary = rootTunIfNameDraft.ifBlank { MLang.NetworkSettings.RootTun.IfNameSummary },
             onClick = { editDialog = RootTunEditDialogState.IfName },
         )
-        SuperArrow(
+        PreferenceArrowItem(
             title = MLang.NetworkSettings.RootTun.MtuTitle,
             summary = rootTunMtuDraft.ifBlank { MLang.NetworkSettings.RootTun.MtuSummary },
             onClick = { editDialog = RootTunEditDialogState.Mtu },
         )
-        SuperSwitch(
+        PreferenceSwitchItem(
             title = MLang.NetworkSettings.RootTun.AutoRouteTitle,
             summary = MLang.NetworkSettings.RootTun.AutoRouteSummary,
             checked = rootTunAutoRoute,
             onCheckedChange = onRootTunAutoRouteChange,
         )
-        SuperSwitch(
+        PreferenceSwitchItem(
             title = MLang.NetworkSettings.RootTun.StrictRouteTitle,
             summary = MLang.NetworkSettings.RootTun.StrictRouteSummary,
             checked = rootTunStrictRoute,
             onCheckedChange = onRootTunStrictRouteChange,
         )
-        SuperSwitch(
+        PreferenceSwitchItem(
             title = MLang.NetworkSettings.RootTun.AutoRedirectTitle,
             summary = MLang.NetworkSettings.RootTun.AutoRedirectSummary,
             checked = rootTunAutoRedirect,
             onCheckedChange = onRootTunAutoRedirectChange,
         )
-        EnumSelector(
+        PreferenceEnumItem(
             title = MLang.NetworkSettings.RootTun.DnsModeTitle,
             summary = MLang.NetworkSettings.RootTun.DnsModeSummary,
             currentValue = rootTunDnsMode,
@@ -439,12 +467,12 @@ private fun RootTunAdvancedOptions(
             exit = fadeOut() + shrinkVertically(),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                SuperArrow(
+                PreferenceArrowItem(
                     title = MLang.NetworkSettings.RootTun.FakeIpRangeTitle,
                     summary = rootTunFakeIpRangeDraft.ifBlank { MLang.NetworkSettings.RootTun.FakeIpRangeSummary },
                     onClick = { editDialog = RootTunEditDialogState.FakeIpRange },
                 )
-                SuperArrow(
+                PreferenceArrowItem(
                     title = MLang.NetworkSettings.RootTun.FakeIpRange6Title,
                     summary = rootTunFakeIpRange6Draft.ifBlank { MLang.NetworkSettings.RootTun.FakeIpRange6Summary },
                     onClick = { editDialog = RootTunEditDialogState.FakeIpRange6 },
@@ -521,25 +549,25 @@ private fun CommonTunServiceOptions(
     Column(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        SuperSwitch(
+        PreferenceSwitchItem(
             title = MLang.NetworkSettings.VpnOptions.BypassPrivateTitle,
             summary = MLang.NetworkSettings.VpnOptions.BypassPrivateSummary,
             checked = bypassPrivateNetwork,
             onCheckedChange = onBypassPrivateNetworkChange,
         )
-        SuperSwitch(
+        PreferenceSwitchItem(
             title = MLang.NetworkSettings.VpnOptions.DnsHijackTitle,
             summary = MLang.NetworkSettings.VpnOptions.DnsHijackSummary,
             checked = dnsHijack,
             onCheckedChange = onDnsHijackChange,
         )
-        SuperSwitch(
+        PreferenceSwitchItem(
             title = MLang.NetworkSettings.VpnOptions.EnableIpv6Title,
             summary = MLang.NetworkSettings.VpnOptions.EnableIpv6Summary,
             checked = enableIPv6,
             onCheckedChange = onEnableIPv6Change,
         )
-        EnumSelector(
+        PreferenceEnumItem(
             title = MLang.NetworkSettings.ProxyOptions.TunStackTitle,
             currentValue = tunStack,
             items = listOf("System", "GVisor", "Mixed"),
@@ -562,52 +590,25 @@ private fun RootTunTextEditDialog(
     ),
 ) {
     val focusManager = LocalFocusManager.current
-    AppDialog(
+    AppTextFieldDialog(
         show = true,
-        modifier = Modifier,
         title = title,
-        summary = null,
+        value = value,
+        onValueChange = onValueChange,
         onDismissRequest = onDismiss,
-        content = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                TextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = keyboardOptions,
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            onCommit()
-                            focusManager.clearFocus()
-                        },
-                    ),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(MLang.ProfilesPage.Button.Cancel)
-                    }
-                    Button(
-                        onClick = {
-                            onCommit()
-                            onDismiss()
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColorsPrimary(),
-                    ) {
-                        Text(
-                            text = MLang.ProfilesPage.Button.Confirm,
-                            color = MiuixTheme.colorScheme.onPrimary,
-                        )
-                    }
-                }
-            }
+        onConfirm = {
+            onCommit()
+            onDismiss()
         },
+        singleLine = true,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onCommit()
+                onDismiss()
+                focusManager.clearFocus()
+            },
+        ),
     )
 }
 

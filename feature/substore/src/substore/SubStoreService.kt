@@ -25,34 +25,12 @@ package com.github.yumelira.yumebox.substore
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
 import timber.log.Timber
 
 class SubStoreService : Service() {
-
-    companion object {
-        var caseEngine: CaseEngine? = null
-        @Volatile
-        var isRunning: Boolean = false
-            private set
-
-        fun startService(frontendPort: Int = 8080, backendPort: Int = 8081, allowLan: Boolean = false) {
-            val context = Global.application
-            val intent = Intent(context, SubStoreService::class.java).apply {
-                putExtra("frontendPort", frontendPort)
-                putExtra("backendPort", backendPort)
-                putExtra("allowLan", allowLan)
-            }
-            context.startService(intent)
-        }
-
-        fun stopService() {
-            val context = Global.application
-            val intent = Intent(context, SubStoreService::class.java)
-            context.stopService(intent)
-        }
-    }
+    private var caseEngine: CaseEngine? = null
+    private var isRunning = false
 
     override fun onBind(intent: Intent): IBinder? {
         return null
@@ -60,13 +38,14 @@ class SubStoreService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (isRunning) return START_STICKY
-        return runCatching {
-            val frontendPort = intent?.getIntExtra("frontendPort", 8080) ?: 8080
-            val backendPort = intent?.getIntExtra("backendPort", 8081) ?: 8081
-            val allowLan = intent?.getBooleanExtra("allowLan", false) ?: false
 
-            if (NetworkUtil.isPortInUse(frontendPort) || NetworkUtil.isPortInUse(backendPort)) {
-                throw Exception("端口 $frontendPort 或 $backendPort 已被占用")
+        val request = SubStoreServiceController.requestFrom(intent)
+        return runCatching {
+            if (
+                NetworkUtil.isPortInUse(request.frontendPort) ||
+                NetworkUtil.isPortInUse(request.backendPort)
+            ) {
+                throw Exception("端口 ${request.frontendPort} 或 ${request.backendPort} 已被占用")
             }
 
             if (!ensureJavetLibraryLoaded()) {
@@ -74,9 +53,9 @@ class SubStoreService : Service() {
             }
 
             val engine = CaseEngine(
-                backendPort = backendPort,
-                frontendPort = frontendPort,
-                allowLan = allowLan
+                backendPort = request.backendPort,
+                frontendPort = request.frontendPort,
+                allowLan = request.allowLan,
             )
             caseEngine = engine
 
@@ -86,24 +65,20 @@ class SubStoreService : Service() {
 
             engine.startServer()
             isRunning = true
+            SubStoreServiceController.markRunning()
 
             START_STICKY
         }.getOrElse { e ->
             Timber.e(e, "Sub-Store service start failed")
-            isRunning = false
+            cleanupService()
+            stopSelf(startId)
             START_NOT_STICKY
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        runCatching {
-            caseEngine?.stopServer()
-            caseEngine = null
-            isRunning = false
-        }.onFailure { e ->
-            Timber.e(e, "Failed to stop Sub-Store service")
-        }
+        cleanupService()
     }
 
     private fun ensureJavetLibraryLoaded(): Boolean = runCatching {
@@ -126,5 +101,16 @@ class SubStoreService : Service() {
     }.getOrElse { e ->
         Timber.e(e, "Javet load error")
         false
+    }
+
+    private fun cleanupService() {
+        runCatching {
+            caseEngine?.stopServer()
+        }.onFailure { e ->
+            Timber.e(e, "Failed to stop Sub-Store service")
+        }
+        caseEngine = null
+        isRunning = false
+        SubStoreServiceController.markStopped()
     }
 }

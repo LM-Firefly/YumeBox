@@ -94,6 +94,7 @@ ProfilesPage = {
         ShareFile = "分享配置文件"
         ShareLink = "分享订阅链接"
         NoLink = "该配置没有订阅链接"
+        ImportedConfigMissing = "导入配置不存在：%s"
     }
 
     Misc = {
@@ -104,12 +105,15 @@ ProfilesPage = {
     SettingsDialog = {
         Title = "订阅设置"
         ChangeLink = "更改订阅链接"
-        SystemPreset = "预设覆写"
-        SystemPresetSummary = "如果不知道什么是分流，推荐打开"
+        SystemPreset = "启用覆写配置"
+        SystemPresetSummary = "启用内置覆写配置"
+        CustomRouting = "自定义分流"
+        CustomRoutingSummary = "独立的分流规则（与覆写配置互斥）"
         NoDescription = "未设置说明"
         EditProfile = "编辑配置"
         OpenConfig = "打开配置"
         EditSettings = "编辑设置"
         SaveFailed = "保存配置失败"
+        ConfigMissing = "配置不存在：%s"
     }
 }

@@ -26,22 +26,6 @@ plugins {
 
 android {
     namespace = "com.github.yumelira.yumebox.feature.editor"
-    compileSdk = gropify.android.compileSdk
-
-    val ndkVersionValue = gropify.android.ndkVersion
-    if (ndkVersionValue.isNotBlank()) {
-        ndkVersion = ndkVersionValue
-    }
-
-    defaultConfig {
-        minSdk = gropify.android.minSdk
-    }
-
-    compileOptions {
-        val javaVer = gropify.android.jvm
-        sourceCompatibility = JavaVersion.toVersion(javaVer)
-        targetCompatibility = JavaVersion.toVersion(javaVer)
-    }
 
     packaging {
         jniLibs {
@@ -51,14 +35,12 @@ android {
 
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("src")
             assets.srcDirs("assets")
         }
     }
 
     buildFeatures {
         compose = true
-        buildConfig = false
     }
 }
 
@@ -71,9 +53,9 @@ dependencies {
     // Sora Editor
     implementation(platform("io.github.rosemoe:editor-bom:${gropify.dep.version.soraEditor}"))
     implementation("io.github.rosemoe:editor")
-     implementation("io.github.rosemoe:editor-lsp")
-     implementation("io.github.rosemoe:language-textmate")
-     implementation("io.github.rosemoe:language-treesitter")
+    implementation("io.github.rosemoe:editor-lsp")
+    implementation("io.github.rosemoe:language-textmate")
+    implementation("io.github.rosemoe:language-treesitter")
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
@@ -88,9 +70,9 @@ dependencies {
     implementation("io.insert-koin:koin-androidx-compose:${gropify.dep.version.koin}")
     implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("top.yukonga.miuix.kmp:miuix:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-ui:${gropify.dep.version.miuix}")
+    implementation("top.yukonga.miuix.kmp:miuix-preference:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
 }
-
 
 

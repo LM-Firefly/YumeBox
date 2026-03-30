@@ -18,6 +18,14 @@ Home = {
     NodeInfo = {
         Node = "Node"
         Delay = "Delay"
+        Unknown = "Unknown"
+        DelayValue = "%dms"
+    }
+
+    Traffic = {
+        UpShort = "UP"
+        DownShort = "DOWN"
+        NoProfile = "No Profile"
     }
 
     IpInfo = {
@@ -25,7 +33,22 @@ Home = {
     }
 
     Status = {
+        Connecting = "Connecting"
+        Disconnecting = "Disconnecting"
         Running = "Running"
         TapToStart = "Tap to start"
+    }
+
+    Control = {
+        HintAddProfile = "Please add a profile first"
+        HintEnableProfile = "Please enable a profile in Config page first"
+        Start = "Start"
+        Stop = "Stop"
+    }
+
+    ProxyMode = {
+        Vpn = "VPN"
+        Tun = "TUN"
+        Http = "HTTP"
     }
 }

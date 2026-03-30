@@ -66,7 +66,7 @@ fun OverrideSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(OverrideSectionTitleSpacing),
         content = {
-            SmallTitle(title)
+            Title(title)
             content()
         },
     )

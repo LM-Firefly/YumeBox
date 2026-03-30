@@ -31,12 +31,14 @@ import android.os.IBinder
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.github.yumelira.yumebox.common.util.formatBytes
-import com.github.yumelira.yumebox.common.util.formatSpeed
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.service.notification.NotificationPresentation
+import com.github.yumelira.yumebox.service.notification.NotificationPresentationFactory
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
 import com.github.yumelira.yumebox.service.root.RootTunState
 import com.github.yumelira.yumebox.service.root.RootTunStateStore
@@ -45,7 +47,7 @@ import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
-import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.flow.collect
 
 class RootTunService : BaseService() {
     private val stateStore by lazy { RootTunStateStore(appContextOrSelf) }
@@ -68,18 +70,19 @@ class RootTunService : BaseService() {
 
             ACTION_START, null -> {
                 val cachedStatus = stateStore.snapshot()
+                startForeground(
+                    NOTIFICATION_ID,
+                    buildNotification(
+                        NotificationPresentationFactory.createStatus(
+                            profileName = cachedStatus.profileName ?: MLang.Service.Notification.UnknownProfile,
+                            status = describeStatus(cachedStatus),
+                        ),
+                    ),
+                )
                 if (!cachedStatus.state.isActive && !cachedStatus.state.isRecovering) {
                     stopSelf()
                     return START_NOT_STICKY
                 }
-
-                startForeground(
-                    NOTIFICATION_ID,
-                    buildNotification(
-                        cachedStatus.profileName ?: MLang.Service.Notification.UnknownProfile,
-                        describeStatus(cachedStatus),
-                    ),
-                )
 
                 if (notificationJob?.isActive != true) {
                     notificationJob = launch(Dispatchers.Default) {
@@ -87,7 +90,7 @@ class RootTunService : BaseService() {
                         var unreachableCount = 0
                         var lastStatus = cachedStatus
 
-                        while (isActive) {
+                        PollingTimers.ticks(PollingTimerSpecs.RootTunStatusNotification).collect {
                             val snapshotResult = runCatching {
                                 RootTunServiceBridge.queryStatus(appContextOrSelf)
                             }
@@ -108,13 +111,20 @@ class RootTunService : BaseService() {
                                 } else {
                                     error?.message ?: "Waiting for reconnect"
                                 }
-                                notificationManager.notify(NOTIFICATION_ID, buildNotification(title, content))
+                                notificationManager.notify(
+                                    NOTIFICATION_ID,
+                                    buildNotification(
+                                        NotificationPresentationFactory.createStatus(
+                                            profileName = title,
+                                            status = content,
+                                        ),
+                                    ),
+                                )
                                 if (!fallbackStatus.state.isActive && !fallbackStatus.state.isRecovering) {
                                     stopSelf()
-                                    break
+                                    return@collect
                                 }
-                                delay(1000L.milliseconds)
-                                continue
+                                return@collect
                             }
 
                             unreachableCount = 0
@@ -130,22 +140,26 @@ class RootTunService : BaseService() {
                                 notificationManager.notify(
                                     NOTIFICATION_ID,
                                     buildNotification(
-                                        snapshot.profileName ?: MLang.Service.Notification.UnknownProfile,
-                                        describeStatus(snapshot),
+                                        NotificationPresentationFactory.createStatus(
+                                            profileName = snapshot.profileName ?: MLang.Service.Notification.UnknownProfile,
+                                            status = describeStatus(snapshot),
+                                        ),
                                     ),
                                 )
                                 stopSelf()
-                                break
+                                return@collect
                             }
 
                             val profileName = snapshot.profileName ?: MLang.Service.Notification.UnknownProfile
-                            val content = if (snapshot.state == RootTunState.Running) {
-                                buildTrafficContent()
+                            val presentation = if (snapshot.state == RootTunState.Running) {
+                                buildTrafficPresentation(profileName)
                             } else {
-                                describeStatus(snapshot)
+                                NotificationPresentationFactory.createStatus(
+                                    profileName = profileName,
+                                    status = describeStatus(snapshot),
+                                )
                             }
-                            notificationManager.notify(NOTIFICATION_ID, buildNotification(profileName, content))
-                            delay(1000L.milliseconds)
+                            notificationManager.notify(NOTIFICATION_ID, buildNotification(presentation))
                         }
                     }
                 }
@@ -165,28 +179,24 @@ class RootTunService : BaseService() {
 
         val snapshot = stateStore.snapshot()
         if (!snapshot.state.isActive) {
-            StatusProvider.markRuntimeStopped(ProxyMode.RootTun)
+            StatusProvider.markRuntimeIdle(ProxyMode.RootTun)
             sendClashStopped(snapshot.lastError)
         }
 
         super.onDestroy()
     }
 
-    private suspend fun buildTrafficContent(): String {
+    private suspend fun buildTrafficPresentation(profileName: String): NotificationPresentation {
         val now = runCatching { RootTunServiceBridge.queryTrafficNow(appContextOrSelf) }.getOrDefault(0L)
         val total = runCatching { RootTunServiceBridge.queryTrafficTotal(appContextOrSelf) }.getOrDefault(0L)
-
-        val upNow = decodeTrafficHalf(now ushr 32)
-        val downNow = decodeTrafficHalf(now and 0xFFFFFFFFL)
-        val upTotal = decodeTrafficHalf(total ushr 32)
-        val downTotal = decodeTrafficHalf(total and 0xFFFFFFFFL)
-
-        val speedStr = "↓ ${formatSpeed(downNow)} ↑ ${formatSpeed(upNow)}"
-        val totalStr = MLang.Service.Notification.TrafficFormat.format(formatBytes(upTotal + downTotal))
-        return "$speedStr | $totalStr"
+        return NotificationPresentationFactory.createRunning(
+            profileName = profileName,
+            trafficNow = now,
+            trafficTotal = total,
+        )
     }
 
-    private fun buildNotification(title: CharSequence, content: CharSequence): Notification {
+    private fun buildNotification(presentation: NotificationPresentation): Notification {
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -209,8 +219,14 @@ class RootTunService : BaseService() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(content)
+            .setContentTitle(presentation.title)
+            .setContentText(presentation.content)
+            .setSubText(presentation.subText)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(presentation.expandedText)
+                    .setSummaryText(presentation.subText)
+            )
             .setSmallIcon(R.drawable.ic_logo_service)
             .setColor(getColor(R.color.color_clash))
             .setContentIntent(contentIntent)
@@ -231,23 +247,13 @@ class RootTunService : BaseService() {
         )
     }
 
-    private fun decodeTrafficHalf(encoded: Long): Long {
-        val type = (encoded ushr 30) and 0x3L
-        val data = encoded and 0x3FFFFFFFL
-        return when (type.toInt()) {
-            0 -> data
-            1 -> (data * 1024L) / 100L
-            2 -> (data * 1024L * 1024L) / 100L
-            3 -> (data * 1024L * 1024L * 1024L) / 100L
-            else -> 0L
-        }
-    }
-
     private fun syncStatus(status: RootTunStatus) {
-        if (status.state.isActive) {
-            StatusProvider.markRuntimeStarted(ProxyMode.RootTun)
-        } else {
-            StatusProvider.markRuntimeStopped(ProxyMode.RootTun)
+        when (status.state) {
+            RootTunState.Idle -> StatusProvider.markRuntimeIdle(ProxyMode.RootTun)
+            RootTunState.Starting -> StatusProvider.markRuntimeStarting(ProxyMode.RootTun)
+            RootTunState.Running -> StatusProvider.markRuntimeRunning(ProxyMode.RootTun)
+            RootTunState.Stopping -> StatusProvider.markRuntimeStopping(ProxyMode.RootTun)
+            RootTunState.Failed -> StatusProvider.markRuntimeFailed(ProxyMode.RootTun)
         }
     }
 

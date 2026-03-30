@@ -70,6 +70,12 @@ class ClashService : BaseService() {
 
                 Intents.ACTION_CLASH_REQUEST_STOP -> {
                     reason = intent.getStringExtra(Intents.EXTRA_STOP_REASON)
+                    reloadJob?.cancel()
+                    reloadJob = null
+                    StatusProvider.markRuntimeStopping(ProxyMode.Http)
+                    if (this@ClashService::runtime.isInitialized) {
+                        runtime.requestStop(reason)
+                    }
                     stopSelf()
                 }
             }
@@ -90,7 +96,7 @@ class ClashService : BaseService() {
             startupLogStore.append("LOCAL_HTTP service: startForeground done")
 
             StatusProvider.clearLegacyStateFiles()
-            StatusProvider.markRuntimeStarted(ProxyMode.Http)
+            StatusProvider.markRuntimeStarting(ProxyMode.Http)
             CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
 
             runtime = SessionRuntime(
@@ -101,13 +107,13 @@ class ClashService : BaseService() {
                     override fun onStarting(spec: RuntimeSpec) = Unit
 
                     override fun onStarted(spec: RuntimeSpec) {
-                        StatusProvider.markRuntimeStarted(ProxyMode.Http)
+                        StatusProvider.markRuntimeRunning(ProxyMode.Http)
                         sendClashStarted()
                     }
 
                     override fun onStopped(reason: String?) {
                         this@ClashService.reason = reason
-                        StatusProvider.markRuntimeStopped(ProxyMode.Http)
+                        StatusProvider.markRuntimeIdle(ProxyMode.Http)
                         sendClashStopped(reason)
                     }
 
@@ -124,7 +130,7 @@ class ClashService : BaseService() {
                     override fun reportFailure(error: String) {
                         reason = error
                         startupLogStore.append("LOCAL_HTTP failed=$error")
-                        StatusProvider.markRuntimeStopped(ProxyMode.Http)
+                        StatusProvider.markRuntimeFailed(ProxyMode.Http)
                         sendClashStopped(error)
                         Log.e("HTTP runtime failed: $error")
                         stopSelf()
@@ -146,7 +152,7 @@ class ClashService : BaseService() {
                 }.onFailure { error ->
                     reason = error.message ?: "http runtime start failed"
                     startupLogStore.append("LOCAL_HTTP failed=$reason")
-                    StatusProvider.markRuntimeStopped(ProxyMode.Http)
+                    StatusProvider.markRuntimeFailed(ProxyMode.Http)
                     sendClashStopped(reason)
                     stopSelf()
                 }
@@ -154,7 +160,7 @@ class ClashService : BaseService() {
         }.onFailure { error ->
             reason = error.message ?: "http runtime start failed"
             startupLogStore.append("LOCAL_HTTP failed=$reason")
-            StatusProvider.markRuntimeStopped(ProxyMode.Http)
+            StatusProvider.markRuntimeFailed(ProxyMode.Http)
             sendClashStopped(reason)
             stopSelf()
         }
@@ -179,10 +185,11 @@ class ClashService : BaseService() {
         notificationJob = null
 
         if (this::runtime.isInitialized) {
+            runtime.requestStop(reason)
             runtime.destroy()
         }
 
-        StatusProvider.markRuntimeStopped(ProxyMode.Http)
+        StatusProvider.markRuntimeIdle(ProxyMode.Http)
         sendClashStopped(reason)
         startupLogStore.append("LOCAL_HTTP destroy")
         Log.i("ClashService destroyed: ${reason ?: "successfully"}")

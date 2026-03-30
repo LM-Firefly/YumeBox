@@ -24,7 +24,7 @@ package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.runtime.Composable
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
 fun NullableBooleanSelector(
@@ -41,7 +41,7 @@ fun NullableBooleanSelector(
         false -> 2
     }
 
-    WindowDropdown(
+    WindowDropdownPreference(
         title = title,
         summary = summary,
         items = items,
@@ -69,7 +69,7 @@ fun <T> NullableEnumSelector(
 ) {
     val selectedIndex = values.indexOf(value).coerceAtLeast(0)
 
-    WindowDropdown(
+    WindowDropdownPreference(
         title = title,
         summary = summary,
         items = items,

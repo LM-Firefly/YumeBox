@@ -22,18 +22,24 @@
 
 package com.github.yumelira.yumebox.service.common.util
 
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun ticker(delayMillis: Long): ReceiveChannel<Unit> = coroutineScope {
     produce {
-        while (isActive) {
-            delay(delayMillis)
+        PollingTimers.ticks(
+            PollingTimerSpecs.dynamic(
+                name = "service_ticker_$delayMillis",
+                intervalMillis = delayMillis,
+                initialDelayMillis = delayMillis,
+            ),
+        ).collect {
             send(Unit)
         }
     }

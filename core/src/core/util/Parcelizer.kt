@@ -25,6 +25,7 @@ package com.github.yumelira.yumebox.core.util
 import android.os.Parcel
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.CompositeDecoder
@@ -136,7 +137,8 @@ object Parcelizer {
         }
 
         override fun decodeString(): String {
-            return parcel.readString()!!
+            return parcel.readString()
+                ?: throw SerializationException("Expected non-null String in Parcel")
         }
     }
 

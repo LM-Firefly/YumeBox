@@ -50,6 +50,11 @@ Component = {
         Cancel = "取消"
         Confirm = "确定"
         Clear = "清除"
+        Copy = "复制"
+    }
+
+    Flag = {
+        ContentDescription = "%s 旗帜"
     }
 
     Loading = {
@@ -57,10 +62,11 @@ Component = {
     }
 
     Update = {
+        Action = {
+            DownloadNow = "立即下载"
+        }
         Title = {
             Available = "发现新版本"
-            ForceCancel = "强制更新提示"
-            Install = "安装更新"
         }
         Message = {
             Available = "检测到可用更新"
@@ -79,6 +85,14 @@ Component = {
             Error = "下载失败，请稍后重试"
             Close = "知道了"
             Waiting = "等待下载开始..."
+            Checking = "正在检查更新..."
+            NoUpdate = "当前已经是最新版本"
+            CheckFailed = "检查更新失败：%s"
+            MissingReleaseMetadata = "最新发布缺少版本元数据"
+            NoCompatibleAsset = "最新发布中没有找到适合当前设备的 APK"
+            DownloadAlreadyRunning = "更新包仍在下载中"
+            InstallPromptOpened = "下载完成，已打开安装器"
+            InstallFailed = "打开安装器失败：%s"
         }
     }
 
@@ -100,6 +114,7 @@ Component = {
             Reset = "重置"
             Add = "添加"
             Delete = "删除"
+            Search = "搜索"
         }
         Dialog = {
             AddTitle = "添加条目"

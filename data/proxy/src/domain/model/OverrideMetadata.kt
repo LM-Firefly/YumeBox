@@ -57,12 +57,15 @@ data class OverrideMetadata(
             )
         }
 
-        fun createSystemPreset(): OverrideMetadata {
+        fun createSystemPreset(
+            name: String = "默认预设",
+            description: String? = null,
+        ): OverrideMetadata {
             val now = System.currentTimeMillis()
             return OverrideMetadata(
                 id = SYSTEM_PRESET_ID,
-                name = "默认预设",
-                description = null,
+                name = name,
+                description = description,
                 isSystem = true,
                 createdAt = now,
                 updatedAt = now,

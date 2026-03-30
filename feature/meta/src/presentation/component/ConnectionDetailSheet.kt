@@ -22,12 +22,11 @@
 
 package com.github.yumelira.yumebox.feature.meta.presentation.component
 
-import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -39,8 +38,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
+import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
+import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -48,9 +53,13 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun ConnectionDetailSheet(
     show: Boolean,
     connectionInfo: ConnectionInfo?,
+    canInterrupt: Boolean,
+    onInterruptConnection: suspend (String) -> Boolean,
     onDismiss: () -> Unit,
     onDismissFinished: () -> Unit = {},
 ) {
+    val scope = rememberCoroutineScope()
+    var isInterrupting by remember(connectionInfo?.id, show) { mutableStateOf(false) }
 
     val host = remember(connectionInfo) {
         connectionInfo?.metadata?.get("host")?.jsonPrimitive?.content ?: ""
@@ -74,7 +83,7 @@ fun ConnectionDetailSheet(
         connectionInfo?.metadata?.get("destinationIP")?.jsonPrimitive?.content ?: ""
     }
 
-    val displayHost = remember(host, destinationPort) {
+    val displayHost = remember(host, destinationPort, sourceIP, sourcePort) {
         if (host.isNotEmpty() && destinationPort.isNotEmpty()) {
             "$host:$destinationPort"
         } else if (host.isNotEmpty()) {
@@ -104,6 +113,7 @@ fun ConnectionDetailSheet(
 
                 item {
                     ConnectionInfoSection(
+                        metadata = info.metadata,
                         network = network,
                         process = process,
                         sourceIP = sourceIP,
@@ -126,6 +136,38 @@ fun ConnectionDetailSheet(
                     }
                 }
 
+                if (canInterrupt) {
+                    item {
+                        Button(
+                            onClick = {
+                                if (isInterrupting) return@Button
+                                isInterrupting = true
+                                scope.launch {
+                                    val closed = runCatching {
+                                        onInterruptConnection(info.id)
+                                    }.getOrDefault(false)
+                                    isInterrupting = false
+                                    if (closed) {
+                                        onDismiss()
+                                    }
+                                }
+                            },
+                            enabled = !isInterrupting,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(),
+                        ) {
+                            Text(
+                                text = if (isInterrupting) {
+                                    MLang.Connection.Detail.Action.Interrupting
+                                } else {
+                                    MLang.Connection.Detail.Action.Interrupt
+                                },
+                                color = MiuixTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -136,6 +178,7 @@ fun ConnectionDetailSheet(
 
 @Composable
 private fun ConnectionInfoSection(
+    metadata: JsonObject,
     network: String,
     process: String,
     sourceIP: String,
@@ -147,39 +190,41 @@ private fun ConnectionInfoSection(
     download: Long,
     chains: List<String>,
 ) {
-    val animatedUpload by animateIntAsState(
-        targetValue = upload.toInt(),
-        label = "upload_animation",
-    )
-    val animatedDownload by animateIntAsState(
-        targetValue = download.toInt(),
-        label = "download_animation",
-    )
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SectionTitle("连接信息")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ConnectionLeadingIcon(
+                metadata = metadata,
+                network = network,
+                size = 48.dp,
+                bitmapSize = 96,
+            )
+            SectionTitle(MLang.Connection.Detail.Section.Info)
+        }
 
-        InfoRow(label = "协议", value = network.uppercase())
+        InfoRow(label = MLang.Connection.Detail.Label.Protocol, value = network.uppercase())
         if (process.isNotEmpty()) {
-            InfoRow(label = "进程", value = process)
+            InfoRow(label = MLang.Connection.Detail.Label.Process, value = process)
         }
-        InfoRow(label = "源地址", value = "$sourceIP:$sourcePort")
+        InfoRow(label = MLang.Connection.Detail.Label.SourceAddress, value = "$sourceIP:$sourcePort")
         if (destinationIP.isNotEmpty()) {
-            InfoRow(label = "目标地址", value = "$destinationIP:$destinationPort")
+            InfoRow(label = MLang.Connection.Detail.Label.DestinationAddress, value = "$destinationIP:$destinationPort")
         }
-        InfoRow(label = "连接时长", value = duration)
+        InfoRow(label = MLang.Connection.Detail.Label.Duration, value = duration)
 
         InfoRow(
-            label = "上传",
-            value = formatBytes(animatedUpload.toLong()),
+            label = MLang.Connection.Detail.Label.Upload,
+            value = formatBytes(upload),
             valueColor = Color(0xFF2196F3),
         )
         InfoRow(
-            label = "下载",
-            value = formatBytes(animatedDownload.toLong()),
+            label = MLang.Connection.Detail.Label.Download,
+            value = formatBytes(download),
             valueColor = Color(0xFF4CAF50),
         )
 
@@ -196,7 +241,10 @@ private fun ProxyChainRow(chains: List<String>) {
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        items(chains.withIndex().toList()) { (index, chain) ->
+        itemsIndexed(
+            items = chains,
+            key = { index, chain -> "$index:$chain" },
+        ) { index, chain ->
             val isLast = index == chains.lastIndex
 
             Row(
@@ -272,11 +320,11 @@ private fun RuleInfoSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SectionTitle("规则")
+        SectionTitle(MLang.Connection.Detail.Section.Rule)
 
-        InfoRow(label = "类型", value = rule)
+        InfoRow(label = MLang.Connection.Detail.Label.Type, value = rule)
         if (rulePayload.isNotEmpty()) {
-            InfoRow(label = "内容", value = rulePayload)
+            InfoRow(label = MLang.Connection.Detail.Label.Content, value = rulePayload)
         }
     }
 }
@@ -333,17 +381,4 @@ private fun calculateDuration(start: String): String {
     } catch (e: Exception) {
         "00:00:00"
     }
-}
-
-private fun formatBytes(bytes: Long): String {
-    if (bytes < 1024) return "${bytes}B"
-
-    val kb = bytes / 1024.0
-    if (kb < 1024) return "%.1fKB".format(kb)
-
-    val mb = kb / 1024.0
-    if (mb < 1024) return "%.1fMB".format(mb)
-
-    val gb = mb / 1024.0
-    return "%.2fGB".format(gb)
 }

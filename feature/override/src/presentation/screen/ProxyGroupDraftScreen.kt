@@ -38,8 +38,8 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
 fun OverrideProxyGroupDraftEditorScreen(
@@ -47,7 +47,7 @@ fun OverrideProxyGroupDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = remember { OverrideStructuredEditorStore.proxyGroupDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyGroup } }
+    val title = OverrideStructuredEditorStore.proxyGroupDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyGroup }
     val initialValue = remember { OverrideStructuredEditorStore.proxyGroupDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -167,9 +167,10 @@ fun OverrideProxyGroupDraftEditorScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             lazyListState = listState,
             onScrollDirectionChanged = saveFabController::onScrollDirectionChanged,
         ) {
@@ -180,7 +181,7 @@ fun OverrideProxyGroupDraftEditorScreen(
                 ) {
                     OverrideSection(MLang.Override.Draft.BasicInfo) {
                         OverrideSelectorCard {
-                            WindowDropdown(
+                            WindowDropdownPreference(
                                 title = MLang.Override.Editor.RuleType,
                                 items = OverrideProxyGroupTypePresets,
                                 selectedIndex = selectedPresetIndex,
@@ -205,29 +206,29 @@ fun OverrideProxyGroupDraftEditorScreen(
                             OverrideFormField(
                                 value = url,
                                 onValueChange = { url = it },
-                                label = "url",
+                                label = MLang.Override.ProxyGroup.Field.Url,
                             )
                             OverrideFormField(
                                 value = intervalText,
                                 onValueChange = { intervalText = it.filter(Char::isDigit) },
-                                label = "interval",
+                                label = MLang.Override.ProxyGroup.Field.Interval,
                             )
                             OverrideFormField(
                                 value = timeoutText,
                                 onValueChange = { timeoutText = it.filter(Char::isDigit) },
-                                label = "timeout",
+                                label = MLang.Override.ProxyGroup.Field.Timeout,
                             )
                             OverrideFormField(
                                 value = maxFailedTimesText,
                                 onValueChange = { maxFailedTimesText = it.filter(Char::isDigit) },
-                                label = "max-failed-times",
+                                label = MLang.Override.ProxyGroup.Field.MaxFailedTimes,
                             )
                         }
                     }
                     OverrideSection(MLang.Override.Editor.MemberSource) {
                         OverrideSelectorCard {
-                            SuperArrow(
-                                title = "proxies",
+                            ArrowPreference(
+                                title = MLang.Override.ProxyGroup.Field.Proxies,
                                 onClick = {
                                     showProxySelector = true
                                     errorText = null
@@ -239,8 +240,8 @@ fun OverrideProxyGroupDraftEditorScreen(
                             OverrideFormField(
                                 value = useText,
                                 onValueChange = { useText = it },
-                                label = "use",
-                                supportText = "每行一个 Provider 名称",
+                                label = MLang.Override.ProxyGroup.Field.Use,
+                                supportText = MLang.Override.ProxyGroup.Field.UseHint,
                                 modifier = Modifier.heightIn(min = 100.dp),
                                 maxLines = 8,
                             )
@@ -250,46 +251,46 @@ fun OverrideProxyGroupDraftEditorScreen(
                         OverrideFormField(
                             value = interfaceName,
                             onValueChange = { interfaceName = it },
-                            label = "interface-name",
+                            label = MLang.Override.ProxyGroup.Field.InterfaceName,
                         )
                         OverrideFormField(
                             value = routingMarkText,
                             onValueChange = { routingMarkText = it.filter(Char::isDigit) },
-                            label = "routing-mark",
+                            label = MLang.Override.ProxyGroup.Field.RoutingMark,
                         )
                         OverrideFormField(
                             value = filter,
                             onValueChange = { filter = it },
-                            label = "filter",
+                            label = MLang.Override.ProxyGroup.Field.Filter,
                         )
                         OverrideFormField(
                             value = excludeFilter,
                             onValueChange = { excludeFilter = it },
-                            label = "exclude-filter",
+                            label = MLang.Override.ProxyGroup.Field.ExcludeFilter,
                         )
                         OverrideFormField(
                             value = excludeType,
                             onValueChange = { excludeType = it },
-                            label = "exclude-type",
+                            label = MLang.Override.ProxyGroup.Field.ExcludeType,
                         )
                         OverrideFormField(
                             value = expectedStatus,
                             onValueChange = { expectedStatus = it },
-                            label = "expected-status",
+                            label = MLang.Override.ProxyGroup.Field.ExpectedStatus,
                         )
                         OverrideFormField(
                             value = icon,
                             onValueChange = { icon = it },
-                            label = "icon",
+                            label = MLang.Override.ProxyGroup.Field.Icon,
                         )
                     }
-                    OverrideCardSection(MLang.Override.Structured.Proxies.Title) {
-                        NullableBooleanSelector(title = "lazy", value = lazy, onValueChange = { lazy = it })
-                        NullableBooleanSelector(title = "disable-udp", value = disableUdp, onValueChange = { disableUdp = it })
-                        NullableBooleanSelector(title = "include-all", value = includeAll, onValueChange = { includeAll = it })
-                        NullableBooleanSelector(title = "include-all-proxies", value = includeAllProxies, onValueChange = { includeAllProxies = it })
-                        NullableBooleanSelector(title = "include-all-providers", value = includeAllProviders, onValueChange = { includeAllProviders = it })
-                        NullableBooleanSelector(title = "hidden", value = hidden, onValueChange = { hidden = it })
+                    OverrideCardSection(MLang.Override.Draft.BooleanOptions) {
+                        NullableBooleanSelector(title = MLang.Override.ProxyGroup.Field.Lazy, value = lazy, onValueChange = { lazy = it })
+                        NullableBooleanSelector(title = MLang.Override.ProxyGroup.Field.DisableUdp, value = disableUdp, onValueChange = { disableUdp = it })
+                        NullableBooleanSelector(title = MLang.Override.ProxyGroup.Field.IncludeAll, value = includeAll, onValueChange = { includeAll = it })
+                        NullableBooleanSelector(title = MLang.Override.ProxyGroup.Field.IncludeAllProxies, value = includeAllProxies, onValueChange = { includeAllProxies = it })
+                        NullableBooleanSelector(title = MLang.Override.ProxyGroup.Field.IncludeAllProviders, value = includeAllProviders, onValueChange = { includeAllProviders = it })
+                        NullableBooleanSelector(title = MLang.Override.ProxyGroup.Field.Hidden, value = hidden, onValueChange = { hidden = it })
                     }
                     OverrideSection(MLang.Override.Draft.ExtraFields) {
                         OverrideExtraFieldsCard(

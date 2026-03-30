@@ -28,7 +28,7 @@ import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.presentation.util.*
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.JsonElement
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 
 typealias OpenRuleListEditor = (
     title: String,
@@ -74,10 +74,10 @@ fun RulesEditor(
     onEditRuleList: OpenRuleListEditor,
 ) {
     Column {
-        SmallTitle(MLang.Override.Form.RuleChain)
+        Title(MLang.Override.Form.RuleChain)
         OverrideSelectorCard {
             StructuredEditorEntry(
-                title = "Rules",
+                title = MLang.Override.Editor.Rules,
                 summary = buildModifierSummary(
                     replaceCount = config.rules?.size ?: 0,
                     startCount = config.rulesStart?.size ?: 0,
@@ -91,7 +91,7 @@ fun RulesEditor(
                         endValue = config.rulesEnd,
                     )
                     onEditRuleList(
-                        "Rules",
+                        MLang.Override.Editor.Rules,
                         values,
                         listOf(
                             OverrideListEditorMode.Replace,
@@ -130,7 +130,7 @@ fun SubRulesEditorSection(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle(MLang.Override.Form.SubRules)
+        Title(MLang.Override.Form.SubRules)
         StructuredInputContent(
             title = MLang.Override.Form.SubRules,
             summary = buildMergeModifierSummary(
@@ -189,7 +189,7 @@ fun RuleProvidersEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle(MLang.Override.Form.RuleProviders)
+        Title(MLang.Override.Form.RuleProviders)
         StructuredInputContent(
             title = MLang.Override.Form.RuleProviders,
             summary = buildMergeModifierSummary(
@@ -248,7 +248,7 @@ fun ProxiesEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle(MLang.Override.Form.ProxyNodes)
+        Title(MLang.Override.Form.ProxyNodes)
         OverrideSelectorCard {
             StructuredEditorEntry(
                 title = MLang.Override.Form.ProxyNodes,
@@ -306,7 +306,7 @@ fun ProxyProvidersEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle(MLang.Override.Form.ProxyProviders)
+        Title(MLang.Override.Form.ProxyProviders)
         StructuredInputContent(
             title = MLang.Override.Form.ProxyProviders,
             summary = buildMergeModifierSummary(
@@ -365,7 +365,7 @@ fun ProxyGroupsEditor(
     onEditJson: OpenJsonEditor,
 ) {
     Column {
-        SmallTitle(MLang.Override.Form.ProxyGroups)
+        Title(MLang.Override.Form.ProxyGroups)
         OverrideSelectorCard {
             StructuredEditorEntry(
                 title = MLang.Override.Form.ProxyGroups,
@@ -426,7 +426,7 @@ private fun StructuredInputContent(
 
     Column {
         OverrideSelectorCard {
-            SuperArrow(
+            ArrowPreference(
                 title = MLang.Override.Form.StructuredEdit.format(title),
                 summary = summary,
                 onClick = onStructuredClick,
@@ -438,7 +438,7 @@ private fun StructuredInputContent(
             expanded = advancedExpanded,
             onExpandedChange = { advancedExpanded = it },
         ) {
-            SuperArrow(
+            ArrowPreference(
                 title = MLang.Override.Form.OpenAdvancedEdit,
                 summary = MLang.Override.Form.OpenAdvancedEditSummary,
                 onClick = onAdvancedClick,
@@ -453,7 +453,7 @@ private fun StructuredEditorEntry(
     summary: String,
     onClick: () -> Unit,
 ) {
-    SuperArrow(
+    ArrowPreference(
         title = title,
         summary = summary,
         onClick = onClick,

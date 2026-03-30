@@ -27,8 +27,9 @@ import androidx.compose.runtime.MutableState
 import com.github.yumelira.yumebox.domain.model.ProxySortMode
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
+import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.extra.SuperListPopup
+import top.yukonga.miuix.kmp.window.WindowListPopup
 
 internal val NodeSortModes = listOf(
     ProxySortMode.DEFAULT,
@@ -45,8 +46,9 @@ internal fun NodeSortPopup(
     onSortSelected: (ProxySortMode) -> Unit,
 ) {
     val selectedSortIndex = NodeSortModes.indexOf(sortMode).coerceAtLeast(0)
-    SuperListPopup(
+    WindowListPopup(
         show = show.value,
+        popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
         alignment = alignment,
         onDismissRequest = onDismiss,
     ) {

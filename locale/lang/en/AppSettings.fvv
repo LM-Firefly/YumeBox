@@ -5,8 +5,10 @@ AppSettings = {
     Section = {
         Behavior = "Behavior"
         Interface = "Interface"
+        Privacy = "Privacy"
         Service = "Service"
         Network = "Network"
+        Experimental = "Experimental"
     }
 
     Behavior = {
@@ -24,6 +26,11 @@ AppSettings = {
         ThemeModeSystem = "Follow System"
         ThemeModeLight = "Light"
         ThemeModeDark = "Dark"
+        LanguageTitle = "App Language"
+        LanguageSummary = "Choose the app language"
+        LanguageSystem = "Follow System"
+        LanguageChinese = "简体中文"
+        LanguageEnglish = "English"
 
         ColorThemeTitle = "Theme Palette"
         ColorThemeSummary = "Pick a seed color and auto-derive monochrome theme colors"
@@ -33,14 +40,33 @@ AppSettings = {
 
         TopBarBlurTitle = "Blur Top Bar"
         TopBarBlurSummary = "Apply a dynamic blur background to the top bar while scrolling"
-        BottomBarLiquidGlassTitle = "Liquid Glass Bottom Bar"
-        BottomBarLiquidGlassSummary = "Enable sampled liquid glass refraction for the bottom navigation bar"
-
         AutoHideNavbarTitle = "Auto-hide Navbar"
         AutoHideNavbarSummary = "Hide navbar on scroll down and show on scroll up"
 
         PageScaleTitle = "Page Scale"
         PageScaleSummary = "Adjust the overall UI scaling ratio of the app"
+        PageScaleDialogSummary = "80% - 120%"
+    }
+
+    Privacy = {
+        BiometricUnlockTitle = "Biometric Unlock"
+        BiometricUnlockSummary = "Require biometric or device credential authentication on app launch"
+        ScreenshotProtectionTitle = "Screenshot Protection"
+        ScreenshotProtectionSummary = "Block screenshots, screen recording, and recents preview"
+        BiometricDialogTitleEnable = "Enable Biometric Unlock"
+        BiometricDialogTitleDisable = "Disable Biometric Unlock"
+        ScreenshotDialogTitleEnable = "Enable Screenshot Protection"
+        ScreenshotDialogTitleDisable = "Disable Screenshot Protection"
+        BiometricPromptTitle = "Verify Identity"
+        BiometricPromptMessage = "Complete authentication to continue into the app"
+        BiometricRetryButton = "Retry"
+        BiometricExitButton = "Exit"
+        BiometricUnavailableTitle = "Biometric Unavailable"
+        BiometricUnavailableMessage = "Authentication is currently unavailable. Please try again later or check device credential and biometric settings"
+        BiometricUnavailableNoneEnrolled = "No biometric data is enrolled yet. Add biometrics in system settings or enable a secure screen lock first"
+        BiometricUnavailableNoHardware = "This device does not support biometrics. Enable a secure screen lock or disable this feature"
+        BiometricUnavailableHwUnavailable = "Biometric hardware is currently unavailable. Please try again later"
+        BiometricUnavailableNoDeviceCredential = "No secure screen lock is configured. Set up a PIN, pattern, or password first"
 
         HideIconTitle = "Hide App Icon"
         HideIconSummary = "After hiding, you can open via dialer *#*#0721#*#*"
@@ -48,14 +74,45 @@ AppSettings = {
         HideFromRecentsSummary = "Do not show this app in the recent tasks list (recents card)"
     }
 
+    Experimental = {
+        AcgHomeTitle = "ACG Experimental Home"
+        AcgHomeSummary = "Enable the new ACG-inspired home layout"
+        AcgQuoteTitle = "ACG Quote"
+        AcgQuoteDefault = "Wait for a cloud to finish roaming on a quiet route"
+        AcgQuoteAuthorTitle = "ACG Quote Author"
+        AcgQuoteAuthorDefault = "YumeBox"
+        AcgSidebarExpandedTitle = "Expand ACG Sidebar by Default"
+        AcgSidebarExpandedSummary = "Open the left info sidebar by default on the ACG home page"
+        WallpaperTitle = "ACG Wallpaper"
+        WallpaperSummary = "Choose a custom wallpaper for the ACG home page"
+        WallpaperCropTitle = "Wallpaper Cropper"
+        WallpaperCropSummary = "Use the home viewport height and slide left or right to pick the visible area"
+        WallpaperCropModeFree = "Manual Preview"
+        WallpaperCropModeFixed = "Fixed Ratio Crop"
+        WallpaperCropSwitchMode = "Switch Mode"
+        ResetWallpaperTitle = "Reset ACG Wallpaper"
+        EditAcgQuoteTitle = "Edit ACG Quote"
+        EditAcgQuoteAuthorTitle = "Edit ACG Quote Author"
+    }
+
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
         SingleNodeTestTitle = "Single Node Test"
         SingleNodeTestSummary = "Tap icon on node card to test individual node delay"
+        ExitUiWhenBackgroundTitle = "Release UI In Background"
+        ExitUiWhenBackgroundSummary = "Release the activity UI when the app is fully hidden in background while keeping the proxy service running"
+        BatteryOptimizationTitle = "Unrestricted Battery"
+        BatteryOptimizationSummaryEnabled = "Background activity is currently unrestricted. Tap to open system power management settings"
+        BatteryOptimizationSummaryDisabled = "Battery optimization is still restricting background activity. Set it to unrestricted to reduce background kills"
     }
 
     Network = {
+        UpdateChannelTitle = "Update Channel"
+        UpdateChannelSummary = "Choose which GitHub Release channel is used for update checks"
+        UpdateChannelStable = "Stable"
+        UpdateChannelPre = "Pre-release"
+        UpdateChannelSmart = "Smart"
         CustomUserAgentTitle = "Custom User-Agent"
         CustomUserAgentSummaryDefault = "Not set, using default"
     }

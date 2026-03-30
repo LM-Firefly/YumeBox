@@ -22,17 +22,23 @@
 
 package com.github.yumelira.yumebox.feature.meta.presentation.component
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -44,47 +50,95 @@ fun TabRowWithContour(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (tabs.isEmpty()) return
+
     val shape = RoundedCornerShape(100.dp)
     val backgroundColor = MiuixTheme.colorScheme.surfaceVariant
     val selectedColor = MiuixTheme.colorScheme.primary
+    val indicatorInset = 4.dp
+    val indicatorGap = 4.dp
+    val indicatorAnimationSpec = remember {
+        tween<Dp>(
+            durationMillis = 280,
+            easing = FastOutSlowInEasing,
+        )
+    }
+    val textAnimationSpec = remember {
+        tween<Color>(
+            durationMillis = 220,
+            easing = FastOutSlowInEasing,
+        )
+    }
 
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(vertical = 8.dp)
             .clip(shape)
             .background(backgroundColor)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(indicatorInset),
     ) {
-        tabs.forEachIndexed { index, tab ->
-            val isSelected = selectedTabIndex == index
-            val tabShape = RoundedCornerShape(100.dp)
-            val tabBgColor = if (isSelected) selectedColor else Color.Transparent
-            val textColor = if (isSelected) {
-                MiuixTheme.colorScheme.onPrimary
-            } else {
-                MiuixTheme.colorScheme.onSurface
-            }
+        val clampedSelectedTabIndex = selectedTabIndex.coerceIn(0, tabs.lastIndex)
+        val tabCount = tabs.size
+        val tabWidth = remember(maxWidth, tabCount) {
+            ((maxWidth - indicatorGap * (tabCount - 1)) / tabCount).coerceAtLeast(0.dp)
+        }
+        val targetOffset = remember(tabWidth, clampedSelectedTabIndex) {
+            (tabWidth + indicatorGap) * clampedSelectedTabIndex
+        }
+        val indicatorOffset by animateDpAsState(
+            targetValue = targetOffset,
+            animationSpec = indicatorAnimationSpec,
+            label = "tab_row_indicator_offset",
+        )
 
+        Box(
+            modifier = Modifier.matchParentSize(),
+        ) {
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .clip(tabShape)
-                    .background(tabBgColor)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { onTabSelected(index) },
-                    )
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = tab,
-                    style = MiuixTheme.textStyles.body2,
-                    color = textColor,
+                    .offset(x = indicatorOffset)
+                    .width(tabWidth)
+                    .fillMaxHeight()
+                    .clip(shape)
+                    .background(selectedColor),
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(indicatorGap),
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                val isSelected = clampedSelectedTabIndex == index
+                val textColor by animateColorAsState(
+                    targetValue = if (isSelected) {
+                        MiuixTheme.colorScheme.onPrimary
+                    } else {
+                        MiuixTheme.colorScheme.onSurface
+                    },
+                    animationSpec = textAnimationSpec,
+                    label = "tab_row_text_color_$index",
                 )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(shape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { onTabSelected(index) },
+                        )
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = tab,
+                        style = MiuixTheme.textStyles.body2,
+                        color = textColor,
+                    )
+                }
             }
         }
     }

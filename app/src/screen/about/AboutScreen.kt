@@ -36,16 +36,18 @@ import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.core.bridge.Bridge
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
-import com.github.yumelira.yumebox.presentation.component.SmallTitle
+import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.github.yumelira.yumebox.update.EmasUpdateManager
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.OpenSourceLicensesScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.CancellationException
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -53,12 +55,11 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun AboutScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
-    var coreVersion by remember { mutableStateOf(MLang.About.App.VersionLoading) }
-
-    LaunchedEffect(Unit) {
-        coreVersion = try {
+    val coreVersion by produceState(initialValue = MLang.About.App.VersionLoading) {
+        value = try {
             Bridge.nativeCoreVersion()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
             MLang.About.App.VersionFailed
         }
     }
@@ -68,9 +69,10 @@ fun AboutScreen(navigator: DestinationsNavigator) {
             TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior)
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item {
                 Column(
@@ -110,7 +112,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     )
                 }
 
-                SmallTitle(MLang.About.Section.ProjectLinks)
+                Title(MLang.About.Section.ProjectLinks)
                 Card {
                     AboutLinkItem(
                         title = "YumeBox",
@@ -126,13 +128,8 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     )
                 }
 
-                SmallTitle(MLang.About.Section.More)
+                Title(MLang.About.Section.More)
                 Card {
-                    SuperArrow(
-                        title = MLang.About.License.CheckUpdate,
-                        summary = MLang.About.License.CheckUpdateSummary,
-                        onClick = { EmasUpdateManager.startManualUpdate(async = true) },
-                    )
                     AboutLinkItem(
                         title = MLang.About.Link.TelegramGroup,
                         url = "https://t.me/OOM_Group",
@@ -147,9 +144,9 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     )
                 }
 
-                SmallTitle(MLang.About.Section.License)
+                Title(MLang.About.Section.License)
                 Card {
-                    SuperArrow(
+                    ArrowPreference(
                         title = MLang.About.License.Libraries,
                         summary = MLang.About.License.LibrariesSummary,
                         onClick = { navigator.navigate(OpenSourceLicensesScreenDestination) },
@@ -187,7 +184,7 @@ private fun AboutLinkItem(
     showArrow: Boolean,
 ) {
     if (showArrow) {
-        SuperArrow(
+        ArrowPreference(
             title = title,
             summary = url,
             onClick = { onOpenUrl(url) },

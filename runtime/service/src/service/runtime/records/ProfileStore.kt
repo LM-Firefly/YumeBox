@@ -38,6 +38,8 @@ object ProfileStore {
     private const val SELECTIONS_KEY = "selections"
     private const val PROFILE_ORDER_KEY = "profile_order"
     private const val SELECTION_SCOPE_KEY_PREFIX = "selection_scope_key:"
+    private const val SELECTION_MEMORY_MIGRATION_VERSION_KEY = "selection_memory_migration_version"
+    private const val SELECTION_MEMORY_MIGRATION_VERSION = 1
 
     private val mmkv by lazy { MMKV.mmkvWithID("profiles", MMKV.MULTI_PROCESS_MODE) }
 
@@ -62,7 +64,7 @@ object ProfileStore {
 
     fun saveSelections(list: List<Selection>) {
         val jsonString = json.encodeToString(ListSerializer(Selection.serializer()), list)
-        mmkv.encode("selections", jsonString)
+        mmkv.encode(SELECTIONS_KEY, jsonString)
     }
 
     fun loadSelections(): List<Selection> {
@@ -74,22 +76,39 @@ object ProfileStore {
         }
     }
 
-    fun saveSelectionScopeKey(profileUUID: UUID, scopeKey: String) {
-        mmkv.encode("$SELECTION_SCOPE_KEY_PREFIX$profileUUID", scopeKey)
-    }
-
-    fun loadSelectionScopeKey(profileUUID: UUID): String? {
-        return mmkv.decodeString("$SELECTION_SCOPE_KEY_PREFIX$profileUUID")
-    }
-
-    fun removeSelectionScopeKey(profileUUID: UUID) {
-        mmkv.removeValueForKey("$SELECTION_SCOPE_KEY_PREFIX$profileUUID")
-    }
-
     fun removeAllSelectionScopeKeys() {
         mmkv.allKeys()
             ?.filter { it.startsWith(SELECTION_SCOPE_KEY_PREFIX) }
             ?.forEach(mmkv::removeValueForKey)
+    }
+
+    fun migrateLegacySelectionMemoryIfNeeded() {
+        val currentVersion = mmkv.decodeInt(SELECTION_MEMORY_MIGRATION_VERSION_KEY, 0)
+        if (currentVersion >= SELECTION_MEMORY_MIGRATION_VERSION) {
+            return
+        }
+
+        val migratedSelections = loadSelections()
+            .asSequence()
+            .mapNotNull { selection ->
+                val groupName = selection.proxy.trim()
+                val selectedProxy = selection.selected.trim()
+                if (groupName.isEmpty() || selectedProxy.isEmpty()) {
+                    null
+                } else {
+                    selection.copy(
+                        proxy = groupName,
+                        selected = selectedProxy,
+                    )
+                }
+            }
+            .groupBy { it.uuid to it.proxy }
+            .values
+            .mapNotNull { items -> items.maxByOrNull(Selection::updatedAt) ?: items.lastOrNull() }
+
+        saveSelections(migratedSelections)
+        removeAllSelectionScopeKeys()
+        mmkv.encode(SELECTION_MEMORY_MIGRATION_VERSION_KEY, SELECTION_MEMORY_MIGRATION_VERSION)
     }
 
     fun saveProfileOrder(order: List<UUID>) {
@@ -111,8 +130,6 @@ object ProfileStore {
         if (mmkv.decodeString(IMPORTED_KEY) != null) count++
         if (mmkv.decodeString(SELECTIONS_KEY) != null) count++
         if (mmkv.decodeString(PROFILE_ORDER_KEY) != null) count++
-        count += loadImported()
-            .count { imported -> mmkv.decodeString("$SELECTION_SCOPE_KEY_PREFIX${imported.uuid}") != null }
         return count
     }
 

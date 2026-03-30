@@ -24,12 +24,13 @@ package com.github.yumelira.yumebox.runtime.client.root
 
 import android.content.Context
 import android.content.Intent
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.root.RootTunStateStore
 import kotlinx.coroutines.*
 import timber.log.Timber
-import kotlin.time.Duration.Companion.milliseconds
 
 object RootTunReloadScheduler {
     enum class Reason {
@@ -60,7 +61,7 @@ object RootTunReloadScheduler {
             }
             debounceJob?.cancel()
             debounceJob = scope.launch {
-                delay(DEBOUNCE_MS.milliseconds)
+                PollingTimers.awaitTick(PollingTimerSpecs.RootTunReloadDebounce)
                 runReload(appContext)
             }
         }
@@ -98,7 +99,7 @@ object RootTunReloadScheduler {
                     rerun
                 }
                 if (shouldRunAgain) {
-                    delay(DEBOUNCE_MS.milliseconds)
+                    PollingTimers.awaitTick(PollingTimerSpecs.RootTunReloadDebounce)
                     runReload(context)
                 }
             }
@@ -118,7 +119,13 @@ object RootTunReloadScheduler {
         var lastResult = com.github.yumelira.yumebox.service.root.RootTunOperationResult(success = true)
         for (index in delays.indices) {
             if (delays[index] > 0L) {
-                delay(delays[index].milliseconds)
+                PollingTimers.awaitTick(
+                    PollingTimerSpecs.dynamic(
+                        name = "root_tun_reload_retry_$index",
+                        intervalMillis = delays[index],
+                        initialDelayMillis = delays[index],
+                    ),
+                )
             }
             lastResult = RootTunController.reload(context)
             if (lastResult.success) {
@@ -139,5 +146,4 @@ object RootTunReloadScheduler {
         }
     }
 
-    private const val DEBOUNCE_MS = 100L
 }

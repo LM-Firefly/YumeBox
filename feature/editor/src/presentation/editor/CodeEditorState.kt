@@ -58,6 +58,15 @@ class CodeEditorState(
         }
     }
 
+    fun loadContent(newContent: String) {
+        if (content != newContent) {
+            content = newContent
+            editor?.setText(newContent)
+        }
+        isModified = false
+        refreshHistoryState()
+    }
+
     fun syncContentFromEditor() {
         editor?.text?.toString()?.let { editorContent ->
             if (content != editorContent) {

@@ -29,15 +29,10 @@ import com.github.yumelira.yumebox.data.repository.ActiveProfileOverrideReloader
 import com.github.yumelira.yumebox.data.repository.OverrideConfigRepository
 import com.github.yumelira.yumebox.data.repository.OverrideResolver
 import com.github.yumelira.yumebox.data.repository.ProfileBindingProvider
-import com.github.yumelira.yumebox.data.util.OverridePresetTemplateSelection
-import com.github.yumelira.yumebox.data.util.applyPresetTemplateToConfig
 import com.github.yumelira.yumebox.domain.model.OverrideConfig
 import com.github.yumelira.yumebox.domain.model.OverrideMetadata
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveEvent
 import com.github.yumelira.yumebox.presentation.util.OverrideSaveState
-import com.github.yumelira.yumebox.presentation.util.encodeOverrideConfigForDiff
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -102,26 +97,23 @@ class OverrideConfigViewModel(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _selectedConfig = MutableStateFlow<OverrideConfig?>(null)
-    val selectedConfig: StateFlow<OverrideConfig?> = _selectedConfig.asStateFlow()
-
-    private val _editSession = MutableStateFlow<OverrideEditSession?>(null)
-    val editSession: StateFlow<OverrideEditSession?> = _editSession.asStateFlow()
-
-    private val _saveState = MutableStateFlow<OverrideSaveState>(OverrideSaveState.Idle)
-    val saveState: StateFlow<OverrideSaveState> = _saveState.asStateFlow()
-
-    private val _events = MutableSharedFlow<OverrideSaveEvent>(extraBufferCapacity = 1)
-    val events: SharedFlow<OverrideSaveEvent> = _events.asSharedFlow()
-
     private val _usageCountMap = MutableStateFlow<Map<String, Int>>(emptyMap())
     val usageCountMap: StateFlow<Map<String, Int>> = _usageCountMap.asStateFlow()
-    private var bindingObserverJob: Job? = null
-    private val silentSaveLock = Any()
-    private val pendingSilentConfigs = mutableMapOf<String, OverrideConfig>()
-    private val pendingSilentCallbacks = mutableMapOf<String, ((OverrideConfig) -> Unit)?>()
-    private val activeSilentSaveIds = mutableSetOf<String>()
-    private var pendingEditSaveJob: Job? = null
+    private var bindingObserverJob: kotlinx.coroutines.Job? = null
+    private val editCoordinator = OverrideEditSessionCoordinator(
+        scope = viewModelScope,
+        configRepo = configRepo,
+        activeProfileOverrideReloader = activeProfileOverrideReloader,
+        reloadConfigs = { loadConfigs() },
+        updateLocalCacheAfterSave = ::updateLocalCacheAfterSave,
+        loggerTag = TAG,
+        textAutosaveDelayMillis = TEXT_AUTOSAVE_DELAY_MILLIS,
+    )
+
+    val selectedConfig: StateFlow<OverrideConfig?> = editCoordinator.selectedConfig
+    val editSession: StateFlow<OverrideEditSession?> = editCoordinator.editSession
+    val saveState: StateFlow<OverrideSaveState> = editCoordinator.saveState
+    val events: SharedFlow<OverrideSaveEvent> = editCoordinator.events
 
     init {
         loadConfigs()
@@ -162,11 +154,11 @@ class OverrideConfigViewModel(
     }
 
     fun getConfigJsonContent(configId: String): String? {
-        return configRepo.getConfigJsonContent(configId)
+        return editCoordinator.getConfigJsonContent(configId)
     }
 
     fun saveConfigJsonContent(configId: String, content: String): Boolean {
-        return configRepo.saveConfigJsonContent(configId, content)
+        return editCoordinator.saveConfigJsonContent(configId, content)
     }
 
     private fun observeBindingChanges() {
@@ -206,205 +198,18 @@ class OverrideConfigViewModel(
     }
 
     fun updateConfig(config: OverrideConfig) {
-        saveConfig(config)
+        editCoordinator.updateConfig(config)
     }
 
     fun saveConfig(config: OverrideConfig) {
-        viewModelScope.launch {
-            persistConfig(
-                config = config,
-                emitSuccessEvent = true,
-                refreshAfterSave = true,
-                updateSaveState = true,
-            )
-        }
+        editCoordinator.saveConfig(config)
     }
 
     fun saveConfigSilently(
         config: OverrideConfig,
         onSaved: ((OverrideConfig) -> Unit)? = null,
     ) {
-        val shouldLaunchWorker = synchronized(silentSaveLock) {
-            pendingSilentConfigs[config.id] = config
-            if (onSaved != null) {
-                pendingSilentCallbacks[config.id] = onSaved
-            } else {
-                pendingSilentCallbacks.remove(config.id)
-            }
-            activeSilentSaveIds.add(config.id)
-        }
-
-        if (!shouldLaunchWorker) {
-            return
-        }
-
-        viewModelScope.launch {
-            drainSilentSaveQueue(config.id)
-        }
-    }
-
-    private suspend fun persistConfig(
-        config: OverrideConfig,
-        emitSuccessEvent: Boolean,
-        refreshAfterSave: Boolean,
-        updateSaveState: Boolean,
-        onSaved: ((OverrideConfig) -> Unit)? = null,
-    ) {
-        if (updateSaveState) {
-            _saveState.value = OverrideSaveState.Saving
-        }
-        try {
-
-            if (configRepo.isSystemPreset(config.id)) {
-                Timber.tag(TAG).w("Cannot update system preset: ${config.id}")
-                if (updateSaveState) {
-                    _saveState.value = OverrideSaveState.Idle
-                }
-                _events.tryEmit(OverrideSaveEvent.Failed(MLang.Override.Save.PresetNotModifiable))
-                return
-            }
-            configRepo.save(config)
-            val runtimeSynced = activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(config.id)
-            if (refreshAfterSave) {
-                loadConfigs()
-            } else {
-                updateLocalCacheAfterSave(config)
-            }
-            Timber.tag(TAG).i("Updated config: ${config.id}")
-            onSaved?.invoke(config)
-            if (emitSuccessEvent) {
-                if (runtimeSynced) {
-                    _events.emit(OverrideSaveEvent.Saved(config.id))
-                } else {
-                    _events.emit(OverrideSaveEvent.Failed(MLang.Override.Save.ApplyFailed))
-                }
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to update config")
-            _events.emit(
-                OverrideSaveEvent.Failed(
-                    e.message ?: MLang.Override.Save.Failed,
-                ),
-            )
-        } finally {
-            if (updateSaveState) {
-                _saveState.value = OverrideSaveState.Idle
-            }
-        }
-    }
-
-    private suspend fun drainSilentSaveQueue(configId: String) {
-        while (true) {
-            val nextRequest = synchronized(silentSaveLock) {
-                val nextConfig = pendingSilentConfigs.remove(configId)
-                if (nextConfig == null) {
-                    activeSilentSaveIds.remove(configId)
-                    null
-                } else {
-                    SilentSaveRequest(
-                        config = nextConfig,
-                        onSaved = pendingSilentCallbacks.remove(configId),
-                    )
-                }
-            } ?: return
-
-            persistConfig(
-                config = nextRequest.config,
-                emitSuccessEvent = false,
-                refreshAfterSave = false,
-                updateSaveState = false,
-                onSaved = nextRequest.onSaved,
-            )
-        }
-    }
-
-    private fun createEditSession(config: OverrideConfig): OverrideEditSession {
-        val snapshot = encodeOverrideConfigForDiff(config.config)
-        return OverrideEditSession(
-            routeConfigId = config.id,
-            targetConfigId = config.id,
-            persistedId = config.id,
-            createdAt = config.createdAt,
-            name = config.name,
-            description = config.description.orEmpty(),
-            config = config.config,
-            draftSnapshot = snapshot,
-            persistedName = config.name,
-            persistedDescription = config.description.orEmpty(),
-            persistedSnapshot = snapshot,
-        )
-    }
-
-    private fun updateEditSession(
-        saveDelayMillis: Long,
-        transform: (OverrideEditSession) -> OverrideEditSession,
-    ) {
-        val currentSession = _editSession.value ?: return
-        val updatedSession = transform(currentSession)
-        if (updatedSession == currentSession) {
-            return
-        }
-        _editSession.value = updatedSession
-        scheduleDraftSave(updatedSession, saveDelayMillis)
-    }
-
-    private fun scheduleDraftSave(
-        session: OverrideEditSession,
-        delayMillis: Long,
-    ) {
-        pendingEditSaveJob?.cancel()
-        pendingEditSaveJob = viewModelScope.launch {
-            if (delayMillis > 0L) {
-                delay(delayMillis)
-            }
-            val latestSession = _editSession.value
-            if (latestSession == null || latestSession.targetConfigId != session.targetConfigId) {
-                return@launch
-            }
-            saveDraftSession(latestSession)
-        }
-    }
-
-    private fun saveDraftSession(
-        session: OverrideEditSession,
-        onSaved: (() -> Unit)? = null,
-    ) {
-        if (!session.canSave || !session.hasPersistedChanges) {
-            onSaved?.invoke()
-            return
-        }
-
-        saveConfigSilently(
-            config = OverrideConfig(
-                id = session.targetConfigId,
-                name = session.name,
-                description = session.description.takeIf(String::isNotBlank),
-                config = session.config,
-                isSystem = false,
-                createdAt = session.createdAt,
-                updatedAt = System.currentTimeMillis(),
-            ),
-        ) { savedConfig ->
-            syncPersistedEditSession(savedConfig)
-            onSaved?.invoke()
-        }
-    }
-
-    private fun syncPersistedEditSession(savedConfig: OverrideConfig) {
-        val persistedSnapshot = encodeOverrideConfigForDiff(savedConfig.config)
-        _editSession.update { currentSession ->
-            if (currentSession == null || currentSession.targetConfigId != savedConfig.id) {
-                return@update currentSession
-            }
-            currentSession.copy(
-                persistedId = savedConfig.id,
-                createdAt = savedConfig.createdAt,
-                persistedName = savedConfig.name,
-                persistedDescription = savedConfig.description.orEmpty(),
-                persistedSnapshot = persistedSnapshot,
-            )
-        }
-        _selectedConfig.value = savedConfig
+        editCoordinator.saveConfigSilently(config, onSaved)
     }
 
     private fun updateLocalCacheAfterSave(config: OverrideConfig) {
@@ -417,9 +222,7 @@ class OverrideConfigViewModel(
         }
         _userConfigs.value = updatedUserConfigs
         _configs.value = _systemPresets.value + updatedUserConfigs
-        if (_selectedConfig.value?.id == config.id) {
-            _selectedConfig.value = config
-        }
+        editCoordinator.syncSelectedConfig(config)
     }
 
     fun deleteConfig(id: String) {
@@ -434,7 +237,7 @@ class OverrideConfigViewModel(
                     loadConfigs()
                     Timber.tag(TAG).i("Deleted config: $id")
                 } else {
-                    Timber.tag(TAG).w("Cannot delete config: $id (system preset or not found)")
+                    Timber.tag(TAG).w("Cannot delete config: $id (builtin preset or not found)")
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to delete config")
@@ -484,117 +287,50 @@ class OverrideConfigViewModel(
 
     fun selectConfig(id: String) {
         viewModelScope.launch {
-            val config = configRepo.getById(id)
-            _selectedConfig.value = config
+            editCoordinator.selectConfig(id)
         }
     }
 
     fun clearSelectedConfig() {
-        _selectedConfig.value = null
+        editCoordinator.clearSelectedConfig()
     }
 
     fun startEditSession(configId: String) {
-        viewModelScope.launch {
-            val currentSession = _editSession.value
-            if (currentSession?.routeConfigId == configId) {
-                return@launch
-            }
-
-            pendingEditSaveJob?.cancel()
-
-            if (configId == "new") {
-                _selectedConfig.value = null
-                val emptyConfig = ConfigurationOverride()
-                _editSession.value = OverrideEditSession(
-                    routeConfigId = configId,
-                    targetConfigId = OverrideMetadata.generateId(),
-                    persistedId = null,
-                    createdAt = System.currentTimeMillis(),
-                    name = "",
-                    description = "",
-                    config = emptyConfig,
-                    draftSnapshot = encodeOverrideConfigForDiff(emptyConfig),
-                    persistedName = "",
-                    persistedDescription = "",
-                    persistedSnapshot = encodeOverrideConfigForDiff(ConfigurationOverride()),
-                )
-                return@launch
-            }
-
-            val config = configRepo.getById(configId)
-            _selectedConfig.value = config
-            _editSession.value = config?.let(::createEditSession)
-        }
+        editCoordinator.startEditSession(configId)
     }
 
     fun updateDraftName(value: String) {
-        updateEditSession(TEXT_AUTOSAVE_DELAY_MILLIS) { session ->
-            session.copy(name = value)
-        }
+        editCoordinator.updateDraftName(value)
     }
 
     fun updateDraftDescription(value: String) {
-        updateEditSession(TEXT_AUTOSAVE_DELAY_MILLIS) { session ->
-            session.copy(description = value)
-        }
+        editCoordinator.updateDraftDescription(value)
     }
 
     fun updateDraftConfig(
         updatedConfig: ConfigurationOverride,
         saveImmediately: Boolean = true,
     ) {
-        updateEditSession(
-            saveDelayMillis = if (saveImmediately) 0L else TEXT_AUTOSAVE_DELAY_MILLIS,
-        ) { session ->
-            session.copy(
-                config = updatedConfig,
-                draftSnapshot = encodeOverrideConfigForDiff(updatedConfig),
-            )
-        }
+        editCoordinator.updateDraftConfig(updatedConfig, saveImmediately)
     }
 
     fun mutateDraftConfig(
         saveImmediately: Boolean = true,
         transform: (ConfigurationOverride) -> ConfigurationOverride,
     ) {
-        val currentSession = _editSession.value ?: return
-        updateDraftConfig(
-            updatedConfig = transform(currentSession.config),
-            saveImmediately = saveImmediately,
-        )
-    }
-
-    fun applyPresetTemplate(
-        selection: OverridePresetTemplateSelection,
-    ) {
-        mutateDraftConfig(saveImmediately = true) { currentConfig ->
-            applyPresetTemplateToConfig(
-                base = currentConfig,
-                selection = selection,
-            )
-        }
+        editCoordinator.mutateDraftConfig(saveImmediately, transform)
     }
 
     fun saveDraftNow(onSaved: (() -> Unit)? = null) {
-        pendingEditSaveJob?.cancel()
-        val session = _editSession.value
-        if (session == null || !session.canSave || !session.hasPersistedChanges) {
-            onSaved?.invoke()
-            return
-        }
-        saveDraftSession(session, onSaved)
+        editCoordinator.saveDraftNow(onSaved)
     }
 
     fun flushDraftSave(onSaved: (() -> Unit)? = null) {
-        pendingEditSaveJob?.cancel()
-        saveDraftNow(onSaved)
+        editCoordinator.flushDraftSave(onSaved)
     }
 
     fun clearEditSession() {
-        pendingEditSaveJob?.cancel()
-        pendingEditSaveJob = null
-        _editSession.value = null
-        clearSelectedConfig()
+        editCoordinator.clearEditSession()
     }
 
     fun importConfigsFromJson(
@@ -660,11 +396,6 @@ class OverrideConfigViewModel(
         return configRepo.isSystemPreset(id)
     }
 }
-
-private data class SilentSaveRequest(
-    val config: OverrideConfig,
-    val onSaved: ((OverrideConfig) -> Unit)? = null,
-)
 
 @Serializable
 private data class OverrideConfigImportEnvelope(

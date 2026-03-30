@@ -44,12 +44,11 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.extra.SuperDialog
-import top.yukonga.miuix.kmp.extra.WindowDropdown
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val ObjectListSectionGap = 12.dp
@@ -133,7 +132,7 @@ fun OverrideObjectListEditorScreen(
                 controller = addFabController,
                 visible = showAddFab,
                 imageVector = Yume.`Badge-plus`,
-                contentDescription = "新增${editorType.itemLabel}",
+                contentDescription = MLang.Override.Editor.New + editorType.itemLabel,
                 onClick = {
                     when (editorType) {
                         OverrideStructuredObjectType.Proxies -> {
@@ -169,19 +168,18 @@ fun OverrideObjectListEditorScreen(
                 scrollBehavior = scrollBehavior,
                 actions = {
                     if (isDeleteMode) {
-                        IconButton(
+                        OverrideTopBarAction(
+                            icon = Yume.Cancel,
+                            contentDescription = MLang.Override.Editor.CancelDelete,
+                            spacedFromNext = true,
                             onClick = {
                                 isDeleteMode = false
                                 selectedUiIds = emptySet()
                             },
-                            modifier = Modifier.padding(end = 8.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Cancel,
-                                contentDescription = MLang.Override.Editor.CancelDelete,
-                            )
-                        }
-                        IconButton(
+                        )
+                        OverrideTopBarAction(
+                            icon = Yume.Delete,
+                            contentDescription = MLang.Override.Editor.DeleteSelected,
                             onClick = {
                                 if (selectedUiIds.isNotEmpty()) {
                                     when (editorType) {
@@ -209,51 +207,38 @@ fun OverrideObjectListEditorScreen(
                                     isDeleteMode = false
                                 }
                             },
-                            modifier = Modifier.padding(end = 24.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Delete,
-                                contentDescription = "删除已选${editorType.itemLabel}",
-                            )
-                        }
+                        )
                     } else {
-                        IconButton(
+                        OverrideTopBarAction(
+                            icon = Yume.Undo,
+                            contentDescription = MLang.Override.Editor.ClearCurrentMode,
+                            spacedFromNext = true,
                             onClick = { showResetDialog = true },
-                            modifier = Modifier.padding(end = 8.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Undo,
-                                contentDescription = MLang.Override.Editor.ClearCurrentMode,
-                            )
-                        }
-                        IconButton(
+                        )
+                        OverrideTopBarAction(
+                            icon = Yume.Delete,
+                            contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             onClick = {
                                 isDeleteMode = true
                                 selectedUiIds = emptySet()
                             },
-                            modifier = Modifier.padding(end = 24.dp),
-                        ) {
-                            Icon(
-                                imageVector = Yume.Delete,
-                                contentDescription = MLang.Override.Editor.EnterDeleteMode,
-                            )
-                        }
+                        )
                     }
                 },
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             modifier = Modifier.fillMaxWidth(),
-            topPadding = 20.dp,
             lazyListState = listState,
             onScrollDirectionChanged = addFabController::onScrollDirectionChanged,
         ) {
             item(key = "modifier-card") {
                 Card {
-                    WindowDropdown(
+                    WindowDropdownPreference(
                         title = MLang.Override.Editor.Mode.Title,
                         items = availableModes.map(OverrideListEditorMode::label),
                         selectedIndex = selectedModeIndex,
@@ -380,8 +365,8 @@ fun OverrideObjectListEditorScreen(
 
     AppDialog(
             show = showResetDialog,
-            title = "清空${editorType.itemLabel}",
-            summary = "清空后将移除当前模式里的所有${editorType.itemLabel}。",
+            title = MLang.Override.Editor.ClearDialog.Title.format(editorType.itemLabel),
+            summary = MLang.Override.Editor.ClearDialog.Summary.format(editorType.itemLabel),
             onDismissRequest = { showResetDialog = false },
         ) {
             DialogButtonRow(

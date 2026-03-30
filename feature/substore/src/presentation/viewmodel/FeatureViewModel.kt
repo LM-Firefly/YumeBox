@@ -23,44 +23,53 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.common.util.DeviceUtil
 import com.github.yumelira.yumebox.common.util.showToastDialog
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.repository.FeatureSettingsRepository
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.substore.SubStorePaths
-import com.github.yumelira.yumebox.substore.SubStoreService
+import com.github.yumelira.yumebox.substore.SubStoreServiceController
+import com.github.yumelira.yumebox.substore.SubStoreServiceRequest
 import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
 import com.github.yumelira.yumebox.substore.model.AutoCloseMode
-import com.github.yumelira.yumebox.substore.util.DownloadUtil
+import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class FeatureViewModel(
     repository: FeatureSettingsRepository,
     private val application: Application,
+    private val downloadClient: SubStoreDownloadClient,
 ) : ViewModel() {
-
-    val isServiceRunning: Boolean get() = SubStoreService.isRunning
     val allowLanAccess: Preference<Boolean> = repository.allowLanAccess
     val backendPort: Preference<Int> = repository.backendPort
     val frontendPort: Preference<Int> = repository.frontendPort
     val selectedPanelType: Preference<Int> = repository.selectedPanelType
     val panelOpenMode: Preference<LinkOpenMode> = repository.panelOpenMode
+    val exitUiWhenBackground: Preference<Boolean> = repository.exitUiWhenBackground
 
     private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
     val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()
 
-    private val _serviceRunningState = MutableStateFlow(SubStoreService.isRunning)
-    val serviceRunningState: StateFlow<Boolean> = _serviceRunningState.asStateFlow()
+    val serviceRunningState: StateFlow<Boolean> = SubStoreServiceController.snapshot
+        .map { it.isActive }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = SubStoreServiceController.snapshot.value.isActive,
+        )
 
     private var autoCloseJob: Job? = null
 
@@ -91,13 +100,20 @@ class FeatureViewModel(
         }
         if (!checkSubStoreReadiness()) return
         viewModelScope.launch {
-            application.startService(Intent(application, SubStoreService::class.java).apply {
-                putExtra("backendPort", backendPort.value)
-                putExtra("frontendPort", frontendPort.value)
-                putExtra("allowLan", allowLanAccess.value)
-            })
-            _serviceRunningState.value = true
-            setupAutoCloseTimer()
+            runCatching {
+                SubStoreServiceController.startService(
+                    context = application,
+                    request = SubStoreServiceRequest(
+                        backendPort = backendPort.value,
+                        frontendPort = frontendPort.value,
+                        allowLan = allowLanAccess.value,
+                    ),
+                )
+            }.onSuccess {
+                setupAutoCloseTimer()
+            }.onFailure { error ->
+                showToast(error.message ?: MLang.Util.Error.UnknownError)
+            }
         }
     }
 
@@ -122,8 +138,7 @@ class FeatureViewModel(
     fun stopService() {
         viewModelScope.launch {
             cancelAutoCloseTimer()
-            application.stopService(Intent(application, SubStoreService::class.java))
-            _serviceRunningState.value = false
+            SubStoreServiceController.stopService(application)
             _autoCloseMode.value = AutoCloseMode.DISABLED
         }
     }
@@ -131,7 +146,7 @@ class FeatureViewModel(
     fun setAllowLanAccess(allow: Boolean) = allowLanAccess.set(allow)
     fun setAutoCloseMode(mode: AutoCloseMode) {
         _autoCloseMode.value = mode
-        if (isServiceRunning) {
+        if (serviceRunningState.value) {
             cancelAutoCloseTimer()
             setupAutoCloseTimer()
         }
@@ -172,56 +187,35 @@ class FeatureViewModel(
     }
 
     fun setPanelOpenMode(mode: LinkOpenMode) = panelOpenMode.set(mode)
+    fun setExitUiWhenBackground(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 
     fun downloadSubStoreFrontend() {
-        if (_isDownloadingSubStoreFrontend.value) return
-        viewModelScope.launch {
-            _isDownloadingSubStoreFrontend.value = true
-            runCatching {
-                SubStorePaths.ensureStructure()
-                SubStorePaths.frontendDir.apply { if (!exists()) mkdirs() }
-                val success = DownloadUtil.downloadAndExtract(
-                    url = "https://github.com/sub-store-org/Sub-Store-Front-End/releases/latest/download/dist.zip",
-                    targetDir = SubStorePaths.frontendDir,
-                )
-                showToast(
-                    if (success) {
-                        MLang.Feature.SubStore.FrontendDownloadSuccess
-                    } else {
-                        MLang.Feature.SubStore.FrontendDownloadFailed
-                    }
-                )
-                if (success) _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
-            }.onFailure { e ->
-                showToast(MLang.Feature.SubStore.DownloadError.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
-            _isDownloadingSubStoreFrontend.value = false
+        launchResourceDownload(
+            loadingState = _isDownloadingSubStoreFrontend,
+            successMessage = MLang.Feature.SubStore.FrontendDownloadSuccess,
+            failureMessage = MLang.Feature.SubStore.FrontendDownloadFailed,
+        ) {
+            SubStorePaths.ensureStructure()
+            SubStorePaths.frontendDir.apply { if (!exists()) mkdirs() }
+            downloadClient.downloadAndExtract(
+                url = "https://github.com/sub-store-org/Sub-Store-Front-End/releases/latest/download/dist.zip",
+                targetDir = SubStorePaths.frontendDir,
+            )
         }
     }
 
     fun downloadSubStoreBackend() {
-        if (_isDownloadingSubStoreBackend.value) return
-        viewModelScope.launch {
-            _isDownloadingSubStoreBackend.value = true
-            runCatching {
-                SubStorePaths.ensureStructure()
-                SubStorePaths.backendDir.apply { if (!exists()) mkdirs() }
-                val success = DownloadUtil.download(
-                    url = "https://github.com/sub-store-org/Sub-Store/releases/latest/download/sub-store.bundle.js",
-                    targetFile = SubStorePaths.backendBundle,
-                )
-                showToast(
-                    if (success) {
-                        MLang.Feature.SubStore.BackendDownloadSuccess
-                    } else {
-                        MLang.Feature.SubStore.BackendDownloadFailed
-                    }
-                )
-                if (success) _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
-            }.onFailure { e ->
-                showToast(MLang.Feature.SubStore.DownloadError.format(e.message ?: MLang.Util.Error.UnknownError))
-            }
-            _isDownloadingSubStoreBackend.value = false
+        launchResourceDownload(
+            loadingState = _isDownloadingSubStoreBackend,
+            successMessage = MLang.Feature.SubStore.BackendDownloadSuccess,
+            failureMessage = MLang.Feature.SubStore.BackendDownloadFailed,
+        ) {
+            SubStorePaths.ensureStructure()
+            SubStorePaths.backendDir.apply { if (!exists()) mkdirs() }
+            downloadClient.download(
+                url = "https://github.com/sub-store-org/Sub-Store/releases/latest/download/sub-store.bundle.js",
+                targetFile = SubStorePaths.backendBundle,
+            )
         }
     }
 
@@ -230,7 +224,13 @@ class FeatureViewModel(
             if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value) return@launch
             downloadSubStoreFrontend()
             while (_isDownloadingSubStoreFrontend.value) {
-                delay(200)
+                PollingTimers.awaitTick(
+                    PollingTimerSpecs.dynamic(
+                        name = "substore_frontend_download_wait",
+                        intervalMillis = 200L,
+                        initialDelayMillis = 200L,
+                    ),
+                )
             }
             downloadSubStoreBackend()
         }
@@ -238,12 +238,41 @@ class FeatureViewModel(
 
     private fun showToast(msg: String) = showToastDialog(msg)
 
+    private fun launchResourceDownload(
+        loadingState: MutableStateFlow<Boolean>,
+        successMessage: String,
+        failureMessage: String,
+        action: suspend () -> Boolean,
+    ) {
+        if (loadingState.value) return
+        viewModelScope.launch {
+            loadingState.value = true
+            runCatching {
+                val success = action()
+                showToast(if (success) successMessage else failureMessage)
+                if (success) {
+                    _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
+                }
+            }.onFailure { e ->
+                showToast(MLang.Feature.SubStore.DownloadError.format(e.message ?: MLang.Util.Error.UnknownError))
+            }
+            loadingState.value = false
+        }
+    }
+
     private fun setupAutoCloseTimer() {
         cancelAutoCloseTimer()
         val mode = _autoCloseMode.value
         mode.minutes?.let { minutes ->
             autoCloseJob = viewModelScope.launch {
-                delay(minutes * 60 * 1000L)
+                val timeoutMillis = minutes * 60 * 1000L
+                PollingTimers.awaitTick(
+                    PollingTimerSpecs.dynamic(
+                        name = "substore_auto_close",
+                        intervalMillis = timeoutMillis,
+                        initialDelayMillis = timeoutMillis,
+                    ),
+                )
                 showToast(MLang.Feature.ServiceStatus.AutoClosed)
                 stopService()
             }

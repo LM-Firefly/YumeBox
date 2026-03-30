@@ -24,4 +24,25 @@ TrafficStatistics = {
         Hourly = "4 Hours"
         Daily = "Daily"
     }
+
+    Donut = {
+        Other = "Other"
+    }
+
+    Action = {
+        Clear = "Clear Statistics"
+        ClearSuccess = "Statistics cleared"
+    }
+
+    Section = {
+        Traffic = "Traffic"
+        TopApps = "Top Apps"
+        EmptyApps = "No app traffic statistics"
+    }
+
+    Metric = {
+        Download = "Download"
+        Upload = "Upload"
+        UsageLine = "Down %s  Up %s"
+    }
 }

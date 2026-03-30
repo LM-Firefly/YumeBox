@@ -41,10 +41,6 @@ enum class OverrideEditorSection {
         override val title: String get() = MLang.Override.Section.Inbound.Title
         override val summary: String get() = MLang.Override.Section.Inbound.Summary
     },
-    Tun {
-        override val title: String get() = MLang.Override.Section.Tun.Title
-        override val summary: String get() = MLang.Override.Section.Tun.Summary
-    },
     Rules {
         override val title: String get() = MLang.Override.Section.Rules.Title
         override val summary: String get() = MLang.Override.Section.Rules.Summary

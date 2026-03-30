@@ -33,7 +33,7 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.extra.SuperDialog
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val SelectionSheetListMaxHeight = 420.dp
@@ -297,45 +297,33 @@ private fun OverrideSelectionInputDialog(
     var inputValue by remember(show) { mutableStateOf("") }
     var errorText by remember(show) { mutableStateOf<String?>(null) }
 
-    AppDialog(
+    AppTextFieldDialog(
         show = show,
         title = title,
+        value = inputValue,
+        onValueChange = {
+            inputValue = it
+            errorText = null
+        },
         onDismissRequest = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TextField(
-                value = inputValue,
-                onValueChange = {
-                    inputValue = it
-                    errorText = null
-                },
-                label = label,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        onConfirm = {
+            val normalizedValue = inputValue.trim()
+            if (normalizedValue.isBlank()) {
+                errorText = MLang.Override.Editor.ContentEmpty
+                return@AppTextFieldDialog
+            }
+            onConfirm(normalizedValue)
+        },
+        label = label,
+        supportingContent = {
             errorText?.let { message ->
                 OverrideFieldAssistText(
                     text = message,
                     color = MiuixTheme.colorScheme.error,
                 )
             }
-            DialogButtonRow(
-                onCancel = onDismiss,
-                onConfirm = {
-                    val normalizedValue = inputValue.trim()
-                    if (normalizedValue.isBlank()) {
-                        errorText = MLang.Override.Editor.ContentEmpty
-                        return@DialogButtonRow
-                    }
-                    onConfirm(normalizedValue)
-                },
-                cancelText = MLang.Override.Dialog.Button.Cancel,
-                confirmText = MLang.Override.Editor.Confirm,
-            )
-        }
-    }
+        },
+    )
 }
 
 private fun collectSelectionItems(groups: List<OverrideSelectionGroup>): List<String> {

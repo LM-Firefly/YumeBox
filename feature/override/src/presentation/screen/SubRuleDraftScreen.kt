@@ -34,7 +34,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.preference.ArrowPreference
 
 @Composable
 fun OverrideSubRuleDraftEditorScreen(
@@ -118,9 +118,10 @@ fun OverrideSubRuleDraftEditorScreen(
             )
         },
     ) { innerPadding ->
+        val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
-            innerPadding = innerPadding,
+            innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             modifier = Modifier.fillMaxSize(),
             lazyListState = listState,
             onScrollDirectionChanged = saveFabController::onScrollDirectionChanged,
@@ -143,7 +144,7 @@ fun OverrideSubRuleDraftEditorScreen(
                         )
                     }
                     OverrideCardSection(MLang.Override.Draft.RuleList) {
-                        SuperArrow(
+                        ArrowPreference(
                             title = MLang.Override.Draft.RuleList,
                             summary = if (rules.isEmpty()) {
                                 MLang.Override.Draft.NoRules

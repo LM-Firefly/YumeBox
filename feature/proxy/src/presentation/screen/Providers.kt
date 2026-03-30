@@ -41,8 +41,10 @@ import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
-import com.github.yumelira.yumebox.presentation.component.SmallTitle
+import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
 import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
@@ -58,12 +60,19 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.extra.WindowListPopup
+import top.yukonga.miuix.kmp.window.WindowListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.text.SimpleDateFormat
 import java.util.*
+
+private fun Provider.VehicleType.localizedDisplayName(): String = when (this) {
+    Provider.VehicleType.HTTP -> MLang.Providers.VehicleType.Http
+    Provider.VehicleType.File -> MLang.Providers.VehicleType.File
+    Provider.VehicleType.Inline -> MLang.Providers.VehicleType.Inline
+    Provider.VehicleType.Compatible -> MLang.Providers.VehicleType.Compatible
+}
 
 private data class ProviderSection(
     val title: String,
@@ -100,9 +109,12 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
         }
     }
 
+    val updatableProviders = remember(providers) {
+        providers.filter { it.vehicleType == Provider.VehicleType.HTTP }
+    }
     val sections = remember(providers) {
+        val (proxyProviders, ruleProviders) = providers.partition { it.type == Provider.Type.Proxy }
         buildList {
-            val proxyProviders = providers.filter { it.type == Provider.Type.Proxy }
             if (proxyProviders.isNotEmpty()) {
                 add(
                     ProviderSection(
@@ -111,7 +123,6 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                     )
                 )
             }
-            val ruleProviders = providers.filter { it.type == Provider.Type.Rule }
             if (ruleProviders.isNotEmpty()) {
                 add(
                     ProviderSection(
@@ -129,14 +140,13 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                 title = MLang.Providers.Title,
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    if (isRunning && providers.any { it.vehicleType == Provider.VehicleType.HTTP }) {
+                    if (isRunning && updatableProviders.isNotEmpty()) {
                         IconButton(
-                            onClick = { viewModel.updateAllProviders() },
-                            modifier = Modifier.padding(end = 24.dp)
+                            onClick = { viewModel.updateAllProviders() }
                         ) {
                             Icon(
                                 imageVector = Yume.`Circle-fading-arrow-up`,
-                                contentDescription = "Update all"
+                                contentDescription = MLang.Providers.Action.UpdateAll
                             )
                         }
                     }
@@ -155,9 +165,10 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                 secondLine = MLang.Providers.Empty.NoProvidersHint
             )
         } else {
+            val mainLikePadding = rememberStandalonePageMainPadding()
             ScreenLazyColumn(
                 scrollBehavior = scrollBehavior,
-                innerPadding = innerPadding,
+                innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             ) {
                 sections.forEach { section ->
                     providerSection(
@@ -212,7 +223,7 @@ private fun ProviderCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = provider.vehicleType.name,
+                        text = provider.vehicleType.localizedDisplayName(),
                         style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
@@ -251,7 +262,7 @@ private fun ProviderCard(
                                 modifier = Modifier.size(20.dp),
                                 imageVector = MiuixIcons.Edit,
                                 tint = updateTint,
-                                contentDescription = "Operation",
+                                contentDescription = MLang.Providers.Action.Operation,
                             )
                             Text(
                                 modifier = Modifier.padding(end = 3.dp),
@@ -302,7 +313,7 @@ private fun LazyListScope.providerSection(
     onUpload: (Provider, Uri) -> Unit,
 ) {
     item(key = "title_${section.title}") {
-        SmallTitle(section.title)
+        Title(section.title)
     }
     items(
         items = section.providers,
