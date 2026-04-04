@@ -262,7 +262,7 @@ jobs:
 
       - name: Release Changelog Builder
         id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v6.1.1
+        uses: mikepenz/release-changelog-builder-action@v6.2.0
         with:
           mode: "COMMIT"
           configurationJson: |
