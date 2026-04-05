@@ -43,6 +43,11 @@ jobs:
           go-download-base-url: 'https://github.com/MetaCubeX/go/releases/download/build'
           go-version: '1.26'
 
+      - name: Apply Go patches
+        run: |
+          cd "$(go env GOROOT)"
+          for p in "$GITHUB_WORKSPACE"/.github/patch/*.patch; do patch --verbose -p 1 < "$p"; done
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:

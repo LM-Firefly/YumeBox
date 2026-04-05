@@ -229,14 +229,14 @@ class NdkTools(private val config: ProjectConfig) {
 
     fun getClangPath(abi: String): String {
         val triple = when (abi) {
-            "arm64-v8a" -> "aarch64-linux-android24"
-            "armeabi-v7a" -> "armv7a-linux-androideabi24"
-            "x86" -> "i686-linux-android24"
-            "x86_64" -> "x86_64-linux-android24"
+            "arm64-v8a" -> "aarch64-linux-android"
+            "armeabi-v7a" -> "armv7a-linux-androideabi"
+            "x86" -> "i686-linux-android"
+            "x86_64" -> "x86_64-linux-android"
             else -> throw IllegalArgumentException("Unsupported ABI: $abi")
         }
         val ext = if (SystemDetector.os == "windows") ".cmd" else ""
-        return File(ndkDir, "toolchains/llvm/prebuilt/${SystemDetector.hostTag}/bin/${triple}-clang${ext}").absolutePath
+        return File(ndkDir, "toolchains/llvm/prebuilt/${SystemDetector.hostTag}/bin/${triple}${getMinAndroidApi()}-clang${ext}").absolutePath
     }
 
     fun getStripPath(): String {
@@ -290,7 +290,7 @@ class NdkTools(private val config: ProjectConfig) {
 }
 
 class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTools) {
-    private val sourceDir = File("lib/native/go/native")
+    private val sourceDir = File("lib/native/go")
     private val outputDir = File("build/native/go")
     private val appJniRoot = File("jniLibs")
     private val goModuleDir = File("lib/native/go")
@@ -304,6 +304,7 @@ class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTool
 
     private val buildTags = config.getCsv("golang.buildTags", "cmfa")
     private val buildFlags = config.getCsv("golang.buildFlags", "-trimpath")
+    private val packageName = config.getString("golang.packageName", "cfa/native")
 
     fun buildAll() {
         if (!sourceDir.exists()) {
@@ -335,14 +336,16 @@ class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTool
         val command = buildList {
             add("go")
             add("build")
-            add("-buildmode=c-shared")
-            if (buildTags.isNotEmpty()) {
-                add("-tags=${buildTags.joinToString(",")}")
-            }
+            add("-buildmode")
+            add("c-shared")
             addAll(buildFlags)
+            if (buildTags.isNotEmpty()) {
+                add("-tags")
+                add(buildTags.joinToString(","))
+            }
             add("-o")
             add(outputFile.absolutePath)
-            add(".")
+            add(packageName.ifBlank { "." })
         }
 
         val result = executeCommand(
@@ -354,7 +357,6 @@ class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTool
             stderrIsError = false
         )
         if (result.success) {
-            stripLibrary(outputFile)
             copyToAppJni(abi, outputFile)
             println("[building] Successfully built $abi")
         } else {
@@ -370,21 +372,8 @@ class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTool
             "GOOS" to "android",
             "GOARCH" to arch,
             "CC" to ndkTools.getClangPath(abi),
-            "CXX" to ndkTools.getClangPath(abi),
-            "CGO_CFLAGS" to "-fPIC",
-            "CGO_LDFLAGS" to "-fPIC -llog -Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384",
-            "GOWORK" to "off"
+            "CFLAGS" to "-O3 -Werror"
         ) + if (abi == "armeabi-v7a") mapOf("GOARM" to "7") else emptyMap()
-    }
-
-    private fun stripLibrary(libFile: File) {
-        println("[Go] Stripping ${libFile.name}...")
-        val command = listOf(ndkTools.getStripPath(), "--strip-unneeded", libFile.absolutePath)
-        executeCommand(
-            command = command,
-            printStdout = false,
-            printStderr = false
-        )
     }
 
     private fun copyToAppJni(abi: String, sourceLib: File) {
@@ -570,7 +559,6 @@ class CppBuilder(private val config: ProjectConfig, private val ndkTools: NdkToo
             "-DCMAKE_BUILD_TYPE=Release",
             "-DGO_SOURCE:STRING=${goSourceDir.absolutePath}",
             "-DGO_OUTPUT:STRING=${goOutputDir.absolutePath}",
-            "-DYUMEBOX_LINKER_FLAGS:STRING=-Wl,-z,max-page-size=16384 -Wl,-z,common-page-size=16384",
             "-DGIT_INFO_FILE:STRING=${gitInfoFile.absolutePath}"
         )
         val configureResult = executeCommand(
