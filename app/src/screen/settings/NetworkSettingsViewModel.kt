@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -110,20 +111,20 @@ class NetworkSettingsViewModel(
 
     val serviceState: StateFlow<ServiceState> = runtimeSnapshot
         .map { snapshot -> ServiceState.fromPhase(snapshot.phase) }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ServiceState.Idle)
 
     val currentProxyMode: StateFlow<ProxyMode> = proxyMode.state
 
     val uiState: StateFlow<NetworkSettingsUiState> = combine(
-        serviceState,
         currentProxyMode,
         runtimeSnapshot,
         rootTunDnsMode.state,
-    ) { serviceState, configuredMode, snapshot, dnsMode ->
+    ) { configuredMode, snapshot, dnsMode ->
         val effectiveMode = RuntimeStateMapper.resolveDisplayMode(snapshot, configuredMode)
         val activeMode = RuntimeStateMapper.modeForOwner(snapshot.owner)
         NetworkSettingsUiState(
-            serviceState = serviceState,
+            serviceState = ServiceState.fromPhase(snapshot.phase),
             configuredMode = configuredMode,
             effectiveMode = effectiveMode,
             needsRestart = snapshot.phase == RuntimePhase.Running && activeMode != configuredMode,
@@ -133,7 +134,7 @@ class NetworkSettingsViewModel(
             showRootTunAdvanced = configuredMode == ProxyMode.RootTun,
             showFakeIpRange = configuredMode == ProxyMode.RootTun && dnsMode == RootTunDnsMode.FakeIp,
         )
-    }.stateIn(
+    }.distinctUntilChanged().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = NetworkSettingsUiState(),

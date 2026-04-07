@@ -20,8 +20,10 @@
 
 package com.github.yumelira.yumebox.presentation.util
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import kotlinx.serialization.json.JsonElement
@@ -234,8 +236,22 @@ object OverrideStructuredEditorStore {
         objectSession.applyProxyDraftValues(values)
     }
 
+    fun applyProxyDraftModeValue(
+        mode: OverrideListEditorMode,
+        value: List<OverrideProxyDraft>,
+    ) {
+        objectSession.applyProxyDraftModeValue(mode, value)
+    }
+
     fun applyProxyGroupDraftValues(values: OverrideListModeValues<List<OverrideProxyGroupDraft>>) {
         objectSession.applyProxyGroupDraftValues(values)
+    }
+
+    fun applyProxyGroupDraftModeValue(
+        mode: OverrideListEditorMode,
+        value: List<OverrideProxyGroupDraft>,
+    ) {
+        objectSession.applyProxyGroupDraftModeValue(mode, value)
     }
 
     fun applyKeyedObjectValues(values: OverrideListModeValues<Map<String, Map<String, JsonElement>>>) {
@@ -244,6 +260,13 @@ object OverrideStructuredEditorStore {
 
     fun applyKeyedObjectDraftValues(values: OverrideListModeValues<List<OverrideKeyedObjectDraft>>) {
         keyedObjectMapSession.applyDraftValues(values)
+    }
+
+    fun applyKeyedObjectDraftModeValue(
+        mode: OverrideListEditorMode,
+        value: List<OverrideKeyedObjectDraft>,
+    ) {
+        keyedObjectMapSession.applyDraftModeValue(mode, value)
     }
 
     fun applySubRuleValues(values: OverrideListModeValues<Map<String, List<String>>>) {
@@ -431,5 +454,42 @@ object OverrideStructuredEditorStore {
 
     fun clearConfigPreview() {
         previewSession.clear()
+    }
+}
+
+@Composable
+fun rememberCurrentReferenceCatalog(): OverrideReferenceCatalog {
+    val referenceCatalog = OverrideStructuredEditorStore.referenceCatalog
+    val objectEditorCallback = OverrideStructuredEditorStore.objectEditorCallback
+    val objectEditorType = OverrideStructuredEditorStore.objectEditorType
+    val objectEditorProxyDraftValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
+    val objectEditorProxyGroupDraftValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
+    val objectEditorSelectedMode = OverrideStructuredEditorStore.objectEditorSelectedMode
+    val proxyGroupDraftEditorValue = OverrideStructuredEditorStore.proxyGroupDraftEditorValue
+    val subRuleGroupEditorCallback = OverrideStructuredEditorStore.subRuleGroupEditorCallback
+    val subRuleGroupEditorDraftValues = OverrideStructuredEditorStore.subRuleGroupEditorDraftValues
+    val subRuleGroupEditorSelectedMode = OverrideStructuredEditorStore.subRuleGroupEditorSelectedMode
+    val subRuleDraftEditorValue = OverrideStructuredEditorStore.subRuleDraftEditorValue
+    val keyedObjectMapEditorCallback = OverrideStructuredEditorStore.keyedObjectMapEditorCallback
+    val keyedObjectMapEditorType = OverrideStructuredEditorStore.keyedObjectMapEditorType
+    val keyedObjectMapEditorDraftValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
+
+    return remember(
+        referenceCatalog,
+        objectEditorCallback,
+        objectEditorType,
+        objectEditorProxyDraftValues,
+        objectEditorProxyGroupDraftValues,
+        objectEditorSelectedMode,
+        proxyGroupDraftEditorValue,
+        subRuleGroupEditorCallback,
+        subRuleGroupEditorDraftValues,
+        subRuleGroupEditorSelectedMode,
+        subRuleDraftEditorValue,
+        keyedObjectMapEditorCallback,
+        keyedObjectMapEditorType,
+        keyedObjectMapEditorDraftValues,
+    ) {
+        OverrideStructuredEditorStore.currentReferenceCatalog()
     }
 }

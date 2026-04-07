@@ -24,6 +24,7 @@ package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -47,7 +48,6 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -76,26 +76,45 @@ fun OverrideObjectListEditorScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     val addFabController = rememberOverrideFabController()
     var isDeleteMode by rememberSaveable { mutableStateOf(false) }
-    var selectedUiIds by remember { mutableStateOf(emptySet<String>()) }
+    val selectedUiIds = remember { mutableStateMapOf<String, Boolean>() }
     val selectedMode = OverrideStructuredEditorStore.objectEditorSelectedMode
 
     val proxyModeValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
     val proxyGroupModeValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
 
-    val selectedModeIndex = availableModes.indexOf(selectedMode).coerceAtLeast(0)
-    val currentProxyDrafts: List<OverrideProxyDraft> = proxyModeValues.valueFor(selectedMode).orEmpty()
-    val currentProxyGroupDrafts: List<OverrideProxyGroupDraft> = proxyGroupModeValues.valueFor(selectedMode).orEmpty()
-    val currentItemCount = when (editorType) {
-        OverrideStructuredObjectType.Proxies -> currentProxyDrafts.size
-        OverrideStructuredObjectType.ProxyGroups -> currentProxyGroupDrafts.size
+    val modeLabels = remember(availableModes) { availableModes.map(OverrideListEditorMode::label) }
+    val selectedModeIndex = remember(availableModes, selectedMode) {
+        availableModes.indexOf(selectedMode).coerceAtLeast(0)
+    }
+    val currentProxyDrafts = remember(proxyModeValues, selectedMode) {
+        proxyModeValues.valueFor(selectedMode).orEmpty()
+    }
+    val currentProxyGroupDrafts = remember(proxyGroupModeValues, selectedMode) {
+        proxyGroupModeValues.valueFor(selectedMode).orEmpty()
+    }
+    val currentItemCount = remember(editorType, currentProxyDrafts, currentProxyGroupDrafts) {
+        when (editorType) {
+            OverrideStructuredObjectType.Proxies -> currentProxyDrafts.size
+            OverrideStructuredObjectType.ProxyGroups -> currentProxyGroupDrafts.size
+        }
     }
 
-    fun applyProxyValues(values: OverrideListModeValues<List<OverrideProxyDraft>>) {
-        OverrideStructuredEditorStore.applyProxyDraftValues(values)
+    fun applyProxyModeValue(
+        mode: OverrideListEditorMode,
+        values: List<OverrideProxyDraft>,
+    ) {
+        OverrideStructuredEditorStore.applyProxyDraftModeValue(mode, values)
     }
 
-    fun applyProxyGroupValues(values: OverrideListModeValues<List<OverrideProxyGroupDraft>>) {
-        OverrideStructuredEditorStore.applyProxyGroupDraftValues(values)
+    fun applyProxyGroupModeValue(
+        mode: OverrideListEditorMode,
+        values: List<OverrideProxyGroupDraft>,
+    ) {
+        OverrideStructuredEditorStore.applyProxyGroupDraftModeValue(mode, values)
+    }
+
+    fun clearSelection() {
+        selectedUiIds.clear()
     }
 
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
@@ -104,25 +123,29 @@ fun OverrideObjectListEditorScreen(
         when (editorType) {
             OverrideStructuredObjectType.Proxies -> {
                 val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                val latestValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
-                val updatedValues = latestValues.update(
+                applyProxyModeValue(
                     mode,
-                    reorderDraftList(latestValues.valueFor(mode).orEmpty(), fromIndex, toIndex),
+                    reorderDraftList(
+                        OverrideStructuredEditorStore.objectEditorProxyDraftValues.valueFor(mode).orEmpty(),
+                        fromIndex,
+                        toIndex,
+                    ),
                 )
-                applyProxyValues(updatedValues)
             }
 
             OverrideStructuredObjectType.ProxyGroups -> {
                 val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                val latestValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
-                val updatedValues = latestValues.update(
+                applyProxyGroupModeValue(
                     mode,
-                    reorderDraftList(latestValues.valueFor(mode).orEmpty(), fromIndex, toIndex),
+                    reorderDraftList(
+                        OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues.valueFor(mode).orEmpty(),
+                        fromIndex,
+                        toIndex,
+                    ),
                 )
-                applyProxyGroupValues(updatedValues)
             }
         }
-        selectedUiIds = emptySet()
+        clearSelection()
     }
     val showAddFab = !isDeleteMode && !showResetDialog
 
@@ -138,24 +161,26 @@ fun OverrideObjectListEditorScreen(
                         OverrideStructuredObjectType.Proxies -> {
                             onOpenProxyDraftEditor(MLang.Override.Editor.NewProxyNode, null) { createdDraft ->
                                 val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                                val latestValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
-                                val updatedValues = latestValues.update(
+                                applyProxyModeValue(
                                     mode,
-                                    latestValues.valueFor(mode).orEmpty().toMutableList().also { it.add(createdDraft) },
+                                    OverrideStructuredEditorStore.objectEditorProxyDraftValues.valueFor(mode)
+                                        .orEmpty()
+                                        .toMutableList()
+                                        .also { it.add(createdDraft) },
                                 )
-                                applyProxyValues(updatedValues)
                             }
                         }
 
                         OverrideStructuredObjectType.ProxyGroups -> {
                             onOpenProxyGroupDraftEditor(MLang.Override.Editor.NewProxyGroup, null) { createdDraft ->
                                 val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                                val latestValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
-                                val updatedValues = latestValues.update(
+                                applyProxyGroupModeValue(
                                     mode,
-                                    latestValues.valueFor(mode).orEmpty().toMutableList().also { it.add(createdDraft) },
+                                    OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues.valueFor(mode)
+                                        .orEmpty()
+                                        .toMutableList()
+                                        .also { it.add(createdDraft) },
                                 )
-                                applyProxyGroupValues(updatedValues)
                             }
                         }
                     }
@@ -174,7 +199,7 @@ fun OverrideObjectListEditorScreen(
                             spacedFromNext = true,
                             onClick = {
                                 isDeleteMode = false
-                                selectedUiIds = emptySet()
+                                clearSelection()
                             },
                         )
                         OverrideTopBarAction(
@@ -185,25 +210,25 @@ fun OverrideObjectListEditorScreen(
                                     when (editorType) {
                                         OverrideStructuredObjectType.Proxies -> {
                                             val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                                            val latestValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
-                                            val updatedValues = latestValues.update(
+                                            applyProxyModeValue(
                                                 mode,
-                                                latestValues.valueFor(mode).orEmpty().filterNot { it.uiId in selectedUiIds },
+                                                OverrideStructuredEditorStore.objectEditorProxyDraftValues.valueFor(mode)
+                                                    .orEmpty()
+                                                    .filterNot { selectedUiIds.containsKey(it.uiId) },
                                             )
-                                            applyProxyValues(updatedValues)
                                         }
 
                                         OverrideStructuredObjectType.ProxyGroups -> {
                                             val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                                            val latestValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
-                                            val updatedValues = latestValues.update(
+                                            applyProxyGroupModeValue(
                                                 mode,
-                                                latestValues.valueFor(mode).orEmpty().filterNot { it.uiId in selectedUiIds },
+                                                OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues.valueFor(mode)
+                                                    .orEmpty()
+                                                    .filterNot { selectedUiIds.containsKey(it.uiId) },
                                             )
-                                            applyProxyGroupValues(updatedValues)
                                         }
                                     }
-                                    selectedUiIds = emptySet()
+                                    clearSelection()
                                     isDeleteMode = false
                                 }
                             },
@@ -220,7 +245,7 @@ fun OverrideObjectListEditorScreen(
                             contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             onClick = {
                                 isDeleteMode = true
-                                selectedUiIds = emptySet()
+                                clearSelection()
                             },
                         )
                     }
@@ -240,13 +265,13 @@ fun OverrideObjectListEditorScreen(
                 Card {
                     WindowDropdownPreference(
                         title = MLang.Override.Editor.Mode.Title,
-                        items = availableModes.map(OverrideListEditorMode::label),
+                        items = modeLabels,
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
                             val newMode = availableModes.getOrElse(index) { selectedMode }
                             OverrideStructuredEditorStore.updateObjectEditorSession(selectedMode = newMode)
                             isDeleteMode = false
-                            selectedUiIds = emptySet()
+                            clearSelection()
                         },
                     )
                 }
@@ -260,10 +285,10 @@ fun OverrideObjectListEditorScreen(
                 when (editorType) {
                     OverrideStructuredObjectType.Proxies -> {
                         items(
-                            count = currentProxyDrafts.size,
-                            key = { index -> currentProxyDrafts[index].uiId },
-                        ) { index ->
-                            val draft = currentProxyDrafts[index]
+                            items = currentProxyDrafts,
+                            key = OverrideProxyDraft::uiId,
+                            contentType = { "proxy-draft-card" },
+                        ) { draft ->
                             ReorderableItem(
                                 state = reorderState,
                                 key = draft.uiId,
@@ -272,18 +297,24 @@ fun OverrideObjectListEditorScreen(
                                     title = draft.name.ifBlank { MLang.Override.Editor.UnnamedProxyNode },
                                     isDragging = isDragging,
                                     isDeleteMode = isDeleteMode,
-                                    isSelected = draft.uiId in selectedUiIds,
+                                    isSelected = selectedUiIds[draft.uiId] == true,
                                     onClick = {
                                         if (isDeleteMode) {
-                                            selectedUiIds = selectedUiIds.toggle(draft.uiId)
+                                            if (selectedUiIds[draft.uiId] == true) {
+                                                selectedUiIds.remove(draft.uiId)
+                                            } else {
+                                                selectedUiIds[draft.uiId] = true
+                                            }
                                         } else {
                                             val draftUiId = draft.uiId
                                             val editMode = selectedMode
                                             onOpenProxyDraftEditor(MLang.Override.Editor.EditProxyNode, draft) { updatedDraft ->
-                                                val latestValues = OverrideStructuredEditorStore.objectEditorProxyDraftValues
-                                                val updatedValues = latestValues.update(
+                                                applyProxyModeValue(
                                                     editMode,
-                                                    latestValues.valueFor(editMode).orEmpty().map { currentDraft ->
+                                                    OverrideStructuredEditorStore.objectEditorProxyDraftValues
+                                                        .valueFor(editMode)
+                                                        .orEmpty()
+                                                        .map { currentDraft ->
                                                         if (currentDraft.uiId == draftUiId) {
                                                             updatedDraft.copy(uiId = draftUiId)
                                                         } else {
@@ -291,15 +322,14 @@ fun OverrideObjectListEditorScreen(
                                                         }
                                                     },
                                                 )
-                                                applyProxyValues(updatedValues)
                                             }
                                         }
                                     },
                                     onSelectedChange = { checked ->
-                                        selectedUiIds = if (checked) {
-                                            selectedUiIds + draft.uiId
+                                        if (checked) {
+                                            selectedUiIds[draft.uiId] = true
                                         } else {
-                                            selectedUiIds - draft.uiId
+                                            selectedUiIds.remove(draft.uiId)
                                         }
                                     },
                                 )
@@ -309,10 +339,10 @@ fun OverrideObjectListEditorScreen(
 
                     OverrideStructuredObjectType.ProxyGroups -> {
                         items(
-                            count = currentProxyGroupDrafts.size,
-                            key = { index -> currentProxyGroupDrafts[index].uiId },
-                        ) { index ->
-                            val draft = currentProxyGroupDrafts[index]
+                            items = currentProxyGroupDrafts,
+                            key = OverrideProxyGroupDraft::uiId,
+                            contentType = { "proxy-group-draft-card" },
+                        ) { draft ->
                             ReorderableItem(
                                 state = reorderState,
                                 key = draft.uiId,
@@ -321,18 +351,24 @@ fun OverrideObjectListEditorScreen(
                                     title = draft.name.ifBlank { MLang.Override.Editor.UnnamedProxyGroup },
                                     isDragging = isDragging,
                                     isDeleteMode = isDeleteMode,
-                                    isSelected = draft.uiId in selectedUiIds,
+                                    isSelected = selectedUiIds[draft.uiId] == true,
                                     onClick = {
                                         if (isDeleteMode) {
-                                            selectedUiIds = selectedUiIds.toggle(draft.uiId)
+                                            if (selectedUiIds[draft.uiId] == true) {
+                                                selectedUiIds.remove(draft.uiId)
+                                            } else {
+                                                selectedUiIds[draft.uiId] = true
+                                            }
                                         } else {
                                             val draftUiId = draft.uiId
                                             val editMode = selectedMode
                                             onOpenProxyGroupDraftEditor(MLang.Override.Editor.EditProxyGroup, draft) { updatedDraft ->
-                                                val latestValues = OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
-                                                val updatedValues = latestValues.update(
+                                                applyProxyGroupModeValue(
                                                     editMode,
-                                                    latestValues.valueFor(editMode).orEmpty().map { currentDraft ->
+                                                    OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues
+                                                        .valueFor(editMode)
+                                                        .orEmpty()
+                                                        .map { currentDraft ->
                                                         if (currentDraft.uiId == draftUiId) {
                                                             updatedDraft.copy(uiId = draftUiId)
                                                         } else {
@@ -340,15 +376,14 @@ fun OverrideObjectListEditorScreen(
                                                         }
                                                     },
                                                 )
-                                                applyProxyGroupValues(updatedValues)
                                             }
                                         }
                                     },
                                     onSelectedChange = { checked ->
-                                        selectedUiIds = if (checked) {
-                                            selectedUiIds + draft.uiId
+                                        if (checked) {
+                                            selectedUiIds[draft.uiId] = true
                                         } else {
-                                            selectedUiIds - draft.uiId
+                                            selectedUiIds.remove(draft.uiId)
                                         }
                                     },
                                 )
@@ -374,16 +409,16 @@ fun OverrideObjectListEditorScreen(
                 onConfirm = {
                     showResetDialog = false
                     isDeleteMode = false
-                    selectedUiIds = emptySet()
+                    clearSelection()
                     when (editorType) {
                         OverrideStructuredObjectType.Proxies -> {
                             val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                            applyProxyValues(OverrideStructuredEditorStore.objectEditorProxyDraftValues.update(mode, emptyList()))
+                            applyProxyModeValue(mode, emptyList())
                         }
 
                         OverrideStructuredObjectType.ProxyGroups -> {
                             val mode = OverrideStructuredEditorStore.objectEditorSelectedMode
-                            applyProxyGroupValues(OverrideStructuredEditorStore.objectEditorProxyGroupDraftValues.update(mode, emptyList()))
+                            applyProxyGroupModeValue(mode, emptyList())
                         }
                     }
                 },
@@ -451,8 +486,4 @@ private fun ReorderableCollectionItemScope.StructuredObjectCard(
         }
         Spacer(modifier = Modifier.height(ObjectListSectionGap))
     }
-}
-
-private fun Set<String>.toggle(uiId: String): Set<String> {
-    return if (uiId in this) this - uiId else this + uiId
 }

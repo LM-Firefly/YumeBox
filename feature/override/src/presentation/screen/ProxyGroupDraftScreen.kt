@@ -34,6 +34,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideExtraFieldDraft
 import com.github.yumelira.yumebox.presentation.util.OverrideProxyGroupDraft
 import com.github.yumelira.yumebox.presentation.util.OverrideProxyGroupTypePresets
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
+import com.github.yumelira.yumebox.presentation.util.rememberCurrentReferenceCatalog
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -47,7 +48,9 @@ fun OverrideProxyGroupDraftEditorScreen(
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val listState = rememberLazyListState()
-    val title = OverrideStructuredEditorStore.proxyGroupDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyGroup }
+    val title = remember {
+        OverrideStructuredEditorStore.proxyGroupDraftEditorTitle.ifBlank { MLang.Override.Editor.ProxyGroup }
+    }
     val initialValue = remember { OverrideStructuredEditorStore.proxyGroupDraftEditorValue }
     val saveFabController = rememberOverrideFabController()
 
@@ -77,10 +80,12 @@ fun OverrideProxyGroupDraftEditorScreen(
     var showExtraFieldDialog by remember { mutableStateOf(false) }
     var showProxySelector by remember { mutableStateOf(false) }
     var errorText by remember { mutableStateOf<String?>(null) }
-    val selectedPresetIndex = OverrideProxyGroupTypePresets.indexOfFirst {
-        it.equals(type, ignoreCase = true)
-    }.coerceAtLeast(0)
-    val referenceCatalog = OverrideStructuredEditorStore.currentReferenceCatalog()
+    val selectedPresetIndex by remember(type) {
+        derivedStateOf {
+            OverrideProxyGroupTypePresets.indexOfFirst { it.equals(type, ignoreCase = true) }.coerceAtLeast(0)
+        }
+    }
+    val referenceCatalog = rememberCurrentReferenceCatalog()
     val excludedGroupNames = remember(name, initialValue?.name) {
         buildSet {
             name.trim().takeIf(String::isNotBlank)?.let(::add)

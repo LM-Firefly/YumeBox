@@ -35,12 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -71,7 +68,6 @@ internal fun LazyListScope.nodeGroupItems(
     groups: List<ProxyGroupInfo>,
     onGroupClick: (ProxyGroupInfo) -> Unit,
     testingGroupNames: Set<String> = emptySet(),
-    onGroupBoundsChanged: ((String, Rect) -> Unit)? = null,
     itemVerticalPadding: Dp = 6.dp,
 ) {
     items(
@@ -82,13 +78,10 @@ internal fun LazyListScope.nodeGroupItems(
         NodeGroupCard(
             group = group,
             isDelayTesting = testingGroupNames.contains(group.name),
-            onClick = { onGroupClick(group) },
+            onClick = onGroupClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = itemVerticalPadding),
-            onBoundsChanged = onGroupBoundsChanged?.let { callback ->
-                { bounds -> callback(group.name, bounds) }
-            },
         )
     }
 }
@@ -97,15 +90,17 @@ internal fun LazyListScope.nodeGroupItems(
 internal fun NodeGroupCard(
     group: ProxyGroupInfo,
     isDelayTesting: Boolean,
-    onClick: () -> Unit,
+    onClick: (ProxyGroupInfo) -> Unit,
     modifier: Modifier = Modifier,
-    onBoundsChanged: ((Rect) -> Unit)? = null,
 ) {
-    val cardShape = RoundedCornerShape(26.dp)
+    val cardShape = RoundedCornerShape(NodeCardDefaults.GroupCornerRadius)
     val interactionSource = remember { MutableInteractionSource() }
 
-    val currentProxy = remember(group.proxies, group.now) {
-        group.proxies.firstOrNull { it.name == group.now }
+    val proxiesByName = remember(group.proxies) {
+        group.proxies.associateBy(Proxy::name)
+    }
+    val currentProxy = remember(group.now, proxiesByName) {
+        proxiesByName[group.now]
     }
     val currentNode = remember(currentProxy?.name, currentProxy?.title, group.now) {
         resolveProxyDisplayPresentation(
@@ -127,11 +122,6 @@ internal fun NodeGroupCard(
 
     Column(
         modifier = modifier
-            .let { base ->
-                if (onBoundsChanged != null) {
-                    base.onGloballyPositioned { coords -> onBoundsChanged(coords.boundsInWindow()) }
-                } else base
-            }
             .shadow(
                 elevation = 4.dp,
                 shape = cardShape,
@@ -144,7 +134,7 @@ internal fun NodeGroupCard(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick,
+                onClick = { onClick(group) },
             )
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),

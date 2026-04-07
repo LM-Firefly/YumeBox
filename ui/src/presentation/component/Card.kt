@@ -34,7 +34,7 @@ import top.yukonga.miuix.kmp.basic.CardDefaults
 @Composable
 fun Card(
     modifier: Modifier = Modifier,
-    cornerRadius: Int = 24,
+    cornerRadius: Int = 20,
     insideMargin: PaddingValues = PaddingValues(0.dp),
     applyHorizontalPadding: Boolean = true,
     colors: CardColors = CardDefaults.defaultColors(),

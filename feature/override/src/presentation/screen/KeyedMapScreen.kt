@@ -72,28 +72,38 @@ fun OverrideKeyedObjectMapEditorScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     val addFabController = rememberOverrideFabController()
     var isDeleteMode by rememberSaveable { mutableStateOf(false) }
-    var selectedUiIds by remember { mutableStateOf(emptySet<String>()) }
+    val selectedUiIds = remember { mutableStateMapOf<String, Boolean>() }
     val selectedMode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
     val editorValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
 
+    val modeLabels = remember(availableModes) { availableModes.map(OverrideListEditorMode::label) }
     val selectedModeIndex = availableModes.indexOf(selectedMode).coerceAtLeast(0)
     val currentDrafts = editorValues.valueFor(selectedMode).orEmpty()
 
-    fun applyKeyedValues(values: OverrideListModeValues<List<OverrideKeyedObjectDraft>>) {
-        OverrideStructuredEditorStore.applyKeyedObjectDraftValues(values)
+    fun applyKeyedModeValue(
+        mode: OverrideListEditorMode,
+        values: List<OverrideKeyedObjectDraft>,
+    ) {
+        OverrideStructuredEditorStore.applyKeyedObjectDraftModeValue(mode, values)
+    }
+
+    fun clearSelection() {
+        selectedUiIds.clear()
     }
 
     val reorderState = rememberReorderableLazyListState(listState) { from, to ->
         val fromIndex = (from.index - KeyedMapReorderHeaderCount).coerceAtLeast(0)
         val toIndex = (to.index - KeyedMapReorderHeaderCount).coerceAtLeast(0)
         val mode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
-        val latestValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
-        val updatedValues = latestValues.update(
+        applyKeyedModeValue(
             mode,
-            reorderDraftList(latestValues.valueFor(mode).orEmpty(), fromIndex, toIndex),
+            reorderDraftList(
+                OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues.valueFor(mode).orEmpty(),
+                fromIndex,
+                toIndex,
+            ),
         )
-        selectedUiIds = emptySet()
-        applyKeyedValues(updatedValues)
+        clearSelection()
     }
     val showAddFab = !isDeleteMode && !showResetDialog
 
@@ -111,12 +121,13 @@ fun OverrideKeyedObjectMapEditorScreen(
                         null,
                     ) { createdDraft ->
                         val mode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
-                        val latestValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
-                        val updatedValues = latestValues.update(
+                        applyKeyedModeValue(
                             mode,
-                            latestValues.valueFor(mode).orEmpty().toMutableList().also { it.add(createdDraft) },
+                            OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues.valueFor(mode)
+                                .orEmpty()
+                                .toMutableList()
+                                .also { it.add(createdDraft) },
                         )
-                        applyKeyedValues(updatedValues)
                     }
                 },
             )
@@ -133,7 +144,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                             spacedFromNext = true,
                             onClick = {
                                 isDeleteMode = false
-                                selectedUiIds = emptySet()
+                                clearSelection()
                             },
                         )
                         OverrideTopBarAction(
@@ -142,14 +153,14 @@ fun OverrideKeyedObjectMapEditorScreen(
                             onClick = {
                                 if (selectedUiIds.isNotEmpty()) {
                                     val mode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
-                                    val latestValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
-                                    val updatedValues = latestValues.update(
+                                    applyKeyedModeValue(
                                         mode,
-                                        latestValues.valueFor(mode).orEmpty().filterNot { it.uiId in selectedUiIds },
+                                        OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues.valueFor(mode)
+                                            .orEmpty()
+                                            .filterNot { selectedUiIds.containsKey(it.uiId) },
                                     )
-                                    selectedUiIds = emptySet()
+                                    clearSelection()
                                     isDeleteMode = false
-                                    applyKeyedValues(updatedValues)
                                 }
                             },
                         )
@@ -165,7 +176,7 @@ fun OverrideKeyedObjectMapEditorScreen(
                             contentDescription = MLang.Override.Editor.EnterDeleteMode,
                             onClick = {
                                 isDeleteMode = true
-                                selectedUiIds = emptySet()
+                                clearSelection()
                             },
                         )
                     }
@@ -185,13 +196,13 @@ fun OverrideKeyedObjectMapEditorScreen(
                 Card {
                     WindowDropdownPreference(
                         title = MLang.Override.Editor.Mode.Title,
-                        items = availableModes.map(OverrideListEditorMode::label),
+                        items = modeLabels,
                         selectedIndex = selectedModeIndex,
                         onSelectedIndexChange = { index ->
                             val newMode = availableModes.getOrElse(index) { selectedMode }
                             OverrideStructuredEditorStore.updateKeyedObjectMapEditorSession(selectedMode = newMode)
                             isDeleteMode = false
-                            selectedUiIds = emptySet()
+                            clearSelection()
                         },
                     )
                 }
@@ -215,10 +226,14 @@ fun OverrideKeyedObjectMapEditorScreen(
                             title = draft.key.ifBlank { MLang.Override.Editor.Unnamed.format(editorType.itemLabel) },
                             isDragging = isDragging,
                             isDeleteMode = isDeleteMode,
-                            isSelected = draft.uiId in selectedUiIds,
+                            isSelected = selectedUiIds[draft.uiId] == true,
                             onClick = {
                                 if (isDeleteMode) {
-                                    selectedUiIds = selectedUiIds.toggle(draft.uiId)
+                                    if (selectedUiIds[draft.uiId] == true) {
+                                        selectedUiIds.remove(draft.uiId)
+                                    } else {
+                                        selectedUiIds[draft.uiId] = true
+                                    }
                                 } else {
                                     val draftUiId = draft.uiId
                                     val editMode = selectedMode
@@ -227,10 +242,12 @@ fun OverrideKeyedObjectMapEditorScreen(
                                         MLang.Override.Editor.Edit + editorType.itemLabel,
                                         draft,
                                     ) { updatedDraft ->
-                                        val latestValues = OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
-                                        val updatedValues = latestValues.update(
+                                        applyKeyedModeValue(
                                             editMode,
-                                            latestValues.valueFor(editMode).orEmpty().map { currentDraft ->
+                                            OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues
+                                                .valueFor(editMode)
+                                                .orEmpty()
+                                                .map { currentDraft ->
                                                 if (currentDraft.uiId == draftUiId) {
                                                     updatedDraft.copy(uiId = draftUiId)
                                                 } else {
@@ -238,15 +255,14 @@ fun OverrideKeyedObjectMapEditorScreen(
                                                 }
                                             },
                                         )
-                                        applyKeyedValues(updatedValues)
                                     }
                                 }
                             },
                             onSelectedChange = { checked ->
-                                selectedUiIds = if (checked) {
-                                    selectedUiIds + draft.uiId
+                                if (checked) {
+                                    selectedUiIds[draft.uiId] = true
                                 } else {
-                                    selectedUiIds - draft.uiId
+                                    selectedUiIds.remove(draft.uiId)
                                 }
                             },
                         )
@@ -270,9 +286,9 @@ fun OverrideKeyedObjectMapEditorScreen(
                 onConfirm = {
                     showResetDialog = false
                     isDeleteMode = false
-                    selectedUiIds = emptySet()
+                    clearSelection()
                     val mode = OverrideStructuredEditorStore.keyedObjectMapEditorSelectedMode
-                    applyKeyedValues(OverrideStructuredEditorStore.keyedObjectMapEditorDraftValues.update(mode, emptyList()))
+                    applyKeyedModeValue(mode, emptyList())
                 },
                 cancelText = MLang.Override.Dialog.Button.Cancel,
                 confirmText = MLang.Override.Editor.Clear,
@@ -338,8 +354,4 @@ private fun ReorderableCollectionItemScope.KeyedObjectCard(
         }
         Spacer(modifier = Modifier.height(KeyedMapSectionGap))
     }
-}
-
-private fun Set<String>.toggle(uiId: String): Set<String> {
-    return if (uiId in this) this - uiId else this + uiId
 }

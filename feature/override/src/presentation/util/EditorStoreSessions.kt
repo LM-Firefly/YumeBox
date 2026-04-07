@@ -241,10 +241,32 @@ internal class OverrideObjectEditorSession {
         callback?.invoke(formattedValues)
     }
 
+    fun applyProxyDraftModeValue(
+        mode: OverrideListEditorMode,
+        value: List<OverrideProxyDraft>,
+    ) {
+        val copiedModeValue = copyProxyDraftList(value).orEmpty()
+        proxyDraftValues = proxyDraftValues.update(mode, copiedModeValue)
+        val formattedValues = this.values.update(mode, formatProxyDrafts(copiedModeValue))
+        this.values = formattedValues
+        callback?.invoke(formattedValues)
+    }
+
     fun applyProxyGroupDraftValues(values: OverrideListModeValues<List<OverrideProxyGroupDraft>>) {
         val copiedValues = copyProxyGroupDraftValues(values)
         val formattedValues = formatProxyGroupDraftValues(copiedValues)
         proxyGroupDraftValues = copiedValues
+        this.values = formattedValues
+        callback?.invoke(formattedValues)
+    }
+
+    fun applyProxyGroupDraftModeValue(
+        mode: OverrideListEditorMode,
+        value: List<OverrideProxyGroupDraft>,
+    ) {
+        val copiedModeValue = copyProxyGroupDraftList(value).orEmpty()
+        proxyGroupDraftValues = proxyGroupDraftValues.update(mode, copiedModeValue)
+        val formattedValues = this.values.update(mode, formatProxyGroupDrafts(copiedModeValue))
         this.values = formattedValues
         callback?.invoke(formattedValues)
     }
@@ -317,6 +339,17 @@ internal class OverrideKeyedObjectMapEditorSession {
         val copiedValues = copyKeyedObjectDraftValues(values)
         val formattedValues = formatKeyedObjectDraftValues(copiedValues)
         draftValues = copiedValues
+        this.values = formattedValues
+        callback?.invoke(formattedValues)
+    }
+
+    fun applyDraftModeValue(
+        mode: OverrideListEditorMode,
+        value: List<OverrideKeyedObjectDraft>,
+    ) {
+        val copiedModeValue = copyKeyedObjectDraftList(value).orEmpty()
+        draftValues = draftValues.update(mode, copiedModeValue)
+        val formattedValues = this.values.update(mode, formatKeyedObjectDrafts(copiedModeValue))
         this.values = formattedValues
         callback?.invoke(formattedValues)
     }
