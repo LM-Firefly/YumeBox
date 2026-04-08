@@ -35,9 +35,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.ToastDialogBridge
 import com.github.yumelira.yumebox.common.util.ToastDialogEvent
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.layout.DialogDefaults
@@ -46,6 +46,10 @@ import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun ToastDialogHost() {
+    val opacity = AppTheme.opacity
+    val radii = AppTheme.radii
+    val spacing = AppTheme.spacing
+
     val event by ToastDialogBridge.event.collectAsState()
     val context = LocalContext.current
     var eventSnapshot by remember { mutableStateOf<ToastDialogEvent?>(null) }
@@ -82,8 +86,8 @@ fun ToastDialogHost() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = MiuixTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(16.dp),
+                            color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtleStrong),
+                            shape = RoundedCornerShape(radii.radius16),
                         )
                         .clickable {
                             val clipboardManager =
@@ -94,7 +98,7 @@ fun ToastDialogHost() {
                             )
                             showDialog.value = false
                         }
-                        .padding(vertical = 14.dp),
+                        .padding(vertical = spacing.space14),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(

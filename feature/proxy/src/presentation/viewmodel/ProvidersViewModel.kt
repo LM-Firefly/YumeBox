@@ -27,7 +27,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.Provider
-import com.github.yumelira.yumebox.data.repository.ProvidersRepository
+import com.github.yumelira.yumebox.data.controller.ProvidersController
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +38,7 @@ import kotlinx.coroutines.launch
 
 class ProvidersViewModel(
     private val proxyFacade: ProxyFacade,
-    private val providersRepository: ProvidersRepository
+    private val providersRepository: ProvidersController
 ) : ViewModel() {
 
     private val _providers = MutableStateFlow<List<Provider>>(emptyList())

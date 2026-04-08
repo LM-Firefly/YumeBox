@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.onboarding
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,7 +61,7 @@ internal fun PrivacyPolicySheet(show: MutableState<Boolean>) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 450.dp)
+                .heightIn(max = UiDp.dp450)
                 .verticalScroll(scrollState),
         ) {
             Text(

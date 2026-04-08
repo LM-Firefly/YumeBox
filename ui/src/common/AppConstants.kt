@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.common
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -46,11 +45,11 @@ object AppConstants {
         val QUOTE_FONT_SIZE = 32.sp
         val QUOTE_LINE_HEIGHT = 48.sp
         val AUTHOR_FONT_SIZE = 18.sp
-        val CARD_CORNER_RADIUS = 12.dp
-        val BUTTON_CORNER_RADIUS = 32.dp
-        val DEFAULT_HORIZONTAL_PADDING = 24.dp
-        val DEFAULT_VERTICAL_SPACING = 24.dp
-        val SPEED_CHART_HEIGHT = 130.dp
+        val CARD_CORNER_RADIUS = UiDp.dp12
+        val BUTTON_CORNER_RADIUS = UiDp.dp32
+        val DEFAULT_HORIZONTAL_PADDING = UiDp.dp24
+        val DEFAULT_VERTICAL_SPACING = UiDp.dp24
+        val SPEED_CHART_HEIGHT = UiDp.dp130
     }
 
     object Limits {

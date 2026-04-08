@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.feature.editor.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,7 +77,7 @@ fun ConfigPreviewScreen(
                 title = title,
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
                         IconButton(
                             onClick = { editorState.undo() },
                             enabled = editorState.canUndo()
@@ -91,7 +90,7 @@ fun ConfigPreviewScreen(
                 },
                 actions = {
                     IconButton(
-                        modifier = Modifier.padding(end = 12.dp),
+                        modifier = Modifier.padding(end = UiDp.dp12),
                         onClick = { editorState.format() }
                     ) {
                         Icon(Yume.ListCollapse, contentDescription = "Format")

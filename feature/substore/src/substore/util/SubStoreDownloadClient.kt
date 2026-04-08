@@ -22,7 +22,7 @@ package com.github.yumelira.yumebox.substore.util
 
 import android.app.Application
 import com.github.yumelira.yumebox.common.util.ByteFormatter.formatSpeed
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
@@ -59,7 +59,7 @@ data class SubscriptionInfo(
 
 class SubStoreDownloadClient(
     private val application: Application,
-    private val appSettings: AppSettingsStorage,
+    private val appSettings: AppSettingsStore,
 ) {
     companion object {
         private const val DEFAULT_USER_AGENT = "ClashMetaForAndroid"

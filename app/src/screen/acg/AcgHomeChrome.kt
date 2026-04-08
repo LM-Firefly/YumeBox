@@ -1,16 +1,41 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.acg
 
-import android.annotation.SuppressLint
 import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -24,13 +49,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.times
 import com.github.yumelira.yumebox.common.util.formatBytesForDisplay
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Waiting
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import com.github.yumelira.yumebox.screen.home.HomeProxyControlState
 import dev.oom_wg.purejoy.mlang.MLang
@@ -47,6 +73,7 @@ internal fun AcgSidebarDecoration(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    val spacing = AppTheme.spacing
     val surface = MiuixTheme.colorScheme.surface
     val isDarkSurface = surface.luminance() < 0.5f
     val glassBase = if (isDarkSurface) {
@@ -98,12 +125,11 @@ internal fun AcgSidebarDecoration(
                 ),
                 shape = RectangleShape,
             )
-            .padding(horizontal = AcgUi.Sidebar.innerHorizontalPadding, vertical = 24.dp),
+            .padding(horizontal = AcgUi.Sidebar.innerHorizontalPadding, vertical = spacing.space24),
         content = content,
     )
 }
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 internal fun AcgSidebarContent(
     topValue: String,
@@ -112,92 +138,18 @@ internal fun AcgSidebarContent(
     icons: List<AcgSidebarIconItem>,
     visibleWidth: Dp,
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val visibleContentWidth =
-            (visibleWidth - AcgUi.Sidebar.innerHorizontalPadding).coerceAtLeast(0.dp)
-        val visibleCenterLine = visibleContentWidth / 2
-        val centerLine = visibleCenterLine + AcgUi.Sidebar.visibleOpticalOffset
-        val laneStart = centerLine - (AcgUi.Sidebar.statsWidth / 2)
-
-        Column(
+    Box(modifier = Modifier.fillMaxSize()) {
+        AcgSidebarRail(
+            topValue = topValue,
+            bottomValue = bottomValue,
+            proxyMode = proxyMode,
+            icons = icons,
             modifier = Modifier
                 .fillMaxHeight()
                 .width(AcgUi.Sidebar.statsWidth)
-                .offset(x = laneStart),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(modifier = Modifier.height(AcgUi.Sidebar.topInset))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(AcgUi.Sidebar.timeGap),
-            ) {
-                AcgSidebarTimeValue(topValue)
-                Box(
-                    modifier = Modifier
-                        .width(AcgUi.Sidebar.dividerWidth)
-                        .height(AcgUi.Sidebar.dividerHeight)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = AcgUi.Sidebar.dividerAlpha)),
-                )
-                AcgSidebarTimeValue(bottomValue)
-            }
-
-            AcgSidebarModeText(
-                mode = proxyMode.toAcgDisplayName(),
-                modifier = Modifier.padding(top = AcgUi.Sidebar.modeTopGap),
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Column(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.White.copy(alpha = AcgUi.Sidebar.iconPillAlpha))
-                    .padding(
-                        horizontal = AcgUi.Sidebar.iconPillHorizontalPadding,
-                        vertical = AcgUi.Sidebar.iconPillVerticalPadding,
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(AcgUi.Sidebar.iconSpacing),
-            ) {
-                icons.forEach { item ->
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = AcgUi.Sidebar.iconAlpha),
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = item.onClick,
-                            ),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(AcgUi.Sidebar.bottomInset))
-        }
+                .offset(x = calculateAcgSidebarLaneStart(visibleWidth)),
+        )
     }
-}
-
-@Composable
-private fun AcgSidebarModeText(
-    mode: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = mode.uppercase(),
-        modifier = modifier,
-        style = MiuixTheme.textStyles.footnote1.copy(
-            fontSize = AcgUi.Sidebar.modeFontSize,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.4.sp,
-        ),
-        color = Color.White.copy(alpha = 0.96f),
-    )
 }
 
 @Composable
@@ -216,7 +168,7 @@ internal fun AcgQuoteText(
             style = MiuixTheme.textStyles.title2,
             fontWeight = FontWeight.Medium,
             fontSize = AcgUi.Quote.textSize,
-            lineHeight = 31.sp,
+            lineHeight = AcgUi.Quote.lineHeight,
             softWrap = true,
             overflow = TextOverflow.Clip,
         )
@@ -240,6 +192,7 @@ internal fun AcgLaunchButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val spacing = AppTheme.spacing
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isRunning = controlState == HomeProxyControlState.Running
@@ -253,20 +206,20 @@ internal fun AcgLaunchButton(
     } else {
         MiuixTheme.colorScheme.background
     }
-    val scale by animateFloatAsState(
+    val pressScale by animateFloatAsState(
         targetValue = if (isPressed && enabled) AcgUi.Button.pressedScale else 1f,
         animationSpec = spring(
             dampingRatio = 0.42f,
             stiffness = 520f,
         ),
-        label = "acg_launch_button_scale",
+        label = "acg_launch_button_press_scale",
     )
 
     Box(
         modifier = Modifier
             .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
+                scaleX = pressScale
+                scaleY = pressScale
             }
             .width(AcgUi.Button.fixedWidth)
             .clip(AcgUi.Shape.launchButton)
@@ -285,7 +238,7 @@ internal fun AcgLaunchButton(
         Row(
             modifier = Modifier.align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space10),
         ) {
             Icon(
                 imageVector = when (controlState) {
@@ -297,44 +250,67 @@ internal fun AcgLaunchButton(
                 },
                 contentDescription = null,
                 tint = contentColor,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(spacing.space18),
             )
-            Text(
-                text = when (controlState) {
-                    HomeProxyControlState.Idle -> MLang.Home.Control.Start
-                    HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
-                    HomeProxyControlState.Running -> MLang.Home.Control.Stop
-                    HomeProxyControlState.Disconnecting -> MLang.Home.Status.Disconnecting
-                },
-                color = contentColor,
-                style = MiuixTheme.textStyles.body1,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                softWrap = false,
-            )
+            Box(
+                modifier = Modifier
+                    .height(22.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                AnimatedContent(
+                    targetState = controlState,
+                    transitionSpec = {
+                        (
+                            slideInVertically(
+                                initialOffsetY = { it / 2 },
+                                animationSpec = tween(
+                                    durationMillis = AnimationSpecs.DURATION_FAST,
+                                    easing = AnimationSpecs.EmphasizedDecelerate,
+                                ),
+                            ) + fadeIn(
+                                animationSpec = tween(
+                                    durationMillis = AnimationSpecs.DURATION_FAST,
+                                    easing = AnimationSpecs.EnterEasing,
+                                ),
+                            )
+                        ).togetherWith(
+                            slideOutVertically(
+                                targetOffsetY = { -it / 2 },
+                                animationSpec = tween(
+                                    durationMillis = AnimationSpecs.DURATION_INSTANT,
+                                    easing = AnimationSpecs.EmphasizedAccelerate,
+                                ),
+                            ) + fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = AnimationSpecs.DURATION_INSTANT,
+                                    easing = AnimationSpecs.ExitEasing,
+                                ),
+                            )
+                        ).using(
+                            SizeTransform(clip = false)
+                        )
+                    },
+                    label = "acg_launch_button_text",
+                ) { state ->
+                    Text(
+                        text = when (state) {
+                            HomeProxyControlState.Idle -> MLang.Home.Control.Start
+                            HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
+                            HomeProxyControlState.Running -> MLang.Home.Control.Stop
+                            HomeProxyControlState.Disconnecting -> MLang.Home.Status.Disconnecting
+                        },
+                        color = contentColor,
+                        style = MiuixTheme.textStyles.body1,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp,
+                        softWrap = false,
+                    )
+                }
+            }
         }
     }
 }
 
-@Composable
-private fun AcgSidebarTimeValue(value: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(AcgUi.Sidebar.timeValueHeight),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = value,
-            color = Color.White.copy(alpha = AcgUi.Sidebar.timeAlpha),
-            style = MiuixTheme.textStyles.title1,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 37.sp,
-            letterSpacing = AcgUi.Sidebar.digitLetterSpacing,
-            softWrap = false,
-        )
-    }
-}
 
 @Composable
 internal fun AcgTrafficStrip(
@@ -376,7 +352,7 @@ private fun AcgTrafficItem(
     val (value, unit) = formatBytesForDisplay(speed)
     val onSurface = MiuixTheme.colorScheme.onSurface
     Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(AcgUi.Traffic.itemGap),
         verticalAlignment = Alignment.Bottom,
     ) {
         Text(
@@ -386,7 +362,7 @@ private fun AcgTrafficItem(
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.8.sp,
-            modifier = Modifier.padding(bottom = 3.dp),
+            modifier = Modifier.padding(bottom = AcgUi.Traffic.labelBottomPadding),
         )
         Text(
             text = value,
@@ -400,7 +376,7 @@ private fun AcgTrafficItem(
             color = onSurface.copy(alpha = 0.55f),
             style = MiuixTheme.textStyles.footnote1,
             fontSize = 12.sp,
-            modifier = Modifier.padding(bottom = 3.dp),
+            modifier = Modifier.padding(bottom = AcgUi.Traffic.labelBottomPadding),
         )
     }
 }
@@ -428,10 +404,10 @@ internal fun AcgHomeInfoPanel(
                 value = resolvedNodeName,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 16.dp),
+                    .padding(end = AcgUi.Info.trailingPadding),
                 leading = {
                     flaggedNode?.countryCode?.let { countryCode ->
-                        CountryFlagCircle(countryCode = countryCode, size = 16.dp)
+                        CountryFlagCircle(countryCode = countryCode, size = AppTheme.spacing.space16)
                     }
                 },
             )
@@ -439,7 +415,7 @@ internal fun AcgHomeInfoPanel(
             Spacer(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 16.dp),
+                    .padding(end = AcgUi.Info.trailingPadding),
             )
         }
 
@@ -448,8 +424,8 @@ internal fun AcgHomeInfoPanel(
                 value = resolvedPing,
                 modifier = Modifier.width(AcgUi.Hero.delayWidth),
                 valueColor = when {
-                    serverPing < 500 -> Color(0xFF0E7A34)
-                    else -> Color(0xFFB87900)
+                    serverPing < 500 -> AppTheme.colors.acg.pingExcellent
+                    else -> AppTheme.colors.acg.pingWarning
                 },
                 alignEnd = true,
             )
@@ -469,7 +445,7 @@ private fun AcgInfoBlock(
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(
-            space = 8.dp,
+            space = AcgUi.Info.blockGap,
             alignment = if (alignEnd) Alignment.End else Alignment.Start,
         ),
         verticalAlignment = Alignment.CenterVertically,

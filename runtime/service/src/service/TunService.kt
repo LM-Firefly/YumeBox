@@ -204,7 +204,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             addAction(Intents.ACTION_CLASH_REQUEST_STOP)
         }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(runtimeEventsReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(runtimeEventsReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(runtimeEventsReceiver, filter)
         }

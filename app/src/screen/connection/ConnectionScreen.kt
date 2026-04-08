@@ -31,7 +31,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionCard
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionDetailSheet
 import com.github.yumelira.yumebox.feature.meta.presentation.component.TabRowWithContour
@@ -41,7 +40,7 @@ import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.Connectio
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
-import com.github.yumelira.yumebox.presentation.theme.LocalSpacing
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -53,12 +52,6 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-
-private object ConnectionPageSpacing {
-    val ContentTop = 20.dp
-    val ContentHorizontal = 12.dp
-    val ItemVertical = 6.dp
-}
 
 private val SortModes = listOf(
     ConnectionSort.Time,
@@ -82,7 +75,7 @@ fun ConnectionScreen(
     val viewModel = koinViewModel<ConnectionViewModel>()
     val state by viewModel.state.collectAsState()
     val filteredConnections by viewModel.filteredConnections.collectAsState()
-    val spacing = LocalSpacing.current
+    val spacing = AppTheme.spacing
 
     val scrollBehavior = MiuixScrollBehavior()
     var showSearchBar by remember { mutableStateOf(false) }
@@ -149,7 +142,7 @@ fun ConnectionScreen(
                 actions = {
                     Box {
                         IconButton(
-                            modifier = Modifier.padding(end = 12.dp),
+                            modifier = Modifier.padding(end = spacing.space12),
                             onClick = { showSortPopup = true }) {
                             Icon(
                                 imageVector = MiuixIcons.Sort,
@@ -195,16 +188,16 @@ fun ConnectionScreen(
             scrollBehavior = scrollBehavior,
             innerPadding = innerPadding,
             contentPadding = PaddingValues(
-                start = ConnectionPageSpacing.ContentHorizontal,
-                end = ConnectionPageSpacing.ContentHorizontal,
+                start = spacing.screenHorizontal,
+                end = spacing.screenHorizontal,
                 top = innerPadding.calculateTopPadding(),
-                bottom = mainLikePadding.calculateBottomPadding() + spacing.md,
+                bottom = mainLikePadding.calculateBottomPadding() + spacing.space12,
             ),
         ) {
 
             item {
                 TabRowWithContour(
-                    modifier = Modifier.padding(top = ConnectionPageSpacing.ContentTop),
+                    modifier = Modifier.padding(top = spacing.space20),
                     tabs = tabs,
                     selectedTabIndex = selectedTabIndex,
                     onTabSelected = { selectedTabIndex = it },
@@ -226,7 +219,7 @@ fun ConnectionScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = spacing.space8),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextField(
@@ -245,7 +238,7 @@ fun ConnectionScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(32.dp),
+                            .padding(spacing.space32),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -267,7 +260,7 @@ fun ConnectionScreen(
                             selectedConnection = connection
                             showDetailSheet = true
                         },
-                        modifier = Modifier.padding(vertical = ConnectionPageSpacing.ItemVertical),
+                        modifier = Modifier.padding(vertical = spacing.space6),
                     )
                 }
             }

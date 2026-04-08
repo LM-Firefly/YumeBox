@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.screen
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,7 +50,6 @@ import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val RuleListSectionGap = 12.dp
 private const val RuleListReorderHeaderCount = 2
 
 @Composable
@@ -191,7 +189,7 @@ fun OverrideRuleListEditorScreen(
             }
 
             item(key = "modifier-card-gap") {
-                Spacer(modifier = Modifier.height(RuleListSectionGap))
+    Spacer(modifier = Modifier.height(UiDp.dp12))
             }
 
             if (currentRules.isNotEmpty()) {
@@ -292,8 +290,8 @@ private fun ReorderableCollectionItemScope.RuleListCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onClick)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = UiDp.dp14, vertical = UiDp.dp14),
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
@@ -310,7 +308,7 @@ private fun ReorderableCollectionItemScope.RuleListCard(
                     )
                 }
                 Box(
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(UiDp.dp32),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (isDeleteMode) {
@@ -328,7 +326,7 @@ private fun ReorderableCollectionItemScope.RuleListCard(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(RuleListSectionGap))
+    Spacer(modifier = Modifier.height(UiDp.dp12))
     }
 }
 

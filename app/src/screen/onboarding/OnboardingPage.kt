@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.onboarding
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -63,64 +62,34 @@ internal fun StartupHeroShell(
     enabled: Boolean,
     onStart: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        DetailBackdrop()
+    OnboardingPageFrame {
+        Spacer(modifier = Modifier.height(UiDp.dp212))
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = PagePadding, vertical = 12.dp),
+        RevealBlock(
+            delayMillis = 0,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
-            Spacer(modifier = Modifier.height(212.dp))
+            StartupTypewriterWord(
+                phrases = StartupTypewriterPhrases,
+                modifier = Modifier.widthIn(max = UiDp.dp320),
+            )
+        }
 
-            RevealBlock(
-                delayMillis = 0,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-                StartupTypewriterWord(
-                    phrases = StartupTypewriterPhrases,
-                    modifier = Modifier.widthIn(max = 320.dp),
-                )
-            }
+        Spacer(modifier = Modifier.height(UiDp.dp18))
 
-            Spacer(modifier = Modifier.height(18.dp))
+        DetailScrollableContent(
+            modifier = Modifier.weight(1f),
+        ) {
+            Spacer(modifier = Modifier.height(UiDp.dp20))
+        }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .widthIn(max = DetailWidth)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-            }
-
-            RevealScaleBlock(
-                delayMillis = 680,
-                modifier = Modifier
-                    .widthIn(max = DetailWidth)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally)
-                    .offset(y = (-156).dp),
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    HeroStartButton(
-                        enabled = enabled,
-                        onStart = onStart,
-                    )
-                }
-            }
+        RevealScaleBlock(
+            delayMillis = 680,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .offset(y = (-156).dp),
+        ) {
+            HeroStartButton(enabled = enabled, onStart = onStart)
         }
     }
 }
@@ -136,6 +105,66 @@ internal fun ProvisionDetailShell(
     onBack: () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    OnboardingPageFrame {
+        Spacer(modifier = Modifier.height(UiDp.dp88))
+
+        RevealBlock(
+            delayMillis = 0,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            DetailPreviewBadge(icon = previewIcon)
+        }
+
+        Spacer(modifier = Modifier.height(UiDp.dp32))
+
+        DetailHeadline(
+            title = title,
+            subtitle = subtitle,
+        )
+
+        Spacer(modifier = Modifier.height(UiDp.dp40))
+
+        DetailScrollableContent(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
+        ) {
+            RevealBlock(delayMillis = 160) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
+                    content = content,
+                )
+            }
+            Spacer(modifier = Modifier.height(UiDp.dp20))
+        }
+
+        DetailFooter(
+            delayMillis = 220,
+            offsetY = (-36).dp,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
+            ) {
+                SecondaryFooterAction(
+                    text = MLang.Onboarding.Navigation.Back,
+                    onClick = onBack,
+                    modifier = Modifier.weight(1f),
+                )
+                PrimaryFooterAction(
+                    text = primaryText,
+                    enabled = primaryEnabled,
+                    onClick = onPrimaryClick,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OnboardingPageFrame(
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         DetailBackdrop()
 
@@ -144,100 +173,27 @@ internal fun ProvisionDetailShell(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = PagePadding, vertical = 12.dp),
-        ) {
-            Spacer(modifier = Modifier.height(88.dp))
-
-            RevealBlock(
-                delayMillis = 0,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-                DetailPreviewBadge(icon = previewIcon)
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Column(
-                modifier = Modifier
-                    .widthIn(max = DetailWidth)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                RevealBlock(delayMillis = 50) {
-                    Text(
-                        text = title,
-                        style = MiuixTheme.textStyles.title2.copy(
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = MiuixTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                RevealBlock(delayMillis = 110) {
-                    Text(
-                        text = subtitle,
-                        style = MiuixTheme.textStyles.body2.copy(lineHeight = 22.sp),
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .widthIn(max = DetailWidth)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                ) {
-                    RevealBlock(delayMillis = 160) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(18.dp),
-                            content = content,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-            }
-
-            RevealBlock(
-                delayMillis = 220,
-                modifier = Modifier
-                    .widthIn(max = DetailWidth)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally)
-                    .offset(y = (-36).dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    SecondaryFooterAction(
-                        text = MLang.Onboarding.Navigation.Back,
-                        onClick = onBack,
-                        modifier = Modifier.weight(1f),
-                    )
-                    PrimaryFooterAction(
-                        text = primaryText,
-                        enabled = primaryEnabled,
-                        onClick = onPrimaryClick,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
+                .padding(horizontal = PagePadding, vertical = UiDp.dp12),
+            content = content,
+        )
     }
+}
+
+@Composable
+private fun DetailScrollableContent(
+    modifier: Modifier = Modifier,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentWidth(Alignment.CenterHorizontally)
+            .widthIn(max = DetailWidth)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = verticalArrangement,
+        content = content,
+    )
 }
 
 @Composable
@@ -332,8 +288,8 @@ internal fun TermsContent(
 
     DetailGroup {
         Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(horizontal = UiDp.dp18, vertical = UiDp.dp18),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp14),
         ) {
             Text(
                 text = annotatedText,
@@ -346,7 +302,7 @@ internal fun TermsContent(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
             ) {
                 Checkbox(
                     state = androidx.compose.ui.state.ToggleableState(accepted),
@@ -354,7 +310,7 @@ internal fun TermsContent(
                 )
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(UiDp.dp4),
                 ) {
                     Text(
                         text = MLang.Onboarding.Privacy.Accept.Title,
@@ -396,112 +352,112 @@ internal fun FinishHeroShell(
     onGithubClick: () -> Unit,
     onCommunityClick: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        DetailBackdrop()
+    OnboardingPageFrame {
+        Spacer(modifier = Modifier.height(UiDp.dp88))
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = PagePadding, vertical = 12.dp),
+        RevealBlock(
+            delayMillis = 0,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
-            Spacer(modifier = Modifier.height(88.dp))
-
-            RevealBlock(
-                delayMillis = 0,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-                DetailPreviewBadge(icon = Yume.CircleCheckBig)
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Column(
-                modifier = Modifier
-                    .widthIn(max = DetailWidth)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                RevealBlock(delayMillis = 50) {
-                    Text(
-                        text = MLang.Onboarding.Finish.Title,
-                        style = MiuixTheme.textStyles.title2.copy(
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = MiuixTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-                RevealBlock(delayMillis = 110) {
-                    Text(
-                        text = MLang.Onboarding.Finish.Subtitle,
-                        style = MiuixTheme.textStyles.body2.copy(lineHeight = 22.sp),
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .widthIn(max = DetailWidth)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                ) {
-                    RevealBlock(delayMillis = 160) {
-                        DetailGroup {
-                            ProjectLinkRow(
-                                icon = Yume.Github,
-                                title = MLang.Onboarding.Project.Github.Title,
-                                summary = MLang.Onboarding.Project.Github.Summary,
-                                onClick = onGithubClick,
-                            )
-                            DetailDivider()
-                            ProjectLinkRow(
-                                icon = Yume.Message,
-                                title = MLang.Onboarding.Project.Community.Title,
-                                summary = MLang.Onboarding.Project.Community.Summary,
-                                onClick = onCommunityClick,
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-            }
-
-            RevealBlock(
-                delayMillis = 220,
-                modifier = Modifier
-                    .widthIn(max = DetailWidth)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally)
-                    .offset(y = (-36).dp),
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    PrimaryFooterAction(
-                        text = MLang.Onboarding.Navigation.Enter,
-                        enabled = enabled,
-                        onClick = onPrimaryClick,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
+            DetailPreviewBadge(icon = Yume.CircleCheckBig)
         }
+
+        Spacer(modifier = Modifier.height(UiDp.dp32))
+
+        DetailHeadline(
+            title = MLang.Onboarding.Finish.Title,
+            subtitle = MLang.Onboarding.Finish.Subtitle,
+        )
+
+        Spacer(modifier = Modifier.height(UiDp.dp40))
+
+        DetailScrollableContent(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
+        ) {
+            RevealBlock(delayMillis = 160) {
+                DetailGroup {
+                    ProjectLinkRow(
+                        icon = Yume.Github,
+                        title = MLang.Onboarding.Project.Github.Title,
+                        summary = MLang.Onboarding.Project.Github.Summary,
+                        onClick = onGithubClick,
+                    )
+                    DetailDivider()
+                    ProjectLinkRow(
+                        icon = Yume.Message,
+                        title = MLang.Onboarding.Project.Community.Title,
+                        summary = MLang.Onboarding.Project.Community.Summary,
+                        onClick = onCommunityClick,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(UiDp.dp20))
+        }
+
+        DetailFooter(
+            delayMillis = 220,
+            offsetY = (-36).dp,
+        ) {
+            PrimaryFooterAction(
+                text = MLang.Onboarding.Navigation.Enter,
+                enabled = enabled,
+                onClick = onPrimaryClick,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.DetailHeadline(
+    title: String,
+    subtitle: String,
+) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = DetailWidth)
+            .fillMaxWidth()
+            .align(Alignment.CenterHorizontally),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
+    ) {
+        RevealBlock(delayMillis = 50) {
+            Text(
+                text = title,
+                style = MiuixTheme.textStyles.title2.copy(
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = MiuixTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+        }
+        RevealBlock(delayMillis = 110) {
+            Text(
+                text = subtitle,
+                style = MiuixTheme.textStyles.body2.copy(lineHeight = 22.sp),
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.DetailFooter(
+    delayMillis: Int,
+    offsetY: androidx.compose.ui.unit.Dp,
+    content: @Composable () -> Unit,
+) {
+    RevealBlock(
+        delayMillis = delayMillis,
+        modifier = Modifier
+            .widthIn(max = DetailWidth)
+            .fillMaxWidth()
+            .align(Alignment.CenterHorizontally)
+            .offset(y = offsetY),
+    ) {
+        content()
     }
 }

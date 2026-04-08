@@ -25,8 +25,7 @@ package com.github.yumelira.yumebox.screen.log
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.data.repository.LogRepository
+import com.github.yumelira.yumebox.data.store.LogStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,14 +35,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class LogViewModel(
-    private val repository: LogRepository,
+    private val repository: LogStore,
 ) : ViewModel() {
 
     private val _isRecording = MutableStateFlow(repository.isRecording())
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
-    private val _tempLogEntries = MutableStateFlow<List<LogEntry>>(emptyList())
-    val tempLogEntries: StateFlow<List<LogEntry>> = _tempLogEntries.asStateFlow()
+    private val _tempLogEntries = MutableStateFlow<List<LogStore.LogEntry>>(emptyList())
+    val tempLogEntries: StateFlow<List<LogStore.LogEntry>> = _tempLogEntries.asStateFlow()
 
     fun startRecording() {
         repository.startRecording()
@@ -59,14 +58,7 @@ class LogViewModel(
     fun refreshTempLogEntries() {
         if (!_isRecording.value) return
         viewModelScope.launch(Dispatchers.IO) {
-            val entries = repository.readTempLogEntries()
-            _tempLogEntries.value = entries.map {
-                LogEntry(
-                    time = it.time,
-                    level = it.level,
-                    message = it.message,
-                )
-            }
+            _tempLogEntries.value = repository.readTempLogEntries()
         }
     }
 
@@ -78,24 +70,11 @@ class LogViewModel(
         val entries = _tempLogEntries.value
         if (entries.isEmpty()) return@withContext false
         try {
-            val repoEntries = entries.map {
-                LogRepository.LogEntry(
-                    time = it.time,
-                    level = it.level,
-                    message = it.message,
-                )
-            }
-            repository.writeLogEntries(targetUri, repoEntries)
+            repository.writeLogEntries(targetUri, entries)
             true
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             false
         }
     }
-
-    data class LogEntry(
-        val time: String,
-        val level: LogMessage.Level,
-        val message: String,
-    )
 }

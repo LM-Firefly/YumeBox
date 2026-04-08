@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -29,7 +30,7 @@ data class SearchStatus(
     val label: String,
     val searchText: String = "",
     val current: Status = Status.COLLAPSED,
-    val offsetY: Dp = 0.dp,
+    val offsetY: Dp = UiDp.dp0,
     val resultStatus: ResultStatus = ResultStatus.DEFAULT,
 ) {
     fun isExpand() = current == Status.EXPANDED

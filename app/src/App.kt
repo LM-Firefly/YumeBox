@@ -30,8 +30,8 @@ import com.github.yumelira.yumebox.common.util.PlatformIdentifier
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
-import com.github.yumelira.yumebox.data.repository.AppTrafficStatisticsCollector
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
@@ -73,7 +73,7 @@ class App : Application() {
             androidContext(this@App)
             modules(appModule)
         }
-        val appSettingsStorage: AppSettingsStorage = koinApp.koin.get()
+        val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
         AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
 
         extractGeoFiles()

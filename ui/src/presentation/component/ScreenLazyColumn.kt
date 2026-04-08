@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -53,8 +52,8 @@ fun ScreenLazyColumn(
     innerPadding: PaddingValues,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues? = null,
-    bottomPadding: Dp = 0.dp,
-    topPadding: Dp = 0.dp,
+    bottomPadding: Dp = UiDp.dp0,
+    topPadding: Dp = UiDp.dp0,
     enableGlobalScroll: Boolean = true,
     lazyListState: LazyListState = rememberLazyListState(),
     onScrollDirectionChanged: ((Boolean) -> Unit)? = null,
@@ -149,7 +148,7 @@ fun combinePaddingValues(
 ): PaddingValues {
     return PaddingValues(
         top = localPadding.calculateTopPadding(),
-        bottom = localPadding.calculateBottomPadding() + mainPadding.calculateBottomPadding() + LocalSpacing.current.md,
+        bottom = localPadding.calculateBottomPadding() + mainPadding.calculateBottomPadding() + LocalSpacing.current.space12,
         start = localPadding.calculateStartPadding(LayoutDirection.Ltr),
         end = localPadding.calculateEndPadding(LayoutDirection.Ltr),
     )

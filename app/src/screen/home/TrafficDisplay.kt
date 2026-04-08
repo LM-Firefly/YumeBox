@@ -45,6 +45,7 @@ import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
@@ -63,6 +64,9 @@ fun TrafficDisplay(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+
     val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
@@ -74,8 +78,8 @@ fun TrafficDisplay(
                 role = Role.Button,
                 onClick = onClick
             )
-            .padding(top = 60.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+            .padding(top = componentSizes.homeTrafficTopPadding, bottom = spacing.space16),
+        verticalArrangement = Arrangement.spacedBy(spacing.space24)
     ) {
         DownloadSection(
             downloadSpeed = trafficNow.download,
@@ -97,11 +101,14 @@ private fun DownloadSection(
     profileName: String?,
     tunnelMode: TunnelState.Mode?
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+
     Column(horizontalAlignment = Alignment.Start) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 28.dp),
+                .heightIn(min = componentSizes.statusCapsuleHeight),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -125,15 +132,19 @@ private fun ProfileModeBadge(
 ) {
     if (profileName == null && tunnelMode == null) return
 
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
+
     Surface(
-        color = MiuixTheme.colorScheme.primary.copy(alpha = 0.1f),
+        color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(28.dp)
+        modifier = Modifier.height(componentSizes.statusCapsuleHeight)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(horizontal = spacing.space12),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space8)
         ) {
             Text(
                 text = profileName ?: MLang.Home.Traffic.NoProfile,
@@ -146,7 +157,7 @@ private fun ProfileModeBadge(
 
             Box(
                 modifier = Modifier
-                    .size(4.dp)
+                    .size(spacing.space4)
                     .background(MiuixTheme.colorScheme.primary, CircleShape)
             )
 
@@ -164,6 +175,9 @@ private fun ProfileModeBadge(
 
 @Composable
 private fun SpeedValue(speed: Long) {
+    val spacing = AppTheme.spacing
+    val opacity = AppTheme.opacity
+
     val (value, unit) = formatBytesForDisplay(speed)
     Row(verticalAlignment = Alignment.Bottom) {
         Text(
@@ -180,8 +194,8 @@ private fun SpeedValue(speed: Long) {
             style = MiuixTheme.textStyles.title2.copy(
                 fontSize = AppConstants.UI.TRAFFIC_UNIT_FONT_SIZE
             ),
-            color = MiuixTheme.colorScheme.primary.copy(alpha = 0.5f),
-            modifier = Modifier.padding(bottom = 14.dp, start = 8.dp)
+            color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.medium),
+            modifier = Modifier.padding(bottom = spacing.space14, start = spacing.space8)
         )
     }
 }
@@ -192,15 +206,17 @@ private fun UploadSection(
     controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
 ) {
+    val spacing = AppTheme.spacing
+
     val (value, unit) = formatBytesForDisplay(uploadSpeed)
     val isRunning = controlState == HomeProxyControlState.Running
     Column(
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(spacing.space12)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(spacing.space12)
         ) {
             Text(
                 text = "UPLOAD",
@@ -215,7 +231,7 @@ private fun UploadSection(
         }
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space8),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
         ) {
@@ -239,16 +255,20 @@ private fun UploadSection(
 
 @Composable
 private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
+
     val primary = MiuixTheme.colorScheme.primary
     Surface(
-        color = primary.copy(alpha = 0.1f),
+        color = primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(28.dp)
+        modifier = Modifier.height(componentSizes.statusCapsuleHeight)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(horizontal = spacing.space12),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space6)
         ) {
             Icon(
                 imageVector = when (proxyMode) {
@@ -258,7 +278,7 @@ private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
                 },
                 contentDescription = null,
                 tint = primary,
-                modifier = Modifier.size(12.dp)
+                modifier = Modifier.size(spacing.space12)
             )
             Text(
                 text = when (proxyMode) {
@@ -278,12 +298,16 @@ private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
 
 @Composable
 private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
+
     val primary = MiuixTheme.colorScheme.primary
     Surface(
-        color = primary.copy(alpha = 0.1f),
+        color = primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
         modifier = Modifier
-            .height(28.dp)
+            .height(componentSizes.statusCapsuleHeight)
             .animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
     ) {
         AnimatedContent(
@@ -304,8 +328,8 @@ private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
         ) { state ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier.padding(horizontal = spacing.space12),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space6)
             ) {
                 Icon(
                     imageVector = when (state) {
@@ -317,7 +341,7 @@ private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
                     },
                     contentDescription = null,
                     tint = primary,
-                    modifier = Modifier.size(12.dp)
+                    modifier = Modifier.size(spacing.space12)
                 )
                 Text(
                     text = when (state) {

@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -75,7 +74,7 @@ fun MessageHost(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(UiDp.dp16),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 ArrowPreference(

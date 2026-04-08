@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -180,8 +179,8 @@ private fun ConfigTextInputDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(vertical = UiDp.dp8),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             TextField(
                 value = textValue,
@@ -189,30 +188,16 @@ private fun ConfigTextInputDialog(
                 label = label,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = {
-                        onClear()
-                        show.value = false
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(MLang.Component.Button.Clear)
-                }
-                Button(
-                    onClick = {
-                        onConfirm()
-                        show.value = false
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColorsPrimary(),
-                ) {
-                    Text(
-                        MLang.Component.Button.Confirm,
-                        color = MiuixTheme.colorScheme.onPrimary,
-                    )
-                }
-            }
+            DialogFilledButtonRow(
+                onSecondary = {
+                    onClear()
+                    show.value = false
+                },
+                onPrimary = {
+                    onConfirm()
+                    show.value = false
+                },
+            )
         }
     }
 }
@@ -297,10 +282,10 @@ fun StringMapWithModifiersInput(
         ) {
             Column {
                 HorizontalDivider()
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(UiDp.dp10))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                 ) {
                     ModifierModeCard(
                         modifier = Modifier.weight(1f),
@@ -345,7 +330,7 @@ fun StringMapWithModifiersInput(
                         },
                     )
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(UiDp.dp10))
                 Text(
                     text = "Merge mode only modifies specified keys; unmodified keys remain unchanged.",
                     style = MiuixTheme.textStyles.body2,
@@ -367,7 +352,7 @@ private fun ModifierModeCard(
 ) {
     Card(
         modifier = modifier,
-        insideMargin = PaddingValues(12.dp),
+        insideMargin = PaddingValues(UiDp.dp12),
     ) {
         Text(
             text = title,
@@ -375,18 +360,18 @@ private fun ModifierModeCard(
         )
         Text(
             text = summary,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = UiDp.dp6),
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
         Text(
             text = helperText,
-            modifier = Modifier.padding(top = 6.dp),
+            modifier = Modifier.padding(top = UiDp.dp6),
             style = MiuixTheme.textStyles.body2,
             color = MiuixTheme.colorScheme.outline,
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(UiDp.dp10))
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
         ) {
             Button(
                 modifier = Modifier.weight(1f),

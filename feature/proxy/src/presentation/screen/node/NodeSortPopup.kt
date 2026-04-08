@@ -23,8 +23,7 @@
 package com.github.yumelira.yumebox.presentation.screen.node
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import com.github.yumelira.yumebox.domain.model.ProxySortMode
+import com.github.yumelira.yumebox.data.model.ProxySortMode
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
@@ -39,7 +38,7 @@ internal val NodeSortModes = listOf(
 
 @Composable
 internal fun NodeSortPopup(
-    show: MutableState<Boolean>,
+    show: Boolean,
     onDismiss: () -> Unit,
     sortMode: ProxySortMode,
     alignment: PopupPositionProvider.Align = PopupPositionProvider.Align.Start,
@@ -47,7 +46,7 @@ internal fun NodeSortPopup(
 ) {
     val selectedSortIndex = NodeSortModes.indexOf(sortMode).coerceAtLeast(0)
     WindowListPopup(
-        show = show.value,
+        show = show,
         popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
         alignment = alignment,
         onDismissRequest = onDismiss,

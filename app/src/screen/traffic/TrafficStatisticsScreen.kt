@@ -1,3 +1,23 @@
+/*
+ * This file is part of YumeBox.
+ *
+ * YumeBox is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Copyright (c)  YumeLira 2025 - Present
+ *
+ */
+
 package com.github.yumelira.yumebox.screen.traffic
 
 import android.content.Context
@@ -19,7 +39,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.toast
@@ -34,6 +53,7 @@ import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.TrafficDonutChart
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import dev.oom_wg.purejoy.mlang.MLang
@@ -51,6 +71,8 @@ fun TrafficStatisticsScreen() {
     val viewModel = koinViewModel<TrafficStatisticsViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
 
     val uiState by viewModel.uiState.collectAsState()
     val timeRanges = StatisticsTimeRange.entries
@@ -91,7 +113,7 @@ fun TrafficStatisticsScreen() {
                     onTabSelected = { index ->
                         timeRanges.getOrNull(index)?.let(viewModel::setTimeRange)
                     },
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = spacing.space16),
                 )
             }
 
@@ -99,16 +121,16 @@ fun TrafficStatisticsScreen() {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = spacing.space16),
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(horizontal = spacing.space18, vertical = spacing.space18),
+                        verticalArrangement = Arrangement.spacedBy(spacing.space16),
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(188.dp),
+                                .height(componentSizes.trafficChartHeight),
                             contentAlignment = Alignment.Center,
                         ) {
                             TrafficDonutChart(
@@ -116,13 +138,13 @@ fun TrafficStatisticsScreen() {
                                 slices = uiState.donutSlices,
                                 selectedKey = null,
                                 onSliceClick = {},
-                                modifier = Modifier.size(168.dp),
+                                modifier = Modifier.size(componentSizes.trafficDonutDiameter),
                                 animationKey = uiState.selectedTimeRange,
-                                strokeWidth = 26.dp,
+                                strokeWidth = componentSizes.trafficDonutStrokeWidth,
                             ) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                                    verticalArrangement = Arrangement.spacedBy(componentSizes.textLineCompactSpacing),
                                 ) {
                                     Text(
                                         text = formatBytes(activeSummary.total),
@@ -152,8 +174,8 @@ fun TrafficStatisticsScreen() {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                        .padding(horizontal = spacing.space16),
+                    verticalArrangement = Arrangement.spacedBy(spacing.space10),
                 ) {
 
 
@@ -173,12 +195,12 @@ fun TrafficStatisticsScreen() {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                            .padding(horizontal = spacing.space16),
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 18.dp),
+                                .padding(horizontal = spacing.space14, vertical = spacing.space18),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -194,7 +216,12 @@ fun TrafficStatisticsScreen() {
                     items = uiState.topApps,
                     key = AppTrafficUsage::appKey,
                 ) { usage ->
-                    Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
+                    Box(
+                        modifier = Modifier.padding(
+                            horizontal = spacing.space16,
+                            vertical = componentSizes.listItemVerticalMinimal,
+                        ),
+                    ) {
                         AppTrafficRow(
                             context = context,
                             usage = usage,
@@ -212,22 +239,25 @@ private fun TrafficMetricCard(
     downloadValue: String,
     uploadValue: String,
 ) {
+    val spacing = AppTheme.spacing
+    val semanticColors = AppTheme.colors
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+                .padding(horizontal = spacing.space14, vertical = spacing.space12),
+            verticalArrangement = Arrangement.spacedBy(spacing.space18),
         ) {
             TrafficMetricLine(
                 label = MLang.TrafficStatistics.Metric.Download,
                 value = downloadValue,
-                valueColor = Color(0xFF5B8FF9),
+                valueColor = semanticColors.traffic.download,
             )
             TrafficMetricLine(
                 label = MLang.TrafficStatistics.Metric.Upload,
                 value = uploadValue,
-                valueColor = Color(0xFF5AD8A6),
+                valueColor = semanticColors.traffic.upload,
             )
         }
     }
@@ -265,6 +295,9 @@ private fun AppTrafficRow(
     usage: AppTrafficUsage,
     total: Long,
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+
     val share = if (total > 0L) usage.totalBytes.toDouble() / total.toDouble() else 0.0
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -272,8 +305,8 @@ private fun AppTrafficRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = spacing.space14, vertical = spacing.space12),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppIconBadge(
@@ -284,7 +317,7 @@ private fun AppTrafficRow(
             )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                verticalArrangement = Arrangement.spacedBy(componentSizes.textLineCompactSpacing),
             ) {
                 Text(
                     text = usage.appName,
@@ -303,7 +336,7 @@ private fun AppTrafficRow(
             }
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                verticalArrangement = Arrangement.spacedBy(componentSizes.textLineCompactSpacing),
             ) {
                 Text(
                     text = formatBytes(usage.totalBytes),
@@ -328,18 +361,23 @@ private fun AppIconBadge(
     packageName: String?,
     appName: String,
 ) {
+    val componentSizes = AppTheme.sizes
+    val semanticColors = AppTheme.colors
+    val opacity = AppTheme.opacity
+    val radii = AppTheme.radii
+
     if (appKey == TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY) {
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFD97706).copy(alpha = 0.16f)),
+                .size(componentSizes.iconBadgeMedium)
+                .clip(RoundedCornerShape(radii.radius12))
+                .background(semanticColors.traffic.unattributed.copy(alpha = opacity.softOverlay)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "?",
                 style = MiuixTheme.textStyles.body1,
-                color = Color(0xFFD97706),
+                color = semanticColors.traffic.unattributed,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -367,17 +405,17 @@ private fun AppIconBadge(
             bitmap = bitmap,
             contentDescription = appName,
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .size(componentSizes.iconBadgeMedium)
+                .clip(RoundedCornerShape(radii.radius12)),
         )
         return
     }
 
     Box(
         modifier = Modifier
-            .size(42.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)),
+            .size(componentSizes.iconBadgeMedium)
+            .clip(RoundedCornerShape(radii.radius12))
+            .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtleStrong)),
         contentAlignment = Alignment.Center,
     ) {
         Text(

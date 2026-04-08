@@ -61,7 +61,7 @@ fun NavigationBackIcon(
 
     Box(
         modifier = modifier
-            .padding(start = spacing.xl)
+            .padding(start = spacing.space20)
             .semantics { role = Role.Button }
             .graphicsLayer {
                 scaleX = scale

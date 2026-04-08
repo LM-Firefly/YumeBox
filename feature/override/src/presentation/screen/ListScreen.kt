@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.screen
 
+package com.github.yumelira.yumebox.presentation.screen
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,11 +42,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.domain.model.OverrideConfig
+import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
+import com.github.yumelira.yumebox.presentation.theme.Spacing
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
@@ -66,7 +68,7 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
-private val OverrideConfigItemGap = 12.dp
+private val OverrideConfigItemGap = Spacing().space12
 
 @Composable
 fun OverrideListScreen(
@@ -77,6 +79,7 @@ fun OverrideListScreen(
     val viewModel: OverrideConfigViewModel = koinViewModel()
     val userConfigs by viewModel.userConfigs.collectAsState()
     val usageCountMap by viewModel.usageCountMap.collectAsState()
+    val pendingRevealConfigId by viewModel.pendingRevealConfigId.collectAsState()
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -88,6 +91,7 @@ fun OverrideListScreen(
     val isEditOptionsDialogVisible = remember { mutableStateOf(false) }
     val deleteTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
     val exportTargetConfig = remember { mutableStateOf<OverrideConfig?>(null) }
+
     val listState = rememberLazyListState()
     val createFabController = rememberOverrideFabController()
     val configItems = remember(userConfigs, usageCountMap) {
@@ -199,6 +203,15 @@ fun OverrideListScreen(
         }
     }
 
+    LaunchedEffect(configItems, pendingRevealConfigId) {
+        val targetId = pendingRevealConfigId ?: return@LaunchedEffect
+        val targetIndex = configItems.indexOfFirst { it.config.id == targetId }
+        if (targetIndex < 0) return@LaunchedEffect
+        val anchorIndex = (targetIndex - 1).coerceAtLeast(0)
+        listState.animateScrollToItem(anchorIndex)
+        viewModel.consumePendingRevealConfig(targetId)
+    }
+
     Scaffold(
         floatingActionButton = {
             OverrideAnimatedFab(
@@ -229,37 +242,34 @@ fun OverrideListScreen(
                         key = "override-empty",
                         contentType = "override-empty",
                     ) {
-                        Box(
+                        Column(
                             modifier = Modifier
                                 .fillParentMaxSize()
-                                .padding(horizontal = 24.dp, vertical = 80.dp),
-                            contentAlignment = Alignment.Center,
+                                .padding(horizontal = UiDp.dp24, vertical = UiDp.dp80)
+                                .wrapContentSize(Alignment.Center),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            CenteredText(
+                                firstLine = MLang.Override.Empty.Title,
+                                secondLine = MLang.Override.Empty.Hint,
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
                             ) {
-                                CenteredText(
-                                    firstLine = MLang.Override.Empty.Title,
-                                    secondLine = MLang.Override.Empty.Hint,
-                                )
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                Button(
+                                    onClick = { showCreateDialog.value = true },
                                 ) {
-                                    Button(
-                                        onClick = { showCreateDialog.value = true },
-                                    ) {
-                                        Text(MLang.Override.Action.New)
-                                    }
-                                    Button(
-                                        onClick = { importConfigLauncher.launch("*/*") },
-                                        colors = ButtonDefaults.buttonColorsPrimary(),
-                                    ) {
-                                        Text(
-                                            text = MLang.Override.Action.Import,
-                                            color = colorScheme.background,
-                                        )
-                                    }
+                                    Text(MLang.Override.Action.New)
+                                }
+                                Button(
+                                    onClick = { importConfigLauncher.launch("*/*") },
+                                    colors = ButtonDefaults.buttonColorsPrimary(),
+                                ) {
+                                    Text(
+                                        text = MLang.Override.Action.Import,
+                                        color = colorScheme.background,
+                                    )
                                 }
                             }
                         }
@@ -362,7 +372,7 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val colorScheme = MiuixTheme.colorScheme
+    val colorScheme = colorScheme
     val accentTintColor = colorScheme.primary
     val descriptionText = config.description?.takeIf(String::isNotBlank) ?: MLang.Override.Card.NoDescription
 
@@ -372,17 +382,17 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
             .padding(vertical = OverrideConfigItemGap / 2)
             .longPressDraggableHandle()
             .alpha(if (isDragging) 0.92f else 1f),
-        insideMargin = PaddingValues(16.dp),
+        insideMargin = PaddingValues(UiDp.dp16),
     ) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
                 verticalAlignment = Alignment.Top,
             ) {
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(UiDp.dp8),
                 ) {
                     Text(
                         text = config.name,
@@ -406,13 +416,13 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
             }
 
             HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                thickness = 0.5.dp,
+                modifier = Modifier.padding(vertical = UiDp.dp12),
+                thickness = UiDp.dp0_5,
                 color = colorScheme.outline.copy(alpha = 0.5f),
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp8)) {
                     OverrideCardActionIconButton(
                         imageVector = Yume.Copy,
                         contentDescription = MLang.Override.Card.Copy,
@@ -429,25 +439,25 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
                 Spacer(modifier = Modifier.weight(1f))
 
                 IconButton(
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier.padding(end = UiDp.dp8),
                     backgroundColor = colorScheme.primary.copy(alpha = 0.1f),
-                    minHeight = 35.dp,
-                    minWidth = 35.dp,
+                    minHeight = UiDp.dp35,
+                    minWidth = UiDp.dp35,
                     onClick = onEdit,
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = UiDp.dp10),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(UiDp.dp2),
                     ) {
                         Icon(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(UiDp.dp20),
                             imageVector = Yume.Edit,
                             tint = accentTintColor,
                             contentDescription = MLang.Override.Card.Edit,
                         )
                         Text(
-                            modifier = Modifier.padding(end = 3.dp),
+                            modifier = Modifier.padding(end = UiDp.dp3),
                             text = MLang.Override.Card.EditButton,
                             color = accentTintColor,
                             fontWeight = FontWeight.Medium,
@@ -458,22 +468,22 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
 
                 IconButton(
                     backgroundColor = colorScheme.secondaryContainer.copy(alpha = 0.78f),
-                    minHeight = 35.dp,
-                    minWidth = 35.dp,
+                    minHeight = UiDp.dp35,
+                    minWidth = UiDp.dp35,
                     onClick = onDelete,
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp),
+                        modifier = Modifier.padding(horizontal = UiDp.dp10),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(UiDp.dp20),
                             imageVector = Yume.Delete,
                             tint = colorScheme.onSurface.copy(alpha = 0.85f),
                             contentDescription = MLang.Override.Card.Delete,
                         )
                         Text(
-                            modifier = Modifier.padding(start = 4.dp, end = 3.dp),
+                            modifier = Modifier.padding(start = UiDp.dp4, end = UiDp.dp3),
                             text = MLang.Override.Card.DeleteButton,
                             color = colorScheme.onSurface.copy(alpha = 0.85f),
                             fontWeight = FontWeight.Medium,
@@ -489,9 +499,9 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
 @Composable
 private fun OverrideConfigStateIndicator(inUse: Boolean) {
     val tint = if (inUse) {
-        MiuixTheme.colorScheme.primary
+        colorScheme.primary
     } else {
-        MiuixTheme.colorScheme.onSurfaceVariantSummary
+        colorScheme.onSurfaceVariantSummary
     }
 
     OverrideStatusBadge(
@@ -535,10 +545,10 @@ private fun CreateConfigDialog(
             )
         },
         onDismissRequest = onDismiss,
-        insideMargin = DpSize(32.dp, 12.dp),
+        insideMargin = DpSize(UiDp.dp32, UiDp.dp12),
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             TextField(
                 value = name,
@@ -558,10 +568,10 @@ private fun CreateConfigDialog(
                     summary = MLang.Override.Dialog.Create.ImportHint,
                     startAction = {
                         Icon(
-                            modifier = Modifier.padding(end = 16.dp),
+                            modifier = Modifier.padding(end = UiDp.dp16),
                             imageVector = Yume.Share,
                             contentDescription = MLang.Override.Action.ImportFile,
-                            tint = MiuixTheme.colorScheme.onBackground,
+                            tint = colorScheme.onBackground,
                         )
                     },
                     onClick = {
@@ -605,7 +615,7 @@ private fun DeleteConfirmDialog(
         onDismissRequest = onDismiss,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
         ) {
             Button(
                 modifier = Modifier.weight(1f),
@@ -621,7 +631,7 @@ private fun DeleteConfirmDialog(
             ) {
                 Text(
                     text = MLang.Override.Dialog.Button.Delete,
-                    color = MiuixTheme.colorScheme.onPrimary,
+                    color = colorScheme.onPrimary,
                 )
             }
         }
@@ -643,7 +653,7 @@ private fun EditOptionsDialog(
         onDismissFinished = onDismissFinished,
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         ) {
             Button(
                 modifier = Modifier.fillMaxWidth(),

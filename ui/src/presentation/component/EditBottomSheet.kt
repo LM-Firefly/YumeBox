@@ -21,7 +21,7 @@
 
 
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -56,8 +56,8 @@ fun TextEditBottomSheet(
                 onValueChange = { textFieldValue.value = it },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Spacer(modifier = Modifier.height(UiDp.dp16))
+            Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
                 Button(
                     onClick = onSecondaryClick, modifier = Modifier.weight(1f)
                 ) { Text(secondaryButtonText) }
@@ -68,7 +68,7 @@ fun TextEditBottomSheet(
                     }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
                 ) { Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary) }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp16))
         }
     }
 }
@@ -90,17 +90,17 @@ fun WarningBottomSheet(
             messages.forEachIndexed { index, message ->
                 Text(message)
                 if (index < messages.lastIndex) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(UiDp.dp8))
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp16))
             Button(
                 onClick = {
                     onConfirm()
                     show.value = false
                 }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColorsPrimary()
             ) { Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary) }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(UiDp.dp16))
         }
     }
 }

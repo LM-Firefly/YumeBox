@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.screen.home
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -73,7 +72,7 @@ fun ProxyControlButton(
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16)
     ) {
         if (profilesLoaded) {
             if (!hasProfiles) {
@@ -112,18 +111,18 @@ fun ProxyControlButton(
                 .fillMaxWidth(buttonWidthFraction)
                 .scale(scaleAnim.value)
                 .shadow(
-                    elevation = 1.dp,
+                    elevation = UiDp.dp1,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
                     clip = false
                 )
                 .border(
-                    width = 0.2.dp,
+                    width = UiDp.dp0_2,
                     color = MiuixTheme.colorScheme.outline,
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius)
                 ),
             colors = ButtonDefaults.buttonColors(MiuixTheme.colorScheme.background),
             cornerRadius = cornerRadius,
-            minHeight = 36.dp
+            minHeight = UiDp.dp36
         ) {
             AnimatedContent(
                 targetState = isRunning,

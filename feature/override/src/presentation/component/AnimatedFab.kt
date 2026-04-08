@@ -19,9 +19,8 @@
  */
 
 
-
 package com.github.yumelira.yumebox.presentation.component
-
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.MutableTransitionState
@@ -109,7 +108,7 @@ fun OverrideAnimatedFab(
         label = "override_shared_fab_visibility",
     ) {
         FloatingActionButton(
-            modifier = Modifier.padding(end = 20.dp, bottom = 85.dp),
+            modifier = Modifier.padding(end = UiDp.dp20, bottom = UiDp.dp85),
             onClick = onClick,
         ) {
             Icon(

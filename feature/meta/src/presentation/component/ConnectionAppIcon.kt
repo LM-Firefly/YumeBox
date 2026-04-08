@@ -18,10 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.feature.meta.presentation.component
 
+package com.github.yumelira.yumebox.feature.meta.presentation.component
 import android.content.Context
-import android.content.pm.PackageManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -38,29 +37,35 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.takeOrElse
 import androidx.core.graphics.drawable.toBitmap
-import com.github.yumelira.yumebox.runtime.client.AppIdentityResolver
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.AppColors
+import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+private const val CONNECTION_APP_ICON_BITMAP_SIZE = 80
+
 @Composable
 internal fun ConnectionLeadingIcon(
     metadata: JsonObject,
     network: String,
     modifier: Modifier = Modifier,
-    size: Dp = 44.dp,
-    bitmapSize: Int = 80,
+    size: Dp = Dp.Unspecified,
+    bitmapSize: Int = CONNECTION_APP_ICON_BITMAP_SIZE,
 ) {
+    val sizes = AppTheme.sizes
     val context = LocalContext.current
     val appIdentityResolver = remember(context) { AppIdentityResolver(context) }
     val identity = remember(metadata, appIdentityResolver) {
         appIdentityResolver.resolve(metadata)
     }
+    val resolvedSize = size.takeOrElse { sizes.connectionLeadingIconSize }
     val iconKey = remember(identity, bitmapSize) {
         "${identity.appKey}|${identity.packageName.orEmpty()}|$bitmapSize"
     }
@@ -83,8 +88,8 @@ internal fun ConnectionLeadingIcon(
             bitmap = bitmap,
             contentDescription = identity.appName.ifEmpty { network },
             modifier = modifier
-                .size(size)
-                .clip(RoundedCornerShape((size.value * 0.32f).dp)),
+                .size(resolvedSize)
+                .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius)),
         )
         return
     }
@@ -92,7 +97,7 @@ internal fun ConnectionLeadingIcon(
     ProtocolFallbackIcon(
         network = network,
         modifier = modifier,
-        size = size,
+        size = resolvedSize,
     )
 }
 
@@ -100,16 +105,18 @@ internal fun ConnectionLeadingIcon(
 private fun ProtocolFallbackIcon(
     network: String,
     modifier: Modifier = Modifier,
-    size: Dp = 44.dp,
+    size: Dp = Dp.Unspecified,
 ) {
+    val sizes = AppTheme.sizes
     val neutral = MiuixTheme.colorScheme.onSurface
+    val resolvedSize = size.takeOrElse { sizes.connectionLeadingIconSize }
     val protocolColor = getProtocolColor(network)
 
     Box(
         modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape((size.value * 0.32f).dp))
-            .background(neutral.copy(alpha = 0.06f)),
+            .size(resolvedSize)
+            .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius))
+            .background(neutral.copy(alpha = AppTheme.opacity.ultraSubtle + AppTheme.opacity.ambientShadow)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -136,10 +143,17 @@ private object ConnectionAppIconResolver {
     }
 }
 
-internal fun getProtocolColor(network: String) = when (network.uppercase()) {
-    "TCP" -> androidx.compose.ui.graphics.Color(0xFF2196F3)
-    "UDP" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
-    "HTTP" -> androidx.compose.ui.graphics.Color(0xFF9E9E9E)
-    "HTTPS" -> androidx.compose.ui.graphics.Color(0xFF00BCD4)
-    else -> androidx.compose.ui.graphics.Color(0xFF9E9E9E)
+@Composable
+internal fun getProtocolColor(network: String): androidx.compose.ui.graphics.Color =
+    getProtocolColor(network, AppTheme.colors)
+
+internal fun getProtocolColor(
+    network: String,
+    appColors: AppColors,
+) = when (network.uppercase()) {
+    "TCP" -> appColors.protocol.tcp
+    "UDP" -> appColors.protocol.udp
+    "HTTP" -> appColors.protocol.http
+    "HTTPS" -> appColors.protocol.https
+    else -> appColors.protocol.unknown
 }

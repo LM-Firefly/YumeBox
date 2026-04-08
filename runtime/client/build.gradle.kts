@@ -29,7 +29,7 @@ android {
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":data:settings"))
+    implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:service"))
 

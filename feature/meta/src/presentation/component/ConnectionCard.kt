@@ -18,10 +18,7 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.meta.presentation.component
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import dev.oom_wg.purejoy.mlang.MLang
@@ -44,6 +40,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -52,7 +49,11 @@ fun ConnectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(24.dp)
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val sizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
+    val shape = RoundedCornerShape(radii.radius24)
     val backgroundColor = MiuixTheme.colorScheme.background
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -92,78 +93,74 @@ fun ConnectionCard(
 
     val relativeTime = formatRelativeTime(connectionInfo.start)
 
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .pressable(interactionSource = interactionSource, indication = SinkFeedback())
             .clip(shape)
             .background(backgroundColor)
-            .border(1.dp, MiuixTheme.colorScheme.surfaceVariant, shape)
+            .border(sizes.nodeCardBorderWidth, MiuixTheme.colorScheme.surfaceVariant, shape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = spacing.space16, vertical = spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.space16),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ConnectionLeadingIcon(
+            metadata = connectionInfo.metadata,
+            network = network,
+        )
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(spacing.space6),
         ) {
-            ConnectionLeadingIcon(
-                metadata = connectionInfo.metadata,
-                network = network,
+
+            Text(
+                text = displayHost,
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
 
-                Text(
-                    text = displayHost,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(sizes.listItemVerticalMinimal),
+                    verticalArrangement = Arrangement.spacedBy(spacing.space4),
                 ) {
 
-                    FlowRow(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
+                    ConnectionTagChip(
+                        label = network.uppercase(),
+                        backgroundColor = getProtocolColor(network),
+                    )
 
-                        ConnectionTagChip(
-                            label = network.uppercase(),
-                            backgroundColor = getProtocolColor(network),
-                        )
-
-                        if (connectionInfo.rule.isNotEmpty()) {
-                            ConnectionTagChip(label = connectionInfo.rule)
-                        }
-
-                        if (connectionInfo.chains.isNotEmpty()) {
-                            ConnectionTagChip(label = MLang.Connection.ChainCount.format(connectionInfo.chains.size))
-                        }
-
+                    if (connectionInfo.rule.isNotEmpty()) {
+                        ConnectionTagChip(label = connectionInfo.rule)
                     }
 
-                    Text(
-                        text = relativeTime,
-                        style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        maxLines = 1,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
+                    if (connectionInfo.chains.isNotEmpty()) {
+                        ConnectionTagChip(label = MLang.Connection.ChainCount.format(connectionInfo.chains.size))
+                    }
+
                 }
+
+                Text(
+                    text = relativeTime,
+                    style = MiuixTheme.textStyles.footnote1,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.padding(start = spacing.space8),
+                )
             }
         }
     }
@@ -174,14 +171,17 @@ private fun ConnectionTagChip(
     label: String,
     backgroundColor: Color = MiuixTheme.colorScheme.primary,
 ) {
+    val spacing = AppTheme.spacing
+    val radii = AppTheme.radii
+    val opacity = AppTheme.opacity
     Text(
         text = label,
         style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
         color = backgroundColor,
         modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(backgroundColor.copy(alpha = 0.1f))
-            .padding(horizontal = 7.dp, vertical = 2.dp),
+            .clip(RoundedCornerShape(radii.full))
+            .background(backgroundColor.copy(alpha = opacity.subtle))
+            .padding(horizontal = spacing.space4, vertical = spacing.space2),
     )
 }
 

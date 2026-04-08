@@ -23,15 +23,15 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.core.presentation.ContractStateViewModel
 import com.github.yumelira.yumebox.core.presentation.LoadableState
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.repository.AppSettingsRepository
-import com.github.yumelira.yumebox.data.repository.OverrideRepository
-import com.github.yumelira.yumebox.data.repository.ProxyDisplaySettingsRepository
-import com.github.yumelira.yumebox.domain.model.*
+import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
+import com.github.yumelira.yumebox.data.model.ProxySortMode
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
+import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.ProxyGroupSyncPriority
 import dev.oom_wg.purejoy.mlang.MLang
@@ -40,10 +40,10 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class ProxyViewModel(
-    private val overrideRepository: OverrideRepository,
+    private val runtimeOverrideController: RuntimeOverrideController,
     private val proxyFacade: ProxyFacade,
-    private val proxyDisplaySettingsRepository: ProxyDisplaySettingsRepository,
-    private val appSettingsRepository: AppSettingsRepository,
+    private val proxyDisplaySettingsStore: ProxyDisplaySettingsStore,
+    appSettings: AppSettingsStore,
 ) : ContractStateViewModel<ProxyViewModel.ProxyUiState, ProxyViewModel.ProxyUiEffect>(ProxyUiState()) {
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
@@ -53,19 +53,10 @@ class ProxyViewModel(
 
     private val groupSorter = ProxyGroupSorter()
 
-    val currentMode: StateFlow<TunnelState.Mode> = proxyDisplaySettingsRepository.proxyMode.state
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TunnelState.Mode.Rule)
-
-    val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsRepository.displayMode.state
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxyDisplayMode.SINGLE_DETAILED)
-
-    val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsRepository.sortMode.state
+    val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxySortMode.DEFAULT)
 
-    val sheetHeightFraction: StateFlow<Float> = proxyDisplaySettingsRepository.sheetHeightFraction.state
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PROXY_SHEET_HEIGHT_FRACTION_DEFAULT)
-
-    val singleNodeTest: StateFlow<Boolean> = appSettingsRepository.singleNodeTest.state
+    val singleNodeTest: StateFlow<Boolean> = appSettings.singleNodeTest.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
@@ -128,29 +119,6 @@ class ProxyViewModel(
         }
     }
 
-    fun patchMode(mode: TunnelState.Mode) {
-        val previousMode = proxyDisplaySettingsRepository.proxyMode.value
-        proxyDisplaySettingsRepository.proxyMode.set(mode)
-        viewModelScope.launch {
-            val persistError = overrideRepository.updateProfile { it.copy(mode = mode) }.exceptionOrNull()
-            if (persistError != null) {
-                proxyDisplaySettingsRepository.proxyMode.set(previousMode)
-                showError(MLang.Proxy.Mode.SwitchFailed.format(persistError.message))
-                return@launch
-            }
-
-            val reloadError = proxyFacade.reloadCurrentProfile().exceptionOrNull()
-            if (reloadError != null) {
-                proxyDisplaySettingsRepository.proxyMode.set(previousMode)
-                showError(MLang.Proxy.Mode.SwitchFailed.format(reloadError.message))
-                return@launch
-            }
-
-            PollingTimers.awaitTick(PollingTimerSpecs.ProxySwitchFeedback)
-            showMessage(MLang.Proxy.Mode.Switched.format(mode.toModeName()))
-        }
-    }
-
     fun testDelay(groupName: String? = null) {
         viewModelScope.launch {
             setLoading(true)
@@ -174,21 +142,11 @@ class ProxyViewModel(
                     showMessage(MLang.Proxy.Testing.RequestSent)
                 } else {
                     showMessage(MLang.Proxy.Testing.All)
-                    var firstError: Throwable? = null
-                    currentGroups.forEach { group ->
-                        runCatching {
-                            proxyFacade.healthCheck(group.name)
-                        }.onFailure { error ->
-                            if (firstError == null) {
-                                firstError = error
-                            }
-                        }
-                    }
+                    proxyFacade.healthCheckAll()
                     if (currentGroups.isNotEmpty()) {
                         PollingTimers.awaitTick(PollingTimerSpecs.ProxyHealthcheckRefresh)
                         proxyFacade.refreshProxyGroups()
                     }
-                    firstError?.let { throw it }
                 }
             }
 
@@ -205,16 +163,8 @@ class ProxyViewModel(
         }
     }
 
-    fun setDisplayMode(mode: ProxyDisplayMode) {
-        proxyDisplaySettingsRepository.displayMode.set(mode)
-    }
-
     fun setSortMode(mode: ProxySortMode) {
-        proxyDisplaySettingsRepository.sortMode.set(mode)
-    }
-
-    fun setSheetHeightFraction(value: Float) {
-        proxyDisplaySettingsRepository.sheetHeightFraction.set(normalizeProxySheetHeightFraction(value))
+        proxyDisplaySettingsStore.sortMode.set(mode)
     }
 
     fun selectProxy(groupName: String, proxyName: String) {
@@ -230,13 +180,6 @@ class ProxyViewModel(
                 showError(MLang.Proxy.Selection.Error.format(error.message))
             }
         }
-    }
-
-    fun testProxyDelay(proxyName: String) {
-        val groupName = proxyGroups.value.firstOrNull { group ->
-            group.proxies.any { it.name == proxyName }
-        }?.name ?: return
-        testProxyDelay(groupName, proxyName)
     }
 
     fun testProxyDelay(groupName: String, proxyName: String) {
@@ -260,13 +203,6 @@ class ProxyViewModel(
 
     fun clearError() {
         clearErrorState()
-    }
-
-    private fun TunnelState.Mode.toModeName(): String = when (this) {
-        TunnelState.Mode.Direct -> MLang.Proxy.Mode.Direct
-        TunnelState.Mode.Global -> MLang.Proxy.Mode.Global
-        TunnelState.Mode.Rule -> MLang.Proxy.Mode.Rule
-        else -> MLang.Proxy.Mode.Unknown
     }
 
     data class ProxyUiState(

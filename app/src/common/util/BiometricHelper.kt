@@ -141,6 +141,7 @@ object BiometricHelper {
             }
 
             hasDeviceCredential(activity) -> {
+                @Suppress("DEPRECATION")
                 promptInfoBuilder.setDeviceCredentialAllowed(true)
             }
 

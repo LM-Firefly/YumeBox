@@ -18,8 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
 
+package com.github.yumelira.yumebox.presentation.component
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -38,7 +39,7 @@ internal fun AppDialogColumn(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         content = content,
     )
 }

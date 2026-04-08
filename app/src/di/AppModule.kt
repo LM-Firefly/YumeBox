@@ -22,7 +22,7 @@
 
 package com.github.yumelira.yumebox.di
 
-import com.github.yumelira.yumebox.data.repository.LogRecordGateway
+import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.log.LogViewModel
 import com.github.yumelira.yumebox.screen.profiles.ProfilesViewModel
@@ -40,8 +40,8 @@ val appIntegrationModule = module {
 }
 
 val appViewModelModule = module {
-    viewModel { AppSettingsViewModel(get(), get()) }
-    viewModel { HomeViewModel(androidApplication(), get(), get(), get()) }
+    viewModel { AppSettingsViewModel(get(), get(), get()) }
+    viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get()) }
     viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
     viewModel { NetworkSettingsViewModel(androidApplication(), get(), get(), get()) }
     viewModel { AccessControlViewModel(androidApplication(), get(), get()) }

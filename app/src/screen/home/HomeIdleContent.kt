@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -42,14 +43,18 @@ fun HomeIdleContent(
     author: String,
     modifier: Modifier = Modifier
 ) {
+    val spacing = AppTheme.spacing
+    val componentSizes = AppTheme.sizes
+    val opacity = AppTheme.opacity
+
     val accentColor = MiuixTheme.colorScheme.primary
     val authorColor = MiuixTheme.colorScheme.onSurfaceVariantSummary
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 122.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(top = componentSizes.homeIdleTopPadding, bottom = componentSizes.homeIdleBottomPadding),
+        verticalArrangement = Arrangement.spacedBy(spacing.space16),
         horizontalAlignment = Alignment.Start
     ) {
         Box(
@@ -59,21 +64,21 @@ fun HomeIdleContent(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 18.dp, start = 8.dp)
+                    .padding(top = spacing.space18, start = spacing.space8)
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.space12),
                     verticalAlignment = Alignment.Top,
                 ) {
                     Box(
                         modifier = Modifier
-                            .padding(top = 12.dp)
-                            .width(2.dp)
-                            .height(36.dp)
+                            .padding(top = spacing.space12)
+                            .width(componentSizes.homeIdleAccentLineWidth)
+                            .height(componentSizes.homeIdleAccentLineHeight)
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
-                                        accentColor.copy(alpha = 0.58f),
+                                        accentColor.copy(alpha = opacity.accent),
                                         Color.Transparent,
                                     )
                                 )
@@ -102,11 +107,11 @@ fun HomeIdleContent(
         ) {
             Box(
                 modifier = Modifier
-                    .width(30.dp)
-                    .height(1.dp)
-                    .background(authorColor.copy(alpha = 0.35f))
+                    .width(componentSizes.homeIdleAuthorDividerWidth)
+                    .height(componentSizes.homeIdleAuthorDividerHeight)
+                    .background(authorColor.copy(alpha = opacity.muted))
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(spacing.space12))
             Text(
                 text = author,
                 style = MiuixTheme.textStyles.title3.copy(

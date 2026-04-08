@@ -36,10 +36,10 @@ import androidx.core.app.ServiceCompat
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.data.store.AppSettingsStorage
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStorage
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.util.AutoStartExecutionGate
 import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
@@ -63,9 +63,9 @@ class AutoRestartService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val mmkvProvider by lazy { MMKVProvider() }
-    private val appSettingsStorage by lazy { AppSettingsStorage(mmkvProvider.getMMKV("settings")) }
+    private val appSettingsStorage by lazy { AppSettingsStore(mmkvProvider.getMMKV("settings")) }
     private val featureStore by lazy { FeatureStore(mmkvProvider.getMMKV("substore")) }
-    private val networkSettingsStorage by lazy { NetworkSettingsStorage(mmkvProvider.getMMKV("network_settings")) }
+    private val networkSettingsStorage by lazy { NetworkSettingsStore(mmkvProvider.getMMKV("network_settings")) }
     private val serviceCache by lazy { mmkvProvider.getMMKV("service_cache") }
     private val profileManager by lazy { ProfileManager(applicationContext) }
     private val foregroundStarted = AtomicBoolean(false)
