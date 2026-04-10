@@ -44,8 +44,8 @@ import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.util.OverrideStructuredEditorStore
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.ramcosta.composedestinations.generated.destinations.OverrideConfigPreviewRouteDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch

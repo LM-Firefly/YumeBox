@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ package com.github.yumelira.yumebox.service.runtime.session
 import android.content.Context
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
 
 interface RuntimeHost {
     val context: Context

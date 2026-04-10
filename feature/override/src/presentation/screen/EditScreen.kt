@@ -30,9 +30,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import com.github.yumelira.yumebox.presentation.component.JsonTextEditorDialog
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.OpenObjectMapEditor
 import com.github.yumelira.yumebox.presentation.component.OpenRuleListEditor
 import com.github.yumelira.yumebox.presentation.component.OpenStringListModifiersEditor
@@ -122,6 +124,8 @@ fun OverrideEditScreen(
             TopBar(
                 title = if (isNewConfig) MLang.Override.Edit.TitleNew else MLang.Override.Edit.TitleEdit,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { paddingValues ->

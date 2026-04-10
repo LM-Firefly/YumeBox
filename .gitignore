@@ -24,6 +24,9 @@
 *.iml
 .navigation/
 captures/
+.vs/
+.vscode/
+CppProperties.json
 
 # Native build
 .cxx/

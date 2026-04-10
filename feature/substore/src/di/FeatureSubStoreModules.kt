@@ -24,6 +24,7 @@ package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
+import com.github.yumelira.yumebox.substore.service.ExtensionStatusService
 import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
 import org.koin.android.ext.koin.androidApplication
 import org.koin.core.module.Module
@@ -32,8 +33,9 @@ import org.koin.dsl.module
 
 val featureSubStoreViewModelModule = module {
     single { SubStoreDownloadClient(androidApplication(), get()) }
+    single { ExtensionStatusService(androidApplication()) }
     viewModel { SettingViewModel(get()) }
-    viewModel { FeatureViewModel(get(), androidApplication(), get()) }
+    viewModel { FeatureViewModel(get(), androidApplication(), get(), get()) }
 }
 
 val featureSubStoreModules: List<Module> = listOf(

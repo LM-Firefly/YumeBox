@@ -20,11 +20,69 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.api.service
 
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import android.content.Context
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeTargetMode
+
+enum class LocalRuntimePhase {
+    Idle,
+    Starting,
+    Running,
+    Stopping,
+    Failed;
+    val isActive: Boolean
+        get() = this != Idle
+}
+
+interface LocalRuntimeServiceContract {
+    fun start(
+        context: Context,
+        mode: RuntimeTargetMode,
+        source: String = ProxyServiceContracts.SOURCE_UNKNOWN,
+    )
+    fun stop(
+        context: Context,
+        clashRequestStopAction: String,
+    )
+}
+
+interface LocalRuntimeStatusContract {
+    val serviceRunning: Boolean
+    fun reconcilePersistedRuntimeState()
+    fun clearLegacyStateFiles()
+    fun isRuntimeActive(mode: RuntimeTargetMode): Boolean
+    fun queryRuntimePhase(mode: RuntimeTargetMode): LocalRuntimePhase
+    fun queryRuntimeStartedAt(mode: RuntimeTargetMode): Long?
+    fun isLocalRuntimeServiceAlive(mode: RuntimeTargetMode): Boolean
+    fun markRuntimeIdle(mode: RuntimeTargetMode)
+}
+
+object RuntimeServiceContractRegistry {
+    @Volatile
+    var localRuntimeService: LocalRuntimeServiceContract? = null
+    @Volatile
+    var localRuntimeStatus: LocalRuntimeStatusContract? = null
+    @Volatile
+    var rootAccessSupport: com.github.yumelira.yumebox.runtime.api.service.root.RootAccessSupportContract? = null
+    @Volatile
+    var rootTunRuntimeRecovery: com.github.yumelira.yumebox.runtime.api.service.root.RootTunRuntimeRecoveryContract? = null
+    @Volatile
+    var rootTunForegroundService: com.github.yumelira.yumebox.runtime.api.service.root.RootTunForegroundServiceContract? = null
+    @Volatile
+    var rootTunStateStoreFactory: com.github.yumelira.yumebox.runtime.api.service.root.RootTunStateStoreFactoryContract? = null
+    @Volatile
+    var rootPackageQuery: com.github.yumelira.yumebox.runtime.api.service.root.RootPackageQueryContract? = null
+}
 
 object ProxyServiceContracts {
+    const val SOURCE_UI = "ui"
+    const val SOURCE_TILE = "tile"
+    const val SOURCE_AUTO_RESTART = "auto_restart"
+    const val SOURCE_AUTO_RESTART_BOOT = "auto_restart_boot"
+    const val SOURCE_AUTO_RESTART_REPLACED = "auto_restart_replaced"
+    const val SOURCE_UNKNOWN = "unknown"
     val ACTION_PROXY_STARTED: String
         get() = Intents.ACTION_CLASH_STARTED
     val ACTION_PROXY_STOPPED: String

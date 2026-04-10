@@ -88,8 +88,7 @@ internal fun ConnectionLeadingIcon(
             bitmap = bitmap,
             contentDescription = identity.appName.ifEmpty { network },
             modifier = modifier
-                .size(resolvedSize)
-                .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius)),
+                .size(resolvedSize),
         )
         return
     }

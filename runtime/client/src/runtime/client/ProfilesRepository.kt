@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -26,12 +26,11 @@ import android.content.Context
 import android.content.Intent
 import com.github.yumelira.yumebox.core.data.RepositoryUtils.safeApiCall
 import com.github.yumelira.yumebox.remote.ServiceClient
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.runtime.client.root.RootTunReloadScheduler
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -47,7 +46,7 @@ class ProfilesRepository(
     private val context: Context,
 ) {
     private val appContext = context.appContextOrSelf
-    private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
+    private val rootTunStateStore by lazy { RuntimeContractResolver.rootTunStateStore(appContext) }
 
     suspend fun createProfile(
         type: Profile.Type,

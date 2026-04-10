@@ -31,12 +31,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionCard
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionDetailSheet
 import com.github.yumelira.yumebox.feature.meta.presentation.component.TabRowWithContour
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionSort
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionTab
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionViewModel
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
@@ -45,10 +47,12 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -75,6 +79,7 @@ fun ConnectionScreen(
     val viewModel = koinViewModel<ConnectionViewModel>()
     val state by viewModel.state.collectAsState()
     val filteredConnections by viewModel.filteredConnections.collectAsState()
+    val scope = rememberCoroutineScope()
     val spacing = AppTheme.spacing
 
     val scrollBehavior = MiuixScrollBehavior()
@@ -139,6 +144,8 @@ fun ConnectionScreen(
             TopBar(
                 title = MLang.Connection.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     Box {
                         IconButton(
@@ -176,6 +183,23 @@ fun ConnectionScreen(
                         Icon(
                             imageVector = MiuixIcons.Search,
                             contentDescription = MLang.Connection.Search,
+                            tint = MiuixTheme.colorScheme.onSurface,
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                val closed = viewModel.closeAllConnections()
+                                if (closed) {
+                                    showDetailSheet = false
+                                    selectedConnection = null
+                                }
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Delete,
+                            contentDescription = MLang.Connection.CloseAll,
                             tint = MiuixTheme.colorScheme.onSurface,
                         )
                     }
@@ -252,13 +276,23 @@ fun ConnectionScreen(
 
                 items(
                     items = filteredConnections,
-                    key = { it.id },
+                    key = { it.connectionInfo.id },
                 ) { connection ->
                     ConnectionCard(
-                        connectionInfo = connection,
+                        item = connection,
+                        showCloseAction = state.selectedTab == ConnectionTab.ACTIVE,
                         onClick = {
-                            selectedConnection = connection
+                            selectedConnection = connection.connectionInfo
                             showDetailSheet = true
+                        },
+                        onClose = {
+                            scope.launch {
+                                val closed = viewModel.closeConnection(connection.connectionInfo.id)
+                                if (closed && selectedConnection?.id == connection.connectionInfo.id) {
+                                    showDetailSheet = false
+                                    selectedConnection = null
+                                }
+                            }
                         },
                         modifier = Modifier.padding(vertical = spacing.space6),
                     )

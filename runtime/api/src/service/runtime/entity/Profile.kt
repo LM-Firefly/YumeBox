@@ -22,16 +22,65 @@
 
 @file:UseSerializers(UUIDSerializer::class)
 
-package com.github.yumelira.yumebox.service.runtime.entity
+package com.github.yumelira.yumebox.runtime.api.service.runtime.entity
 
 import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
 import com.github.yumelira.yumebox.core.util.Parcelizer
-import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
+import com.github.yumelira.yumebox.runtime.api.service.runtime.util.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import java.util.*
+
+@Serializable
+enum class RuntimeTargetMode {
+    Tun,
+    Http,
+    RootTun,
+}
+
+@Serializable
+enum class RuntimeOwner {
+    None,
+    LocalTun,
+    LocalHttp,
+    RootTun,
+}
+
+@Serializable
+enum class RuntimePhase {
+    Idle,
+    Starting,
+    Running,
+    Stopping,
+    Failed;
+    val running: Boolean
+        get() = this == Running
+}
+
+@Serializable
+data class RuntimeSnapshot(
+    val owner: RuntimeOwner = RuntimeOwner.None,
+    val phase: RuntimePhase = RuntimePhase.Idle,
+    val targetMode: RuntimeTargetMode = RuntimeTargetMode.Tun,
+    val profileReady: Boolean = false,
+    val groupsReady: Boolean = false,
+    val trafficReady: Boolean = false,
+    val configReady: Boolean = false,
+    val transportReady: Boolean = false,
+    val logReady: Boolean = false,
+    val profileUuid: String? = null,
+    val profileName: String? = null,
+    val lastError: String? = null,
+    val startedAt: Long? = null,
+    val effectiveFingerprint: String? = null,
+    val generation: Long = 0L,
+    val running: Boolean = phase.running,
+) {
+    val payloadReady: Boolean
+        get() = profileReady && groupsReady && trafficReady
+}
 
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable

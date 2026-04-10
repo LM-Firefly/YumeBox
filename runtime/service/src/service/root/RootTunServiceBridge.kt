@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -32,8 +32,12 @@ import android.os.Looper
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunOperationResult
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStartRequest
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStatus
 import com.github.yumelira.yumebox.service.RootTunService
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.topjohnwu.superuser.ipc.RootService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine

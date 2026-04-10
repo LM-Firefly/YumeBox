@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -35,10 +35,10 @@ import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
@@ -137,6 +137,22 @@ class ClashManager(private val context: Context) : IClashManager,
             } else {
                 SelectionDao.remove(current, group)
             }
+        }
+    }
+
+    override fun patchForceSelector(group: String, name: String): Boolean {
+        return Clash.patchForceSelector(group, name).also { patched ->
+            val current = store.activeProfile ?: return@also
+            val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            SelectionDao.persistForcePinnedSelection(
+                profileUUID = current,
+                proxyGroup = group,
+                requestedNode = name,
+                patched = patched,
+                supportsPinnedSelection = patchedGroup?.let {
+                    it.type == Proxy.Type.URLTest || it.type == Proxy.Type.Fallback
+                } ?: false,
+            )
         }
     }
 

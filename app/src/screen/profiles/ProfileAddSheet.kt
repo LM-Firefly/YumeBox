@@ -58,7 +58,7 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAct
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.*

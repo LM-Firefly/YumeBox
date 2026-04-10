@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -31,10 +31,11 @@ import android.os.Binder
 import android.os.IBinder
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
 import com.github.yumelira.yumebox.service.runtime.session.LocalHttpTransport
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeHost
@@ -42,7 +43,6 @@ import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntime
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded

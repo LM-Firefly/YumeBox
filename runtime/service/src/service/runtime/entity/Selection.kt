@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 
 package com.github.yumelira.yumebox.service.runtime.entity
 
-import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
+import com.github.yumelira.yumebox.runtime.api.service.runtime.util.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import java.util.*

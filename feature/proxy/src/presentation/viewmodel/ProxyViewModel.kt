@@ -28,6 +28,7 @@ import com.github.yumelira.yumebox.core.presentation.LoadableState
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
+import com.github.yumelira.yumebox.data.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.data.model.ProxySortMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
@@ -55,6 +56,9 @@ class ProxyViewModel(
 
     val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxySortMode.DEFAULT)
+
+    val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsStore.displayMode.state
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxyDisplayMode.DOUBLE_DETAILED)
 
     val singleNodeTest: StateFlow<Boolean> = appSettings.singleNodeTest.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -167,6 +171,10 @@ class ProxyViewModel(
         proxyDisplaySettingsStore.sortMode.set(mode)
     }
 
+    fun setDisplayMode(mode: ProxyDisplayMode) {
+        proxyDisplaySettingsStore.displayMode.set(mode)
+    }
+
     fun selectProxy(groupName: String, proxyName: String) {
         viewModelScope.launch {
             runCatching {
@@ -180,6 +188,29 @@ class ProxyViewModel(
                 showError(MLang.Proxy.Selection.Error.format(error.message))
             }
         }
+    }
+
+    fun forceSelectProxy(groupName: String, proxyName: String) {
+        viewModelScope.launch {
+            runCatching {
+                val success = proxyFacade.forceSelectProxy(groupName, proxyName)
+                if (success) {
+                    val target = proxyName.ifBlank { MLang.Proxy.Mode.Rule }
+                    showMessage(MLang.Proxy.Selection.Switched.format(target))
+                } else {
+                    showError(MLang.Proxy.Selection.Failed)
+                }
+            }.onFailure { error ->
+                showError(MLang.Proxy.Selection.Error.format(error.message))
+            }
+        }
+    }
+
+    fun testProxyDelay(proxyName: String) {
+        val groupName = proxyGroups.value.firstOrNull { group ->
+            group.proxies.any { it.name == proxyName }
+        }?.name ?: return
+        testProxyDelay(groupName, proxyName)
     }
 
     fun testProxyDelay(groupName: String, proxyName: String) {

@@ -39,7 +39,7 @@ dependencies {
     implementation(project(":locale"))
     implementation(project(":ui"))
     implementation(project(":data"))
-    implementation(project(":feature:editor"))
+    api(project(":feature:editor:api"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
@@ -60,4 +60,3 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("sh.calvin.reorderable:reorderable:${gropify.dep.version.reorderable}")
 }
-

@@ -16,6 +16,7 @@ interface IRootTunService {
     String queryConfigurationJson();
     String queryProvidersJson();
     boolean patchSelector(String group, String name);
+    boolean patchForceSelector(String group, String name);
     boolean closeConnection(String id);
     void closeAllConnections();
     String healthCheck(String group);

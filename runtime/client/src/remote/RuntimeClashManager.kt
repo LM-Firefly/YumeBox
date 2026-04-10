@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -26,12 +26,11 @@ import android.content.Context
 import com.github.yumelira.yumebox.core.model.*
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
 import com.github.yumelira.yumebox.runtime.client.root.RootTunController
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.ILogObserver
-import com.github.yumelira.yumebox.service.root.RootTunRuntimeRecovery
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.json.int
@@ -44,7 +43,7 @@ class RuntimeClashManager(
     private val local: IClashManager,
 ) : IClashManager {
     private val appContext = context.appContextOrSelf
-    private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
+    private val rootTunStateStore by lazy { RuntimeContractResolver.rootTunStateStore(appContext) }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var rootLogJob: Job? = null
     private var rootLogSeq: Long = 0L
@@ -143,11 +142,11 @@ class RuntimeClashManager(
     }
 
     override fun patchSelector(group: String, name: String): Boolean {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.patchSelector(appContext, group, name) } },
-            localCall = { local.patchSelector(group, name) },
-            fallbackOnRootFailure = false,
-        )
+        return local.patchSelector(group, name)
+    }
+
+    override fun patchForceSelector(group: String, name: String): Boolean {
+        return local.patchForceSelector(group, name)
     }
 
     override fun closeConnection(id: String): Boolean {
@@ -217,7 +216,7 @@ class RuntimeClashManager(
                         if (chunk.items.isNotEmpty()) {
                             chunk.items.forEach { raw ->
                                 observer.newItem(
-                                    com.github.yumelira.yumebox.service.root.RootTunJson.Default.decodeFromString(
+                                    com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson.Default.decodeFromString(
                                         LogMessage.serializer(),
                                         raw,
                                     ),
@@ -275,11 +274,12 @@ class RuntimeClashManager(
     }
 
     private fun handleRootRuntimeFailure(error: Throwable) {
-        if (RootTunRuntimeRecovery.isBinderConnectionFailure(error)) {
+        val recovery = RuntimeContractResolver.rootTunRuntimeRecovery
+        if (recovery.isBinderConnectionFailure(error)) {
             rootLogJob?.cancel()
             rootLogJob = null
             rootLogSeq = 0L
-            RootTunRuntimeRecovery.handleBinderGone(appContext, RootTunRuntimeRecovery.binderFailureReason(error))
+            recovery.handleBinderGone(appContext, recovery.binderFailureReason(error))
             Timber.w(error, "Root runtime binder died")
             return
         }

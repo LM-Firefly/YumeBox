@@ -113,6 +113,7 @@ include(
     ":feature:proxy",
     ":feature:override",
     ":feature:editor",
+    ":feature:editor:api",
     ":feature:meta",
     ":runtime:api",
     ":runtime:client",

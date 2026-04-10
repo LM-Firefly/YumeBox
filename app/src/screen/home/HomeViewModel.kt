@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,6 +25,8 @@ package com.github.yumelira.yumebox.screen.home
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.core.model.ConnectionInfo
+import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.core.presentation.AndroidContractStateViewModel
 import com.github.yumelira.yumebox.core.presentation.LoadableState
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
@@ -35,13 +37,13 @@ import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
 import com.github.yumelira.yumebox.data.gateway.NetworkInfoService
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.remote.ServiceClient
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.ProxyGroupSyncPriority
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
-import com.github.yumelira.yumebox.service.root.RootAccessSupport
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
@@ -118,8 +120,12 @@ class HomeViewModel(
         resolveControlState(runtimeSnapshot.value.phase, _pendingTransition.value),
     )
 
-    private val _speedHistory = MutableStateFlow<List<Long>>(emptyList())
-    val speedHistory: StateFlow<List<Long>> = _speedHistory.asStateFlow()
+    private val _speedHistory = MutableStateFlow<List<TrafficData>>(emptyList())
+    val speedHistory: StateFlow<List<TrafficData>> = _speedHistory.asStateFlow()
+    private val _connections = MutableStateFlow<List<ConnectionInfo>>(emptyList())
+    val connections: StateFlow<List<ConnectionInfo>> = _connections.asStateFlow()
+    private val _tunnelMode = MutableStateFlow<TunnelState.Mode?>(null)
+    val tunnelMode: StateFlow<TunnelState.Mode?> = _tunnelMode.asStateFlow()
     private var reconcileJob: Job? = null
 
     private val mainProxyNode: StateFlow<com.github.yumelira.yumebox.core.model.Proxy?> =
@@ -152,6 +158,7 @@ class HomeViewModel(
         observeRuntimeFailures()
         syncProxyModeState()
         startSpeedSampling()
+        startConnectionSampling()
         observeProfileChanges()
     }
 
@@ -187,7 +194,9 @@ class HomeViewModel(
             controlState
                 .collect { state ->
                     if (state != HomeProxyControlState.Running) {
-                        _speedHistory.value = List(24) { 0L }
+                        _speedHistory.value = List(24) { TrafficData.ZERO }
+                        _connections.value = emptyList()
+                        _tunnelMode.value = null
                     }
                     _uiState.update {
                         it.copy(
@@ -378,21 +387,45 @@ class HomeViewModel(
             PollingTimers.ticks(PollingTimerSpecs.HomeSpeedSampling).collect {
                 val snapshot = runtimeSnapshot.value
                 val sample = when {
-                    snapshot.phase == RuntimePhase.Idle || snapshot.phase == RuntimePhase.Failed -> 0L
-                    snapshot.phase.running -> {
-                        val t = proxyFacade.trafficNow.value
-                        val d = TrafficData.from(t)
-                        (d.upload + d.download).coerceAtLeast(0L)
-                    }
-
-                    else -> 0L
+                    snapshot.phase.running -> TrafficData.from(proxyFacade.trafficNow.value)
+                    else -> TrafficData.ZERO
+                }
+                val mode = if (snapshot.phase.running) {
+                    runCatching {
+                        withContext(Dispatchers.IO) { proxyFacade.queryTunnelState().mode }
+                    }.getOrNull()
+                } else {
+                    null
                 }
                 _speedHistory.update { old ->
                     buildList(sampleLimit) {
-                        repeat((sampleLimit - old.size - 1).coerceAtLeast(0)) { add(0L) }
+                        repeat((sampleLimit - old.size - 1).coerceAtLeast(0)) { add(TrafficData.ZERO) }
                         addAll(old.takeLast(sampleLimit - 1))
                         add(sample)
                     }
+                }
+                _tunnelMode.value = mode
+            }
+        }
+    }
+
+    private fun startConnectionSampling(maxConnections: Int = 256) {
+        viewModelScope.launch {
+            PollingTimers.ticks(PollingTimerSpecs.ConnectionsPolling).collect {
+                if (!runtimeSnapshot.value.phase.running) {
+                    _connections.value = emptyList()
+                    return@collect
+                }
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        ServiceClient.clash().queryConnections().connections
+                    }
+                }.onSuccess { list ->
+                    _connections.value = list.take(maxConnections)
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    Timber.v(error, "Failed to sample connections for home topology")
+                    _connections.value = emptyList()
                 }
             }
         }
@@ -411,7 +444,7 @@ class HomeViewModel(
             Timber.d("Home startProxy kickoff: mode=${request.mode} profileId=${request.profileId}")
 
             if (request.mode == ProxyMode.RootTun) {
-                val rootStatus = RootAccessSupport.evaluateAsync(getApplication())
+                val rootStatus = proxyFacade.evaluateRootAccess()
                 if (!rootStatus.canStartRootTun) {
                     clearPendingStart()
                     _pendingTransition.value = PendingTransition.None

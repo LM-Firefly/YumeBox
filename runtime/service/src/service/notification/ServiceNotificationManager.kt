@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -32,8 +32,8 @@ import androidx.core.app.NotificationManagerCompat
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
 import com.github.yumelira.yumebox.runtime.service.R
-import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.tencent.mmkv.MMKV

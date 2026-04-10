@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ import com.github.yumelira.yumebox.core.domain.ConnectionHistoryManager
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.service.root.RootTunJson
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

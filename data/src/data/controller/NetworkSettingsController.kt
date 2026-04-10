@@ -35,8 +35,7 @@ import kotlinx.coroutines.withContext
 class NetworkSettingsController(
     private val store: NetworkSettingsStore,
     private val isRunning: () -> Boolean,
-    private val restartProxy: suspend (ProxyMode) -> Unit,
-    private val beforeRestart: suspend (ProxyMode) -> Unit = {},
+    private val commandExecutor: NetworkSettingsCommandExecutor,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var restartJob: Job? = null
@@ -62,11 +61,7 @@ class NetworkSettingsController(
     }
 
     suspend fun startService(mode: ProxyMode): Result<Unit> = runCatching {
-        store.proxyMode.set(mode)
-        beforeRestart(mode)
-        withContext(Dispatchers.IO) {
-            restartProxy(mode)
-        }
+        commandExecutor.startService(mode).getOrThrow()
     }
 
     fun requestRestartIfRunning() {
@@ -84,13 +79,29 @@ class NetworkSettingsController(
                 ),
             )
             if (!isRunning()) return@launch
-            val targetMode = store.proxyMode.value
-            beforeRestart(targetMode)
-            startService(targetMode)
+            commandExecutor.restartConfiguredService()
         }
     }
 
     companion object {
         private const val RESTART_DEBOUNCE_DELAY_MS = 300L
+    }
+}
+
+class NetworkSettingsCommandExecutor(
+    private val store: NetworkSettingsStore,
+    private val restartProxy: suspend (ProxyMode) -> Unit,
+    private val beforeRestart: suspend (ProxyMode) -> Unit = {},
+) {
+    suspend fun startService(mode: ProxyMode): Result<Unit> = runCatching {
+        store.proxyMode.set(mode)
+        beforeRestart(mode)
+        withContext(Dispatchers.IO) {
+            restartProxy(mode)
+        }
+    }
+    suspend fun restartConfiguredService(): Result<Unit> {
+        val targetMode = store.proxyMode.value
+        return startService(targetMode)
     }
 }

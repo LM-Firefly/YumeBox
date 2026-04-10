@@ -41,7 +41,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Edit
 import com.github.yumelira.yumebox.presentation.icon.yume.Share
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.util.*
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -158,7 +158,7 @@ fun ProfileCard(
                                 Text(
                                     text = timeText,
                                     fontSize = 12.sp,
-                                    color = colorScheme.onTertiaryContainer.copy(alpha = opacity.strong),
+                                    color = colorScheme.onSurfaceVariantSummary,
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
                                     modifier = Modifier.padding(end = componentSizes.profileMetaTrailingInset)

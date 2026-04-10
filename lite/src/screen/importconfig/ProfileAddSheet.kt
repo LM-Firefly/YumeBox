@@ -69,7 +69,7 @@ import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator

@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service.remote
+package com.github.yumelira.yumebox.runtime.api.service.remote
 
 import com.github.yumelira.yumebox.core.model.*
 
@@ -38,6 +38,7 @@ interface IClashManager {
     fun queryProviders(): ProviderList
 
     fun patchSelector(group: String, name: String): Boolean
+    fun patchForceSelector(group: String, name: String): Boolean
     fun closeConnection(id: String): Boolean
     fun closeAllConnections()
 

@@ -24,8 +24,8 @@ import android.content.Context
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.CompileRequest
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.runtime.api.service.common.util.importedDir
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray

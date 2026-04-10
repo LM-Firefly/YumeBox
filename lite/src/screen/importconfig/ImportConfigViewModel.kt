@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -28,10 +28,10 @@ import com.github.yumelira.yumebox.core.presentation.AndroidContractStateViewMod
 import com.github.yumelira.yumebox.core.presentation.LoadableState
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.config.TunProfileSync
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

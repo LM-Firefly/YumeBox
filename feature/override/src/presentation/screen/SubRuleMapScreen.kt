@@ -117,6 +117,8 @@ fun OverrideSubRuleMapEditorScreen(
             TopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     if (isDeleteMode) {
                         OverrideTopBarAction(

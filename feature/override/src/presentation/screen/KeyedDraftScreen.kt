@@ -23,6 +23,7 @@ package com.github.yumelira.yumebox.presentation.screen
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -224,6 +225,8 @@ fun OverrideKeyedObjectDraftEditorScreen(
             TopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { innerPadding ->

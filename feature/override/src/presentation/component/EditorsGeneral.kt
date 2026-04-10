@@ -27,6 +27,7 @@ import com.github.yumelira.yumebox.core.model.ConfigurationOverride
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.model.TunnelState
 import dev.oom_wg.purejoy.mlang.MLang
+import java.security.SecureRandom
 
 @Composable
 fun GeneralEditor(
@@ -239,6 +240,7 @@ fun GeneralEditor(
                 title = MLang.Override.Form.ApiSecret,
                 value = config.secret,
                 placeholder = MLang.Override.Form.ApiSecret,
+                randomValueGenerator = ::generateRandomApiSecret,
                 onValueChange = { onConfigChange(config.copy(secret = it)) },
             )
         }
@@ -352,4 +354,17 @@ fun GeneralEditor(
             )
         }
     }
+}
+
+private val apiSecretRandom = SecureRandom()
+private const val API_SECRET_LENGTH = 16
+private const val API_SECRET_CHARSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-="
+
+private fun generateRandomApiSecret(): String {
+    val builder = StringBuilder(API_SECRET_LENGTH)
+    repeat(API_SECRET_LENGTH) {
+        val index = apiSecretRandom.nextInt(API_SECRET_CHARSET.length)
+        builder.append(API_SECRET_CHARSET[index])
+    }
+    return builder.toString()
 }

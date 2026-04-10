@@ -225,7 +225,9 @@ fun OverrideListScreen(
         topBar = {
             TopBar(
                 title = MLang.Override.Title,
-                scrollBehavior = scrollBehavior
+                scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { paddingValues ->

@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.util
+package com.github.yumelira.yumebox.runtime.api.service.runtime.util
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind

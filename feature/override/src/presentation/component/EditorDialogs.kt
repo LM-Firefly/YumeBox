@@ -80,7 +80,7 @@ fun JsonTextEditorDialog(
     onDismiss: () -> Unit,
 ) {
 
-    com.github.yumelira.yumebox.feature.editor.component.JsonEditorDialog(
+    com.github.yumelira.yumebox.feature.editor.api.component.JsonEditorDialog(
         show = show,
         title = title,
         subtitle = MLang.Override.Editor.JsonBlockSubtitle,
