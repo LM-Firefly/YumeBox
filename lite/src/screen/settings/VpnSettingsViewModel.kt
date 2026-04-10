@@ -45,6 +45,7 @@ class VpnSettingsViewModel(
     private val proxyFacade: ProxyFacade,
 ) : ViewModel() {
     val themeMode: Preference<ThemeMode> = appSettingsStore.themeMode
+    val invertOnPrimaryColors: Preference<Boolean> = appSettingsStore.invertOnPrimaryColors
     val appLanguage: Preference<AppLanguage> = appSettingsStore.appLanguage
     val dnsHijack: Preference<Boolean> = networkSettingsStore.dnsHijack
     val allowBypass: Preference<Boolean> = networkSettingsStore.allowBypass
@@ -65,6 +66,10 @@ class VpnSettingsViewModel(
 
     fun onThemeModeChange(mode: ThemeMode) {
         themeMode.set(mode)
+    }
+
+    fun onInvertOnPrimaryColorsChange(enabled: Boolean) {
+        invertOnPrimaryColors.set(enabled)
     }
 
     fun onAppLanguageChange(language: AppLanguage) {

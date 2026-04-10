@@ -45,6 +45,7 @@ class AppSettingsViewModel(
     val appLanguage: Preference<AppLanguage> = settings.appLanguage
     val colorTheme: Preference<AppColorTheme> = settings.colorTheme
     val themeSeedColorArgb: Preference<Long> = settings.themeAccentColorArgb
+    val invertOnPrimaryColors: Preference<Boolean> = settings.invertOnPrimaryColors
     val automaticRestart: Preference<Boolean> = settings.automaticRestart
     val autoUpdateCurrentProfileOnStart: Preference<Boolean> = settings.autoUpdateCurrentProfileOnStart
     val hideAppIcon: Preference<Boolean> = settings.hideAppIcon
@@ -73,6 +74,7 @@ class AppSettingsViewModel(
     fun onAppLanguageChange(language: AppLanguage) = controller.applyAppLanguage(language)
     fun onColorThemeChange(theme: AppColorTheme) = colorTheme.set(theme)
     fun onThemeSeedColorChange(argb: Long) = themeSeedColorArgb.set(argb)
+    fun onInvertOnPrimaryColorsChange(enabled: Boolean) = invertOnPrimaryColors.set(enabled)
     fun resetThemeSeedColor() = themeSeedColorArgb.set(DEFAULT_CUSTOM_THEME_SEED_ARGB)
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
     fun onBottomBarUseLegacyStyleChange(enabled: Boolean) = bottomBarUseLegacyStyle.set(enabled)

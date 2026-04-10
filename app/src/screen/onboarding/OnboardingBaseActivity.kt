@@ -96,6 +96,7 @@ private fun OnboardingActivityTheme(
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
     val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
+    val invertOnPrimaryColors by appSettingsViewModel.invertOnPrimaryColors.state.collectAsState()
     val pageScale by appSettingsViewModel.pageScale.state.collectAsState()
 
     ProvideAndroidPlatformTheme {
@@ -108,6 +109,7 @@ private fun OnboardingActivityTheme(
             YumeTheme(
                 themeMode = themeMode,
                 themeSeedColorArgb = themeSeedColorArgb,
+                invertOnPrimaryColors = invertOnPrimaryColors,
             ) {
                 Scaffold { _ ->
                     Surface(
