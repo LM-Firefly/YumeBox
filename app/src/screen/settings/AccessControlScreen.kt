@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.*
@@ -129,6 +130,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     TopBar(
                         title = MLang.AccessControl.Title,
                         scrollBehavior = scrollBehavior,
+                        navigationIconPadding = 0.dp,
+                        navigationIcon = { NavigationBackIcon(navigator = navigator) },
                         actions = {
                             IconButton(
                                 onClick = { showSettingsSheet = true }

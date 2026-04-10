@@ -25,6 +25,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -54,6 +55,7 @@ import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
@@ -90,7 +92,12 @@ fun AppSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.AppSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
+            )
         },
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
@@ -253,6 +260,7 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val showTrafficNotification by viewModel.showTrafficNotification.state.collectAsState()
     val singleNodeTest by viewModel.singleNodeTest.state.collectAsState()
+    val logLevel by viewModel.logLevel.state.collectAsState()
     val exitUiWhenBackground by viewModel.exitUiWhenBackground.state.collectAsState()
     var batteryOptimizationIgnored by remember {
         mutableStateOf(isBatteryOptimizationIgnored(context))
@@ -284,6 +292,14 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
             summary = MLang.AppSettings.ServiceSection.TrafficNotificationSummary,
             checked = showTrafficNotification,
             onCheckedChange = viewModel::onShowTrafficNotificationChange,
+        )
+        PreferenceEnumItem(
+            title = MLang.AppSettings.ServiceSection.LogLevelTitle,
+            summary = MLang.AppSettings.ServiceSection.LogLevelSummary,
+            currentValue = logLevel,
+            items = listOf("VERBOSE", "DEBUG", "INFO", "WARN", "ERROR", "ASSERT"),
+            values = listOf(Log.VERBOSE, Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.ASSERT),
+            onValueChange = viewModel::onLogLevelChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.ServiceSection.SingleNodeTestTitle,

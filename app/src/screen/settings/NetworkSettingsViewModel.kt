@@ -30,6 +30,7 @@ import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
@@ -50,10 +51,11 @@ import kotlinx.coroutines.launch
 
 class NetworkSettingsViewModel(
     application: Application,
-    settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: NetworkSettingsController,
     private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
 
     val proxyMode: Preference<ProxyMode> = settings.proxyMode
     val bypassPrivateNetwork: Preference<Boolean> = settings.bypassPrivateNetwork

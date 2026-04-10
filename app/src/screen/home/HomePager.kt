@@ -40,6 +40,7 @@ import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.ramcosta.composedestinations.generated.destinations.ConnectionScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
@@ -67,6 +68,8 @@ fun HomePager(
     val selectedServerName by homeViewModel.selectedServerName.collectAsState()
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val speedHistory by homeViewModel.speedHistory.collectAsState()
+    val connections by homeViewModel.connections.collectAsState()
+    val tunnelMode by homeViewModel.tunnelMode.collectAsState()
     val proxyMode by homeViewModel.proxyMode.collectAsState()
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
@@ -142,28 +145,24 @@ fun HomePager(
                             TrafficData.ZERO
                         },
                         profileName = currentProfile?.name?.takeIf { isRunning },
-                        tunnelMode = null,
+                        tunnelMode = tunnelMode?.takeIf { isRunning },
                         controlState = controlState,
                         proxyMode = proxyMode,
                         isEnabled = isProxyEnabled,
                         onClick = {
-                            if (!hasEnabledProfile || recommendedProfile == null) {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                            if (isRunning) {
+                                coroutineScope.launch { homeViewModel.stopProxy() }
+                                return@TrafficDisplay
+                            }
+                            val targetProfile = recommendedProfile
+                            if (!hasEnabledProfile || targetProfile == null) {
                                 context.toast(MLang.ProfilesVM.Error.ProfileNotExist)
                                 return@TrafficDisplay
                             }
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                            handleProxyToggle(
-                                isRunning = isRunning,
-                                recommendedProfile = recommendedProfile,
-                                onStart = { profile ->
-                                    homeViewModel.startProxy(
-                                        profileId = profile.uuid.toString(),
-                                        mode = null
-                                    )
-                                },
-                                onStop = {
-                                    coroutineScope.launch { homeViewModel.stopProxy() }
-                                }
+                            homeViewModel.startProxy(
+                                profileId = targetProfile.uuid.toString(),
+                                mode = null,
                             )
                         }
                     )
@@ -176,34 +175,30 @@ fun HomePager(
                         IpInfoDisplay(
                             state = if (isRunning) ipMonitoringState else com.github.yumelira.yumebox.data.gateway.IpMonitoringState.Loading
                         )
-                    }
-
-                    SpeedChart(
-                        speedHistory = speedHistory,
-                        isRunning = isRunning,
-                        onClick = {
-                            navigator.navigate(TrafficStatisticsScreenDestination) {
-                                launchSingleTop = true
+                        SpeedChart(
+                            speedHistory = speedHistory,
+                            isRunning = isRunning,
+                            onClick = {
+                                navigator.navigate(TrafficStatisticsScreenDestination) {
+                                    launchSingleTop = true
+                                }
                             }
+                        )
+                        if (isRunning) {
+                            TopologyChart(
+                                connections = connections,
+                                onClick = {
+                                    navigator.navigate(ConnectionScreenDestination) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
 
             item { Spacer(modifier = Modifier.height(UiDp.dp32)) }
         }
-    }
-}
-
-private fun handleProxyToggle(
-    isRunning: Boolean,
-    recommendedProfile: com.github.yumelira.yumebox.service.runtime.entity.Profile?,
-    onStart: (com.github.yumelira.yumebox.service.runtime.entity.Profile) -> Unit,
-    onStop: () -> Unit
-) {
-    if (!isRunning) {
-        recommendedProfile?.let { profile -> onStart(profile) }
-    } else {
-        onStop()
     }
 }

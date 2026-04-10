@@ -43,9 +43,13 @@ import com.github.yumelira.yumebox.presentation.component.rememberStandalonePage
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -114,6 +118,14 @@ fun CustomRoutingScreen(
             TopBar(
                 title = MLang.MetaFeature.CustomRouting.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIcon = {
+                    IconButton(onClick = { saveAndExit() }) {
+                        Icon(
+                            imageVector = MiuixIcons.Back,
+                            contentDescription = MLang.Component.Navigation.Back,
+                        )
+                    }
+                },
             )
         },
     ) { paddingValues ->

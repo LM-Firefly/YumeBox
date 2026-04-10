@@ -63,6 +63,9 @@ class LogRecordService : Service() {
         var currentLogFileName: String? = null
             private set
 
+        @Volatile
+        private var instance: LogRecordService? = null
+
         fun start(context: Context) {
             val intent = Intent(context, LogRecordService::class.java).apply {
                 action = ACTION_START
@@ -84,6 +87,10 @@ class LogRecordService : Service() {
         fun getLogDir(context: Context): File {
             return File(context.filesDir, LOG_DIR).apply { mkdirs() }
         }
+
+        fun writeLog(logLine: String) {
+            instance?.writeLogInternal(logLine)
+        }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -92,11 +99,13 @@ class LogRecordService : Service() {
     private var logCollectJob: Job? = null
     private var logFile: File? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    private val writerLock = Any()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         createNotificationChannel()
     }
 
@@ -113,7 +122,19 @@ class LogRecordService : Service() {
         serviceScope.cancel()
         isRecording = false
         currentLogFileName = null
+        instance = null
         super.onDestroy()
+    }
+
+    private fun writeLogInternal(logLine: String) {
+        if (!isRecording) return
+        serviceScope.launch {
+            runCatching {
+                appendLogLine(logLine + "\n")
+            }.onFailure { e ->
+                Timber.tag(TAG).e(e, "Runtime app log write failed")
+            }
+        }
     }
 
     private fun startRecording() {
@@ -138,8 +159,7 @@ class LogRecordService : Service() {
                             if (isRecording) {
                                 runCatching {
                                     val line = "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
-                                    logWriter?.write(line)
-                                    logWriter?.flush()
+                                    appendLogLine(line)
                                 }.onFailure { e ->
                                     Timber.tag(TAG).e(e, "Log write failed")
                                 }
@@ -186,6 +206,13 @@ class LogRecordService : Service() {
             logFile = null
         }.onFailure { e ->
             Timber.tag(TAG).e(e, "Log writer close failed")
+        }
+    }
+
+    private fun appendLogLine(line: String) {
+        synchronized(writerLock) {
+            logWriter?.write(line)
+            logWriter?.flush()
         }
     }
 

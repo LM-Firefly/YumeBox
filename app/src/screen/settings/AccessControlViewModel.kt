@@ -29,6 +29,7 @@ import com.github.yumelira.yumebox.core.presentation.AndroidContractStateViewMod
 import com.github.yumelira.yumebox.core.presentation.LoadableState
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.service.root.RootPackageShell
 import dev.oom_wg.purejoy.mlang.MLang
@@ -43,12 +44,13 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: AccessControlController,
 ) : AndroidContractStateViewModel<AccessControlViewModel.UiState, AccessControlViewModel.AccessControlUiEffect>(
     application,
     UiState(),
 ) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
 
     data class AppInfo(
         val packageName: String,

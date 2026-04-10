@@ -21,6 +21,10 @@ on:
       raw_apk_artifact_name:
         required: true
         type: string
+      with_extension:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -112,10 +116,15 @@ jobs:
         run: |
           set -eu
           chmod +x gradlew
+          EXTRA_ARGS=""
+          if [ "${{ inputs.with_extension }}" = "true" ]; then
+            EXTRA_ARGS="-PwithExtension=true"
+          fi
           ./gradlew --no-daemon \
             -Pupdate.channel="${{ inputs.channel }}" \
             -Pupdate.tag="${{ inputs.release_tag }}" \
             -Pupdate.metaAssetName="${{ inputs.meta_asset_name }}" \
+            $EXTRA_ARGS \
             :${{ inputs.module }}:assembleRelease
 
       - name: Upload raw APK artifact

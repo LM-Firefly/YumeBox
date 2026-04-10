@@ -158,7 +158,7 @@ fun ProfileCard(
                                 Text(
                                     text = timeText,
                                     fontSize = 12.sp,
-                                    color = colorScheme.onTertiaryContainer.copy(alpha = opacity.strong),
+                                    color = colorScheme.onSurfaceVariantSummary,
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
                                     modifier = Modifier.padding(end = componentSizes.profileMetaTrailingInset)

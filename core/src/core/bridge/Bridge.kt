@@ -59,6 +59,7 @@ object Bridge {
     external fun nativeHealthCheckProxy(completable: CompletableDeferred<String>, proxyName: String)
     external fun nativeHealthCheckAll()
     external fun nativePatchSelector(selector: String, name: String): Boolean
+    external fun nativeForcePatchSelector(selector: String, name: String): Boolean
     external fun nativeFetchAndValid(
         completable: FetchCallback,
         path: String,

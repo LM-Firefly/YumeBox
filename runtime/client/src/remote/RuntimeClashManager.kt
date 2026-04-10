@@ -143,11 +143,11 @@ class RuntimeClashManager(
     }
 
     override fun patchSelector(group: String, name: String): Boolean {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.patchSelector(appContext, group, name) } },
-            localCall = { local.patchSelector(group, name) },
-            fallbackOnRootFailure = false,
-        )
+        return local.patchSelector(group, name)
+    }
+
+    override fun patchForceSelector(group: String, name: String): Boolean {
+        return local.patchForceSelector(group, name)
     }
 
     override fun closeConnection(id: String): Boolean {

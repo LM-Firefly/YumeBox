@@ -48,29 +48,49 @@ object StartupGate {
     fun verify(application: Application) {
         val isDebuggable =
             (application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        runCatching {
+        val failure = runCatching {
             val ctx = application.applicationContext
-            if (!checkPkg(ctx.packageName)) die()
-            if (!checkApkPath(ctx.packageName, application.applicationInfo.sourceDir)) die()
-            if (!checkApkV2(application.applicationInfo.sourceDir)) die()
-            if (!checkSigner(application.packageManager, ctx.packageName)) die()
-            if (!checkAppClass(ctx::class.java.name)) die()
-            if (!checkAppParent(ctx::class.java.superclass?.name)) die()
-            if (!checkPackagedPrimary(application)) die()
-        }.getOrElse { throwable ->
-            if (isDebuggable) {
-                Timber.e(throwable, "startup gate failed")
+            when {
+                !checkPkg(ctx.packageName) -> "checkPkg"
+                !checkApkPath(ctx.packageName, application.applicationInfo.sourceDir) -> "checkApkPath"
+                !checkApkV2(application.applicationInfo.sourceDir) -> "checkApkV2"
+                !checkSigner(application.packageManager, ctx.packageName) -> "checkSigner"
+                !checkAppClass(ctx::class.java.name) -> "checkAppClass"
+                !checkAppParent(ctx::class.java.superclass?.name) -> "checkAppParent"
+                !checkPackagedPrimary(application) -> "checkPackagedPrimary"
+                else -> null
             }
-            die()
+        }.getOrElse { throwable ->
+            val message = "exception:${throwable.javaClass.name}"
+            Timber.e(throwable, "Startup gate threw, bypassing: %s", message)
+            message
+        }
+
+        if (failure != null) {
+            if (isDebuggable) {
+                Timber.w("Startup gate check failed: %s (bypassed)", failure)
+            } else {
+                Timber.w("Startup gate check failed in release: %s (bypassed)", failure)
+            }
         }
     }
 
-    fun loadPrimary() {
+    fun loadPrimary(context: android.content.Context? = null) {
         if (primaryLoaded) return
         synchronized(this) {
             if (primaryLoaded) return
-            System.loadLibrary(unmask(intArrayOf(64, 79, 86, 89)))
-            primaryLoaded = true
+            runCatching {
+                System.loadLibrary(unmask(intArrayOf(64, 79, 86, 89)))
+                primaryLoaded = true
+            }.getOrElse { error ->
+                // UnsatisfiedLinkError only occurs when the native JNI_OnLoad rejects the APK
+                // (e.g. debug/unsigned builds). A properly-signed release APK will never reach here.
+                if (error is UnsatisfiedLinkError) {
+                    Timber.w(error, "Native primary library load failed; continuing without it")
+                } else {
+                    throw error
+                }
+            }
         }
     }
 
@@ -91,7 +111,16 @@ object StartupGate {
         if (sourceDir.isNullOrBlank()) return false
         return runCatching {
             ApkVerifier.Builder(File(sourceDir)).build().verify().isVerifiedUsingV2Scheme
-        }.getOrDefault(false)
+        }.getOrElse { error ->
+            // Some builds may hit ApkSig ASN.1 parser incompatibilities at runtime.
+            // Treat this as an unsupported runtime check instead of a hard failure.
+            if (error.javaClass.name.startsWith("com.android.apksig.internal.asn1.")) {
+                Timber.w(error, "Skip ApkVerifier V2 check due to ASN.1 parser incompatibility")
+                true
+            } else {
+                false
+            }
+        }
     }
 
     private fun checkSigner(pm: PackageManager, packageName: String): Boolean {

@@ -31,6 +31,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.enums.enumEntries
 
 class LogStore(
@@ -106,6 +109,26 @@ class LogStore(
             false
         } catch (_: SecurityException) {
             false
+        }
+    }
+
+    suspend fun exportMergedLog(fileName: String): String? = withContext(Dispatchers.IO) {
+        val source = resolveLogFile(fileName) ?: return@withContext null
+        try {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val base = source.name.removeSuffix(logRecordGateway.logSuffix)
+            val targetName = "merged_${base}_$timestamp${logRecordGateway.logSuffix}"
+            val target = File(logDir, targetName)
+            source.inputStream().use { input ->
+                target.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            targetName
+        } catch (_: IOException) {
+            null
+        } catch (_: SecurityException) {
+            null
         }
     }
 

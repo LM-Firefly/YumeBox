@@ -27,11 +27,15 @@ import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.data.model.AppLogBridge
+import com.github.yumelira.yumebox.data.model.AppLogTree
+import com.github.yumelira.yumebox.data.model.CrashHandler
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.di.featureProxyModules
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
+import com.github.yumelira.yumebox.service.LogRecordService
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,9 +55,11 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        if (Timber.forest().isEmpty()) {
+            Timber.plant(AppLogTree())
         }
+        CrashHandler.init(this)
+        AppLogBridge.runtimeLogWriter = { line -> LogRecordService.writeLog(line) }
 
         StartupGate.loadPrimary()
         Global.init(this)

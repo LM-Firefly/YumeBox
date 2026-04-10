@@ -87,10 +87,12 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 Clash.loadCompiledConfig(service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")).await()
 
                 val restoreSelections = SelectionDao.queryRestorableSelections(active.uuid)
+                val restorePins = SelectionDao.getAllPins(active.uuid)
                 val runtimeGroups = Clash.queryGroupNames(false).map { Clash.queryGroup(it, ProxySort.Default) }
                 SelectionRestoreExecutor.restore(
                     profileUuid = active.uuid,
                     selections = restoreSelections,
+                    pins = restorePins,
                     runtimeGroups = runtimeGroups,
                     tag = "LOCAL",
                 )

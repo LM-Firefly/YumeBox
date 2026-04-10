@@ -28,6 +28,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.service.root.RootPackageShell
 import kotlinx.coroutines.Dispatchers
@@ -43,9 +44,11 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: AccessControlController,
 ) : AndroidViewModel(application) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
+
     data class AppInfo(
         val packageName: String,
         val label: String,

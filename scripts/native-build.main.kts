@@ -104,6 +104,47 @@ object SystemDetector {
     }
 }
 
+object ToolResolver {
+    private fun isWindowsExe(path: String): Boolean {
+        return SystemDetector.os != "windows" || path.lowercase().endsWith(".exe") || path.lowercase().endsWith(".cmd") || path.lowercase().endsWith(".bat")
+    }
+
+    private fun normalizeCandidate(candidate: String): String? {
+        if (candidate.isBlank()) return null
+        val file = File(candidate)
+        if (file.exists() && file.isFile && isWindowsExe(file.name)) {
+            return file.absolutePath
+        }
+        return null
+    }
+
+    private fun firstExistingEnvPath(vararg envKeys: String): String? {
+        return envKeys
+            .asSequence()
+            .mapNotNull { System.getenv(it) }
+            .mapNotNull { normalizeCandidate(it) }
+            .firstOrNull()
+    }
+
+    fun resolveGo(): String =
+        firstExistingEnvPath("YUMEBOX_GO", "GO")
+            ?: "go"
+
+    fun resolveCargo(): String =
+        firstExistingEnvPath("YUMEBOX_CARGO", "CARGO")
+            ?: "cargo"
+
+    fun hasGo(): Boolean {
+        val resolved = resolveGo()
+        return if (resolved == "go") SystemDetector.checkCommandExists("go") else true
+    }
+
+    fun hasCargo(): Boolean {
+        val resolved = resolveCargo()
+        return if (resolved == "cargo") SystemDetector.checkCommandExists("cargo") else true
+    }
+}
+
 data class CommandResult(
     val success: Boolean,
     val output: String = "",
@@ -270,6 +311,7 @@ class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTool
 
     private val buildTags = config.getCsv("golang.buildTags", "cmfa")
     private val buildFlags = config.getCsv("golang.buildFlags", "-trimpath")
+    private val goExecutable = ToolResolver.resolveGo()
 
     fun buildAll() {
         if (!sourceDir.exists()) {
@@ -299,8 +341,9 @@ class GoBuilder(private val config: ProjectConfig, private val ndkTools: NdkTool
         val env = buildGoEnv(abi)
 
         val command = buildList {
-            add("go")
+            add(goExecutable)
             add("build")
+            add("-buildvcs=false")
             add("-buildmode=c-shared")
             if (buildTags.isNotEmpty()) {
                 add("-tags=${buildTags.joinToString(",")}")
@@ -375,6 +418,7 @@ class RustBuilder(private val config: ProjectConfig) {
     private val sourceDir = File("lib/native/rust")
     private val outputDir = File("build/native/rust")
     private val appJniRoot = File("jniLibs")
+    private val cargoExecutable = ToolResolver.resolveCargo()
 
     fun buildAll() {
         if (!sourceDir.exists()) {
@@ -392,7 +436,7 @@ class RustBuilder(private val config: ProjectConfig) {
         println("[building] Building for $abi (Rust)...")
 
         val command = listOf(
-            "cargo", "ndk",
+            cargoExecutable, "ndk",
             "-t", abi,
             "-o", outputDir.absolutePath,
             "build", "--release"
@@ -715,8 +759,10 @@ fun main(args: Array<String>) {
     val ndkTools = NdkTools(config)
 
     println("NDK: ${ndkTools.ndkDir.absolutePath}")
-    println("Go: ${if (SystemDetector.checkCommandExists("go")) "OK" else "NOT FOUND"}")
-    println("Rust: ${if (SystemDetector.checkCommandExists("cargo")) "OK" else "NOT FOUND"}")
+    val goExecutable = ToolResolver.resolveGo()
+    val cargoExecutable = ToolResolver.resolveCargo()
+    println("Go: ${if (ToolResolver.hasGo()) "OK ($goExecutable)" else "NOT FOUND"}")
+    println("Rust: ${if (ToolResolver.hasCargo()) "OK ($cargoExecutable)" else "NOT FOUND"}")
     println("XZ library: org.tukaani:xz:1.12")
 
     val buildGo = args.isEmpty() || args.contains("--all") || args.contains("--go")

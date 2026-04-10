@@ -23,6 +23,7 @@ package com.github.yumelira.yumebox.screen.home
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -121,23 +122,36 @@ private fun IpInfoRow(
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
             Spacer(modifier = Modifier.height(UiDp.dp4))
-            Text(
-                text = value,
-                style = MiuixTheme.textStyles.body1.copy(lineHeight = 20.sp),
-                fontFamily = FontFamily.Monospace,
-                color = valueColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = if (isRevealable) {
-                    Modifier
+            if (isRevealable) {
+                Box(
+                    modifier = Modifier
                         .widthIn(max = INFO_VALUE_MAX_WIDTH)
                         .height(INFO_TEXT_HEIGHT)
                         .clip(INFO_VALUE_CORNER_RADIUS)
-                        .clickable(onClick = onToggleVisibility)
-                } else {
-                    Modifier.height(INFO_TEXT_HEIGHT)
+                        .clickable(onClick = onToggleVisibility),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Text(
+                        text = value,
+                        style = MiuixTheme.textStyles.body1.copy(lineHeight = 20.sp),
+                        fontFamily = FontFamily.Monospace,
+                        color = valueColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
                 }
-            )
+            } else {
+                Text(
+                    text = value,
+                    style = MiuixTheme.textStyles.body1.copy(lineHeight = 20.sp),
+                    fontFamily = FontFamily.Monospace,
+                    color = valueColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.height(INFO_TEXT_HEIGHT)
+                )
+            }
         }
 
         CountryBadge(countryCode = countryCode)

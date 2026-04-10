@@ -35,10 +35,11 @@ import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.substore.SubStorePaths
 import com.github.yumelira.yumebox.substore.SubStoreServiceController
 import com.github.yumelira.yumebox.substore.SubStoreServiceRequest
-import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
 import com.github.yumelira.yumebox.substore.model.AutoCloseMode
+import com.github.yumelira.yumebox.substore.service.ExtensionStatusService
 import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,6 +53,7 @@ class FeatureViewModel(
     store: FeatureStore,
     private val application: Application,
     private val downloadClient: SubStoreDownloadClient,
+    private val extensionStatusService: ExtensionStatusService,
 ) : ViewModel() {
     val allowLanAccess: Preference<Boolean> = store.allowLanAccess
     val backendPort: Preference<Int> = store.backendPort
@@ -59,8 +61,9 @@ class FeatureViewModel(
     val selectedPanelType: Preference<Int> = store.selectedPanelType
     val panelOpenMode: Preference<LinkOpenMode> = store.panelOpenMode
     val exitUiWhenBackground: Preference<Boolean> = store.exitUiWhenBackground
+    private val subStoreAutoCloseModeOrdinal: Preference<Int> = store.subStoreAutoCloseModeOrdinal
 
-    private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
+    private val _autoCloseMode = MutableStateFlow(autoCloseModeFromOrdinal(subStoreAutoCloseModeOrdinal.value))
     val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()
 
     val serviceRunningState: StateFlow<Boolean> = SubStoreServiceController.snapshot
@@ -88,11 +91,6 @@ class FeatureViewModel(
     private val _isJavetLoaded = MutableStateFlow(false)
     val isJavetLoaded: StateFlow<Boolean> = _isJavetLoaded.asStateFlow()
 
-    companion object {
-        private const val EXTENSION_PACKAGE_NAME = "com.github.yumelira.yumebox.extension"
-        private const val JAVET_LIB_NAME = "libjavet-node-android"
-    }
-
     fun startService() {
         if (DeviceUtil.is32BitDevice()) {
             showToast(MLang.Feature.SubStore.Not32Bit)
@@ -119,7 +117,7 @@ class FeatureViewModel(
 
     private fun checkSubStoreReadiness(): Boolean {
         return when {
-            !_isExtensionInstalled.value -> {
+            !(_isExtensionInstalled.value || _isJavetLoaded.value) -> {
                 showToast(MLang.Feature.SubStore.InstallExtension); false
             }
 
@@ -140,45 +138,39 @@ class FeatureViewModel(
             cancelAutoCloseTimer()
             SubStoreServiceController.stopService(application)
             _autoCloseMode.value = AutoCloseMode.DISABLED
+            subStoreAutoCloseModeOrdinal.set(AutoCloseMode.DISABLED.ordinal)
         }
     }
 
     fun setAllowLanAccess(allow: Boolean) = allowLanAccess.set(allow)
     fun setAutoCloseMode(mode: AutoCloseMode) {
+        subStoreAutoCloseModeOrdinal.set(mode.ordinal)
         _autoCloseMode.value = mode
-        if (serviceRunningState.value) {
-            cancelAutoCloseTimer()
-            setupAutoCloseTimer()
+        when {
+            mode == AutoCloseMode.DISABLED && serviceRunningState.value -> stopService()
+            mode != AutoCloseMode.DISABLED && !serviceRunningState.value -> startService()
+            serviceRunningState.value -> {
+                cancelAutoCloseTimer()
+                setupAutoCloseTimer()
+            }
         }
     }
 
     fun initializeSubStoreStatus() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
+            _autoCloseMode.value = autoCloseModeFromOrdinal(subStoreAutoCloseModeOrdinal.value)
             _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
-            _isExtensionInstalled.value = checkExtensionInstalled()
-            initializeJavetStatus()
+            _isExtensionInstalled.value = extensionStatusService.isExtensionAvailable()
+            _isJavetLoaded.value = if (_isExtensionInstalled.value) extensionStatusService.isJavetLoaded() else false
+            tryStartServiceIfConfigured()
         }
-    }
-
-    private fun checkExtensionInstalled(): Boolean = runCatching {
-        application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
-        true
-    }.getOrDefault(false)
-
-    private fun initializeJavetStatus() {
-        if (!_isExtensionInstalled.value) {
-            _isJavetLoaded.value = false; return
-        }
-        NativeLibraryManager.initialize(application)
-        _isJavetLoaded.value = if (!NativeLibraryManager.isLibraryAvailable(JAVET_LIB_NAME)) {
-            NativeLibraryManager.extractAllLibraries()[JAVET_LIB_NAME] == true
-        } else true
     }
 
     fun refreshExtensionStatus() {
-        viewModelScope.launch {
-            _isExtensionInstalled.value = checkExtensionInstalled()
-            initializeJavetStatus()
+        viewModelScope.launch(Dispatchers.IO) {
+            _isExtensionInstalled.value = extensionStatusService.isExtensionAvailable()
+            _isJavetLoaded.value = if (_isExtensionInstalled.value) extensionStatusService.isJavetLoaded() else false
+            tryStartServiceIfConfigured()
         }
     }
 
@@ -252,6 +244,7 @@ class FeatureViewModel(
                 showToast(if (success) successMessage else failureMessage)
                 if (success) {
                     _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
+                    tryStartServiceIfConfigured()
                 }
             }.onFailure { e ->
                 showToast(MLang.Feature.SubStore.DownloadError.format(e.message ?: MLang.Util.Error.UnknownError))
@@ -282,5 +275,15 @@ class FeatureViewModel(
     private fun cancelAutoCloseTimer() {
         autoCloseJob?.cancel()
         autoCloseJob = null
+    }
+
+    private fun tryStartServiceIfConfigured() {
+        if (_autoCloseMode.value != AutoCloseMode.DISABLED && !serviceRunningState.value) {
+            startService()
+        }
+    }
+
+    private fun autoCloseModeFromOrdinal(ordinal: Int): AutoCloseMode {
+        return AutoCloseMode.entries.getOrElse(ordinal) { AutoCloseMode.DISABLED }
     }
 }

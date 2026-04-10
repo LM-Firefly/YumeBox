@@ -36,6 +36,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.data.util.ProxyChainResolver
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
@@ -68,6 +69,11 @@ enum class ProxyGroupSyncPriority {
 class ProxyFacade(
     private val context: Context,
 ) {
+    private data class DelayCacheEntry(
+        val delay: Int,
+        val updatedAt: Long,
+    )
+
     private companion object {
         const val TRAFFIC_TOTAL_POLL_TICKS = 10
         const val RUNTIME_PAYLOAD_REFRESH_TICKS = 15
@@ -75,6 +81,7 @@ class ProxyFacade(
         const val PROXY_SELECT_FULL_REFRESH_DELAY_MS = 400L
         const val ROOT_TUN_BOOTSTRAP_ATTEMPTS = 20
         const val ROOT_TUN_BOOTSTRAP_DELAY_MS = 300L
+        const val PROXY_DELAY_CACHE_TTL_MS = 5 * 60 * 1000L
     }
 
     private val appContext: Context = context.appContextOrSelf
@@ -85,6 +92,7 @@ class ProxyFacade(
     private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
     private val runtimeControl = ProxyRuntimeControl(appContext) { actionClashRequestStop }
     private val previewCache = ProxyGroupPreviewCache()
+    private val proxyChainResolver = ProxyChainResolver()
     private val _rootTunStatus = MutableStateFlow(RootTunStatus())
     val rootTunStatus: StateFlow<RootTunStatus> = _rootTunStatus.asStateFlow()
     private val _runtimeSnapshot = MutableStateFlow(
@@ -128,6 +136,7 @@ class ProxyFacade(
     private var activeProxyGroupSyncPriority = ProxyGroupSyncPriority.OFF
     private var lastProxyGroupsSummary: String? = null
     private var generationCounter = 0L
+    private val proxyDelayCache = mutableMapOf<String, DelayCacheEntry>()
 
     private val serviceEventsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -373,6 +382,38 @@ class ProxyFacade(
         return ok
     }
 
+    suspend fun forceSelectProxy(group: String, proxyName: String): Boolean {
+        Timber.d("Force select proxy: group=$group proxy=$proxyName")
+        val ok = if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
+            RootTunController.patchForceSelector(appContext, group, proxyName)
+        } else {
+            connectCurrentBackend()
+            ServiceClient.clash().patchForceSelector(group, proxyName)
+        }
+        if (ok) {
+            applyLocalForceSelection(group = group, proxyName = proxyName)
+            scope.launch {
+                runCatching {
+                    refreshProxyGroup(group)
+                    scheduleRuntimeProxyGroupsRefresh(PROXY_SELECT_FULL_REFRESH_DELAY_MS)
+                }
+            }
+        }
+        return ok
+    }
+
+    private fun applyLocalForceSelection(group: String, proxyName: String) {
+        val desired = proxyName.trim()
+        val currentGroups = _proxyGroups.value
+        if (currentGroups.isEmpty()) return
+        val updatedGroups = currentGroups.map { info ->
+            if (info.name != group) return@map info
+            val nextNow = if (desired.isNotEmpty()) desired else info.now.trim()
+            info.copy(now = nextNow, fixed = desired)
+        }
+        publishProxyGroups(attachChainPaths(updatedGroups), cacheForPreview = true)
+    }
+
     suspend fun healthCheck(group: String) {
         Timber.d("Health check request: group=%s", group)
         if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
@@ -509,10 +550,10 @@ class ProxyFacade(
                         RootTunController.queryAllProxyGroups(
                             context = appContext,
                             excludeNotSelectable = false,
-                        ).map(::toProxyGroupInfo)
+                        ).let(::toProxyGroupInfos)
                     } else {
                         connectCurrentBackend()
-                        ServiceClient.clash().queryAllProxyGroups(excludeNotSelectable = false).map(::toProxyGroupInfo)
+                        ServiceClient.clash().queryAllProxyGroups(excludeNotSelectable = false).let(::toProxyGroupInfos)
                     }
                 }.getOrElse { error ->
                     Timber.e(error, "Failed to refresh proxy groups")
@@ -561,7 +602,7 @@ class ProxyFacade(
                 }
             } ?: return
 
-            val updatedGroups = updateCachedProxyGroup(updatedGroup)
+            val updatedGroups = attachChainPaths(updateCachedProxyGroup(updatedGroup))
             publishProxyGroups(updatedGroups, cacheForPreview = true)
         }
     }
@@ -1163,7 +1204,7 @@ class ProxyFacade(
         connectCurrentBackend()
         val groups = ServiceClient.clash()
             .queryProfileProxyGroups(excludeNotSelectable = false)
-            .map(::toProxyGroupInfo)
+            .let(::toProxyGroupInfos)
 
         return groups
     }
@@ -1189,16 +1230,79 @@ class ProxyFacade(
     }
 
     private fun publishProxyGroups(groups: List<ProxyGroupInfo>, cacheForPreview: Boolean) {
-        val summary = summarizeProxyGroups(groups)
+        val normalizedGroups = enrichProxyGroupDelays(groups)
+        val summary = summarizeProxyGroups(normalizedGroups)
         if (summary != lastProxyGroupsSummary) {
-            _proxyGroups.value = groups
+            _proxyGroups.value = normalizedGroups
             lastProxyGroupsSummary = summary
         }
-        updateGroupsReady(groups.isNotEmpty())
-        updateResolvedPrimaryNode(groups)
+        updateGroupsReady(normalizedGroups.isNotEmpty())
+        updateResolvedPrimaryNode(normalizedGroups)
         if (cacheForPreview) {
-            backfillPreviewCache(groups)
+            backfillPreviewCache(normalizedGroups)
         }
+    }
+
+    private fun enrichProxyGroupDelays(groups: List<ProxyGroupInfo>): List<ProxyGroupInfo> {
+        if (groups.isEmpty()) {
+            proxyDelayCache.clear()
+            return groups
+        }
+        val now = System.currentTimeMillis()
+        groups.asSequence()
+            .flatMap { group -> group.proxies.asSequence() }
+            .forEach { proxy ->
+                if (proxy.delay != 0) {
+                    proxyDelayCache[proxy.name] = DelayCacheEntry(delay = proxy.delay, updatedAt = now)
+                }
+            }
+        val validDelayMap = proxyDelayCache.entries
+            .filter { (_, entry) -> now - entry.updatedAt <= PROXY_DELAY_CACHE_TTL_MS }
+            .associate { (name, entry) -> name to entry.delay }
+        if (validDelayMap.isEmpty()) {
+            proxyDelayCache.clear()
+            return groups
+        }
+        proxyDelayCache.keys.removeAll { name -> name !in validDelayMap }
+        val groupNowMap = groups.associate { group -> group.name to group.now.trim() }
+        return groups.map { group ->
+            val enrichedProxies = group.proxies.map { proxy ->
+                val effectiveDelay = resolveEffectiveDelay(
+                    name = proxy.name,
+                    delayMap = validDelayMap,
+                    groupNowMap = groupNowMap,
+                    visited = mutableSetOf(),
+                )
+                if (effectiveDelay != null && effectiveDelay != proxy.delay) {
+                    proxy.copy(delay = effectiveDelay)
+                } else {
+                    proxy
+                }
+            }
+            group.copy(proxies = enrichedProxies)
+        }
+    }
+
+    private fun resolveEffectiveDelay(
+        name: String,
+        delayMap: Map<String, Int>,
+        groupNowMap: Map<String, String>,
+        visited: MutableSet<String>,
+    ): Int? {
+        if (!visited.add(name)) return null
+        val selectedChild = groupNowMap[name].orEmpty()
+        if (selectedChild.isNotEmpty()) {
+            val childDelay = resolveEffectiveDelay(
+                name = selectedChild,
+                delayMap = delayMap,
+                groupNowMap = groupNowMap,
+                visited = visited,
+            )
+            if (childDelay != null && childDelay != 0) {
+                return childDelay
+            }
+        }
+        return delayMap[name]?.takeIf { it != 0 }
     }
 
     private fun toProxyGroupInfo(group: ProxyGroup): ProxyGroupInfo {
@@ -1209,7 +1313,31 @@ class ProxyFacade(
             now = group.now.trim(),
             icon = group.icon,
             hidden = group.hidden,
+            fixed = group.fixed.trim(),
+            chainPath = emptyList(),
         )
+    }
+
+    private fun toProxyGroupInfos(groups: List<ProxyGroup>): List<ProxyGroupInfo> {
+        return attachChainPaths(groups.map(::toProxyGroupInfo))
+    }
+
+    private fun attachChainPaths(groups: List<ProxyGroupInfo>): List<ProxyGroupInfo> {
+        if (groups.isEmpty()) return groups
+        val groupMap = groups.associateBy { it.name }
+        return groups.map { group ->
+            if (!group.type.group || group.now.isBlank()) {
+                group.copy(chainPath = emptyList())
+            } else {
+                group.copy(
+                    chainPath = proxyChainResolver.buildChainPathFromMap(
+                        groupName = group.name,
+                        currentNode = group.now,
+                        groups = groupMap,
+                    ),
+                )
+            }
+        }
     }
 
     private fun updateCachedProxyGroup(updated: ProxyGroupInfo): List<ProxyGroupInfo> {

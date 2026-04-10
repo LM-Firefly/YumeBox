@@ -31,14 +31,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.VpnUtils
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.github.yumelira.yumebox.data.model.AccessControlMode
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
+import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
@@ -89,7 +92,12 @@ fun NetworkSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.NetworkSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
+            )
         },
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()

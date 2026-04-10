@@ -95,4 +95,21 @@ class ProxyChainResolver {
             buildChainPathRecursive(asGroup.now, groups, visited, path)
         }
     }
+
+    fun buildChainPathFromMap(
+        groupName: String,
+        currentNode: String,
+        groups: Map<String, ProxyGroupInfo>,
+        visited: MutableSet<String> = mutableSetOf(),
+    ): List<String> {
+        if (groupName in visited) return listOf(groupName)
+        visited.add(groupName)
+        val nextGroup = groups[currentNode] ?: return listOf(groupName, currentNode)
+        val nextNow = nextGroup.now.trim()
+        return if (nextGroup.type.group && nextNow.isNotBlank()) {
+            listOf(groupName) + buildChainPathFromMap(currentNode, nextNow, groups, visited)
+        } else {
+            listOf(groupName, currentNode)
+        }
+    }
 }

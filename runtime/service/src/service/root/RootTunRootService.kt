@@ -159,6 +159,10 @@ class RootTunRootService : RootService() {
             return runtime.patchSelector(group, name)
         }
 
+        override fun patchForceSelector(group: String, name: String): Boolean {
+            return runtime.patchForceSelector(group, name)
+        }
+
         override fun closeConnection(id: String): Boolean {
             return runtime.closeConnection(id)
         }
@@ -193,6 +197,7 @@ class RootTunRootService : RootService() {
         super.onCreate()
         Global.init(this)
         initializeServiceGlobal(this)
+        MMKV.disableProcessModeChecker()
         MMKV.initialize(this)
         stateStore = RootTunStateStore(this)
         startupLogStore = RootTunStartupLogStore(this)

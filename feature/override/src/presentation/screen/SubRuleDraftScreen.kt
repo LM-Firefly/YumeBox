@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
@@ -116,6 +117,8 @@ fun OverrideSubRuleDraftEditorScreen(
             TopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { innerPadding ->
