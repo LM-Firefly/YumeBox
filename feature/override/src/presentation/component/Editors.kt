@@ -62,12 +62,16 @@ internal fun OverrideTextInputContent(
     title: String,
     value: String?,
     placeholder: String = "",
+    randomValueGenerator: (() -> String)? = null,
+    randomButtonText: String = "Random",
     onValueChange: (String?) -> Unit,
 ) {
     StringInputContent(
         title = title,
         value = value,
         placeholder = placeholder,
+        randomValueGenerator = randomValueGenerator,
+        randomButtonText = randomButtonText,
         onValueChange = onValueChange,
     )
 }

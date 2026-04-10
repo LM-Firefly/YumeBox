@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/dlclark/regexp2"
@@ -28,6 +29,7 @@ type ProxyGroup struct {
 	Now     string   `json:"now"`
 	Icon    string   `json:"icon"`
 	Hidden  bool     `json:"hidden"`
+	Fixed   string   `json:"fixed"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -57,12 +59,25 @@ func buildProxyGroupsFromParsed(
 			continue
 		}
 
+		fixed := ""
+		if marshaler, ok := proxy.Adapter().(json.Marshaler); ok {
+			if data, err := marshaler.MarshalJSON(); err == nil {
+				var mapData map[string]any
+				if err := json.Unmarshal(data, &mapData); err == nil {
+					if value, ok := mapData["fixed"].(string); ok {
+						fixed = value
+					}
+				}
+			}
+		}
+
 		result = append(result, &ProxyGroup{
 			Name:    name,
 			Type:    proxy.Type().String(),
 			Now:     group.Now(),
 			Icon:    group.Icon(),
 			Hidden:  group.Hidden(),
+			Fixed:   fixed,
 			Proxies: convertPreviewProxies(group.Proxies(), pattern),
 		})
 	}

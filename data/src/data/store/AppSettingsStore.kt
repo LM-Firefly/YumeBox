@@ -22,6 +22,7 @@
 
 package com.github.yumelira.yumebox.data.store
 
+import android.util.Log
 import com.github.yumelira.yumebox.data.model.AppColorTheme
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
@@ -56,6 +57,7 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val singleNodeTest by boolFlow(true)
     val screenshotProtectionEnabled by boolFlow(false)
     val biometricUnlockEnabled by boolFlow(false)
+    val logLevel by intFlow(Log.INFO)
 
     val customUserAgent by strFlow("")
 

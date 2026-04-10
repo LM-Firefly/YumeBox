@@ -97,6 +97,7 @@ class StatusProvider : ContentProvider() {
             val app = context?.applicationContext as? android.app.Application ?: return@runCatching
             initializeServiceGlobal(app)
             // MMKV 必须在使用前初始化，ContentProvider 在 Application.onCreate 之前执行
+            MMKV.disableProcessModeChecker()
             MMKV.initialize(app)
             clearTunStarting()
             syncCachedRuntimeState()
@@ -335,6 +336,7 @@ class StatusProvider : ContentProvider() {
         }
 
         @SuppressLint("Deprecated")
+        @Suppress("DEPRECATION")
         private fun queryRunningServiceClassNames(activityManager: ActivityManager): List<String> {
             return activityManager.getRunningServices(Int.MAX_VALUE)
                 .mapNotNull { service ->

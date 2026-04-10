@@ -150,6 +150,18 @@ class RuntimeClashManager(
         )
     }
 
+    override fun patchForceSelector(group: String, name: String): Boolean {
+        return queryWithRuntime(
+            rootCall = {
+                kotlinx.coroutines.runBlocking {
+                    RootTunController.patchForceSelector(appContext, group, name)
+                }
+            },
+            localCall = { local.patchForceSelector(group, name) },
+            fallbackOnRootFailure = false,
+        )
+    }
+
     override fun closeConnection(id: String): Boolean {
         return queryWithRuntime(
             rootCall = { runBlocking { RootTunController.closeConnection(appContext, id) } },

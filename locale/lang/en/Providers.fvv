@@ -21,6 +21,13 @@ Providers = {
         RuleProviders = "Rule Providers (%d)"
     }
 
+    Info = {
+        ExpireDays = "Expires: %s (%d days left)"
+        Expired = "Expires: %s (expired)"
+        RemainingTraffic = "Remaining: %s"
+        UsedTraffic = "Traffic: %s / %s (%d%%)"
+    }
+
     VehicleType = {
         Http = "HTTP"
         File = "File"
@@ -35,6 +42,7 @@ Providers = {
         AllUpdated = "All updated"
         UploadSuccess = "%s uploaded successfully"
         UploadFailed = "Upload failed: %s"
+        OpenFileFailed = "Open file failed: %s"
     }
     InfoTitle = "Core Directory"
     InfoSummary = "Geo assets and shared runtime files live in: %s. Rule and proxy providers are always written into the active profile's private directory."

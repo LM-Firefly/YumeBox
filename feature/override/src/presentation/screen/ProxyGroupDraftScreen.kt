@@ -168,6 +168,8 @@ fun OverrideProxyGroupDraftEditorScreen(
             TopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { innerPadding ->

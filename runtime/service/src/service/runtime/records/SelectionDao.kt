@@ -26,6 +26,8 @@ import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import java.util.*
 
 object SelectionDao {
+    private const val PIN_KEY_PREFIX = "pin_"
+
     fun migrateLegacyIfNeeded() {
         ProfileStore.migrateLegacySelectionMemoryIfNeeded()
     }
@@ -85,6 +87,7 @@ object SelectionDao {
         val list = ProfileStore.loadSelections().toMutableList()
         list.removeAll { it.uuid == profileUUID }
         ProfileStore.saveSelections(list)
+        removeAllPins(profileUUID)
     }
 
     fun clearAll() {
@@ -105,5 +108,53 @@ object SelectionDao {
         val list = ProfileStore.loadSelections().toMutableList()
         list.removeAll { it.uuid == profileUUID && it.proxy in proxies }
         ProfileStore.saveSelections(list)
+    }
+
+    fun setPinned(profileUUID: UUID, proxyGroup: String, pinnedNode: String) {
+        val normalizedGroup = proxyGroup.trim()
+        val normalizedNode = pinnedNode.trim()
+        if (normalizedGroup.isEmpty() || normalizedNode.isEmpty()) return
+        ProfileStore.setSelectionScopeValue(makePinKey(profileUUID, normalizedGroup), normalizedNode)
+    }
+
+    fun getPinned(profileUUID: UUID, proxyGroup: String): String? {
+        val normalizedGroup = proxyGroup.trim()
+        if (normalizedGroup.isEmpty()) return null
+        return ProfileStore.getSelectionScopeValue(makePinKey(profileUUID, normalizedGroup))
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+    }
+
+    fun removePinned(profileUUID: UUID, proxyGroup: String) {
+        val normalizedGroup = proxyGroup.trim()
+        if (normalizedGroup.isEmpty()) return
+        ProfileStore.removeSelectionScopeValue(makePinKey(profileUUID, normalizedGroup))
+    }
+
+    fun getAllPins(profileUUID: UUID): Map<String, String> {
+        val prefix = makePinKeyPrefix(profileUUID)
+        return ProfileStore.querySelectionScopeValues(prefix)
+            .mapNotNull { (key, value) ->
+                val group = key.removePrefix(prefix).trim()
+                val node = value.trim()
+                if (group.isEmpty() || node.isEmpty()) null else group to node
+            }
+            .toMap()
+    }
+
+    private fun removeAllPins(profileUUID: UUID) {
+        val prefix = makePinKeyPrefix(profileUUID)
+        val keys = ProfileStore.querySelectionScopeValues(prefix).keys
+        keys.forEach { scopedKey ->
+            ProfileStore.removeSelectionScopeValue(scopedKey)
+        }
+    }
+
+    private fun makePinKey(profileUUID: UUID, proxyGroup: String): String {
+        return "${PIN_KEY_PREFIX}${profileUUID}_$proxyGroup"
+    }
+
+    private fun makePinKeyPrefix(profileUUID: UUID): String {
+        return "${PIN_KEY_PREFIX}${profileUUID}_"
     }
 }

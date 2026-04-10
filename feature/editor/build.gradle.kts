@@ -35,7 +35,10 @@ android {
 
     sourceSets {
         getByName("main") {
-            assets.srcDirs("assets")
+            assets.directories.apply {
+                clear()
+                add("assets")
+            }
         }
     }
 

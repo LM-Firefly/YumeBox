@@ -257,11 +257,11 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: Send preview to Telegram
-        continue-on-error: true
-        env:
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}
-          MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
-        run: |
-          python scripts/preview-bot.py
+#      - name: Send preview to Telegram
+#        continue-on-error: true
+#        env:
+#          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+#          CHAT_ID: ${{ secrets.CHAT_ID }}
+#          MESSAGE_THREAD_ID: ${{ secrets.MESSAGE_THREAD_ID }}
+#        run: |
+#          python scripts/preview-bot.py

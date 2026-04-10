@@ -140,6 +140,24 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 
+    override fun patchForceSelector(group: String, name: String): Boolean {
+        return Clash.patchForceSelector(group, name).also { patched ->
+            val current = store.activeProfile ?: return@also
+            if (!patched) {
+                SelectionDao.removePinned(current, group)
+                return@also
+            }
+            val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            if (patchedGroup != null && (patchedGroup.type == Proxy.Type.URLTest || patchedGroup.type == Proxy.Type.Fallback)) {
+                if (name.isBlank()) {
+                    SelectionDao.removePinned(current, group)
+                } else {
+                    SelectionDao.setPinned(current, group, name)
+                }
+            }
+        }
+    }
+
     override fun closeConnection(id: String): Boolean {
         return Clash.closeConnection(id)
     }

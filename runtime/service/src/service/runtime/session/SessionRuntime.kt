@@ -241,6 +241,26 @@ class SessionRuntime(
         }
     }
 
+    fun patchForceSelector(group: String, name: String): Boolean {
+        val profileUuid = currentSnapshot.profileUuid?.let(UUID::fromString)
+        return Clash.patchForceSelector(group, name).also { patched ->
+            if (!patched) {
+                profileUuid?.let { SelectionDao.removePinned(it, group) }
+                return@also
+            }
+            if (currentSnapshot.phase == RuntimePhase.Running || currentSnapshot.phase == RuntimePhase.Starting) {
+                val refreshedGroup = refreshRuntimeProxyGroup(group)
+                if (refreshedGroup != null && (refreshedGroup.type == Proxy.Type.URLTest || refreshedGroup.type == Proxy.Type.Fallback)) {
+                    if (name.isBlank()) {
+                        profileUuid?.let { SelectionDao.removePinned(it, group) }
+                    } else {
+                        profileUuid?.let { SelectionDao.setPinned(it, group, name) }
+                    }
+                }
+            }
+        }
+    }
+
     fun closeConnection(id: String): Boolean {
         if (currentSnapshot.phase != RuntimePhase.Running) return false
         return Clash.closeConnection(id)
@@ -532,7 +552,8 @@ class SessionRuntime(
     private fun restoreSelections(spec: RuntimeSpec) {
         val profileUuid = UUID.fromString(spec.profileUuid)
         val restoreSelections = SelectionDao.queryRestorableSelections(profileUuid)
-        if (restoreSelections.isEmpty()) {
+        val restorePins = SelectionDao.getAllPins(profileUuid)
+        if (restoreSelections.isEmpty() && restorePins.isEmpty()) {
             return
         }
         val runtimeGroups = runCatching {
@@ -541,6 +562,7 @@ class SessionRuntime(
         SelectionRestoreExecutor.restore(
             profileUuid = profileUuid,
             selections = restoreSelections,
+            pins = restorePins,
             runtimeGroups = runtimeGroups,
             tag = spec.owner.name,
         )

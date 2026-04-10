@@ -293,6 +293,10 @@ object RootTunController {
         return remoteCall(context) { service -> service.patchSelector(group, name) }
     }
 
+    suspend fun patchForceSelector(context: Context, group: String, name: String): Boolean {
+        return remoteCall(context) { service -> service.patchForceSelector(group, name) }
+    }
+
     suspend fun closeConnection(context: Context, id: String): Boolean {
         return remoteCall(context) { service -> service.closeConnection(id) }
     }

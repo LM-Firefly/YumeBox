@@ -20,25 +20,37 @@
 
 
 package com.github.yumelira.yumebox.presentation.screen
+
 import com.github.yumelira.yumebox.presentation.theme.UiDp
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.SubscriptionInfo
+import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -49,6 +61,9 @@ import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-u
 import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import kotlin.math.pow
+import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
@@ -138,6 +153,8 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.Providers.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     if (isRunning && updatableProviders.isNotEmpty()) {
                         IconButton(
@@ -169,6 +186,9 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                 scrollBehavior = scrollBehavior,
                 innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
             ) {
+                item(key = "providers_runtime_info") {
+                    ProvidersInfoCard(basePath = context.runtimeHomeDir.absolutePath)
+                }
                 sections.forEach { section ->
                     providerSection(
                         section = section,
@@ -191,6 +211,7 @@ private fun ProviderCard(
     onUpdate: () -> Unit,
     onUpload: (Uri) -> Unit
 ) {
+    val context = LocalContext.current
     val showPopup = remember { mutableStateOf(false) }
     val colorScheme = MiuixTheme.colorScheme
     val updateBg = remember(colorScheme) { colorScheme.primary.copy(alpha = 0.1f) }
@@ -203,23 +224,106 @@ private fun ProviderCard(
     }
 
     Card(modifier = Modifier.padding(vertical = UiDp.dp4)) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = provider.name,
-                    style = MiuixTheme.textStyles.body1,
-                    color = MiuixTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.size(UiDp.dp4))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = provider.name,
+                        style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurface
+                    )
+                    if (provider.count > 0) {
+                        Spacer(modifier = Modifier.width(UiDp.dp8))
+                        Box(
+                            modifier = Modifier
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(50.dp))
+                                .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                .padding(horizontal = UiDp.dp8, vertical = UiDp.dp2)
+                        ) {
+                            Text(
+                                text = provider.count.toString(),
+                                style = MiuixTheme.textStyles.footnote1,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MiuixTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+                if (provider.path.isNotBlank()) {
+                    Box {
+                        IconButton(
+                            backgroundColor = updateBg,
+                            minHeight = UiDp.dp35,
+                            minWidth = UiDp.dp35,
+                            enabled = !isUpdating,
+                            onClick = { showPopup.value = true }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = UiDp.dp10),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(UiDp.dp2),
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(UiDp.dp20),
+                                    imageVector = MiuixIcons.Edit,
+                                    tint = updateTint,
+                                    contentDescription = MLang.Providers.Action.Operation,
+                                )
+                                Text(
+                                    modifier = Modifier.padding(end = UiDp.dp3),
+                                    text = MLang.Providers.Action.Operation,
+                                    color = updateTint,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
+                        val popupItems = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
+                        WindowListPopup(
+                            show = showPopup.value,
+                            popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
+                            alignment = PopupPositionProvider.Align.End,
+                            onDismissRequest = { showPopup.value = false }
+                        ) {
+                            ListPopupColumn {
+                                popupItems.forEachIndexed { index, item ->
+                                    DropdownImpl(
+                                        text = item,
+                                        optionSize = popupItems.size,
+                                        isSelected = false,
+                                        onSelectedIndexChange = {
+                                            showPopup.value = false
+                                            when (index) {
+                                                0 -> onUpdate()
+                                                1 -> filePicker.launch("*/*")
+                                            }
+                                        },
+                                        index = index
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(UiDp.dp4))
+            val percentageText = provider.subscriptionInfo?.let(::formatUsagePercent)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = provider.vehicleType.localizedDisplayName(),
@@ -239,69 +343,129 @@ private fun ProviderCard(
                         )
                     }
                 }
+                if (percentageText != null) {
+                    Text(
+                        text = percentageText,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.width(UiDp.dp8))
-
-            if (provider.path.isNotBlank()) {
-                Box {
-                    IconButton(
-                        backgroundColor = updateBg,
-                        minHeight = UiDp.dp35,
-                        minWidth = UiDp.dp35,
-                        enabled = !isUpdating,
-                        onClick = { showPopup.value = true }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = UiDp.dp10),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(UiDp.dp2),
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(UiDp.dp20),
-                                imageVector = MiuixIcons.Edit,
-                                tint = updateTint,
-                                contentDescription = MLang.Providers.Action.Operation,
-                            )
-                            Text(
-                                modifier = Modifier.padding(end = UiDp.dp3),
-                                text = MLang.Providers.Action.Operation,
-                                color = updateTint,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 15.sp
-                            )
-                        }
+            provider.subscriptionInfo?.let { info ->
+                if (info.total > 0) {
+                    val used = (info.upload.toULong() + info.download.toULong())
+                    val total = info.total.toULong()
+                    val remaining = if (total > used) total - used else 0uL
+                    val fraction = (used.toDouble() / total.toDouble()).coerceIn(0.0, 1.2)
+                    val percent = (fraction * 100.0).roundToInt()
+                    val progressColor = when {
+                        percent >= 90 -> MiuixTheme.colorScheme.error
+                        percent >= 70 -> Color(0xFFFFB300)
+                        else -> Color(0xFF4CAF50)
                     }
-
-                    val popupItems = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
-
-                    WindowListPopup  (
-                        show = showPopup.value,
-                        popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
-                        alignment = PopupPositionProvider.Align.End,
-                        onDismissRequest = { showPopup.value = false }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                            .background(progressColor.copy(alpha = 0.14f))
                     ) {
-                        ListPopupColumn {
-                            popupItems.forEachIndexed { index, item ->
-                                DropdownImpl(
-                                    text = item,
-                                    optionSize = popupItems.size,
-                                    isSelected = false,
-                                    onSelectedIndexChange = {
-                                        showPopup.value = false
-                                        when (index) {
-                                            0 -> onUpdate()
-                                            1 -> filePicker.launch("*/*")
-                                        }
-                                    },
-                                    index = index
-                                )
-                            }
-                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(fraction.toFloat().coerceIn(0f, 1f))
+                                .fillMaxHeight()
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
+                                .background(progressColor)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = MLang.Providers.Info.UsedTraffic.format(
+                            formatBytes(used),
+                            formatBytes(total),
+                            percent,
+                        ),
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                }
+                if (info.expire > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val diff = info.expire * 1000 - System.currentTimeMillis()
+                    val days = diff / (1000 * 60 * 60 * 24)
+                    val dateLabel = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(info.expire * 1000))
+                    val suffix = when {
+                        days >= 0 -> MLang.Providers.Info.ExpireDays.format(dateLabel, days.toInt())
+                        else -> MLang.Providers.Info.Expired.format(dateLabel)
+                    }
+                    Text(
+                        text = suffix,
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = if (diff > 0) MiuixTheme.colorScheme.onSurfaceVariantSummary else MiuixTheme.colorScheme.error,
+                    )
+                }
+            }
+            if (provider.vehicleType == Provider.VehicleType.File && provider.path.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    Text(
+                        text = MLang.Providers.ProviderPath.format(provider.path),
+                        style = MiuixTheme.textStyles.footnote1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        softWrap = false,
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProvidersInfoCard(basePath: String) {
+    Card(modifier = Modifier.padding(vertical = 6.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = MLang.Providers.InfoTitle,
+                style = MiuixTheme.textStyles.subtitle,
+                color = MiuixTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = MLang.Providers.InfoSummary.format(basePath),
+                style = MiuixTheme.textStyles.footnote1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            )
+        }
+    }
+}
+
+private fun openProviderFile(context: android.content.Context, path: String) {
+    runCatching {
+        val file = File(path)
+        if (!file.exists() || !file.isFile) {
+            context.toast(MLang.Providers.Message.UploadFailed.format(MLang.Util.Error.UnknownError), Toast.LENGTH_LONG)
+            return
+        }
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file,
+        )
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "text/plain")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, MLang.Providers.Title))
+    }.onFailure { error ->
+        context.toast(
+            MLang.Providers.Message.UploadFailed.format(error.message ?: MLang.Util.Error.UnknownError),
+            Toast.LENGTH_LONG,
+        )
     }
 }
 
@@ -331,4 +495,20 @@ private fun LazyListScope.providerSection(
 
 private fun formatTimestamp(ts: Long): String {
     return SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(ts))
+}
+
+private fun formatUsagePercent(info: SubscriptionInfo): String? {
+    if (info.total <= 0) return null
+    val used = info.upload.toULong() + info.download.toULong()
+    val total = info.total.toULong()
+    if (total == 0uL) return null
+    return String.format(Locale.getDefault(), "%.2f%%", used.toDouble() / total.toDouble() * 100.0)
+}
+
+private fun formatBytes(bytes: ULong): String {
+    if (bytes == 0uL) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB")
+    val exponent = (kotlin.math.log(bytes.toDouble(), 1024.0)).toInt().coerceIn(0, units.lastIndex)
+    val value = bytes.toDouble() / 1024.0.pow(exponent.toDouble())
+    return String.format(Locale.getDefault(), "%.2f %s", value, units[exponent])
 }

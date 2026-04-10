@@ -31,10 +31,15 @@ import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
+import com.github.yumelira.yumebox.data.model.AppLogBuffer
+import com.github.yumelira.yumebox.data.model.AppLogBridge
+import com.github.yumelira.yumebox.data.model.AppLogTree
+import com.github.yumelira.yumebox.data.model.CrashHandler
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
+import com.github.yumelira.yumebox.service.LogRecordService
 import com.github.yumelira.yumebox.substore.util.AppUtil
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
@@ -61,12 +66,15 @@ class App : Application() {
         super.onCreate()
 
         instance = this
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        if (Timber.forest().isEmpty()) {
+            Timber.plant(AppLogTree())
         }
+        CrashHandler.init(this)
+        AppLogBridge.runtimeLogWriter = { line -> LogRecordService.writeLog(line) }
 
         StartupGate.verify(this)
         Global.init(this)
+        MMKV.disableProcessModeChecker()
         MMKV.initialize(this)
 
         val koinApp = startKoin {
@@ -74,6 +82,7 @@ class App : Application() {
             modules(appModule)
         }
         val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
+        AppLogBuffer.minLogLevel = appSettingsStorage.logLevel.value
         AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
 
         extractGeoFiles()

@@ -22,6 +22,7 @@
 
 package com.github.yumelira.yumebox.screen.settings
 
+import com.github.yumelira.yumebox.data.model.AppLogBuffer
 import androidx.lifecycle.ViewModel
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.model.AppColorTheme
@@ -65,6 +66,7 @@ class AppSettingsViewModel(
     val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
     val screenshotProtectionEnabled: Preference<Boolean> = settings.screenshotProtectionEnabled
     val biometricUnlockEnabled: Preference<Boolean> = settings.biometricUnlockEnabled
+    val logLevel: Preference<Int> = settings.logLevel
     val exitUiWhenBackground: Preference<Boolean> = featureStore.exitUiWhenBackground
 
     val customUserAgent: Preference<String> = settings.customUserAgent
@@ -103,6 +105,11 @@ class AppSettingsViewModel(
     fun onExitUiWhenBackgroundChange(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 
     fun applyCustomUserAgent(userAgent: String) = controller.applyCustomUserAgent(userAgent)
+
+    fun onLogLevelChange(level: Int) {
+        logLevel.set(level)
+        AppLogBuffer.minLogLevel = level
+    }
 
     fun setInitialSetupCompleted(completed: Boolean) = initialSetupCompleted.set(completed)
     fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)

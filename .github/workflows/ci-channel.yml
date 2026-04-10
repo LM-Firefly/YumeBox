@@ -2,7 +2,7 @@ name: CI Channel
 
 on:
   push:
-    branches: [ "Yume", "Dev" ]
+    branches: [ "Yumes", "Dev" ]
     paths-ignore:
       - "**.md"
       - "docs/**"
@@ -144,6 +144,19 @@ jobs:
       raw_apk_artifact_name: apk-raw-pre-lite
     secrets: inherit
 
+  build-apk-pre-app-with-extension:
+    needs: bundle-native-pre
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: pre
+      module: app
+      artifact_prefix: yumebox-pre-extension
+      release_tag: Pre-release
+      meta_asset_name: yumebox-pre-extension-meta.json
+      raw_apk_artifact_name: apk-raw-pre-app-with-extension
+      with_extension: true
+    secrets: inherit
+
   build-apk-smart-app:
     needs: bundle-native-smart
     uses: ./.github/workflows/reusable-build-apk-only.yml
@@ -182,6 +195,19 @@ jobs:
       publish_artifact_name: publish-pre-lite
     secrets: inherit
 
+  prepare-publish-pre-app-with-extension:
+    needs: build-apk-pre-app-with-extension
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: pre
+      module: app
+      artifact_prefix: yumebox-pre-extension
+      release_tag: Pre-release
+      meta_asset_name: yumebox-pre-extension-meta.json
+      raw_apk_artifact_name: apk-raw-pre-app-with-extension
+      publish_artifact_name: publish-pre-app-with-extension
+    secrets: inherit
+
   prepare-publish-smart-app:
     needs: build-apk-smart-app
     uses: ./.github/workflows/reusable-prepare-publish.yml
@@ -199,13 +225,14 @@ jobs:
     needs:
       - prepare-publish-pre-app
       - prepare-publish-pre-lite
+      - prepare-publish-pre-app-with-extension
     uses: ./.github/workflows/reusable-publish-release.yml
     with:
       channel: pre
       release_tag: Pre-release
       release_name: Pre-release
       prerelease: true
-      publish_artifacts: publish-pre-app,publish-pre-lite
+      publish_artifacts: publish-pre-app,publish-pre-lite,publish-pre-app-with-extension
       cleanup_assets: true
     secrets: inherit
 
@@ -221,28 +248,28 @@ jobs:
       cleanup_assets: true
     secrets: inherit
 
-  notify-pre:
-    needs:
-      - prepare-publish-pre-app
-      - publish-release-pre
-    uses: ./.github/workflows/reusable-notify-telegram.yml
-    with:
-      channel: pre
-      release_tag: Pre-release
-      publish_artifact_name: publish-pre-app
-      meta_asset_name: yumebox-pre-meta.json
-      telegram_title: YumeBox Pre
-    secrets: inherit
+#  notify-pre:
+#    needs:
+#      - prepare-publish-pre-app
+#      - publish-release-pre
+#    uses: ./.github/workflows/reusable-notify-telegram.yml
+#    with:
+#      channel: pre
+#      release_tag: Pre-release
+#      publish_artifact_name: publish-pre-app
+#      meta_asset_name: yumebox-pre-meta.json
+#      telegram_title: YumeBox Pre
+#    secrets: inherit
 
-  notify-smart:
-    needs:
-      - prepare-publish-smart-app
-      - publish-release-smart
-    uses: ./.github/workflows/reusable-notify-telegram.yml
-    with:
-      channel: smart
-      release_tag: Smart
-      publish_artifact_name: publish-smart-app
-      meta_asset_name: yumebox-smart-meta.json
-      telegram_title: YumeBox Smart
-    secrets: inherit
+#  notify-smart:
+#    needs:
+#      - prepare-publish-smart-app
+#      - publish-release-smart
+#    uses: ./.github/workflows/reusable-notify-telegram.yml
+#    with:
+#      channel: smart
+#      release_tag: Smart
+#      publish_artifact_name: publish-smart-app
+#      meta_asset_name: yumebox-smart-meta.json
+#      telegram_title: YumeBox Smart
+#    secrets: inherit

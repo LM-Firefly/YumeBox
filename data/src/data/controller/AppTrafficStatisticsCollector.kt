@@ -234,8 +234,8 @@ class AppTrafficStatisticsCollector(
                 appName = identity.appName.ifBlank { current?.appName.orEmpty() },
                 uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
                 downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
-                routeKey = routeKey ?: current?.routeKey,
-                routeLabel = routeLabel ?: current?.routeLabel,
+                routeKey = routeKey,
+                routeLabel = routeLabel,
             )
         }
 

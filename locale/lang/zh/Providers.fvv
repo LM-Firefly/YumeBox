@@ -21,6 +21,13 @@ Providers = {
         RuleProviders = "规则提供者 (%d)"
     }
 
+    Info = {
+        ExpireDays = "到期：%s (剩余%d天)"
+        Expired = "到期：%s (已过期)"
+        RemainingTraffic = "剩余流量: %s"
+        UsedTraffic = "流量：%s / %s (%d%%)"
+    }
+
     VehicleType = {
         Http = "HTTP"
         File = "文件"
@@ -35,6 +42,7 @@ Providers = {
         AllUpdated = "全部更新完成"
         UploadSuccess = "%s 上传成功"
         UploadFailed = "上传失败: %s"
+        OpenFileFailed = "打开文件失败: %s"
     }
     InfoTitle = "内核目录"
     InfoSummary = "GeoX 和内核运行时公共文件位于：%s。规则和代理提供者只会写入当前配置的私有目录。"

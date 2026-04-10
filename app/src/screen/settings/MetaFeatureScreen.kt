@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.GeoFileType
 import com.github.yumelira.yumebox.core.model.GeoXItem
@@ -65,6 +66,8 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.MetaFeature.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { innerPadding ->

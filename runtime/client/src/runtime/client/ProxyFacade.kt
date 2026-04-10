@@ -373,6 +373,28 @@ class ProxyFacade(
         return ok
     }
 
+    suspend fun forceSelectProxy(group: String, proxyName: String): Boolean {
+        Timber.d("Force select proxy: group=$group proxy=$proxyName")
+        val ok = if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
+            RootTunController.patchForceSelector(appContext, group, proxyName)
+        } else {
+            connectCurrentBackend()
+            ServiceClient.clash().patchForceSelector(group, proxyName)
+        }
+        if (ok) {
+            PollingTimers.awaitTick(
+                PollingTimerSpecs.dynamic(
+                    name = "proxy_force_select_refresh",
+                    intervalMillis = 200L,
+                    initialDelayMillis = 200L,
+                ),
+            )
+            refreshProxyGroup(group)
+            scheduleRuntimeProxyGroupsRefresh(PROXY_SELECT_FULL_REFRESH_DELAY_MS)
+        }
+        return ok
+    }
+
     suspend fun healthCheck(group: String) {
         Timber.d("Health check request: group=%s", group)
         if (_runtimeSnapshot.value.owner == RuntimeOwner.RootTun) {
@@ -509,10 +531,10 @@ class ProxyFacade(
                         RootTunController.queryAllProxyGroups(
                             context = appContext,
                             excludeNotSelectable = false,
-                        ).map(::toProxyGroupInfo)
+                        ).let(::toProxyGroupInfos)
                     } else {
                         connectCurrentBackend()
-                        ServiceClient.clash().queryAllProxyGroups(excludeNotSelectable = false).map(::toProxyGroupInfo)
+                        ServiceClient.clash().queryAllProxyGroups(excludeNotSelectable = false).let(::toProxyGroupInfos)
                     }
                 }.getOrElse { error ->
                     Timber.e(error, "Failed to refresh proxy groups")
@@ -561,7 +583,7 @@ class ProxyFacade(
                 }
             } ?: return
 
-            val updatedGroups = updateCachedProxyGroup(updatedGroup)
+            val updatedGroups = attachChainPaths(updateCachedProxyGroup(updatedGroup))
             publishProxyGroups(updatedGroups, cacheForPreview = true)
         }
     }
@@ -1163,7 +1185,7 @@ class ProxyFacade(
         connectCurrentBackend()
         val groups = ServiceClient.clash()
             .queryProfileProxyGroups(excludeNotSelectable = false)
-            .map(::toProxyGroupInfo)
+            .let(::toProxyGroupInfos)
 
         return groups
     }
@@ -1209,7 +1231,42 @@ class ProxyFacade(
             now = group.now.trim(),
             icon = group.icon,
             hidden = group.hidden,
+            fixed = group.fixed.trim(),
+            chainPath = emptyList(),
         )
+    }
+
+    private fun toProxyGroupInfos(groups: List<ProxyGroup>): List<ProxyGroupInfo> {
+        return attachChainPaths(groups.map(::toProxyGroupInfo))
+    }
+
+    private fun attachChainPaths(groups: List<ProxyGroupInfo>): List<ProxyGroupInfo> {
+        if (groups.isEmpty()) return groups
+        val groupMap = groups.associateBy { it.name }
+        return groups.map { group ->
+            if (!group.type.group || group.now.isBlank()) {
+                group.copy(chainPath = emptyList())
+            } else {
+                group.copy(chainPath = buildChainPath(group.name, group.now, groupMap))
+            }
+        }
+    }
+
+    private fun buildChainPath(
+        groupName: String,
+        currentNode: String,
+        groups: Map<String, ProxyGroupInfo>,
+        visited: MutableSet<String> = mutableSetOf(),
+    ): List<String> {
+        if (groupName in visited) return listOf(groupName)
+        visited.add(groupName)
+        val nextGroup = groups[currentNode] ?: return listOf(groupName, currentNode)
+        val nextNow = nextGroup.now.trim()
+        return if (nextGroup.type.group && nextNow.isNotBlank()) {
+            listOf(groupName) + buildChainPath(currentNode, nextNow, groups, visited)
+        } else {
+            listOf(groupName, currentNode)
+        }
     }
 
     private fun updateCachedProxyGroup(updated: ProxyGroupInfo): List<ProxyGroupInfo> {

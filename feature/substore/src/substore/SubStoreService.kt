@@ -82,6 +82,13 @@ class SubStoreService : Service() {
     }
 
     private fun ensureJavetLibraryLoaded(): Boolean = runCatching {
+        try {
+            System.loadLibrary("javet-node-android")
+            Timber.d("Javet loaded via System.loadLibrary()")
+            return true
+        } catch (e: Throwable) {
+            Timber.w(e, "System.loadLibrary(javet-node-android) failed, fallback to extraction")
+        }
         NativeLibraryManager.initialize(applicationContext)
         val javetLibBaseName = "libjavet-node-android"
 

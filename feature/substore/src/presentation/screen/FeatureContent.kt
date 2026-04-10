@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.DeviceUtil
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.*
@@ -42,6 +43,7 @@ import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
 fun FeatureContent(
+    onNavigateBack: () -> Unit,
     onOpenExternalUrl: (String) -> Unit,
     onOpenInAppUrl: (String) -> Unit,
 ) {
@@ -74,7 +76,12 @@ fun FeatureContent(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.Feature.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.Feature.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(onNavigateBack = onNavigateBack) },
+            )
         },
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()

@@ -31,12 +31,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionCard
 import com.github.yumelira.yumebox.feature.meta.presentation.component.ConnectionDetailSheet
 import com.github.yumelira.yumebox.feature.meta.presentation.component.TabRowWithContour
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionSort
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionTab
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionViewModel
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
@@ -139,6 +141,8 @@ fun ConnectionScreen(
             TopBar(
                 title = MLang.Connection.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     Box {
                         IconButton(

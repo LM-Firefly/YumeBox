@@ -115,6 +115,8 @@ fun OverrideStringListEditorScreen(
             TopBar(
                 title = title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
                 actions = {
                     IconButton(
                         onClick = { showResetDialog = true },
