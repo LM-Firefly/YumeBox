@@ -23,8 +23,7 @@
 }
 -keep interface kotlinx.coroutines.CompletableDeferred { *; }
 
-# Keep data models for serialization
--keep class com.github.yumelira.yumebox.core.model.** { *; }
+# Serialization metadata
 -keepattributes Signature
 -keepattributes *Annotation*
 
