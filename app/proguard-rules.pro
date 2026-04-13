@@ -1,11 +1,10 @@
 # ========================================
-# R8 Configuration: Shrink Only (No Obfuscation)
+# R8 Configuration: Shrink, Optimize, Obfuscate
 # ========================================
-# Disable code obfuscation while keeping shrinking and resource shrinking
--dontobfuscate
-# Keep optimization and shrinking enabled
 -optimizationpasses 5
 -allowaccessmodification
+-repackageclasses
+-adaptclassstrings
 
 # ========================================
 # Native / Android Core
@@ -16,7 +15,12 @@
 
 # JNI bridge entry points
 -keep class com.github.yumelira.yumebox.core.bridge.** { *; }
--keep class com.github.yumelira.yumebox.core.Global { *; }
+-keep class com.github.yumelira.yumebox.core.Global {
+    public static ** INSTANCE;
+    public final android.content.Context getApplication();
+    public final void init(android.content.Context);
+    public final void destroy();
+}
 
 # Parcelable CREATOR
 -keepclassmembers class * implements android.os.Parcelable {
@@ -29,7 +33,6 @@
 -keep class kotlin.Metadata { *; }
 -keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, RuntimeVisibleTypeAnnotations
--keepattributes LineNumberTable, SourceFile
 
 # kotlinx.serialization generated serializers / companions
 -dontnote kotlinx.serialization.AnnotationsKt
@@ -82,8 +85,17 @@
 # ========================================
 # Javet / Native JS
 # ========================================
--keep class com.caoccao.javet.** { *; }
--keep interface com.caoccao.javet.** { *; }
+-keep class com.caoccao.javet.interop.V8Host { *; }
+-keep class com.caoccao.javet.interop.V8Runtime { *; }
+-keep class com.caoccao.javet.interop.NodeRuntime { *; }
+-keep class com.caoccao.javet.interop.engine.** { *; }
+-keep class com.caoccao.javet.interop.callback.** { *; }
+-keep class com.caoccao.javet.interop.converters.** { *; }
+-keep class com.caoccao.javet.interfaces.IJavetDirectCallable { *; }
+-keepclassmembers class * {
+    @com.caoccao.javet.annotations.V8Function <methods>;
+    @com.caoccao.javet.annotations.V8Property <methods>;
+}
 
 # JMX classes not available on Android
 -dontwarn java.lang.management.**
@@ -105,26 +117,20 @@
 
 -keepclassmembernames class **.R$* { *; }
 -keepclassmembernames class **.R { *; }
--keepclassmembers class ** {
-    public static final <fields>;
-}
 
 # ========================================
-# ML Kit (Google) - Reflection for Component Registration
+# ML Kit (Google) - Component registration only
 # ========================================
--keep class com.google.mlkit.** { *; }
--keep class com.google.android.gms.internal.mlkit** { *; }
-
-# Keep ComponentRegistrar implementations for ML Kit
-#-keep class * implements com.google.firebase.components.ComponentRegistrar { *; }
-#-keep @com.google.firebase.components.ComponentRegistrar class * { *; }
+-keep class * implements com.google.firebase.components.ComponentRegistrar { *; }
+-keep @com.google.firebase.components.ComponentRegistrar class * { *; }
+-keep class com.google.mlkit.vision.barcode.BarcodeScannerOptions { *; }
+-keep class com.google.mlkit.vision.barcode.common.Barcode { *; }
+-keep class com.google.android.libraries.barhopper.** { *; }
 
 # ========================================
 # Koin Dependency Injection
 # ========================================
--keep class org.koin.** { *; }
--keep interface org.koin.** { *; }
--keep class * extends org.koin.core.component.KoinComponent { *; }
+-keepnames class * extends org.koin.core.component.KoinComponent
 -keepclassmembers class * {
     @org.koin.core.inject *** inject(...);
 }
