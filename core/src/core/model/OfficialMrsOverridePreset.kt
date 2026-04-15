@@ -800,70 +800,13 @@ fun sortOfficialMrsItemIds(itemIds: Collection<String>): List<String> {
 fun buildOfficialMrsConfigurationOverride(
     selection: OfficialMrsPresetSelection = defaultOfficialMrsPresetSelection(),
 ): ConfigurationOverride {
-    val normalizedItemIds = normalizeOfficialMrsEnabledItemIds(selection.enabledItemIds)
-    val selectedUrlTestRegions = officialMrsRegions.filter { it.id in selection.urlTestRegionIds }
-    val selectedFallbackRegions = officialMrsRegions.filter { it.id in selection.fallbackRegionIds }
-    val enableUrlTestGroup = selection.enableUrlTestGroup
-    val enableFallbackGroup = selection.enableFallbackGroup
-    return ConfigurationOverride(
-        ruleProviders = buildOfficialMrsRuleProviders(normalizedItemIds),
-        proxyGroups = buildOfficialMrsProxyGroups(
-            selectedUrlTestRegions = selectedUrlTestRegions,
-            selectedFallbackRegions = selectedFallbackRegions,
-            enabledItemIds = normalizedItemIds,
-            enableUrlTestGroup = enableUrlTestGroup,
-            enableFallbackGroup = enableFallbackGroup,
-        ),
-        rules = buildOfficialMrsRules(normalizedItemIds),
-    )
+    // Simplified: Returns empty ConfigurationOverride as proxy groups and rules are no longer supported
+    return ConfigurationOverride()
 }
 
 fun inferOfficialMrsPresetSelection(config: ConfigurationOverride): OfficialMrsPresetSelection {
-    val providerKeys = config.ruleProviders?.keys.orEmpty().toSet()
-    val groupNames = config.proxyGroups
-        ?.mapNotNull { group -> group["name"]?.jsonPrimitiveOrNull?.safeContentOrNull }
-        ?.toSet()
-        .orEmpty()
-    val rules = config.rules.orEmpty()
-
-    val hasTemplateSignals = providerKeys.any(officialMrsTemplateProviderIds::contains) ||
-        groupNames.any(officialMrsServiceGroupNames::contains) ||
-        groupNames.any(officialMrsRegionGroupNames::contains) ||
-        rules.any(::isOfficialMrsTemplateRule)
-
-    if (!hasTemplateSignals) {
-        return defaultOfficialMrsPresetSelection()
-    }
-
-    val inferredUrlTestRegionIds = officialMrsRegions
-        .filter { region -> region.groupName in groupNames }
-        .mapTo(linkedSetOf(), OfficialMrsRegionSpec::id)
-    val inferredFallbackRegionIds = officialMrsRegions
-        .filter { region -> region.fallbackGroupName in groupNames }
-        .mapTo(linkedSetOf(), OfficialMrsRegionSpec::id)
-    val hasAnyAutoGroup = OFFICIAL_MRS_AUTO_GROUP_NAME in groupNames ||
-        officialMrsRegions.any { region -> region.groupName in groupNames }
-    val hasAnyFallbackGroup = OFFICIAL_MRS_FALLBACK_GROUP_NAME in groupNames ||
-        officialMrsRegions.any { region -> region.fallbackGroupName in groupNames }
-
-    val inferredItemIds = officialMrsItems
-        .filter { spec ->
-            isOfficialMrsItemEnabledInConfig(
-                spec = spec,
-                providerKeys = providerKeys,
-                groupNames = groupNames,
-                rules = rules,
-            )
-        }
-        .mapTo(linkedSetOf(), OfficialMrsItemSpec::id)
-
-    return OfficialMrsPresetSelection(
-        urlTestRegionIds = inferredUrlTestRegionIds,
-        fallbackRegionIds = inferredFallbackRegionIds,
-        enabledItemIds = inferredItemIds.ifEmpty { defaultOfficialMrsEnabledItemIds() },
-        enableUrlTestGroup = hasAnyAutoGroup,
-        enableFallbackGroup = hasAnyFallbackGroup,
-    )
+    // Simplified: Always return default selection as proxy groups and rules are no longer supported
+    return defaultOfficialMrsPresetSelection()
 }
 
 fun officialMrsItemById(id: String): OfficialMrsItemSpec? = officialMrsItemsById[id]

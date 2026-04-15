@@ -20,29 +20,6 @@
 
 package com.github.yumelira.yumebox.core.model
 
-import kotlinx.serialization.json.JsonElement
-
-data class ConfigurationOverrideRoutingSection(
-    val ruleProviders: Map<String, Map<String, JsonElement>>?,
-    val ruleProvidersMerge: Map<String, Map<String, JsonElement>>?,
-    val proxyGroups: List<Map<String, JsonElement>>?,
-    val proxyGroupsStart: List<Map<String, JsonElement>>?,
-    val proxyGroupsEnd: List<Map<String, JsonElement>>?,
-    val rules: List<String>?,
-    val rulesStart: List<String>?,
-    val rulesEnd: List<String>?,
-    val subRules: Map<String, List<String>>?,
-    val subRulesMerge: Map<String, List<String>>?,
-)
-
-data class ConfigurationOverrideProxyResourceSection(
-    val proxies: List<Map<String, JsonElement>>?,
-    val proxiesStart: List<Map<String, JsonElement>>?,
-    val proxiesEnd: List<Map<String, JsonElement>>?,
-    val proxyProviders: Map<String, Map<String, JsonElement>>?,
-    val proxyProvidersMerge: Map<String, Map<String, JsonElement>>?,
-)
-
 data class ConfigurationOverrideDnsSection(
     val dns: ConfigurationOverride.Dns,
     val dnsForce: ConfigurationOverride.Dns?,
@@ -58,54 +35,6 @@ data class ConfigurationOverrideSupportSection(
     val profile: ConfigurationOverride.Profile,
     val geoxurl: ConfigurationOverride.GeoXUrl,
     val geoxurlForce: ConfigurationOverride.GeoXUrl?,
-)
-
-fun ConfigurationOverride.routingSection(): ConfigurationOverrideRoutingSection =
-    ConfigurationOverrideRoutingSection(
-        ruleProviders = ruleProviders,
-        ruleProvidersMerge = ruleProvidersMerge,
-        proxyGroups = proxyGroups,
-        proxyGroupsStart = proxyGroupsStart,
-        proxyGroupsEnd = proxyGroupsEnd,
-        rules = rules,
-        rulesStart = rulesStart,
-        rulesEnd = rulesEnd,
-        subRules = subRules,
-        subRulesMerge = subRulesMerge,
-    )
-
-fun ConfigurationOverride.withRoutingSection(
-    section: ConfigurationOverrideRoutingSection,
-): ConfigurationOverride = copy(
-    ruleProviders = section.ruleProviders,
-    ruleProvidersMerge = section.ruleProvidersMerge,
-    proxyGroups = section.proxyGroups,
-    proxyGroupsStart = section.proxyGroupsStart,
-    proxyGroupsEnd = section.proxyGroupsEnd,
-    rules = section.rules,
-    rulesStart = section.rulesStart,
-    rulesEnd = section.rulesEnd,
-    subRules = section.subRules,
-    subRulesMerge = section.subRulesMerge,
-)
-
-fun ConfigurationOverride.proxyResourceSection(): ConfigurationOverrideProxyResourceSection =
-    ConfigurationOverrideProxyResourceSection(
-        proxies = proxies,
-        proxiesStart = proxiesStart,
-        proxiesEnd = proxiesEnd,
-        proxyProviders = proxyProviders,
-        proxyProvidersMerge = proxyProvidersMerge,
-    )
-
-fun ConfigurationOverride.withProxyResourceSection(
-    section: ConfigurationOverrideProxyResourceSection,
-): ConfigurationOverride = copy(
-    proxies = section.proxies,
-    proxiesStart = section.proxiesStart,
-    proxiesEnd = section.proxiesEnd,
-    proxyProviders = section.proxyProviders,
-    proxyProvidersMerge = section.proxyProvidersMerge,
 )
 
 fun ConfigurationOverride.dnsSection(): ConfigurationOverrideDnsSection =

@@ -40,30 +40,6 @@ enum class OverrideEditorSection {
     Inbound {
         override val title: String get() = MLang.Override.Section.Inbound.Title
         override val summary: String get() = MLang.Override.Section.Inbound.Summary
-    },
-    Rules {
-        override val title: String get() = MLang.Override.Section.Rules.Title
-        override val summary: String get() = MLang.Override.Section.Rules.Summary
-    },
-    Proxies {
-        override val title: String get() = MLang.Override.Section.Proxies.Title
-        override val summary: String get() = MLang.Override.Section.Proxies.Summary
-    },
-    ProxyProviders {
-        override val title: String get() = MLang.Override.Section.ProxyProviders.Title
-        override val summary: String get() = MLang.Override.Section.ProxyProviders.Summary
-    },
-    ProxyGroups {
-        override val title: String get() = MLang.Override.Section.ProxyGroups.Title
-        override val summary: String get() = MLang.Override.Section.ProxyGroups.Summary
-    },
-    RuleProviders {
-        override val title: String get() = MLang.Override.Section.RuleProviders.Title
-        override val summary: String get() = MLang.Override.Section.RuleProviders.Summary
-    },
-    SubRules {
-        override val title: String get() = MLang.Override.Section.SubRules.Title
-        override val summary: String get() = MLang.Override.Section.SubRules.Summary
     };
 
     abstract val title: String

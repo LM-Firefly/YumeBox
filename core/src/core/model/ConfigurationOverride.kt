@@ -158,51 +158,6 @@ data class ConfigurationOverride(
     @SerialName("geo-update-interval")
     var geoUpdateInterval: Int? = null,
 
-    @SerialName("rule-providers")
-    var ruleProviders: Map<String, Map<String, JsonElement>>? = null,
-
-    @SerialName("rule-providers-merge")
-    var ruleProvidersMerge: Map<String, Map<String, JsonElement>>? = null,
-
-    @SerialName("proxy-groups")
-    var proxyGroups: List<Map<String, JsonElement>>? = null,
-
-    @SerialName("proxy-groups-start")
-    var proxyGroupsStart: List<Map<String, JsonElement>>? = null,
-
-    @SerialName("proxy-groups-end")
-    var proxyGroupsEnd: List<Map<String, JsonElement>>? = null,
-
-    @SerialName("rules")
-    var rules: List<String>? = null,
-
-    @SerialName("rules-start")
-    var rulesStart: List<String>? = null,
-
-    @SerialName("rules-end")
-    var rulesEnd: List<String>? = null,
-
-    @SerialName("sub-rules")
-    var subRules: Map<String, List<String>>? = null,
-
-    @SerialName("sub-rules-merge")
-    var subRulesMerge: Map<String, List<String>>? = null,
-
-    @SerialName("proxies")
-    var proxies: List<Map<String, JsonElement>>? = null,
-
-    @SerialName("proxies-start")
-    var proxiesStart: List<Map<String, JsonElement>>? = null,
-
-    @SerialName("proxies-end")
-    var proxiesEnd: List<Map<String, JsonElement>>? = null,
-
-    @SerialName("proxy-providers")
-    var proxyProviders: Map<String, Map<String, JsonElement>>? = null,
-
-    @SerialName("proxy-providers-merge")
-    var proxyProvidersMerge: Map<String, Map<String, JsonElement>>? = null,
-
     @SerialName("dns")
     val dns: Dns = Dns(),
 

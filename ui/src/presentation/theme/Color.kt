@@ -226,26 +226,56 @@ private val basePalette = ThemePalette(
     ),
 )
 
-fun colorSchemeFromSeed(seed: Color, isDark: Boolean) =
-    derivePaletteFromSeed(seed).toColorScheme(isDark)
+fun colorSchemeFromSeed(
+    seed: Color,
+    isDark: Boolean,
+    invertOnPrimaryColors: Boolean = false,
+) = derivePaletteFromSeed(
+    seed = seed,
+    invertOnPrimaryColors = invertOnPrimaryColors,
+).toColorScheme(isDark)
 
 fun colorFromArgb(argb: Long): Color = Color(argb.toInt())
 
 fun colorToArgbLong(color: Color): Long = color.toArgb().toLong()
 
-private fun derivePaletteFromSeed(seed: Color): ThemePalette {
+private fun derivePaletteFromSeed(
+    seed: Color,
+    invertOnPrimaryColors: Boolean,
+): ThemePalette {
     return ThemePalette(
-        light = deriveThemeColors(base = basePalette.light, seed = seed, dark = false),
-        dark = deriveThemeColors(base = basePalette.dark, seed = seed, dark = true),
+        light = deriveThemeColors(
+            base = basePalette.light,
+            seed = seed,
+            dark = false,
+            invertOnPrimaryColors = invertOnPrimaryColors,
+        ),
+        dark = deriveThemeColors(
+            base = basePalette.dark,
+            seed = seed,
+            dark = true,
+            invertOnPrimaryColors = invertOnPrimaryColors,
+        ),
     )
 }
 
-private fun deriveThemeColors(base: ThemeColors, seed: Color, dark: Boolean): ThemeColors {
+private fun deriveThemeColors(
+    base: ThemeColors,
+    seed: Color,
+    dark: Boolean,
+    invertOnPrimaryColors: Boolean,
+): ThemeColors {
     val primary = if (dark) seed else seed.mix(Color.Black, 0.05f)
     val primaryVariant = if (dark) seed.mix(Color.White, 0.36f) else seed.mix(Color.White, 0.25f)
 
-    val onPrimary = primary.autoOnColor(threshold = if (dark) 0.72f else 0.52f)
-    val onPrimaryVariant = primaryVariant.autoOnColor(threshold = if (dark) 0.68f else 0.52f)
+    val onPrimary = primary.autoOnColor(
+        threshold = if (dark) 0.72f else 0.52f,
+        invert = invertOnPrimaryColors,
+    )
+    val onPrimaryVariant = primaryVariant.autoOnColor(
+        threshold = if (dark) 0.68f else 0.52f,
+        invert = invertOnPrimaryColors,
+    )
 
     val disabledPrimary = if (dark) {
         base.disabledPrimary.mix(seed, 0.18f)
@@ -291,8 +321,8 @@ private fun deriveThemeColors(base: ThemeColors, seed: Color, dark: Boolean): Th
         base.tertiaryContainerVariant.mix(seed, 0.13f)
     }
 
-    val onPrimaryContainer = primaryContainer.autoOnColor()
-    val onTertiaryContainer = tertiaryContainer.autoOnColor()
+    val onPrimaryContainer = primaryContainer.autoOnColor(invert = invertOnPrimaryColors)
+    val onTertiaryContainer = tertiaryContainer.autoOnColor(invert = invertOnPrimaryColors)
 
     return base.copy(
         primary = primary,
@@ -323,5 +353,13 @@ private fun Color.mix(other: Color, ratio: Float): Color {
     )
 }
 
-private fun Color.autoOnColor(threshold: Float = 0.52f): Color =
-    if (luminance() > threshold) Color.Black else Color.White
+private fun Color.autoOnColor(
+    threshold: Float = 0.52f,
+    invert: Boolean = false,
+): Color {
+    val defaultOnColor = if (luminance() > threshold) Color.Black else Color.White
+    if (!invert) {
+        return defaultOnColor
+    }
+    return if (defaultOnColor == Color.Black) Color.White else Color.Black
+}

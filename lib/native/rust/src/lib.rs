@@ -209,6 +209,7 @@ struct CompileResult {
     error: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum PatchModifier {
     Replace,
@@ -218,12 +219,14 @@ enum PatchModifier {
     Force,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 struct ParsedKey<'a> {
     base: &'a str,
     modifier: PatchModifier,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 enum SchemaId {
     Root,
@@ -242,12 +245,14 @@ enum SchemaId {
     ProviderItem,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 enum ListStyle {
     Plain,
     NamedObjects,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 enum FieldBehavior {
     Scalar,
@@ -257,6 +262,7 @@ enum FieldBehavior {
     Rules,
 }
 
+#[allow(dead_code)]
 #[derive(Default)]
 struct PatchOperations {
     replace: Option<JsonValue>,
