@@ -29,6 +29,7 @@ import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.core.model.OverrideSpec
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.util.YamlCodec
+import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -128,19 +129,6 @@ class CompiledConfigPipeline(
         logger: ((String) -> Unit)?,
     ): String = withContext(Dispatchers.Default) {
         val profileDir = File(spec.profileDir)
-        val sourceFile = profileDir.resolve("config.yaml")
-        val runtimeFile = File(spec.runtimeConfigPath.ifBlank { profileDir.resolve("runtime.yaml").absolutePath })
-
-        if (spec.overrideSpecs.isEmpty()) {
-            logger?.invoke(
-                "runtime prepare: mode=copy-config source=${sourceFile.absolutePath} target=${runtimeFile.absolutePath}",
-            )
-            val fingerprint = copyProfileConfigToRuntimeFile(sourceFile, runtimeFile)
-            logger?.invoke(
-                "runtime prepare: copied sourceSha=${sourceFile.readText().sha256Short()} targetSha=${runtimeFile.readText().sha256Short()}",
-            )
-            return@withContext fingerprint
-        }
 
         logger?.invoke(
             "runtime prepare: mode=compile-overrides count=${spec.overrideSpecs.size} " +
@@ -207,17 +195,11 @@ class CompiledConfigPipeline(
         )
     }
 
-    private fun copyProfileConfigToRuntimeFile(sourceFile: File, runtimeFile: File): String {
-        check(sourceFile.isFile) { "Profile config missing: ${sourceFile.absolutePath}" }
-        runtimeFile.parentFile?.mkdirs()
-        sourceFile.copyTo(runtimeFile, overwrite = true)
-        return runtimeFile.readText().sha256Short()
-    }
-
     private fun validateCompiledProviderPaths(finalYaml: String, profileDir: File) {
         val invalidPaths = mutableListOf<String>()
-        val expectedRuleBase = profileDir.resolve("providers/rules").absolutePath.replace('\\', '/')
-        val expectedProxyBase = profileDir.resolve("providers/proxies").absolutePath.replace('\\', '/')
+        val runtimeHomeDir = context.runtimeHomeDir
+        val expectedRuleBase = profileDir.resolve("providers/rules").canonicalFile
+        val expectedProxyBase = profileDir.resolve("providers/proxies").canonicalFile
         PATH_PATTERN.findAll(finalYaml).forEach { match ->
             val pathValue = match.groupValues[1].replace('\\', '/').trim()
             if (!pathValue.endsWith(".yaml") && !pathValue.endsWith(".yml") && !pathValue.endsWith(".mrs")) {
@@ -226,9 +208,10 @@ class CompiledConfigPipeline(
             val isLegacyPath = pathValue.startsWith("./ruleset/") ||
                 pathValue.startsWith("ruleset/") ||
                 pathValue.contains("/clash/")
-            val inProfileProviders = pathValue.startsWith("$expectedRuleBase/") ||
-                pathValue.startsWith("$expectedProxyBase/")
-            if (isLegacyPath || !inProfileProviders) {
+            val resolvedPath = runtimeHomeDir.resolve(pathValue).canonicalFile
+            val inProfileProviders = resolvedPath.toPath().startsWith(expectedRuleBase.toPath()) ||
+                resolvedPath.toPath().startsWith(expectedProxyBase.toPath())
+            if (isLegacyPath || File(pathValue).isAbsolute || !inProfileProviders) {
                 invalidPaths += pathValue
             }
         }
@@ -241,7 +224,7 @@ class CompiledConfigPipeline(
         if (PATH_PATTERN.containsMatchIn(finalYaml)) {
             Log.i(
                 TAG,
-                "Compiled provider paths validated: profile=${profileDir.absolutePath} ruleBase=$expectedRuleBase proxyBase=$expectedProxyBase",
+                "Compiled provider paths validated: profile=${profileDir.absolutePath} runtimeHome=${runtimeHomeDir.absolutePath}",
             )
         }
     }
