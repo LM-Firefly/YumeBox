@@ -52,7 +52,6 @@ func openUrl(ctx context.Context, url string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-
 	return response.Body, nil
 }
 
@@ -178,13 +177,6 @@ func FetchAndValid(
 	})
 
 	reportStatus(string(bytes))
-
-	cfg, err := Parse(rawCfg)
-	if err != nil {
-		return err
-	}
-
-	destroyProviders(cfg)
 
 	return nil
 }
