@@ -18,15 +18,10 @@
  *
  */
 
-@file:DependsOn("org.tukaani:xz:1.12")
-
 import java.io.File
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
-import org.tukaani.xz.LZMA2Options
-import org.tukaani.xz.XZOutputStream
 
 class ProjectConfig {
     private val properties = Properties()
@@ -630,72 +625,6 @@ class CppBuilder(private val config: ProjectConfig, private val ndkTools: NdkToo
     }
 }
 
-// ==================== resource-downloader.kts ====================
-
-class ResourceDownloader(private val config: ProjectConfig) {
-    private val outputDir = File("build/generated/assets/geo")
-
-    fun downloadGeoFiles() {
-        outputDir.mkdirs()
-
-        val assets = listOf(
-            AssetInfo("geoip.metadb", config.getString("asset.geoip.url", "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb")),
-            AssetInfo("geosite.dat", config.getString("asset.geosite.url", "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat")),
-            AssetInfo("ASN.mmdb", config.getString("asset.asn.url", "https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb"))
-        )
-
-        assets.forEach { asset ->
-            if (asset.url.isNotEmpty() && asset.url.startsWith("https://")) {
-                downloadFile(asset.name, asset.url, compress = true)
-            }
-        }
-    }
-
-    private data class AssetInfo(val name: String, val url: String)
-
-    private fun downloadFile(name: String, url: String, compress: Boolean = false) {
-        try {
-            println("[Geo] Downloading $name from $url...")
-
-            val tempFile = File.createTempFile("geo-", "-${name}")
-            tempFile.deleteOnExit()
-
-            val connection = URL(url).openConnection()
-            connection.connect()
-            connection.getInputStream().use { input ->
-                tempFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-
-            if (compress) {
-                val outputFile = File(outputDir, "${name}.xz")
-                compressToXz(tempFile, outputFile)
-                println("[Geo] Downloaded and compressed $name -> ${outputFile.absolutePath}")
-            } else {
-                val outputFile = File(outputDir, name)
-                tempFile.copyTo(outputFile, overwrite = true)
-                println("[Geo] Downloaded $name to ${outputFile.absolutePath}")
-            }
-        } catch (e: Exception) {
-            println("[Geo] Failed to download $name: ${e.message}")
-        }
-    }
-
-    private fun compressToXz(sourceFile: File, outputFile: File) {
-        if (outputFile.exists()) {
-            outputFile.delete()
-        }
-        sourceFile.inputStream().buffered().use { input ->
-            outputFile.outputStream().buffered().use { fileOutput ->
-                XZOutputStream(fileOutput, LZMA2Options()).use { xzOutput ->
-                    input.copyTo(xzOutput)
-                }
-            }
-        }
-    }
-}
-
 fun printUsage() {
     println("""
         YumeBox Native Build Tool
@@ -706,7 +635,6 @@ fun printUsage() {
           --go       Build Go native libraries
           --rust     Build Rust config compiler
           --cpp      Generate CMake/git info
-          --geo      Download and compress GeoIP/GeoSite assets into app/assets with XZ
           --clean    Clean build outputs
           --all      Build everything (default)
           --help     Show this help
@@ -716,10 +644,6 @@ fun printUsage() {
 fun cleanBuildOutputs() {
     println("[Clean] Removing build outputs...")
     File("build/native").deleteRecursively()
-    File("build/generated").deleteRecursively()
-    listOf("geoip.metadb.xz", "geosite.dat.xz", "ASN.mmdb.xz").forEach { name ->
-        File("app/assets/$name").delete()
-    }
 
     val abis = listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
     abis.forEach { abi ->
@@ -766,7 +690,6 @@ fun main(args: Array<String>) {
     val buildGo = args.isEmpty() || args.contains("--all") || args.contains("--go")
     val buildRust = args.isEmpty() || args.contains("--all") || args.contains("--rust")
     val buildCpp = args.isEmpty() || args.contains("--all") || args.contains("--cpp")
-    val downloadGeo = args.isEmpty() || args.contains("--all") || args.contains("--geo")
 
     if (buildGo) {
         GoBuilder(config, ndkTools).buildAll()
@@ -778,10 +701,6 @@ fun main(args: Array<String>) {
 
     if (buildCpp) {
         CppBuilder(config, ndkTools).buildAll()
-    }
-
-    if (downloadGeo) {
-        ResourceDownloader(config).downloadGeoFiles()
     }
 
     println("=== Build Complete ===")

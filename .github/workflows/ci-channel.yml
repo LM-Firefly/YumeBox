@@ -20,12 +20,6 @@ permissions:
   contents: write
 
 jobs:
-  build-geo-pre:
-    uses: ./.github/workflows/reusable-build-geo.yml
-    with:
-      channel: pre
-    secrets: inherit
-
   build-native-abi-pre-armeabi-v7a:
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
@@ -56,12 +50,6 @@ jobs:
       channel: pre
       kernel_channel: alpha
       abi: x86_64
-    secrets: inherit
-
-  build-geo-smart:
-    uses: ./.github/workflows/reusable-build-geo.yml
-    with:
-      channel: smart
     secrets: inherit
 
   build-native-abi-smart-armeabi-v7a:
@@ -98,7 +86,6 @@ jobs:
 
   bundle-native-pre:
     needs:
-      - build-geo-pre
       - build-native-abi-pre-armeabi-v7a
       - build-native-abi-pre-arm64-v8a
       - build-native-abi-pre-x86
@@ -110,7 +97,6 @@ jobs:
 
   bundle-native-smart:
     needs:
-      - build-geo-smart
       - build-native-abi-smart-armeabi-v7a
       - build-native-abi-smart-arm64-v8a
       - build-native-abi-smart-x86
