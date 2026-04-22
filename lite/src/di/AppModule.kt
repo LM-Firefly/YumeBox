@@ -131,8 +131,6 @@ private val appDataRuntimeModule = module {
             com.github.yumelira.yumebox.remote.ServiceClient.clash().queryProviders()
         }
     }
-    single { OverrideConfigStore(androidContext()) }
-    single<OverrideConfigProvider> { get<OverrideConfigStore>() }
     single {
         val profilesRepository = get<ProfilesRepository>()
         RuntimeOverrideController(
@@ -143,6 +141,8 @@ private val appDataRuntimeModule = module {
 
     single { ProfileBindingStore(androidContext()) }
     single<ProfileBindingProvider> { get<ProfileBindingStore>() }
+    single { OverrideConfigStore(androidContext(), get()) }
+    single<OverrideConfigProvider> { get<OverrideConfigStore>() }
 
     single { TunProfileSync(androidContext(), get(), get()) }
 

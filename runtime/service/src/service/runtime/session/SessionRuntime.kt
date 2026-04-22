@@ -181,7 +181,7 @@ class SessionRuntime(
     fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         if (currentSnapshot.phase != RuntimePhase.Running) return emptyList()
         val groups = runCatching {
-            Clash.queryGroupNames(excludeNotSelectable).map { Clash.queryGroup(it, ProxySort.Default) }
+            resolveRuntimeProxyGroupNames(excludeNotSelectable).mapNotNull(::queryRuntimeProxyGroupOrNull)
         }.getOrElse {
             if (excludeNotSelectable) {
                 val selectable = Clash.queryGroupNames(true).toSet()
@@ -197,7 +197,7 @@ class SessionRuntime(
 
     fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         if (currentSnapshot.phase != RuntimePhase.Running) return emptyList()
-        return runCatching { Clash.queryGroupNames(excludeNotSelectable) }
+        return runCatching { resolveRuntimeProxyGroupNames(excludeNotSelectable) }
             .getOrElse { queryAllProxyGroups(excludeNotSelectable).map { it.name } }
     }
 
@@ -535,7 +535,7 @@ class SessionRuntime(
             return
         }
         val runtimeGroups = runCatching {
-            Clash.queryGroupNames(false).map { Clash.queryGroup(it, ProxySort.Default) }
+            resolveRuntimeProxyGroupNames(excludeNotSelectable = false).mapNotNull(::queryRuntimeProxyGroupOrNull)
         }.getOrDefault(emptyList())
         SelectionRestoreExecutor.restore(
             profileUuid = profileUuid,
@@ -579,7 +579,7 @@ class SessionRuntime(
         val configuration = runCatching { Clash.queryConfiguration() }.getOrDefault(UiConfiguration())
         val providers = runCatching { Clash.queryProviders() }.getOrDefault(emptyList())
         val proxyGroups = runCatching {
-            Clash.queryGroupNames(false).map { Clash.queryGroup(it, ProxySort.Default) }
+            resolveRuntimeProxyGroupNames(excludeNotSelectable = false).mapNotNull(::queryRuntimeProxyGroupOrNull)
         }.getOrDefault(emptyList())
         val trafficNow = runCatching { Clash.queryTrafficNow() }.getOrDefault(0L)
         val trafficTotal = runCatching { Clash.queryTrafficTotal() }.getOrDefault(0L)
@@ -600,6 +600,49 @@ class SessionRuntime(
         val group = runCatching { Clash.queryGroup(name, proxySort) }.getOrNull() ?: return null
         queryCache.upsertProxyGroup(name, group)
         return group
+    }
+
+    private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        val expectedNames = currentSpec
+            ?.let(::readExpectedGroupNames)
+            .orEmpty()
+        val runtimeNames = Clash.queryGroupNames(excludeNotSelectable)
+
+        if (expectedNames.isEmpty()) {
+            return runtimeNames
+        }
+
+        val selectableNames = if (excludeNotSelectable) runtimeNames.toSet() else null
+        return buildList(expectedNames.size + runtimeNames.size) {
+            expectedNames.forEach { groupName ->
+                if (groupName.isBlank()) return@forEach
+                if (selectableNames != null && groupName !in selectableNames) return@forEach
+                if (groupName !in this) {
+                    add(groupName)
+                }
+            }
+            runtimeNames.forEach { groupName ->
+                if (groupName.isBlank()) return@forEach
+                if (groupName !in this) {
+                    add(groupName)
+                }
+            }
+        }
+    }
+
+    private fun queryRuntimeProxyGroupOrNull(name: String): ProxyGroup? {
+        val runtimeGroup = Clash.queryGroup(name, ProxySort.Default)
+        return runtimeGroup.takeIf(::isRuntimeProxyGroupUsable)
+    }
+
+    private fun isRuntimeProxyGroupUsable(group: ProxyGroup): Boolean {
+        if (group.name.isBlank()) {
+            return false
+        }
+        return group.type != Proxy.Type.Unknown ||
+            group.proxies.isNotEmpty() ||
+            group.now.isNotBlank() ||
+            !group.icon.isNullOrBlank()
     }
 
     private fun ensureRuntimeSnapshot(): SessionRuntimeQuerySnapshot {

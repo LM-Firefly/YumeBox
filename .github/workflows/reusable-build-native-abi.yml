@@ -32,7 +32,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: "24"
 
       - name: Setup Kotlin
         uses: fwilhe2/setup-kotlin@main
@@ -103,6 +103,12 @@ jobs:
         run: |
           chmod +x scripts/sync-kernel.sh
           ./scripts/sync-kernel.sh "${{ inputs.kernel_channel }}"
+
+      - name: Sync Rust submodule
+        run: |
+          git submodule sync -- lib/native/rust
+          git submodule update --init --recursive -- lib/native/rust
+          test -f lib/native/rust/Cargo.toml
 
       - name: Build native libraries for ABI
         env:
