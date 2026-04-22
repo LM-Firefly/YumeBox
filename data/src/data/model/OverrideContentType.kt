@@ -18,38 +18,33 @@
  *
  */
 
-plugins {
-    id("com.android.library")
-    kotlin("plugin.compose")
-    id("org.jetbrains.compose")
+package com.github.yumelira.yumebox.data.model
 
-}
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
+@Serializable
+enum class OverrideContentType(
+    val extension: String,
+) {
+    @SerialName("yaml")
+    Yaml("yaml"),
 
-android {
-    namespace = "com.github.yumelira.yumebox.core.locale"
+    @SerialName("js")
+    JavaScript("js"),
+    ;
 
-    sourceSets {
-        getByName("main") {
-            kotlin.directories.apply {
-                clear()
-                addAll(
-                    listOf(
-                        "src",
-                        "build/generated/fytxt/kotlin/commonMain/kotlin",
-                    )
-                )
+    companion object {
+        fun fromExtension(extension: String?): OverrideContentType? {
+            return when (extension?.lowercase()?.removePrefix(".")) {
+                "yaml", "yml" -> Yaml
+                "js" -> JavaScript
+                else -> null
             }
         }
-    }
 
-    buildFeatures {
-        compose = true
+        fun fromFileName(fileName: String?): OverrideContentType? {
+            return fromExtension(fileName?.substringAfterLast('.', missingDelimiterValue = ""))
+        }
     }
-}
-
-dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
-    implementation(composeBom)
-    implementation("androidx.compose.runtime:runtime")
 }
