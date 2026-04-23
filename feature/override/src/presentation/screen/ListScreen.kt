@@ -596,6 +596,7 @@ private fun CreateConfigDialog(
                                         nameTextFieldValueState.value = updatedTextFieldValue
                                     },
                                     label = MLang.Override.Dialog.Create.Name,
+                                    useLabelAsPlaceholder = true,
                                 )
                             }
                         }
@@ -679,6 +680,7 @@ private fun ImportOverrideFileContent(
             value = fileName,
             onValueChange = {},
             label = MLang.ProfilesPage.Input.SelectFile,
+            useLabelAsPlaceholder = true,
             readOnly = true,
             enabled = false,
             modifier = Modifier.fillMaxWidth(),
