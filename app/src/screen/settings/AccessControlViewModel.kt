@@ -81,7 +81,7 @@ class AccessControlViewModel(
         val searchQuery: String = "",
         val showSystemApps: Boolean = false,
         val sortMode: SortMode = SortMode.LABEL,
-        val selectedFirst: Boolean = true,
+        val selectedFirst: Boolean = false,
         val needsMiuiPermission: Boolean = false,
         override val message: String? = null,
         override val error: String? = null,
@@ -227,8 +227,8 @@ class AccessControlViewModel(
     ): List<AppInfo> {
         val filtered = apps.filter { app ->
             val matchesQuery = query.isEmpty() ||
-                app.label.contains(query, ignoreCase = true) ||
-                app.packageName.contains(query, ignoreCase = true)
+                    app.label.contains(query, ignoreCase = true) ||
+                    app.packageName.contains(query, ignoreCase = true)
             val matchesSystemFilter = showSystemApps || !app.isSystemApp
             matchesQuery && matchesSystemFilter
         }

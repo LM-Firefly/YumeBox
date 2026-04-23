@@ -335,12 +335,11 @@ class OverrideConfigStore(
         val sanitizedConfigs = index.configs.filterValues { metadata ->
             !isLegacySystemPresetId(metadata.id)
         }
-        val sanitizedProfileChains = index
-            .copy(configs = sanitizedConfigs)
-            .sanitizeProfileChains { overrideId ->
-                !isLegacySystemPresetId(overrideId) && sanitizedConfigs.containsKey(overrideId)
-            }
-            .profileChains
+        val sanitizedProfileChains = index.profileChains.mapValues { (_, binding) ->
+            binding.copy(
+                overrideIds = binding.overrideIds.filterNot(::isLegacySystemPresetId),
+            )
+        }
         return if (sanitizedConfigs == index.configs && sanitizedProfileChains == index.profileChains) {
             index
         } else {

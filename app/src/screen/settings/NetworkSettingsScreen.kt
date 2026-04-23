@@ -29,6 +29,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.github.yumelira.yumebox.common.util.VpnUtils
@@ -542,11 +544,23 @@ private fun RootTunTextEditDialog(
     ),
 ) {
     val focusManager = LocalFocusManager.current
+    var localTextFieldValue by remember(title) {
+        mutableStateOf(
+            TextFieldValue(
+                text = value,
+                selection = TextRange(value.length),
+            ),
+        )
+    }
+
     AppTextFieldDialog(
         show = true,
         title = title,
-        value = value,
-        onValueChange = onValueChange,
+        textFieldValue = localTextFieldValue,
+        onTextFieldValueChange = { updatedTextFieldValue ->
+            localTextFieldValue = updatedTextFieldValue
+            onValueChange(updatedTextFieldValue.text)
+        },
         onDismissRequest = onDismiss,
         onConfirm = {
             onCommit()

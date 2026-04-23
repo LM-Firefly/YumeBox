@@ -155,7 +155,6 @@ private fun GeoXDownloadSheet(
                 onClick = {
                     val itemsToDownload = geoXItems.filter { selectedItems[it.type] == true }
                     if (itemsToDownload.isEmpty()) {
-                        context.toast(MLang.MetaFeature.Download.SelectFiles)
                         return@AppBottomSheetConfirmAction
                     }
                     show.value = false
