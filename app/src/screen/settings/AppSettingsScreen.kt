@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.common.util.AppIconHelper
 import com.github.yumelira.yumebox.common.util.BiometricHelper
 import com.github.yumelira.yumebox.common.util.LocaleUtil
+import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
@@ -149,10 +150,13 @@ private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
 
 @Composable
 private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
+    val context = LocalContext.current
     val themeMode by viewModel.themeMode.state.collectAsState()
     val appLanguage by viewModel.appLanguage.state.collectAsState()
     val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsState()
     val invertOnPrimaryColors by viewModel.invertOnPrimaryColors.state.collectAsState()
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.state.collectAsState()
+    val smoothCornerEnabled by viewModel.smoothCornerEnabled.state.collectAsState()
     val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
     val bottomBarUseLegacyStyle by viewModel.bottomBarUseLegacyStyle.state.collectAsState()
     val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
@@ -185,6 +189,23 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     }
     Title(MLang.AppSettings.Section.Interface)
     Card {
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.PredictiveBackTitle,
+            summary = MLang.AppSettings.Interface.PredictiveBackSummary,
+            checked = predictiveBackEnabled,
+            onCheckedChange = { enabled ->
+                viewModel.onPredictiveBackEnabledChange(enabled)
+                PredictiveBackCompat.apply(context.applicationInfo, enabled)
+                BiometricHelper.findFragmentActivity(context)?.recreate()
+            },
+            enabled = PredictiveBackCompat.isSupported,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.SmoothCornerTitle,
+            summary = MLang.AppSettings.Interface.SmoothCornerSummary,
+            checked = smoothCornerEnabled,
+            onCheckedChange = viewModel::onSmoothCornerEnabledChange,
+        )
         PreferenceEnumItem(
             title = MLang.AppSettings.Interface.LanguageTitle,
             summary = MLang.AppSettings.Interface.LanguageSummary,

@@ -37,6 +37,7 @@ fun YumeTheme(
     themeMode: ThemeMode? = null,
     themeSeedColorArgb: Long = DEFAULT_THEME_SEED_ARGB,
     invertOnPrimaryColors: Boolean = false,
+    smoothCornerEnabled: Boolean = true,
     spacing: Spacing = Spacing(),
     radii: Radii = Radii(),
     sizes: Sizes = Sizes(),
@@ -68,6 +69,7 @@ fun YumeTheme(
     ) {
         MiuixTheme(
             colors = colorScheme,
+            smoothRounding = smoothCornerEnabled,
         ) {
             content()
         }

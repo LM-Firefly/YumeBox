@@ -25,7 +25,6 @@ import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -41,6 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.*
@@ -154,9 +156,7 @@ fun MainScreen(
         { targetPage -> mainPagerState.animateToPage(targetPage) }
     }
 
-    BackHandler(enabled = mainPagerState.selectedPage != 0) {
-        handlePageChange(0)
-    }
+    MainScreenBackHandler(mainPagerState = mainPagerState)
 
     CompositionLocalProvider(
         LocalNavigator provides navigator,
@@ -235,6 +235,24 @@ fun MainScreen(
             }
         }
     }
+}
+
+@Composable
+private fun MainScreenBackHandler(
+    mainPagerState: MainPagerState,
+) {
+    val isPagerBackHandlerEnabled by remember(mainPagerState) {
+        derivedStateOf { mainPagerState.selectedPage != 0 }
+    }
+    val navigationEventState = rememberNavigationEventState(NavigationEventInfo.None)
+
+    NavigationBackHandler(
+        state = navigationEventState,
+        isBackEnabled = isPagerBackHandlerEnabled,
+        onBackCompleted = {
+            mainPagerState.animateToPage(0)
+        },
+    )
 }
 
 @Composable
