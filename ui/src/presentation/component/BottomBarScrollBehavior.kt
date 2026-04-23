@@ -23,10 +23,20 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.unit.Velocity
+import kotlin.math.abs
 
 @Stable
 class BottomBarScrollBehavior {
@@ -36,6 +46,7 @@ class BottomBarScrollBehavior {
     var isAutoHideEnabled by mutableStateOf(true)
 
     private val scrollThreshold = 12f
+    private val flingThreshold = 120f
 
     private var lastToggleTime = 0L
     private val toggleDelay = 150L
@@ -43,6 +54,17 @@ class BottomBarScrollBehavior {
     private var accumulatedScroll = 0f
 
     val nestedScrollConnection = object : NestedScrollConnection {
+        override fun onPreScroll(
+            available: Offset,
+            source: NestedScrollSource
+        ): Offset {
+            if (!isAutoHideEnabled) return Offset.Zero
+            if (source != NestedScrollSource.UserInput) return Offset.Zero
+
+            updateVisibilityFromDelta(available.y)
+            return Offset.Zero
+        }
+
         override fun onPostScroll(
             consumed: Offset,
             available: Offset,
@@ -51,20 +73,50 @@ class BottomBarScrollBehavior {
             if (!isAutoHideEnabled) return Offset.Zero
             if (source != NestedScrollSource.UserInput) return Offset.Zero
 
-            val delta = consumed.y
-            if (kotlin.math.abs(delta) < 0.5f) return Offset.Zero
-
-            if ((accumulatedScroll > 0 && delta < 0) || (accumulatedScroll < 0 && delta > 0)) {
-                accumulatedScroll = 0f
+            val delta = when {
+                abs(consumed.y) >= 0.5f -> consumed.y
+                abs(available.y) >= 0.5f -> available.y
+                else -> 0f
             }
+            if (delta == 0f) return Offset.Zero
 
-            accumulatedScroll += delta
-
-            if (kotlin.math.abs(accumulatedScroll) >= scrollThreshold) {
-                if (accumulatedScroll < 0) hideBottomBar() else showBottomBar()
-                accumulatedScroll = 0f
-            }
+            updateVisibilityFromDelta(delta)
             return Offset.Zero
+        }
+
+        override suspend fun onPostFling(
+            consumed: Velocity,
+            available: Velocity
+        ): Velocity {
+            if (!isAutoHideEnabled) return Velocity.Zero
+
+            accumulatedScroll = 0f
+            val velocityY = when {
+                abs(consumed.y) >= flingThreshold -> consumed.y
+                abs(available.y) >= flingThreshold -> available.y
+                else -> 0f
+            }
+
+            when {
+                velocityY < 0f -> hideBottomBar()
+                velocityY > 0f -> showBottomBar()
+            }
+            return Velocity.Zero
+        }
+    }
+
+    private fun updateVisibilityFromDelta(deltaY: Float) {
+        if (abs(deltaY) < 0.5f) return
+
+        if ((accumulatedScroll > 0f && deltaY < 0f) || (accumulatedScroll < 0f && deltaY > 0f)) {
+            accumulatedScroll = 0f
+        }
+
+        accumulatedScroll += deltaY
+
+        if (abs(accumulatedScroll) >= scrollThreshold) {
+            if (accumulatedScroll < 0f) hideBottomBar() else showBottomBar()
+            accumulatedScroll = 0f
         }
     }
 
