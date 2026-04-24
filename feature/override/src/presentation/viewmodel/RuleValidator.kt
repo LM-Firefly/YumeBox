@@ -23,28 +23,11 @@
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import com.github.yumelira.yumebox.core.model.ConfigurationOverride
-import dev.oom_wg.purejoy.mlang.MLang
 
 internal object RuleValidator {
 
+    @Suppress("UNUSED_PARAMETER")
     fun validate(config: ConfigurationOverride): List<String> {
-        val warnings = mutableListOf<String>()
-        val rules = config.rules.orEmpty()
-        rules.forEachIndexed { index, raw ->
-            val rule = raw.trim()
-            if (rule.isEmpty()) {
-                warnings += MLang.Override.Rule.EmptyWarning.format(index + 1)
-                return@forEachIndexed
-            }
-            val parts = rule.split(',').map { it.trim() }
-            if (parts.size < 2) {
-                warnings += MLang.Override.Rule.InvalidFormatWarning.format(index + 1, rule)
-                return@forEachIndexed
-            }
-            if (parts.first().equals("RULE-SET", ignoreCase = true) && parts.size < 3) {
-                warnings += MLang.Override.Rule.MissingTargetWarning.format(index + 1, rule)
-            }
-        }
-        return warnings
+        return emptyList()
     }
 }

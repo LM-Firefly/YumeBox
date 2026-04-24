@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -26,9 +26,10 @@ import android.content.Context
 import android.content.Intent
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunOperationResult
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import kotlinx.coroutines.*
 import timber.log.Timber
 
@@ -81,7 +82,7 @@ object RootTunReloadScheduler {
             return
         }
 
-        val state = RootTunStateStore(context).snapshot()
+        val state = RuntimeContractResolver.rootTunStateStore(context).snapshot()
         if (!state.state.isActive && !state.runtimeReady) {
             return
         }
@@ -109,14 +110,14 @@ object RootTunReloadScheduler {
     private suspend fun syncAndReload(
         context: Context,
         reasons: Set<Reason>,
-    ): com.github.yumelira.yumebox.service.root.RootTunOperationResult {
+    ): RootTunOperationResult {
         Timber.i("RootTun reload: reasons=%s", reasons.joinToString(","))
         return retryReload(context)
     }
 
-    private suspend fun retryReload(context: Context): com.github.yumelira.yumebox.service.root.RootTunOperationResult {
+    private suspend fun retryReload(context: Context): RootTunOperationResult {
         val delays = longArrayOf(0L, 250L, 500L, 1000L)
-        var lastResult = com.github.yumelira.yumebox.service.root.RootTunOperationResult(success = true)
+        var lastResult = RootTunOperationResult(success = true)
         for (index in delays.indices) {
             if (delays[index] > 0L) {
                 PollingTimers.awaitTick(

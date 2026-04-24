@@ -38,6 +38,7 @@ fun FeatureScreen(
 ) {
     val context = LocalContext.current
     FeatureContent(
+        onNavigateBack = { navigator.navigateUp() },
         onOpenExternalUrl = { url -> openUrl(context, url) },
         onOpenInAppUrl = { url -> WebViewActivity.start(context, url) },
     )

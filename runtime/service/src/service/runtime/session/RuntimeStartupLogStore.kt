@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -24,7 +24,7 @@ package com.github.yumelira.yumebox.service.runtime.session
 
 import android.content.Context
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
 import java.io.File
 import java.nio.charset.StandardCharsets
 

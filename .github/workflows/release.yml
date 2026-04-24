@@ -29,7 +29,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: stable
-      kernel_channel: meta
+      kernel_channel: alpha
       abi: armeabi-v7a
     secrets: inherit
 
@@ -37,7 +37,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: stable
-      kernel_channel: meta
+      kernel_channel: alpha
       abi: arm64-v8a
     secrets: inherit
 
@@ -45,7 +45,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: stable
-      kernel_channel: meta
+      kernel_channel: alpha
       abi: x86
     secrets: inherit
 
@@ -53,7 +53,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-native-abi.yml
     with:
       channel: stable
-      kernel_channel: meta
+      kernel_channel: alpha
       abi: x86_64
     secrets: inherit
 
@@ -81,6 +81,43 @@ jobs:
       raw_apk_artifact_name: apk-raw-stable-app
     secrets: inherit
 
+  build-apk-stable-lite:
+    needs: bundle-native-stable
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: stable
+      module: lite
+      artifact_prefix: yumebox-stable-lite
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-lite-meta.json
+      raw_apk_artifact_name: apk-raw-stable-lite
+    secrets: inherit
+
+  build-apk-stable-app-with-extension:
+    needs: bundle-native-stable
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: stable
+      module: app
+      artifact_prefix: yumebox-stable-extension
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-extension-meta.json
+      raw_apk_artifact_name: apk-raw-stable-app-with-extension
+      with_extension: true
+    secrets: inherit
+
+  build-apk-stable-extension:
+    needs: bundle-native-stable
+    uses: ./.github/workflows/reusable-build-apk-only.yml
+    with:
+      channel: stable
+      module: extension
+      artifact_prefix: yumebox-stable-extension-standalone
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-extension-standalone-meta.json
+      raw_apk_artifact_name: apk-raw-stable-extension
+    secrets: inherit
+
   prepare-publish-stable-app:
     needs: build-apk-stable-app
     uses: ./.github/workflows/reusable-prepare-publish.yml
@@ -94,27 +131,143 @@ jobs:
       publish_artifact_name: publish-stable-app
     secrets: inherit
 
+  prepare-publish-stable-lite:
+    needs: build-apk-stable-lite
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: stable
+      module: lite
+      artifact_prefix: yumebox-stable-lite
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-lite-meta.json
+      raw_apk_artifact_name: apk-raw-stable-lite
+      publish_artifact_name: publish-stable-lite
+    secrets: inherit
+
+  prepare-publish-stable-app-with-extension:
+    needs: build-apk-stable-app-with-extension
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: stable
+      module: app
+      artifact_prefix: yumebox-stable-extension
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-extension-meta.json
+      raw_apk_artifact_name: apk-raw-stable-app-with-extension
+      publish_artifact_name: publish-stable-app-with-extension
+    secrets: inherit
+
+  prepare-publish-stable-extension:
+    needs: build-apk-stable-extension
+    uses: ./.github/workflows/reusable-prepare-publish.yml
+    with:
+      channel: stable
+      module: extension
+      artifact_prefix: yumebox-stable-extension-standalone
+      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      meta_asset_name: yumebox-stable-extension-standalone-meta.json
+      raw_apk_artifact_name: apk-raw-stable-extension
+      publish_artifact_name: publish-stable-extension
+    secrets: inherit
+
   publish-release-stable:
-    needs: prepare-publish-stable-app
+    needs:
+      - prepare-publish-stable-app
+      - prepare-publish-stable-lite
+      - prepare-publish-stable-app-with-extension
+      - prepare-publish-stable-extension
     uses: ./.github/workflows/reusable-publish-release.yml
     with:
       channel: stable
       release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
       release_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
       prerelease: false
-      publish_artifacts: publish-stable-app
+      publish_artifacts: publish-stable-app,publish-stable-lite,publish-stable-app-with-extension,publish-stable-extension
       cleanup_assets: false
     secrets: inherit
 
-  notify-stable:
+  delete-extension-release-tag:
     needs:
-      - prepare-publish-stable-app
-      - publish-release-stable
-    uses: ./.github/workflows/reusable-notify-telegram.yml
-    with:
-      channel: stable
-      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
-      publish_artifact_name: publish-stable-app
-      meta_asset_name: yumebox-stable-meta.json
-      telegram_title: YumeBox Stable
-    secrets: inherit
+      - prepare-publish-stable-extension
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete existing Extension release and tag
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const tag = 'Extension';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            try {
+              const release = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
+              await github.rest.repos.deleteRelease({
+                owner,
+                repo,
+                release_id: release.data.id,
+              });
+              core.info(`Deleted release for tag ${tag}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`Release ${tag} not found, skip release delete.`);
+              } else {
+                throw error;
+              }
+            }
+
+            try {
+              await github.rest.git.deleteRef({
+                owner,
+                repo,
+                ref: `tags/${tag}`,
+              });
+              core.info(`Deleted git tag ${tag}`);
+            } catch (error) {
+              if (error.status === 404) {
+                core.info(`Tag ${tag} not found, skip tag delete.`);
+              } else {
+                throw error;
+              }
+            }
+
+  publish-release-extension:
+    needs:
+      - delete-extension-release-tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Download publish stable extension artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: publish-stable-extension
+          path: publish
+
+      - name: Publish extension release assets
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: Extension
+          name: Extension
+          prerelease: true
+          draft: false
+          target_commitish: ${{ github.sha }}
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: publish/*.apk
+
+#  notify-stable:
+#    needs:
+#      - prepare-publish-stable-app
+#      - publish-release-stable
+#    uses: ./.github/workflows/reusable-notify-telegram.yml
+#    with:
+#      channel: stable
+#      release_tag: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+#      publish_artifact_name: publish-stable-app
+#      meta_asset_name: yumebox-stable-meta.json
+#      telegram_title: YumeBox Stable
+#    secrets: inherit

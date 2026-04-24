@@ -34,7 +34,14 @@ plugins {
 
 val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
-
+val extensionAbiList =
+    gropify.abi.extension.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+val withExtensionTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.equals("assembleReleaseWithExtension", ignoreCase = true) ||
+        taskName.endsWith(":assembleReleaseWithExtension", ignoreCase = true)
+}
+val withExtension = project.hasProperty("withExtension") || withExtensionTaskRequested
+val packagingAbiList = if (withExtension) extensionAbiList else appAbiList
 val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
 
 android {
@@ -57,8 +64,14 @@ android {
 
     sourceSets {
         getByName("main") {
-            kotlin.srcDirs("src")
-            res.srcDirs("res")
+            kotlin.directories.apply {
+                clear()
+                add("src")
+            }
+            res.directories.apply {
+                clear()
+                add("res")
+            }
             assets.directories.apply {
                 clear()
                 addAll(
@@ -68,9 +81,18 @@ android {
                     )
                 )
             }
-            aidl.srcDirs("aidl")
-            resources.srcDirs("resources")
-            jniLibs.srcDirs("../jniLibs")
+            aidl.directories.apply {
+                clear()
+                add("aidl")
+            }
+            resources.directories.apply {
+                clear()
+                add("resources")
+            }
+            jniLibs.directories.apply {
+                clear()
+                add("../jniLibs")
+            }
             if (project.file("AndroidManifest.xml").isFile) {
                 manifest.srcFile("AndroidManifest.xml")
             }
@@ -111,14 +133,16 @@ android {
             //noinspection WrongGradleMethod
             isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
-            include(*appAbiList.toTypedArray())
-            isUniversalApk = true
+            include(*packagingAbiList.toTypedArray())
+            isUniversalApk = !withExtension
         }
     }
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (!withExtension) {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
     }
@@ -152,7 +176,11 @@ android {
                 val buildTypeName = variant.buildType ?: "release"
                 output.versionName.set(gropify.project.version.name)
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
-                    "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    if (withExtension) {
+                        "${gropify.project.name}_Extension-${abiName}-${buildTypeName}.apk"
+                    } else {
+                        "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    }
                 )
             }
         }
@@ -169,7 +197,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:substore"))
     implementation(project(":feature:proxy"))
     implementation(project(":feature:override"))

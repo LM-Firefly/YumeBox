@@ -18,6 +18,17 @@
 -keep class com.github.yumelira.yumebox.core.bridge.** { *; }
 -keep class com.github.yumelira.yumebox.core.Global { *; }
 
+# Reflection bridge: LogRecordGateway.writeRuntimeLog calls this via reflection
+-keep class com.github.yumelira.yumebox.service.LogRecordService {
+    public static void writeLog(java.lang.String);
+}
+
+# Reflection bridge: createLogRecordGateway() instantiates this implementation by class name
+-keep class com.github.yumelira.yumebox.service.LogRecordServiceGateway {
+    public <init>();
+    *;
+}
+
 # Parcelable CREATOR
 -keepclassmembers class * implements android.os.Parcelable {
     public static final android.os.Parcelable$Creator *;

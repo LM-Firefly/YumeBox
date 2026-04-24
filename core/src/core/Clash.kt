@@ -30,6 +30,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
@@ -82,9 +83,20 @@ object Clash {
     }
 
     fun queryConnections(): ConnectionSnapshot {
-        return ConnectionJson.decodeFromString(
+        val rawJson = Bridge.nativeQueryConnections()
+        val element = ConnectionJson.parseToJsonElement(rawJson)
+        val normalized = if (element is JsonObject && element["connections"] == JsonNull) {
+            JsonObject(
+                element.toMutableMap().apply {
+                    put("connections", JsonArray(emptyList()))
+                },
+            )
+        } else {
+            element
+        }
+        return ConnectionJson.decodeFromJsonElement(
             ConnectionSnapshot.serializer(),
-            Bridge.nativeQueryConnections(),
+            normalized,
         )
     }
 
@@ -227,6 +239,10 @@ object Clash {
 
     fun patchSelector(selector: String, name: String): Boolean {
         return Bridge.nativePatchSelector(selector, name)
+    }
+
+    fun patchForceSelector(selector: String, name: String): Boolean {
+        return Bridge.nativeForcePatchSelector(selector, name)
     }
 
     fun fetchAndValid(

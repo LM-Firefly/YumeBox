@@ -20,7 +20,7 @@
 
 package com.github.yumelira.yumebox.service.common.util
 
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 
 object AutoStartUpdatePolicy {
     enum class Decision {

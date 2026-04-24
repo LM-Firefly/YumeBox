@@ -23,7 +23,7 @@
 package com.github.yumelira.yumebox
 
 import android.app.Application
-import android.content.res.Configuration
+import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
@@ -31,7 +31,12 @@ import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.gateway.writeRuntimeLog
+import com.github.yumelira.yumebox.data.model.AppLogBuffer
+import com.github.yumelira.yumebox.data.model.AppLogBridge
+import com.github.yumelira.yumebox.data.model.AppLogTree
+import com.github.yumelira.yumebox.data.model.CrashHandler
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
@@ -39,6 +44,7 @@ import com.github.yumelira.yumebox.substore.util.AppUtil
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.koin.androidContext
@@ -59,50 +65,63 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
         instance = this
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        try {
+            runBlocking { executeStartupSequence() }
+        } catch (e: Exception) {
+            Timber.e(e, "Fatal error during application startup")
+            CrashHandler.init(this)
         }
+    }
 
-        StartupGate.verify(this)
-        Global.init(this)
-        MMKV.initialize(this)
-
+    private suspend fun executeStartupSequence() {
+        initSystem()
+        initDataStore()
         val koinApp = startKoin {
             androidContext(this@App)
             modules(appModule)
         }
-        val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
-        AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
-
-        extractGeoFiles()
-        val featureStore: FeatureStore = koinApp.koin.get()
-        featureStore.syncAppVersion(BuildConfig.VERSION_CODE)
-        scheduleDeferredStartupTasks(koinApp.koin, featureStore)
-
+        val appState: AppStateManager = koinApp.koin.get()
+        initConfig(appState)
+        scheduleDeferredStartupTasks(koinApp.koin, appState.featureStore)
         PlatformIdentifier.getPlatformIdentifier()
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        AppLanguageManager.refreshSystemLanguage()
+    private suspend fun initSystem() = withContext(Dispatchers.IO) {
+        if (Timber.forest().isEmpty()) {
+            Timber.plant(AppLogTree())
+        }
+        CrashHandler.init(this@App)
+        AppLogBridge.runtimeLogWriter = ::writeRuntimeLog
+        StartupGate.verify(this@App)
+        Timber.d("System initialization completed")
+    }
+
+    private suspend fun initDataStore() = withContext(Dispatchers.IO) {
+        Global.init(this@App)
+        MMKV.disableProcessModeChecker()
+        MMKV.initialize(this@App)
+        Timber.d("Data stores initialized")
+    }
+
+    private suspend fun initConfig(appState: AppStateManager) = withContext(Dispatchers.IO) {
+        AppLanguageManager.apply(appState.appSettingsStore.appLanguage.value)
+        AppLogBuffer.minLogLevel = appState.appSettingsStore.logLevel.value
+        extractGeoFiles()
+        appState.featureStore.syncAppVersion(BuildConfig.VERSION_CODE)
+        Timber.d("Application configuration applied")
     }
 
     private fun extractGeoFiles() {
         val mihomoDir = runtimeHomeDir.apply { mkdirs() }
-        val geoFiles = listOf("geoip.metadb", "geosite.dat", "ASN.mmdb")
         val failedFiles = mutableListOf<String>()
-
-        geoFiles.forEach { filename ->
+        listOf("geoip.metadb", "geosite.dat", "ASN.mmdb").forEach { filename ->
             val targetFile = File(mihomoDir, filename)
             if (!targetFile.exists()) {
                 try {
                     if (!extractCompressedAssetIfExists("$filename.xz", targetFile)) {
                         assets.open(filename).use { input ->
-                            targetFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
+                            targetFile.outputStream().use(input::copyTo)
                         }
                     }
                 } catch (_: IOException) {
@@ -110,7 +129,6 @@ class App : Application() {
                 }
             }
         }
-
         if (failedFiles.isNotEmpty()) {
             Timber.w("Failed to extract geo files: ${failedFiles.joinToString()}")
         }
@@ -119,10 +137,8 @@ class App : Application() {
     private fun extractCompressedAssetIfExists(assetName: String, targetFile: File): Boolean {
         return try {
             assets.open(assetName).use { input ->
-                XZInputStream(input.buffered()).use { xzInput ->
-                    targetFile.outputStream().buffered().use { output ->
-                        xzInput.copyTo(output)
-                    }
+                XZInputStream(input.buffered()).use { xz ->
+                    targetFile.outputStream().buffered().use(xz::copyTo)
                 }
             }
             true
@@ -135,18 +151,14 @@ class App : Application() {
         StartupTaskCoordinator.startRuntimeWarmup(startupScope) {
             runCatching { koin.get<AppTrafficStatisticsCollector>() }
                 .onFailure { Timber.w(it, "App traffic collector init skipped") }
-
             runCatching { koin.get<ProxyFacade>().awaitProxyGroupWarmUp() }
                 .onFailure { Timber.w(it, "Proxy preview warm-up skipped") }
-
             if (featureStore.isFirstTimeOpen()) {
                 withContext(Dispatchers.IO) {
                     runCatching {
                         AppUtil.initFirstOpen()
                         featureStore.markFirstOpenHandled()
-                    }.onFailure { error ->
-                        Timber.w(error, "First-open asset initialization failed")
-                    }
+                    }.onFailure { Timber.w(it, "First-open initialization failed") }
                 }
             }
         }

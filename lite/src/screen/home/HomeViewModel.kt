@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,6 +25,9 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.config.TunProfileSync
+import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
 import com.github.yumelira.yumebox.data.gateway.NetworkInfoService
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
@@ -33,12 +36,13 @@ import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.ProxyGroupSyncPriority
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -102,6 +106,24 @@ class HomeViewModel(
     val selectedServerName: StateFlow<String?> = proxyFacade.resolvedPrimaryNode
         .map { it?.name }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val selectedServerPing: StateFlow<Int?> = proxyFacade.resolvedPrimaryNode
+        .map { node -> node?.delay?.takeIf { it > 0 } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val ipMonitoringState: StateFlow<IpMonitoringState> = isRunning
+        .flatMapLatest { running ->
+            if (!running) {
+                flowOf(IpMonitoringState.Loading)
+            } else {
+                networkInfoService.startIpMonitoring(
+                    isProxyActiveFlow = isRunning,
+                    externalRefreshFlow = PollingTimers.ticks(PollingTimerSpecs.HomeIpRefresh).map { Unit },
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), IpMonitoringState.Loading)
 
     val controlState: StateFlow<HomeControlState> = combine(
         runtimeSnapshot,

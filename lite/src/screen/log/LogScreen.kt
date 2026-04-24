@@ -80,6 +80,8 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.extended.Download
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Destination<RootGraph>
@@ -109,6 +111,20 @@ fun LogScreen(navigator: DestinationsNavigator) {
         }
     }
 
+    val saveRecentLogsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/plain"),
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val success = viewModel.exportRecentLogsToUri(uri)
+            if (!success) {
+                launch(Dispatchers.Main) {
+                    context.showToast("保存失败")
+                }
+            }
+        }
+    }
+
     LaunchedEffect(listState) {
         var previousIndex = 0
         snapshotFlow { listState.firstVisibleItemIndex }
@@ -133,6 +149,11 @@ fun LogScreen(navigator: DestinationsNavigator) {
                 title = "日志录制",
                 scrollBehavior = scrollBehavior,
                 actions = {
+                    IconButton(
+                        onClick = { saveRecentLogsLauncher.launch("lite-log-recent-${System.currentTimeMillis()}.log") },
+                    ) {
+                        Icon(imageVector = MiuixIcons.Download, contentDescription = "保存近期日志")
+                    }
                     if (logEntries.isNotEmpty()) {
                         IconButton(
                             onClick = { saveFileLauncher.launch("lite-log-${System.currentTimeMillis()}.txt") },

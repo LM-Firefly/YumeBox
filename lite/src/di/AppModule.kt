@@ -20,8 +20,10 @@
 
 package com.github.yumelira.yumebox.di
 
+import com.github.yumelira.yumebox.data.controller.AccessControlCommandExecutor
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
+import com.github.yumelira.yumebox.data.controller.NetworkSettingsCommandExecutor
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
 import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
@@ -35,6 +37,7 @@ import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.data.store.ProfileBindingStore
 import com.github.yumelira.yumebox.data.controller.ProvidersController
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
@@ -52,7 +55,7 @@ import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
-import com.github.yumelira.yumebox.service.LogRecordServiceGateway
+import com.github.yumelira.yumebox.data.gateway.createLogRecordGateway
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
@@ -88,6 +91,16 @@ private val appFoundationModule = module {
     single { FeatureStore(get(named("substore"))) }
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
     single { TrafficStatisticsStore(get(named("traffic_statistics"))) }
+    single {
+        AppStateManager(
+            appSettingsStore = get(),
+            networkSettingsStore = get(),
+            featureStore = get(),
+            profileLinksStore = get(),
+            proxyDisplaySettingsStore = get(),
+            trafficStatisticsStore = get(),
+        )
+    }
 }
 
 private val appDataRuntimeModule = module {
@@ -95,9 +108,8 @@ private val appDataRuntimeModule = module {
     single {
         val proxyFacade = get<ProxyFacade>()
         val tunProfileSync = get<TunProfileSync>()
-        NetworkSettingsController(
+        NetworkSettingsCommandExecutor(
             store = get(),
-            isRunning = { RuntimeStateMapper.isActuallyRunning(proxyFacade.runtimeSnapshot.value) },
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
             beforeRestart = { targetMode ->
                 if (targetMode == ProxyMode.Tun) {
@@ -108,11 +120,25 @@ private val appDataRuntimeModule = module {
     }
     single {
         val proxyFacade = get<ProxyFacade>()
-        val tunProfileSync = get<TunProfileSync>()
+        NetworkSettingsController(
+            store = get(),
+            isRunning = { RuntimeStateMapper.isActuallyRunning(proxyFacade.runtimeSnapshot.value) },
+            commandExecutor = get(),
+        )
+    }
+    single {
+        val proxyFacade = get<ProxyFacade>()
         AccessControlController(
             store = get(),
             isRunning = { proxyFacade.isRunning.value },
             resolveActiveMode = { RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner) },
+            commandExecutor = get(),
+        )
+    }
+    single {
+        val proxyFacade = get<ProxyFacade>()
+        val tunProfileSync = get<TunProfileSync>()
+        AccessControlCommandExecutor(
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
             beforeRestart = { targetMode ->
                 if (targetMode == ProxyMode.Tun) {
@@ -121,7 +147,7 @@ private val appDataRuntimeModule = module {
             },
         )
     }
-    single<LogRecordGateway> { LogRecordServiceGateway() }
+    single<LogRecordGateway> { createLogRecordGateway() }
     single { LogStore(androidApplication(), get()) }
     single { NetworkInfoService() }
     single {
@@ -176,8 +202,8 @@ private val appDataRuntimeModule = module {
 private val appViewModelModule = module {
     viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get()) }
     viewModel { ImportConfigViewModel(androidApplication(), get(), get(), get()) }
-    viewModel { VpnSettingsViewModel(get(), get(), get(), get(), get()) }
-    viewModel { AccessControlViewModel(androidApplication(), get(), get()) }
+    viewModel { VpnSettingsViewModel(get(), get(), get(), get()) }
+    viewModel { AccessControlViewModel(androidApplication(), get(), get(), get()) }
     viewModel { LogViewModel(get()) }
 }
 

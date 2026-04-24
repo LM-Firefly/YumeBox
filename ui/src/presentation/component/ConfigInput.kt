@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
@@ -91,6 +93,8 @@ fun StringInputContent(
     title: String,
     value: String?,
     placeholder: String = "",
+    randomValueGenerator: (() -> String)? = null,
+    randomButtonText: String = "Random",
     onValueChange: (String?) -> Unit,
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -111,6 +115,8 @@ fun StringInputContent(
         textValue = textValue,
         label = placeholder,
         onTextValueChange = { textValue = it },
+        randomValueGenerator = randomValueGenerator,
+        randomButtonText = randomButtonText,
         onClear = { onValueChange(null) },
         onConfirm = { onValueChange(textValue.takeIf { it.isNotEmpty() }) },
     )
@@ -163,11 +169,29 @@ private fun ConfigTextInputDialog(
     textValue: String,
     label: String,
     onTextValueChange: (String) -> Unit,
+    randomValueGenerator: (() -> String)? = null,
+    randomButtonText: String = "Random",
     onClear: () -> Unit,
     onConfirm: () -> Unit,
     onDismiss: (() -> Unit)? = null,
 ) {
     if (!show.value) return
+    var fieldValue by remember(show.value) {
+        mutableStateOf(
+            TextFieldValue(
+                text = textValue,
+                selection = TextRange(textValue.length),
+            )
+        )
+    }
+    LaunchedEffect(textValue) {
+        if (textValue != fieldValue.text) {
+            fieldValue = TextFieldValue(
+                text = textValue,
+                selection = TextRange(textValue.length),
+            )
+        }
+    }
     AppDialog(
         show = show.value,
         title = title,
@@ -182,12 +206,45 @@ private fun ConfigTextInputDialog(
                 .padding(vertical = UiDp.dp8),
             verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
-            TextField(
-                value = textValue,
-                onValueChange = onTextValueChange,
-                label = label,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (randomValueGenerator == null) {
+                TextField(
+                    value = fieldValue,
+                    onValueChange = { updatedValue ->
+                        fieldValue = updatedValue
+                        onTextValueChange(updatedValue.text)
+                    },
+                    label = label,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextField(
+                        value = fieldValue,
+                        onValueChange = { updatedValue ->
+                            fieldValue = updatedValue
+                            onTextValueChange(updatedValue.text)
+                        },
+                        label = label,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Button(
+                        onClick = {
+                            val generated = randomValueGenerator.invoke()
+                            fieldValue = TextFieldValue(
+                                text = generated,
+                                selection = TextRange(generated.length),
+                            )
+                            onTextValueChange(generated)
+                        },
+                    ) {
+                        Text(randomButtonText)
+                    }
+                }
+            }
             DialogFilledButtonRow(
                 onSecondary = {
                     onClear()

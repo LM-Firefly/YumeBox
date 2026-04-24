@@ -22,9 +22,10 @@
 
 package com.github.yumelira.yumebox.service.root
 
+import com.github.yumelira.yumebox.runtime.api.service.root.RootPackageQueryContract
 import com.topjohnwu.superuser.Shell
 
-object RootPackageShell {
+object RootPackageShell : RootPackageQueryContract {
     private data class CacheEntry<T>(
         val value: T,
         val cachedAt: Long,
@@ -41,7 +42,7 @@ object RootPackageShell {
     @Volatile
     private var packageNameCache: CacheEntry<Set<String>>? = null
 
-    fun hasRootAccess(): Boolean {
+    override fun hasRootAccess(): Boolean {
         return runCatching { Shell.getShell().isRoot }.getOrDefault(false)
     }
 
@@ -103,7 +104,7 @@ object RootPackageShell {
         return resolved
     }
 
-    fun queryInstalledPackageNames(): Set<String>? {
+    override fun queryInstalledPackageNames(): Set<String>? {
         if (!hasRootAccess()) return null
 
         val now = System.currentTimeMillis()

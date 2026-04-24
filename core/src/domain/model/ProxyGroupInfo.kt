@@ -33,4 +33,6 @@ data class ProxyGroupInfo(
     val now: String,
     val icon: String? = null,
     val hidden: Boolean = false,
+    val fixed: String = "",
+    val chainPath: List<String> = emptyList(),
 )

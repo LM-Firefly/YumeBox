@@ -20,9 +20,10 @@
 
 
 
-package com.github.yumelira.yumebox.service.common.util
+package com.github.yumelira.yumebox.runtime.api.service.common.util
 
 import android.content.Context
+import java.io.File
 
 object Global {
     lateinit var application: Context
@@ -39,6 +40,9 @@ fun initializeServiceGlobal(app: Context) {
 
 val Context.appContextOrSelf: Context
     get() = applicationContext ?: this
+
+val Context.importedDir: File
+    get() = filesDir.resolve("imported")
 
 val packageName: String
     get() = Global.application.packageName

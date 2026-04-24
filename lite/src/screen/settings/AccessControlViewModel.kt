@@ -28,8 +28,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
-import com.github.yumelira.yumebox.service.root.RootPackageShell
+import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,9 +44,12 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: AccessControlController,
+    private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
+
     data class AppInfo(
         val packageName: String,
         val label: String,
@@ -192,7 +196,7 @@ class AccessControlViewModel(
         val context = getApplication<Application>()
         val permission = "com.android.permission.GET_INSTALLED_APPS"
 
-        if (RootPackageShell.hasRootAccess()) {
+        if (proxyFacade.hasRootPackageAccess()) {
             loadApps()
             return
         }
@@ -272,7 +276,7 @@ class AccessControlViewModel(
         pm: PackageManager,
         selfPackageName: String,
     ): List<ApplicationInfo> {
-        val packageNames = RootPackageShell.queryInstalledPackageNames()
+        val packageNames = proxyFacade.queryInstalledRootPackageNames()
             ?: throw SecurityException("Unable to query installed packages from root shell")
 
         return packageNames

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
-import com.github.yumelira.yumebox.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
 
 class DialerLaunchService : Service() {
 
