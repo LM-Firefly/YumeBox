@@ -189,23 +189,6 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     }
     Title(MLang.AppSettings.Section.Interface)
     Card {
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.PredictiveBackTitle,
-            summary = MLang.AppSettings.Interface.PredictiveBackSummary,
-            checked = predictiveBackEnabled,
-            onCheckedChange = { enabled ->
-                viewModel.onPredictiveBackEnabledChange(enabled)
-                PredictiveBackCompat.apply(context.applicationInfo, enabled)
-                BiometricHelper.findFragmentActivity(context)?.recreate()
-            },
-            enabled = PredictiveBackCompat.isSupported,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.SmoothCornerTitle,
-            summary = MLang.AppSettings.Interface.SmoothCornerSummary,
-            checked = smoothCornerEnabled,
-            onCheckedChange = viewModel::onSmoothCornerEnabledChange,
-        )
         PreferenceEnumItem(
             title = MLang.AppSettings.Interface.LanguageTitle,
             summary = MLang.AppSettings.Interface.LanguageSummary,
@@ -235,6 +218,23 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
             summary = MLang.AppSettings.Interface.TopBarBlurSummary,
             checked = topBarBlurEnabled,
             onCheckedChange = viewModel::onTopBarBlurEnabledChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.PredictiveBackTitle,
+            summary = MLang.AppSettings.Interface.PredictiveBackSummary,
+            checked = predictiveBackEnabled,
+            onCheckedChange = { enabled ->
+                viewModel.onPredictiveBackEnabledChange(enabled)
+                PredictiveBackCompat.apply(context.applicationInfo, enabled)
+                BiometricHelper.findFragmentActivity(context)?.recreate()
+            },
+            enabled = PredictiveBackCompat.isSupported,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.SmoothCornerTitle,
+            summary = MLang.AppSettings.Interface.SmoothCornerSummary,
+            checked = smoothCornerEnabled,
+            onCheckedChange = viewModel::onSmoothCornerEnabledChange,
         )
         PageScalePreferenceItem(
             pageScale = pageScale,
