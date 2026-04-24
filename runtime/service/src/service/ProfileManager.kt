@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -23,16 +23,16 @@
 package com.github.yumelira.yumebox.service
 
 import android.content.Context
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.remote.IProfileManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.runtime.api.service.remote.IProfileManager
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.records.ProfileStore
 import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
 import com.github.yumelira.yumebox.service.runtime.util.generateProfileUUID
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
+import com.github.yumelira.yumebox.runtime.api.service.common.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

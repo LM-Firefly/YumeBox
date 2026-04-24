@@ -31,10 +31,8 @@ import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.service.StatusProvider
-import com.github.yumelira.yumebox.service.common.util.AutoStartExecutionGate
-import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CancellationException
 import timber.log.Timber
@@ -52,6 +50,7 @@ object ProxyAutoStartHelper {
         networkSettingsStorage: NetworkSettingsStore,
         serviceCache: MMKV,
     ) {
+        RuntimeContractResolver.warmUp(context)
         if (AutoStartSessionGate.shouldSkipAutoStart()) {
             Timber.tag(TAG).i("Skip auto start: manual pause gate is active in current session")
             return
@@ -84,7 +83,7 @@ object ProxyAutoStartHelper {
             return
         }
 
-        if (proxyFacade.runtimeSnapshot.value.running || StatusProvider.serviceRunning) {
+        if (proxyFacade.runtimeSnapshot.value.running || RuntimeContractResolver.localRuntimeStatus.serviceRunning) {
             return
         }
 
@@ -146,5 +145,54 @@ object ProxyAutoStartHelper {
             if (e is CancellationException) throw e
             Timber.tag(TAG).w(e, "Auto update on start failed")
         }
+    }
+}
+
+object AutoStartExecutionGate {
+    private const val KEY_AUTO_START_EXECUTING_AT = "auto_start_executing_at"
+    private const val ACTIVE_WINDOW_MS = 2 * 60 * 1000L
+    fun markStarted(serviceCache: MMKV, now: Long = System.currentTimeMillis()) {
+        serviceCache.encode(KEY_AUTO_START_EXECUTING_AT, now)
+    }
+    fun clear(serviceCache: MMKV) {
+        serviceCache.removeValueForKey(KEY_AUTO_START_EXECUTING_AT)
+    }
+    fun isExecuting(serviceCache: MMKV, now: Long = System.currentTimeMillis()): Boolean {
+        val startedAt = serviceCache.decodeLong(KEY_AUTO_START_EXECUTING_AT, 0L)
+        if (startedAt <= 0L) {
+            return false
+        }
+        val active = now >= startedAt && now - startedAt <= ACTIVE_WINDOW_MS
+        if (!active) {
+            clear(serviceCache)
+        }
+        return active
+    }
+}
+
+object AutoStartUpdatePolicy {
+    enum class Decision {
+        Proceed,
+        AutoUpdateDisabled,
+        SkipPostUpdateColdStart,
+        SkipColdStartReason,
+        NoActiveProfile,
+        UnsupportedProfileType,
+    }
+    fun decide(
+        autoUpdateEnabled: Boolean,
+        activeProfile: Profile?,
+        skipForPostUpdateColdStart: Boolean,
+        startupReason: String? = null,
+        coldStartReasons: Set<String> = emptySet(),
+    ): Decision {
+        if (!autoUpdateEnabled) return Decision.AutoUpdateDisabled
+        if (skipForPostUpdateColdStart) return Decision.SkipPostUpdateColdStart
+        if (!startupReason.isNullOrBlank() && startupReason in coldStartReasons) {
+            return Decision.SkipColdStartReason
+        }
+        if (activeProfile == null) return Decision.NoActiveProfile
+        if (activeProfile.type != Profile.Type.Url) return Decision.UnsupportedProfileType
+        return Decision.Proceed
     }
 }

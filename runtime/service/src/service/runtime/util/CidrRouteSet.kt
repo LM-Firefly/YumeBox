@@ -167,6 +167,7 @@ private fun bigIntegerToAddressString(
     val copyLength = raw.size - sourceStart
     System.arraycopy(raw, sourceStart, normalized, byteLength - copyLength, copyLength)
     return InetAddress.getByAddress(normalized).hostAddress
+        ?: throw IllegalStateException("Unable to resolve IP address string")
 }
 
 private fun rootRouteAddress(bitSize: Int): String {

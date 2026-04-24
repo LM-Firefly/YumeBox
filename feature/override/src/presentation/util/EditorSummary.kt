@@ -33,12 +33,6 @@ object OverrideEditorSummaryBuilder {
             OverrideEditorSection.Dns to buildDnsSummary(config),
             OverrideEditorSection.Sniffer to buildSnifferSummary(config),
             OverrideEditorSection.Inbound to buildInboundSummary(config),
-            OverrideEditorSection.Proxies to buildProxiesSummary(config),
-            OverrideEditorSection.ProxyProviders to buildProxyProvidersSummary(config),
-            OverrideEditorSection.ProxyGroups to buildProxyGroupsSummary(config),
-            OverrideEditorSection.Rules to buildRulesSummary(config),
-            OverrideEditorSection.RuleProviders to buildRuleProvidersSummary(config),
-            OverrideEditorSection.SubRules to buildSubRulesSummary(config),
         )
 
         val modifierGroups = sectionSummaries.values.flatMap { it.visualModes }
@@ -360,64 +354,6 @@ object OverrideEditorSummaryBuilder {
                     config.sniffer.skipDstAddressEnd,
                 )
                 addIfForce(config.snifferForce)
-            },
-        )
-    }
-
-    private fun buildRulesSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countListGroup(config.rules, config.rulesStart, config.rulesEnd),
-            visualModes = buildSet {
-                addListModes(config.rules, config.rulesStart, config.rulesEnd)
-            },
-        )
-    }
-
-    private fun buildProxiesSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countListGroup(config.proxies, config.proxiesStart, config.proxiesEnd),
-            visualModes = buildSet {
-                addListModes(config.proxies, config.proxiesStart, config.proxiesEnd)
-            },
-        )
-    }
-
-    private fun buildProxyProvidersSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countMapGroup(config.proxyProviders, config.proxyProvidersMerge),
-            visualModes = buildSet {
-                addMapModes(config.proxyProviders, config.proxyProvidersMerge)
-            },
-        )
-    }
-
-    private fun buildProxyGroupsSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countListGroup(
-                config.proxyGroups,
-                config.proxyGroupsStart,
-                config.proxyGroupsEnd,
-            ),
-            visualModes = buildSet {
-                addListModes(config.proxyGroups, config.proxyGroupsStart, config.proxyGroupsEnd)
-            },
-        )
-    }
-
-    private fun buildRuleProvidersSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countMapGroup(config.ruleProviders, config.ruleProvidersMerge),
-            visualModes = buildSet {
-                addMapModes(config.ruleProviders, config.ruleProvidersMerge)
-            },
-        )
-    }
-
-    private fun buildSubRulesSummary(config: ConfigurationOverride): OverrideSectionSummary {
-        return OverrideSectionSummary(
-            modifiedCount = countMapGroup(config.subRules, config.subRulesMerge),
-            visualModes = buildSet {
-                addMapModes(config.subRules, config.subRulesMerge)
             },
         )
     }

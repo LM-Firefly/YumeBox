@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -23,11 +23,13 @@ package com.github.yumelira.yumebox.service.root
 import android.content.Context
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunState
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStatus
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeHost
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded

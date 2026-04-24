@@ -24,12 +24,17 @@ package com.github.yumelira.yumebox.feature.meta.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.yumelira.yumebox.common.util.formatBytes
+import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.core.domain.ConnectionHistoryManager
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.util.buildRuleChain
+import com.github.yumelira.yumebox.core.util.formatProxyChain
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.remote.ServiceClient
+import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +63,7 @@ enum class ConnectionTab {
 
 data class ConnectionState(
     val snapshot: ConnectionSnapshot? = null,
+    val connectionSpeeds: Map<String, ConnectionSpeed> = emptyMap(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val searchQuery: String = "",
@@ -68,12 +74,30 @@ data class ConnectionState(
     val totalConnections: Int get() = snapshot?.connections?.size ?: 0
 }
 
+data class ConnectionSpeed(
+    val uploadPerSecond: Long = 0L,
+    val downloadPerSecond: Long = 0L,
+)
+
+data class ConnectionCardItem(
+    val connectionInfo: ConnectionInfo,
+    val displayHost: String,
+    val relativeTime: String,
+    val protocolAndNetwork: String,
+    val processName: String,
+    val ruleChain: String,
+    val downloadSpeedText: String,
+    val downloadText: String,
+    val uploadSpeedText: String,
+    val uploadText: String,
+)
+
 class ConnectionViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(ConnectionState())
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
-    val filteredConnections: StateFlow<List<ConnectionInfo>> = state
+    val filteredConnections: StateFlow<List<ConnectionCardItem>> = state
         .map(::buildFilteredConnections)
         .stateIn(
             scope = viewModelScope,
@@ -136,6 +160,20 @@ class ConnectionViewModel : ViewModel() {
         }
     }
 
+    suspend fun closeAllConnections(): Boolean {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                ServiceClient.clash().closeAllConnections()
+                true
+            }.onFailure { error ->
+                Timber.w(error, "Failed to close all connections")
+                _state.update { it.copy(error = error.message) }
+            }.getOrDefault(false)
+        }.also {
+            refreshConnections(showRefreshing = true)
+        }
+    }
+
     private suspend fun refreshConnections(showRefreshing: Boolean) {
         if (showRefreshing) {
             _state.update { current ->
@@ -144,11 +182,20 @@ class ConnectionViewModel : ViewModel() {
         }
         withContext(Dispatchers.IO) {
             try {
+                val previousConnections = _state.value.snapshot?.connections.orEmpty().associateBy { it.id }
                 val snapshot = ServiceClient.clash().queryConnections()
+                val connectionSpeeds = snapshot.connections.associate { connection ->
+                    val previous = previousConnections[connection.id]
+                    connection.id to ConnectionSpeed(
+                        uploadPerSecond = (connection.upload - (previous?.upload ?: connection.upload)).coerceAtLeast(0L),
+                        downloadPerSecond = (connection.download - (previous?.download ?: connection.download)).coerceAtLeast(0L),
+                    )
+                }
                 ConnectionHistoryManager.updateConnections(snapshot.connections)
                 _state.update {
                     it.copy(
                         snapshot = snapshot,
+                        connectionSpeeds = connectionSpeeds,
                         error = null,
                         isLoading = false,
                         isRefreshing = false,
@@ -167,7 +214,7 @@ class ConnectionViewModel : ViewModel() {
         }
     }
 
-    private fun buildFilteredConnections(currentState: ConnectionState): List<ConnectionInfo> {
+    private fun buildFilteredConnections(currentState: ConnectionState): List<ConnectionCardItem> {
         val connections = when (currentState.selectedTab) {
             ConnectionTab.ACTIVE -> currentState.snapshot?.connections ?: emptyList()
             ConnectionTab.CLOSED -> ConnectionHistoryManager.getClosedConnections()
@@ -200,12 +247,73 @@ class ConnectionViewModel : ViewModel() {
         } else {
             filtered
         }
-        return sorted
+        return sorted.map { connection ->
+            val metadata = connection.metadata
+            val type = metadata["type"]?.jsonPrimitive?.content.orEmpty()
+            val network = metadata["network"]?.jsonPrimitive?.content.orEmpty().ifEmpty { "TCP" }
+            val processName = metadata["process"]?.jsonPrimitive?.content.orEmpty()
+            val speeds = if (currentState.selectedTab == ConnectionTab.ACTIVE) {
+                currentState.connectionSpeeds[connection.id] ?: ConnectionSpeed()
+            } else {
+                ConnectionSpeed()
+            }
+            val chainParts = buildRuleChain(
+                rule = connection.rule,
+                chain = connection.chains,
+            )
+            ConnectionCardItem(
+                connectionInfo = connection,
+                displayHost = connectionDisplayTarget(connection),
+                relativeTime = formatRelativeTime(connection.start),
+                protocolAndNetwork = buildProtocolAndNetwork(type, network),
+                processName = processName,
+                ruleChain = formatProxyChain(chainParts),
+                downloadSpeedText = formatSpeed(speeds.downloadPerSecond),
+                downloadText = formatBytes(connection.download),
+                uploadSpeedText = formatSpeed(speeds.uploadPerSecond),
+                uploadText = formatBytes(connection.upload),
+            )
+        }
     }
 
     override fun onCleared() {
         super.onCleared()
         stopPolling()
+    }
+}
+
+private fun buildProtocolAndNetwork(type: String, network: String): String {
+    val displayType = type.trim().uppercase()
+    val displayNetwork = network.trim().uppercase()
+    return when {
+        displayType.isNotEmpty() && displayNetwork.isNotEmpty() -> "$displayType | $displayNetwork"
+        displayType.isNotEmpty() -> displayType
+        else -> displayNetwork
+    }
+}
+
+private fun formatRelativeTime(start: String): String {
+    if (start.isEmpty()) return ""
+    return try {
+        val startTime = java.time.OffsetDateTime.parse(start).toInstant()
+        val now = java.time.Instant.now()
+        val duration = java.time.Duration.between(startTime, now)
+        val seconds = duration.seconds
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+        when {
+            seconds < 60 -> MLang.Connection.RelativeTime.JustNow
+            minutes < 60 -> MLang.Connection.RelativeTime.MinutesAgo.format(minutes)
+            hours < 24 -> MLang.Connection.RelativeTime.HoursAgo.format(hours)
+            days < 7 -> MLang.Connection.RelativeTime.DaysAgo.format(days)
+            else -> {
+                val date = java.time.LocalDateTime.ofInstant(startTime, java.time.ZoneId.systemDefault())
+                MLang.Connection.RelativeTime.Date.format(date.monthValue, date.dayOfMonth)
+            }
+        }
+    } catch (_: Exception) {
+        ""
     }
 }
 

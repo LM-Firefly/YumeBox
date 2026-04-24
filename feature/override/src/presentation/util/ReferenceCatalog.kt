@@ -37,44 +37,19 @@ data class OverrideReferenceCatalog(
 
 @Composable
 fun rememberOverrideReferenceCatalog(config: ConfigurationOverride): OverrideReferenceCatalog {
-    return remember(
-        config.proxies,
-        config.proxiesStart,
-        config.proxiesEnd,
-        config.proxyGroups,
-        config.proxyGroupsStart,
-        config.proxyGroupsEnd,
-        config.subRules,
-        config.subRulesMerge,
-        config.ruleProviders,
-        config.ruleProvidersMerge,
-    ) {
+    return remember(config) {
         buildOverrideReferenceCatalog(config)
     }
 }
 
 fun buildOverrideReferenceCatalog(config: ConfigurationOverride): OverrideReferenceCatalog {
+    // Advanced override sections were removed from ConfigurationOverride.
+    // Keep the catalog stable for editor flows that still consume it.
     return OverrideReferenceCatalog(
-        proxyNames = collectJsonObjectFieldNames(
-            "name",
-            config.proxies,
-            config.proxiesStart,
-            config.proxiesEnd,
-        ),
-        proxyGroupNames = collectJsonObjectFieldNames(
-            "name",
-            config.proxyGroups,
-            config.proxyGroupsStart,
-            config.proxyGroupsEnd,
-        ),
-        subRuleNames = collectOrderedNames(
-            config.subRules?.keys.orEmpty().toList(),
-            config.subRulesMerge?.keys.orEmpty().toList(),
-        ),
-        ruleProviderNames = collectOrderedNames(
-            config.ruleProviders?.keys.orEmpty().toList(),
-            config.ruleProvidersMerge?.keys.orEmpty().toList(),
-        ),
+        proxyNames = emptyList(),
+        proxyGroupNames = emptyList(),
+        subRuleNames = emptyList(),
+        ruleProviderNames = emptyList(),
     )
 }
 

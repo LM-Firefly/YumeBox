@@ -21,6 +21,11 @@
 
 package com.github.yumelira.yumebox.presentation.component
 import com.github.yumelira.yumebox.presentation.theme.UiDp
+import com.github.yumelira.yumebox.presentation.util.OverrideListEditorMode
+import com.github.yumelira.yumebox.presentation.util.OverrideListModeValues
+import com.github.yumelira.yumebox.presentation.util.OverrideReferenceCatalog
+import com.github.yumelira.yumebox.presentation.util.OverrideStructuredMapType
+import com.github.yumelira.yumebox.presentation.util.OverrideStructuredObjectType
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.serialization.json.JsonElement
 import top.yukonga.miuix.kmp.basic.TextField
 
 typealias OpenStringListEditor = (
@@ -57,17 +63,58 @@ typealias OpenJsonEditor = (
     onValueChange: (String?) -> Unit,
 ) -> Unit
 
+typealias OpenRuleListEditor = (
+    title: String,
+    values: OverrideListModeValues<List<String>>,
+    availableModes: List<OverrideListEditorMode>,
+    selectedMode: OverrideListEditorMode,
+    referenceCatalog: OverrideReferenceCatalog,
+    callback: (OverrideListModeValues<List<String>>) -> Unit,
+) -> Unit
+
+typealias OpenStructuredObjectListEditor = (
+    type: OverrideStructuredObjectType,
+    title: String,
+    values: OverrideListModeValues<List<Map<String, JsonElement>>>,
+    availableModes: List<OverrideListEditorMode>,
+    selectedMode: OverrideListEditorMode,
+    referenceCatalog: OverrideReferenceCatalog,
+    callback: (OverrideListModeValues<List<Map<String, JsonElement>>>) -> Unit,
+) -> Unit
+
+typealias OpenObjectMapEditor = (
+    type: OverrideStructuredMapType,
+    title: String,
+    values: OverrideListModeValues<Map<String, Map<String, JsonElement>>>,
+    availableModes: List<OverrideListEditorMode>,
+    selectedMode: OverrideListEditorMode,
+    callback: (OverrideListModeValues<Map<String, Map<String, JsonElement>>>) -> Unit,
+) -> Unit
+
+typealias OpenSubRulesEditor = (
+    title: String,
+    values: OverrideListModeValues<Map<String, List<String>>>,
+    availableModes: List<OverrideListEditorMode>,
+    selectedMode: OverrideListEditorMode,
+    referenceCatalog: OverrideReferenceCatalog,
+    callback: (OverrideListModeValues<Map<String, List<String>>>) -> Unit,
+) -> Unit
+
 @Composable
 internal fun OverrideTextInputContent(
     title: String,
     value: String?,
     placeholder: String = "",
+    randomValueGenerator: (() -> String)? = null,
+    randomButtonText: String = "Random",
     onValueChange: (String?) -> Unit,
 ) {
     StringInputContent(
         title = title,
         value = value,
         placeholder = placeholder,
+        randomValueGenerator = randomValueGenerator,
+        randomButtonText = randomButtonText,
         onValueChange = onValueChange,
     )
 }

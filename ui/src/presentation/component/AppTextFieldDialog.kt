@@ -27,7 +27,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.TextField
@@ -51,6 +58,22 @@ fun AppTextFieldDialog(
     trailingIcon: @Composable (() -> Unit)? = null,
     supportingContent: @Composable (() -> Unit)? = null,
 ) {
+    var fieldValue by remember(show) {
+        mutableStateOf(
+            TextFieldValue(
+                text = value,
+                selection = TextRange(value.length),
+            )
+        )
+    }
+    LaunchedEffect(value, show) {
+        if (show && value != fieldValue.text) {
+            fieldValue = TextFieldValue(
+                text = value,
+                selection = TextRange(value.length),
+            )
+        }
+    }
     AppDialog(
         show = show,
         modifier = modifier,
@@ -64,8 +87,11 @@ fun AppTextFieldDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = if (supportingContent == null) UiDp.dp0 else UiDp.dp8),
-                value = value,
-                onValueChange = onValueChange,
+                value = fieldValue,
+                onValueChange = { updatedValue ->
+                    fieldValue = updatedValue
+                    onValueChange(updatedValue.text)
+                },
                 label = label,
                 singleLine = singleLine,
                 maxLines = maxLines,

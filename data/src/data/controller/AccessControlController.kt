@@ -31,13 +31,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AccessControlController(
     private val store: NetworkSettingsStore,
     private val isRunning: () -> Boolean,
     private val resolveActiveMode: () -> ProxyMode?,
-    private val restartProxy: suspend (ProxyMode) -> Unit,
-    private val beforeRestart: suspend (ProxyMode) -> Unit = {},
+    private val commandExecutor: AccessControlCommandExecutor,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var applyJob: Job? = null
@@ -72,11 +72,22 @@ class AccessControlController(
             if (store.accessControlMode.value == AccessControlMode.ALLOW_ALL) return@launch
 
             try {
-                beforeRestart(targetMode)
-                restartProxy(targetMode)
+                commandExecutor.restartProxy(targetMode)
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
             }
+        }
+    }
+}
+
+class AccessControlCommandExecutor(
+    private val restartProxy: suspend (ProxyMode) -> Unit,
+    private val beforeRestart: suspend (ProxyMode) -> Unit = {},
+) {
+    suspend fun restartProxy(mode: ProxyMode) {
+        beforeRestart(mode)
+        withContext(Dispatchers.IO) {
+            restartProxy.invoke(mode)
         }
     }
 }

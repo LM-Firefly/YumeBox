@@ -20,9 +20,9 @@
 
 
 
-package com.github.yumelira.yumebox.service.common.constants
+package com.github.yumelira.yumebox.runtime.api.service.common.constants
 
-import com.github.yumelira.yumebox.service.common.util.packageName
+import com.github.yumelira.yumebox.runtime.api.service.common.util.packageName
 
 object Intents {
     private fun action(packageName: String, actionName: String): String = "$packageName.action.$actionName"

@@ -22,7 +22,12 @@
 
 package com.github.yumelira.yumebox.presentation.screen.node
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.data.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.data.model.ProxySortMode
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
@@ -36,14 +41,29 @@ internal val NodeSortModes = listOf(
     ProxySortMode.BY_LATENCY,
 )
 
+internal val NodeDisplayModes = listOf(
+    ProxyDisplayMode.SINGLE_DETAILED,
+    ProxyDisplayMode.DOUBLE_DETAILED,
+)
+
 @Composable
 internal fun NodeSortPopup(
     show: Boolean,
     onDismiss: () -> Unit,
+    displayMode: ProxyDisplayMode,
     sortMode: ProxySortMode,
     alignment: PopupPositionProvider.Align = PopupPositionProvider.Align.Start,
+    onDisplayModeSelected: (ProxyDisplayMode) -> Unit,
     onSortSelected: (ProxySortMode) -> Unit,
 ) {
+    val selectedDisplayIndex = when (displayMode) {
+        ProxyDisplayMode.SINGLE_DETAILED,
+        ProxyDisplayMode.SINGLE_SIMPLE,
+        -> 0
+        ProxyDisplayMode.DOUBLE_DETAILED,
+        ProxyDisplayMode.DOUBLE_SIMPLE,
+        -> 1
+    }
     val selectedSortIndex = NodeSortModes.indexOf(sortMode).coerceAtLeast(0)
     WindowListPopup(
         show = show,
@@ -52,6 +72,19 @@ internal fun NodeSortPopup(
         onDismissRequest = onDismiss,
     ) {
         ListPopupColumn {
+            NodeDisplayModes.forEachIndexed { index, mode ->
+                DropdownImpl(
+                    text = mode.displayName,
+                    optionSize = NodeDisplayModes.size,
+                    isSelected = selectedDisplayIndex == index,
+                    onSelectedIndexChange = {
+                        if (selectedDisplayIndex != index) onDisplayModeSelected(mode)
+                        onDismiss()
+                    },
+                    index = index,
+                )
+            }
+            Spacer(modifier = androidx.compose.ui.Modifier.height(6.dp))
             NodeSortModes.forEachIndexed { index, mode ->
                 DropdownImpl(
                     text = mode.displayName,

@@ -22,8 +22,10 @@
 
 package com.github.yumelira.yumebox.di
 
+import com.github.yumelira.yumebox.data.controller.AccessControlCommandExecutor
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
+import com.github.yumelira.yumebox.data.controller.NetworkSettingsCommandExecutor
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
 import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
@@ -40,6 +42,7 @@ import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.data.store.ProfileBindingStore
 import com.github.yumelira.yumebox.data.controller.ProvidersController
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
@@ -86,15 +89,37 @@ val appFoundationModule = module {
     single { FeatureStore(get(named("substore"))) }
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
     single { TrafficStatisticsStore(get(named("traffic_statistics"))) }
+    single {
+        AppStateManager(
+            appSettingsStore = get(),
+            networkSettingsStore = get(),
+            featureStore = get(),
+            profileLinksStore = get(),
+            proxyDisplaySettingsStore = get(),
+            trafficStatisticsStore = get(),
+        )
+    }
 }
 
 val appDataRuntimeModule = module {
     single { AppSettingsController(get(), applyLanguage = AppLanguageManager::apply) }
     single {
+        NetworkSettingsCommandExecutor(
+            store = get(),
+            restartProxy = { mode -> get<ProxyFacade>().startProxy(mode) },
+        )
+    }
+    single {
         val proxyFacade = get<ProxyFacade>()
         NetworkSettingsController(
             store = get(),
             isRunning = { RuntimeStateMapper.isActuallyRunning(proxyFacade.runtimeSnapshot.value) },
+            commandExecutor = get(),
+        )
+    }
+    single {
+        val proxyFacade = get<ProxyFacade>()
+        AccessControlCommandExecutor(
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
         )
     }
@@ -104,7 +129,7 @@ val appDataRuntimeModule = module {
             store = get(),
             isRunning = { proxyFacade.isRunning.value },
             resolveActiveMode = { RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner) },
-            restartProxy = { mode -> proxyFacade.startProxy(mode) },
+            commandExecutor = get(),
         )
     }
     single { LogStore(androidApplication(), get()) }

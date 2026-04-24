@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -23,13 +23,13 @@
 package com.github.yumelira.yumebox.service.runtime.session
 
 import android.content.Context
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.root.RootTunConfigFactory
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
+import com.github.yumelira.yumebox.runtime.api.service.common.util.importedDir
 import java.io.File
 import java.security.MessageDigest
 

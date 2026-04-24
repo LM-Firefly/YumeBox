@@ -44,7 +44,7 @@ import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.util.AutoStartExecutionGate
 import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
 import kotlinx.coroutines.*
 import timber.log.Timber
