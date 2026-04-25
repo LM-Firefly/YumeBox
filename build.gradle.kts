@@ -22,12 +22,12 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 
 plugins {
-    id("com.android.application") version "9.1.1" apply false
+    id("com.android.application") version "9.2.0" apply false
     id("com.android.library") version "9.1.1" apply false
-    kotlin("plugin.serialization") version "2.2.10" apply false
+    kotlin("plugin.serialization") version "2.3.21" apply false
     kotlin("plugin.compose") version "2.3.10" apply false
     id("org.jetbrains.compose") version "1.10.3" apply false
-    id("com.google.devtools.ksp") version "2.3.6" apply false
+    id("com.google.devtools.ksp") version "2.3.7" apply false
     id("com.mikepenz.aboutlibraries.plugin.android") version "14.0.0-b03" apply false
 }
 
