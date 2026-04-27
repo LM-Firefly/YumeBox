@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -18,19 +18,15 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.runtime.session
+package com.github.yumelira.yumebox.runtime.service.runtime.session
 
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.domain.ConnectionHistoryManager
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.service.root.RootTunJson
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicLong
@@ -41,7 +37,6 @@ internal class SessionRuntimeTelemetry(
     private val onLogReadyChanged: (Boolean) -> Unit,
 ) {
     private var logJob: Job? = null
-    private var connectionTrackingJob: Job? = null
     private val logSeq = AtomicLong(0L)
     private val recentLogs = ArrayDeque<Pair<Long, String>>()
     private var localLogObserver: ((LogMessage) -> Unit)? = null
@@ -100,23 +95,6 @@ internal class SessionRuntimeTelemetry(
             recentLogs.clear()
         }
         host.onLogReady(false)
-    }
-
-    fun startConnectionTracking() {
-        stopConnectionTracking()
-        connectionTrackingJob = scope.launch(Dispatchers.IO) {
-            PollingTimers.ticks(PollingTimerSpecs.SessionConnectionTracking).collect {
-                runCatching {
-                    val snapshot = Clash.queryConnections()
-                    ConnectionHistoryManager.updateConnections(snapshot.connections)
-                }
-            }
-        }
-    }
-
-    fun stopConnectionTracking() {
-        connectionTrackingJob?.cancel()
-        connectionTrackingJob = null
     }
 
     private companion object {

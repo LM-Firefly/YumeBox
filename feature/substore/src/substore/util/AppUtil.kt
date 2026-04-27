@@ -20,10 +20,10 @@
 
 
 
-package com.github.yumelira.yumebox.substore.util
+package com.github.yumelira.yumebox.feature.substore.util
 
 import com.github.yumelira.yumebox.core.Global
-import com.github.yumelira.yumebox.substore.SubStorePaths
+import com.github.yumelira.yumebox.feature.substore.SubStorePaths
 import java.io.File
 
 object AppUtil {

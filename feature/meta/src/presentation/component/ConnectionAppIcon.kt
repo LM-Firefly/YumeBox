@@ -46,6 +46,7 @@ import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -61,7 +62,7 @@ internal fun ConnectionLeadingIcon(
 ) {
     val sizes = AppTheme.sizes
     val context = LocalContext.current
-    val appIdentityResolver = remember(context) { AppIdentityResolver(context) }
+    val appIdentityResolver = koinInject<AppIdentityResolver>()
     val identity = remember(metadata, appIdentityResolver) {
         appIdentityResolver.resolve(metadata)
     }
@@ -88,8 +89,7 @@ internal fun ConnectionLeadingIcon(
             bitmap = bitmap,
             contentDescription = identity.appName.ifEmpty { network },
             modifier = modifier
-                .size(resolvedSize)
-                .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius)),
+                .size(resolvedSize),
         )
         return
     }

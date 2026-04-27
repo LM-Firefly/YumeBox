@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.feature.editor.language
+package com.github.yumelira.yumebox.presentation.language
 
 enum class LanguageScope(
     val scopeName: String,

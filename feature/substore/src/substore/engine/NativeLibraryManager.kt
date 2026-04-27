@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.substore.engine
+package com.github.yumelira.yumebox.feature.substore.engine
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -62,6 +62,19 @@ object NativeLibraryManager {
 
         this.context = context
         libsBaseDir = File(context.filesDir, LIBS_DIR_NAME)
+        try {
+            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+            val lastUpdateTime = packageInfo.lastUpdateTime
+            val prefs = context.getSharedPreferences("native_lib_config", Context.MODE_PRIVATE)
+            val savedTime = prefs.getLong("last_update_time", 0)
+            if (lastUpdateTime != savedTime) {
+                Timber.i("App updated (time=$lastUpdateTime), clearing native libs cache")
+                libsBaseDir?.deleteRecursively()
+                prefs.edit().putLong("last_update_time", lastUpdateTime).apply()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to check app update time")
+        }
         libsBaseDir?.mkdirs()
         registerDefaultLibraries()
         isInitialized = true
@@ -133,20 +146,41 @@ object NativeLibraryManager {
                     if (libEntry != null) break
                 }
             }
+            if (libEntry == null) {
+                val pattern = Regex("lib/($abi|${Build.SUPPORTED_ABIS.joinToString("|")})/${info.name}\\.v\\.\\d+\\.\\d+\\.\\d+\\.so")
+                libEntry = zip.entries().asSequence().firstOrNull { e ->
+                    pattern.matches(e.name)
+                }
+                if (libEntry != null) {
+                    Timber.d("Found library via regex match in Main APK: ${libEntry.name}")
+                    val actualFileName = libEntry.name.substringAfterLast("/")
+                    actualLibraryNames[info.name] = actualFileName
+                }
+            }
 
             if (libEntry == null) {
                 throw RuntimeException("Library not found in APK: ${info.name}")
             }
+            val actualFileName = libEntry.name.substringAfterLast("/")
+            val targetFileName = if (actualFileName.startsWith("libjavet-node-android")) {
+                "libjavet-node-android.so"
+            } else {
+                actualFileName
+            }
+            val actualTargetFile = File(targetFile.parentFile, targetFileName)
+            if (targetFileName != info.name) {
+                actualLibraryNames[info.name] = targetFileName
+            }
 
             zip.getInputStream(libEntry).use { input ->
-                FileOutputStream(targetFile).use { output ->
+                FileOutputStream(actualTargetFile).use { output ->
                     input.copyTo(output)
                 }
             }
 
-            targetFile.setReadable(true, false)
+            actualTargetFile.setReadable(true, false)
             if (info.type == LibraryType.PROCESS_EXEC) {
-                targetFile.setExecutable(true, false)
+                actualTargetFile.setExecutable(true, false)
             }
 
             return true
@@ -161,13 +195,16 @@ object NativeLibraryManager {
 
         val extensionApk = getExtensionApk(info.packageName)
         if (extensionApk == null) {
-            Timber.w("Extension APK missing: ${info.packageName}")
-            return false
+            Timber.w("Extension APK missing: ${info.packageName}, trying Main APK for ${info.name}")
+            return extractFromMainApk(info, targetFile)
         }
 
         val abi = getSupportedAbi()
 
         ZipFile(extensionApk).use { zip ->
+            val libEntries = zip.entries().asSequence().map { it.name }
+                .filter { it.startsWith("lib/") }
+                .joinToString(", ")
             val pattern =
                 Regex("lib/($abi|${Build.SUPPORTED_ABIS.joinToString("|")})/${info.name}\\.v\\.\\d+\\.\\d+\\.\\d+\\.so")
             val entry = zip.entries().asSequence().firstOrNull { e ->
@@ -175,7 +212,7 @@ object NativeLibraryManager {
             }
 
             if (entry == null) {
-                Timber.w("Library not found in extension APK: ${info.name}")
+                Timber.w("Library ${info.name} not found in extension APK, available: $libEntries")
                 return false
             }
 
@@ -194,9 +231,13 @@ object NativeLibraryManager {
             if (info.type == LibraryType.PROCESS_EXEC) {
                 actualTargetFile.setExecutable(true, false)
             }
+            Timber.d("Successfully extracted $actualFileName to ${actualTargetFile.absolutePath}")
 
             return true
         }
+    }
+    fun getActualLibraryName(baseName: String): String? {
+        return actualLibraryNames[baseName]
     }
 
     private val actualLibraryNames = mutableMapOf<String, String>()

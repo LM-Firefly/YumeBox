@@ -27,7 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -76,9 +76,9 @@ fun CustomRoutingScreen(
     ) -> Unit,
 ) {
     val viewModel: CustomRoutingViewModel = koinViewModel()
-    val presetSelection by viewModel.presetSelection.collectAsState()
-    val customRoutingContent by viewModel.customRoutingContent.collectAsState()
-    val templateRoundTripSafe by viewModel.templateRoundTripSafe.collectAsState()
+    val presetSelection by viewModel.presetSelection.collectAsStateWithLifecycle()
+    val customRoutingContent by viewModel.customRoutingContent.collectAsStateWithLifecycle()
+    val templateRoundTripSafe by viewModel.templateRoundTripSafe.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val selectedUrlTestRegions = remember { mutableStateListOf<OverridePresetRegion>() }

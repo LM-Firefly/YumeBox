@@ -23,11 +23,11 @@ package com.github.yumelira.yumebox.screen.navigation
 import androidx.compose.runtime.Composable
 import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.data.model.OverrideContentType
-import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.screen.ConfigPreviewScreen
-import com.github.yumelira.yumebox.presentation.screen.OverrideListScreen
-import com.github.yumelira.yumebox.presentation.util.OverrideEditorStore
-import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
+import com.github.yumelira.yumebox.presentation.language.LanguageScope
+import com.github.yumelira.yumebox.feature.editor.presentation.screen.ConfigPreviewScreen
+import com.github.yumelira.yumebox.feature.override.presentation.screen.OverrideListScreen
+import com.github.yumelira.yumebox.feature.override.presentation.util.OverrideEditorStore
+import com.github.yumelira.yumebox.feature.override.presentation.viewmodel.OverrideConfigViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.OverrideConfigPreviewRouteDestination
@@ -40,6 +40,7 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
     val overrideConfigViewModel: OverrideConfigViewModel = koinInject()
 
     OverrideListScreen(
+        onNavigateBack = { navigator.popBackStack() },
         onOpenCodeEditor = { config ->
             OverrideEditorStore.setupConfigPreview(
                 title = config.name,

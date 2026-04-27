@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.common.util
+package com.github.yumelira.yumebox.runtime.api.autostart
 
 import com.tencent.mmkv.MMKV
 

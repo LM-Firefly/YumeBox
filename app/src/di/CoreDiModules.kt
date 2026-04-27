@@ -22,8 +22,10 @@
 
 package com.github.yumelira.yumebox.di
 
+import com.github.yumelira.yumebox.data.controller.AccessControlCommandExecutor
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
+import com.github.yumelira.yumebox.data.controller.NetworkSettingsCommandExecutor
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
 import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
@@ -40,6 +42,7 @@ import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.data.store.ProfileBindingStore
 import com.github.yumelira.yumebox.data.controller.ProvidersController
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
@@ -50,7 +53,8 @@ import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
 import com.github.yumelira.yumebox.runtime.client.root.RootTunReloadScheduler
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
+import com.github.yumelira.yumebox.common.APPLICATION_SCOPE_NAME
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
@@ -61,8 +65,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-
-const val APPLICATION_SCOPE_NAME = "applicationScope"
 
 val appFoundationModule = module {
     single<CoroutineScope>(named(APPLICATION_SCOPE_NAME)) {
@@ -86,15 +88,37 @@ val appFoundationModule = module {
     single { FeatureStore(get(named("substore"))) }
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }
     single { TrafficStatisticsStore(get(named("traffic_statistics"))) }
+    single {
+        AppStateManager(
+            appSettingsStore = get(),
+            networkSettingsStore = get(),
+            featureStore = get(),
+            profileLinksStore = get(),
+            proxyDisplaySettingsStore = get(),
+            trafficStatisticsStore = get(),
+        )
+    }
 }
 
 val appDataRuntimeModule = module {
     single { AppSettingsController(get(), applyLanguage = AppLanguageManager::apply) }
     single {
+        NetworkSettingsCommandExecutor(
+            store = get(),
+            restartProxy = { mode -> get<ProxyFacade>().startProxy(mode) },
+        )
+    }
+    single {
         val proxyFacade = get<ProxyFacade>()
         NetworkSettingsController(
             store = get(),
             isRunning = { RuntimeStateMapper.isActuallyRunning(proxyFacade.runtimeSnapshot.value) },
+            commandExecutor = get(),
+        )
+    }
+    single {
+        val proxyFacade = get<ProxyFacade>()
+        AccessControlCommandExecutor(
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
         )
     }
@@ -104,7 +128,7 @@ val appDataRuntimeModule = module {
             store = get(),
             isRunning = { proxyFacade.isRunning.value },
             resolveActiveMode = { RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner) },
-            restartProxy = { mode -> proxyFacade.startProxy(mode) },
+            commandExecutor = get(),
         )
     }
     single { LogStore(androidApplication(), get()) }
@@ -119,8 +143,8 @@ val appDataRuntimeModule = module {
     single {
         val appContext = androidContext()
         ProvidersController(appContext) {
-            com.github.yumelira.yumebox.remote.ServiceClient.connect(appContext)
-            com.github.yumelira.yumebox.remote.ServiceClient.clash().queryProviders()
+            com.github.yumelira.yumebox.runtime.client.remote.ServiceClient.connect(appContext)
+            com.github.yumelira.yumebox.runtime.client.remote.ServiceClient.clash().queryProviders()
         }
     }
 
@@ -133,7 +157,13 @@ val appDataRuntimeModule = module {
     single { OverrideResolver(get(), get()) }
     single {
         val appContext = androidContext()
-        OverrideService(appContext, get()) {
+        OverrideService(get()) {
+            appContext.sendBroadcast(
+                android.content.Intent(
+                    com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+                        .actionOverrideChanged(appContext.packageName)
+                ).setPackage(appContext.packageName)
+            )
             RootTunReloadScheduler.schedule(
                 appContext,
                 RootTunReloadScheduler.Reason.PROFILE_OVERRIDE_CHANGED,
@@ -149,7 +179,7 @@ val appDataRuntimeModule = module {
         )
     }
 
-    single { ProxyFacade(androidContext()) }
+    single { ProxyFacade(androidContext(), get()) }
     single { AppIdentityResolver(androidContext()) }
     single { ProfilesRepository(androidContext()) }
     single {
@@ -160,11 +190,11 @@ val appDataRuntimeModule = module {
             trafficStatisticsStore = get(),
             appIdentityResolver = get(),
             queryTrafficTotal = {
-                TrafficData.from(proxyFacade.queryTrafficTotal())
+                if (proxyFacade.runtimeSnapshot.value.running)
+                    TrafficData.from(proxyFacade.trafficTotal.value)
+                else TrafficData.ZERO
             },
-            queryConnections = {
-                proxyFacade.queryConnections()
-            },
+            connectionSnapshotFlow = proxyFacade.connectionSnapshot,
             queryActiveProfileId = {
                 proxyFacade.refreshCurrentProfile()
                 proxyFacade.currentProfile.value?.uuid?.toString()

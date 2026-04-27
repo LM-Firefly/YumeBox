@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -30,28 +30,29 @@ import android.content.IntentFilter
 import android.os.Binder
 import android.os.IBinder
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
-import com.github.yumelira.yumebox.service.runtime.session.LocalHttpTransport
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeHost
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
-import com.github.yumelira.yumebox.service.runtime.session.SessionRuntime
-import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
-import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
-import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
-import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.service.common.util.CoreRuntimeConfig
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.service.notification.ServiceNotificationManager
+import com.github.yumelira.yumebox.runtime.service.runtime.session.LocalHttpTransport
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeHost
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeSpec
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeStartupLogStore
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntime
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendClashStarted
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendClashStopped
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendProfileLoaded
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
 
 class ClashService : BaseService() {
     private var reason: String? = null
+    private val powerController by lazy { ServicePowerController(this) }
     private val notificationManager by lazy {
         ServiceNotificationManager(this, ServiceNotificationManager.HTTP_CONFIG)
     }
@@ -84,7 +85,7 @@ class ClashService : BaseService() {
 
     override fun onCreate() {
         super.onCreate()
-
+        powerController.start()
         runCatching {
             startupLogStore.append("LOCAL_HTTP service: onCreate begin")
 
@@ -100,6 +101,7 @@ class ClashService : BaseService() {
             CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
 
             runtime = SessionRuntime(
+                screenOn = powerController.screenOn,
                 host = object : RuntimeHost {
                     override val context = this@ClashService
                     override val mode: ProxyMode = ProxyMode.Http
@@ -168,7 +170,7 @@ class ClashService : BaseService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (notificationJob?.isActive != true) {
-            notificationJob = notificationManager.startTrafficUpdate(this)
+            notificationJob = notificationManager.startTrafficUpdate(this, powerController.screenOn)
         }
         return START_STICKY
     }
@@ -183,6 +185,7 @@ class ClashService : BaseService() {
         reloadJob = null
         notificationJob?.cancel()
         notificationJob = null
+        notificationManager.resetSpeedSmoothing()
 
         if (this::runtime.isInitialized) {
             runtime.requestStop(reason)
@@ -194,6 +197,7 @@ class ClashService : BaseService() {
         startupLogStore.append("LOCAL_HTTP destroy")
         Log.i("ClashService destroyed: ${reason ?: "successfully"}")
 
+        powerController.stop()
         super.onDestroy()
     }
 

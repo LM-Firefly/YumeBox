@@ -20,14 +20,14 @@
 
 package com.github.yumelira.yumebox.runtime.client
 
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.LocalRuntimePhase
-import com.github.yumelira.yumebox.service.root.RootTunState
-import com.github.yumelira.yumebox.service.root.RootTunStatus
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunState
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStatus
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
 
 internal object ProxyRuntimeOwnership {
     fun detectOwner(
@@ -51,7 +51,7 @@ internal object ProxyRuntimeOwnership {
         return RuntimeSnapshot(
             owner = owner,
             phase = RuntimePhase.Starting,
-            targetMode = targetMode,
+            targetMode = targetMode.toRuntimeTargetMode(),
             profileReady = true,
             profileUuid = profile.uuid.toString(),
             profileName = profile.name,
@@ -74,7 +74,7 @@ internal object ProxyRuntimeOwnership {
                 RuntimeOwner.LocalTun, RuntimeOwner.LocalHttp -> localPhase.toRuntimePhase()
                 RuntimeOwner.None -> RuntimePhase.Idle
             },
-            targetMode = modeForOwner(owner, configuredMode),
+            targetMode = modeForOwner(owner, configuredMode).toRuntimeTargetMode(),
             profileReady = owner == RuntimeOwner.RootTun && !rootStatus.profileUuid.isNullOrBlank(),
             profileUuid = rootStatus.profileUuid.takeIf { owner == RuntimeOwner.RootTun },
             profileName = rootStatus.profileName.takeIf { owner == RuntimeOwner.RootTun },
@@ -97,7 +97,7 @@ internal object ProxyRuntimeOwnership {
         return current.copy(
             owner = owner,
             phase = RuntimePhase.Running,
-            targetMode = modeForOwner(owner, configuredMode),
+            targetMode = modeForOwner(owner, configuredMode).toRuntimeTargetMode(),
             lastError = null,
         )
     }

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,15 +20,13 @@
 
 
 
-package com.github.yumelira.yumebox.remote
+package com.github.yumelira.yumebox.runtime.client.remote
 
 import android.content.Context
-import com.github.yumelira.yumebox.service.ClashManager
-import com.github.yumelira.yumebox.service.ProfileManager
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.IProfileManager
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.common.util.initializeServiceGlobal
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.IProfileManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -39,7 +37,7 @@ import timber.log.Timber
 object ServiceClient {
     private val mutex = Mutex()
     private var initialized = false
-    private var localClashManager: ClashManager? = null
+    private var localClashManager: IClashManager? = null
     private var clashManager: IClashManager? = null
     private var profileManager: IProfileManager? = null
 
@@ -55,10 +53,16 @@ object ServiceClient {
 
                 try {
                     initializeServiceGlobal(appContext)
-                    val localManager = ClashManager(appContext)
+                    val localManager = instantiateServiceObject<IClashManager>(
+                        className = "com.github.yumelira.yumebox.runtime.service.ClashManager",
+                        context = appContext,
+                    )
                     localClashManager = localManager
                     clashManager = RuntimeClashManager(appContext, localManager)
-                    profileManager = ProfileManager(appContext)
+                    profileManager = instantiateServiceObject<IProfileManager>(
+                        className = "com.github.yumelira.yumebox.runtime.service.ProfileManager",
+                        context = appContext,
+                    )
                     initialized = true
                     Timber.d(
                         "ServiceClient gateway initialized in pid=${android.os.Process.myPid()}, process=${android.app.Application.getProcessName()}, cost=${System.currentTimeMillis() - startedAt}ms"
@@ -92,4 +96,10 @@ object ServiceClient {
     }
 
     fun isConnected(): Boolean = initialized && clashManager != null && profileManager != null
+
+    private inline fun <reified T> instantiateServiceObject(className: String, context: Context): T {
+        val clazz = Class.forName(className)
+        val instance = clazz.getConstructor(Context::class.java).newInstance(context)
+        return (instance as? T) ?: error("$className does not implement ${T::class.java.name}")
+    }
 }

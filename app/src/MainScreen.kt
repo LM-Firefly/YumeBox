@@ -35,6 +35,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
@@ -46,9 +47,9 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.presentation.screen.ProxyPager
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.ProxyPager
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
+import com.github.yumelira.yumebox.feature.substore.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.screen.acg.AcgHomePage
 import com.github.yumelira.yumebox.screen.acg.calculateHomeVisibility
@@ -85,16 +86,16 @@ fun MainScreen(
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val featureViewModel = koinViewModel<FeatureViewModel>()
     val homeViewModel = koinViewModel<HomeViewModel>()
-    val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
-    val bottomBarUseLegacyStyle by appSettingsViewModel.bottomBarUseLegacyStyle.state.collectAsState()
-    val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsState()
-    val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsState()
-    val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsState()
-    val acgWallpaperZoom by appSettingsViewModel.acgWallpaperZoom.state.collectAsState()
-    val acgWallpaperBiasX by appSettingsViewModel.acgWallpaperBiasX.state.collectAsState()
-    val acgWallpaperBiasY by appSettingsViewModel.acgWallpaperBiasY.state.collectAsState()
-    val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
-    val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
+    val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsStateWithLifecycle()
+    val bottomBarUseLegacyStyle by appSettingsViewModel.bottomBarUseLegacyStyle.state.collectAsStateWithLifecycle()
+    val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsStateWithLifecycle()
+    val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsStateWithLifecycle()
+    val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsStateWithLifecycle()
+    val acgWallpaperZoom by appSettingsViewModel.acgWallpaperZoom.state.collectAsStateWithLifecycle()
+    val acgWallpaperBiasX by appSettingsViewModel.acgWallpaperBiasX.state.collectAsStateWithLifecycle()
+    val acgWallpaperBiasY by appSettingsViewModel.acgWallpaperBiasY.state.collectAsStateWithLifecycle()
+    val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsStateWithLifecycle()
+    val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsStateWithLifecycle()
     val bottomBarScrollBehavior = rememberBottomBarScrollBehavior(autoHideEnabled = bottomBarAutoHideEnabled)
     val pagerFlingBehavior = rememberMainPagerFlingBehavior(mainPagerState.pagerState)
     var settledMainPage by remember { mutableIntStateOf(initialMainPage) }

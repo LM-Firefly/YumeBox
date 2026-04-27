@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.screen
+package com.github.yumelira.yumebox.feature.override.presentation.screen
 
 
 import com.github.yumelira.yumebox.presentation.theme.UiDp

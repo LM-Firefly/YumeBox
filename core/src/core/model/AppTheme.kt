@@ -20,12 +20,18 @@
 
 
 
-package com.github.yumelira.yumebox.data.model
+package com.github.yumelira.yumebox.core.model
 
-enum class ProxyMode {
-    Tun,
+enum class ThemeMode {
+    Auto, Light, Dark
+}
 
-    RootTun,
+enum class AppLanguage {
+    System,
+    Zh,
+    En,
+}
 
-    Http
+enum class AppColorTheme {
+    ClassicMonochrome,
 }

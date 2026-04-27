@@ -20,11 +20,12 @@
 
 
 
-package com.github.yumelira.yumebox.service.common.util
+package com.github.yumelira.yumebox.runtime.api.service.common.util
 
 import android.content.Context
+import java.io.File
 
-object Global {
+object ServiceGlobal {
     lateinit var application: Context
         private set
 
@@ -34,11 +35,14 @@ object Global {
 }
 
 fun initializeServiceGlobal(app: Context) {
-    Global.init(app)
+    ServiceGlobal.init(app)
 }
 
 val Context.appContextOrSelf: Context
     get() = applicationContext ?: this
 
+val Context.importedDir: File
+    get() = filesDir.resolve("imported")
+
 val packageName: String
-    get() = Global.application.packageName
+    get() = ServiceGlobal.application.packageName

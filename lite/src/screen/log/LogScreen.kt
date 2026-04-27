@@ -39,7 +39,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -80,6 +80,8 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.extended.Download
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Destination<RootGraph>
@@ -90,8 +92,8 @@ fun LogScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    val isRecording by viewModel.isRecording.collectAsState()
-    val logEntries by viewModel.tempLogEntries.collectAsState()
+    val isRecording by viewModel.isRecording.collectAsStateWithLifecycle()
+    val logEntries by viewModel.tempLogEntries.collectAsStateWithLifecycle()
 
     var fabHidden by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -104,6 +106,20 @@ fun LogScreen(navigator: DestinationsNavigator) {
             if (!viewModel.saveTempLog(uri)) {
                 launch(Dispatchers.Main) {
                     context.showToast("导出失败")
+                }
+            }
+        }
+    }
+
+    val saveRecentLogsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/plain"),
+    ) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val success = viewModel.exportRecentLogsToUri(uri)
+            if (!success) {
+                launch(Dispatchers.Main) {
+                    context.showToast("保存失败")
                 }
             }
         }
@@ -133,6 +149,11 @@ fun LogScreen(navigator: DestinationsNavigator) {
                 title = "日志录制",
                 scrollBehavior = scrollBehavior,
                 actions = {
+                    IconButton(
+                        onClick = { saveRecentLogsLauncher.launch("lite-log-recent-${System.currentTimeMillis()}.log") },
+                    ) {
+                        Icon(imageVector = MiuixIcons.Download, contentDescription = "保存近期日志")
+                    }
                     if (logEntries.isNotEmpty()) {
                         IconButton(
                             onClick = { saveFileLauncher.launch("lite-log-${System.currentTimeMillis()}.txt") },

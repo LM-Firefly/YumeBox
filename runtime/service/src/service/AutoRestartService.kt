@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -35,17 +35,17 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.service.R
-import com.github.yumelira.yumebox.service.common.util.AutoStartExecutionGate
-import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
-import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
+import com.github.yumelira.yumebox.runtime.api.autostart.AutoStartExecutionGate
+import com.github.yumelira.yumebox.runtime.api.autostart.AutoStartUpdatePolicy
+import com.github.yumelira.yumebox.runtime.service.root.RootTunServiceBridge
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeServiceLauncher
 import kotlinx.coroutines.*
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
@@ -61,7 +61,7 @@ class AutoRestartService : Service() {
         const val REASON_PACKAGE_REPLACED = "package_replaced"
     }
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mmkvProvider by lazy { MMKVProvider() }
     private val appSettingsStorage by lazy { AppSettingsStore(mmkvProvider.getMMKV("settings")) }
     private val featureStore by lazy { FeatureStore(mmkvProvider.getMMKV("substore")) }

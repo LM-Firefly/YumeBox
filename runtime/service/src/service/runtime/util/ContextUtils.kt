@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,16 +20,13 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.util
+package com.github.yumelira.yumebox.runtime.service.runtime.util
 
 import android.content.Context
 import android.content.Intent
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 import java.io.File
 import java.util.*
-
-val Context.importedDir: File
-    get() = filesDir.resolve("imported")
 
 val File.directoryLastModified: Long?
     get() {

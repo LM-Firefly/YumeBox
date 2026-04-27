@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -29,27 +29,29 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.VpnService
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
-import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
-import com.github.yumelira.yumebox.service.runtime.session.*
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
-import com.github.yumelira.yumebox.service.runtime.util.cancelAndJoinBlocking
-import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
-import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
-import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.service.common.util.CoreRuntimeConfig
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.common.util.initializeServiceGlobal
+import com.github.yumelira.yumebox.runtime.service.notification.ServiceNotificationManager
+import com.github.yumelira.yumebox.runtime.service.runtime.session.*
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.service.runtime.util.cancelAndJoinBlocking
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendClashStarted
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendClashStopped
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendProfileLoaded
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.*
 
-class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
+class TunService : VpnService(), CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default) {
     private var reason: String? = null
+    private val powerController by lazy { ServicePowerController(this) }
     private val notificationManager by lazy {
         ServiceNotificationManager(this, ServiceNotificationManager.VPN_CONFIG)
     }
@@ -71,9 +73,13 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
                     reloadJob = null
                     StatusProvider.markRuntimeStopping(ProxyMode.Tun)
                     if (this@TunService::runtime.isInitialized) {
-                        runtime.requestStop(reason)
+                        launch(Dispatchers.IO) {
+                            runCatching { runtime.destroy() }
+                            stopSelf()
+                        }
+                    } else {
+                        stopSelf()
                     }
-                    stopSelf()
                 }
             }
         }
@@ -81,6 +87,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     override fun onCreate() {
         super.onCreate()
+        powerController.start()
         runCatching {
             initializeServiceGlobal(appContextOrSelf)
             startupLogStore.append("LOCAL_TUN service: onCreate begin")
@@ -97,6 +104,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
             CoreRuntimeConfig.applyCustomUserAgentIfPresent(this)
 
             runtime = SessionRuntime(
+                screenOn = powerController.screenOn,
                 host = object : RuntimeHost {
                     override val context = this@TunService
                     override val mode: ProxyMode = ProxyMode.Tun
@@ -165,7 +173,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (notificationJob?.isActive != true) {
-            notificationJob = notificationManager.startTrafficUpdate(this)
+            notificationJob = notificationManager.startTrafficUpdate(this, powerController.screenOn)
         }
         return START_STICKY
     }
@@ -176,6 +184,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         reloadJob = null
         notificationJob?.cancel()
         notificationJob = null
+        notificationManager.resetSpeedSmoothing()
 
         if (this::runtime.isInitialized) {
             runtime.requestStop(reason)
@@ -187,6 +196,7 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.De
         startupLogStore.append("LOCAL_TUN destroy")
         Log.i("TunService destroyed: ${reason ?: "successfully"}")
 
+        powerController.stop()
         super.onDestroy()
         cancelAndJoinBlocking()
     }

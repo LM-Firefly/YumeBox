@@ -24,7 +24,7 @@ package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.github.yumelira.yumebox.data.model.AccessControlMode
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
 import com.tencent.mmkv.MMKV
 
@@ -52,4 +52,6 @@ class NetworkSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = e
     val rootTunFakeIpRange6 by strFlow("fc00::/18")
     val accessControlMode by enumFlow(AccessControlMode.ALLOW_ALL)
     val accessControlPackages by stringSetFlow(emptySet())
+    val accessControlShowSystemApps by boolFlow(false)
+    val accessControlSelectedFirst by boolFlow(true)
 }

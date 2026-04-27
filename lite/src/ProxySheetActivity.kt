@@ -24,9 +24,10 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
+import com.github.yumelira.yumebox.feature.proxy.ProxySheetContent
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
@@ -46,10 +47,10 @@ class ProxySheetActivity : ComponentActivity() {
         overridePendingTransition(0, 0)
 
         setContent {
-            val themeMode by appSettingsStorage.themeMode.state.collectAsState()
-            val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsState()
-            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
-            val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsState()
+            val themeMode by appSettingsStorage.themeMode.state.collectAsStateWithLifecycle()
+            val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsStateWithLifecycle()
+            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsStateWithLifecycle()
+            val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsStateWithLifecycle()
 
             ProvideAndroidPlatformTheme {
                 YumeTheme(

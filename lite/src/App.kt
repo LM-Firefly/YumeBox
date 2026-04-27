@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,7 +25,12 @@ import com.github.yumelira.yumebox.lite.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.data.gateway.writeRuntimeLog
+import com.github.yumelira.yumebox.data.logging.AppLogBridge
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
+import com.github.yumelira.yumebox.data.logging.AppLogTree
+import com.github.yumelira.yumebox.data.logging.CrashHandler
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.di.featureProxyModules
@@ -46,9 +51,11 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        if (Timber.forest().isEmpty()) {
+            Timber.plant(AppLogTree())
         }
+        CrashHandler.init(this)
+        AppLogBridge.runtimeLogWriter = ::writeRuntimeLog
 
         StartupGate.loadPrimary()
         Global.init(this)
@@ -72,6 +79,7 @@ class App : Application() {
         networkSettings: NetworkSettingsStore,
         networkSettingsStore: MMKV,
     ) {
+        AppLogBuffer.minLogLevel = appSettings.logLevel.value
         networkSettings.proxyMode.set(ProxyMode.Tun)
         if (!networkSettingsStore.containsKey("bypassPrivateNetwork")) {
             networkSettings.bypassPrivateNetwork.set(false)

@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.content.Context
 import android.content.Intent
@@ -34,16 +34,16 @@ import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.core.model.UiConfiguration
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.ILogObserver
-import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
-import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
-import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
-import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.runtime.service.runtime.session.CompiledConfigPipeline
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendBroadcastSelf
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -141,6 +141,22 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 
+    override fun patchForceSelector(group: String, name: String): Boolean {
+        return Clash.patchForceSelector(group, name).also { patched ->
+            val current = store.activeProfile ?: return@also
+            val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            SelectionDao.persistForcePinnedSelection(
+                profileUUID = current,
+                proxyGroup = group,
+                requestedNode = name,
+                patched = patched,
+                supportsPinnedSelection = patchedGroup?.let {
+                    it.type == Proxy.Type.URLTest || it.type == Proxy.Type.Fallback
+                } ?: false,
+            )
+        }
+    }
+
     override fun closeConnection(id: String): Boolean {
         return Clash.closeConnection(id)
     }
@@ -204,11 +220,10 @@ class ClashManager(private val context: Context) : IClashManager,
             return runtimeNames
         }
         val expectedNames = runCatching {
-            Clash.inspectCompiledGroups(
+            Clash.inspectCompiledGroupNames(
                 runtimeFile.readText(),
-                File(spec.profileDir),
                 excludeNotSelectable,
-            ).map(ProxyGroup::name)
+            )
         }.getOrDefault(emptyList())
         if (expectedNames.isEmpty()) {
             return runtimeNames

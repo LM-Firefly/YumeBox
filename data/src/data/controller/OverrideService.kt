@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -22,19 +22,12 @@
 
 package com.github.yumelira.yumebox.data.controller
 
-import android.content.Context
-import android.content.Intent
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import timber.log.Timber
 
 class OverrideService(
-    context: Context,
     private val resolver: OverrideResolver,
     private val onRuntimeOverrideChanged: () -> Unit = {},
 ) {
-    private val appContext = context.appContextOrSelf
-
     suspend fun applyOverride(profileId: String): Boolean {
         return try {
             val overrideIds = resolver.resolveIds(profileId)
@@ -59,20 +52,12 @@ class OverrideService(
                 return false
             }
 
-            notifyRuntimeOverrideChanged()
+            onRuntimeOverrideChanged()
 
             true
         } catch (e: Exception) {
             Timber.e(e, "Failed to apply override for profile: %s", profileId)
             false
         }
-    }
-
-    private fun notifyRuntimeOverrideChanged() {
-        appContext.sendBroadcast(
-            Intent(Intents.actionOverrideChanged(appContext.packageName))
-                .setPackage(appContext.packageName),
-        )
-        onRuntimeOverrideChanged()
     }
 }

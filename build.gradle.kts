@@ -28,10 +28,10 @@ plugins {
     `jvm-toolchains`
     id("com.android.application") version "9.2.0" apply false
     id("com.android.library") version "9.2.0" apply false
-    kotlin("plugin.serialization") version "2.2.10" apply false
-    kotlin("plugin.compose") version "2.3.10" apply false
+    kotlin("plugin.serialization") version "2.3.21" apply false
+    kotlin("plugin.compose") version "2.3.21" apply false
     id("org.jetbrains.compose") version "1.10.3" apply false
-    id("com.google.devtools.ksp") version "2.3.2" apply false
+    id("com.google.devtools.ksp") version "2.3.7" apply false
     id("com.mikepenz.aboutlibraries.plugin.android") version "+" apply false
 }
 
@@ -40,7 +40,7 @@ val androidCompileSdkMinor = providers.gradleProperty("android.compileSdkMinor")
 val androidMinSdk = providers.gradleProperty("android.minSdk").map(String::toInt).get()
 val androidJvm = providers.gradleProperty("android.jvm")
     .orElse(providers.gradleProperty("project.jvm"))
-    .orElse("17")
+    .orElse("21")
     .get()
 val androidJvmVersion = androidJvm.toInt()
 val androidNdkVersion = providers.gradleProperty("android.ndkVersion").orNull.orEmpty()
@@ -163,4 +163,10 @@ subprojects {
             }
         }
     }
+}
+
+tasks.register("assembleReleaseWithExtension") {
+    group = "build"
+    description = "Assemble release APK with extension merged (arm64-v8a and x86_64, including javet libs)."
+    dependsOn(":app:assembleRelease")
 }

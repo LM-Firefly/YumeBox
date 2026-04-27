@@ -46,8 +46,8 @@ import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
-import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
+import com.github.yumelira.yumebox.feature.substore.presentation.viewmodel.SettingEvent
+import com.github.yumelira.yumebox.feature.substore.presentation.viewmodel.SettingViewModel
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.FeatureScreenDestination

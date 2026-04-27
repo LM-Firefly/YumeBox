@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.presentation.util
+package com.github.yumelira.yumebox.feature.proxy.presentation.util
 
 data class FlaggedName(
     val countryCode: String?,

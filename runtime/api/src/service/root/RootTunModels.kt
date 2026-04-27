@@ -20,12 +20,13 @@
 
 
 
-package com.github.yumelira.yumebox.service.root
+package com.github.yumelira.yumebox.runtime.api.service.root
 
+import android.content.Context
+import android.os.IInterface
 import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.model.UiConfiguration
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeLogChunk
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -93,17 +94,52 @@ data class RootTunRuntimeSnapshot(
     val profileFingerprint: String = "",
 )
 
+data class RootAccessStatus(
+    val rootAccessGranted: Boolean,
+    val blockedMessage: String = "Root access required",
+) {
+    val canStartRootTun: Boolean
+        get() = rootAccessGranted
+    fun rootTunBlockedMessage(): String = blockedMessage
+}
+
+interface RootAccessSupportContract {
+    fun evaluate(context: Context): RootAccessStatus
+    suspend fun evaluateAsync(context: Context): RootAccessStatus
+    suspend fun requireRootTunAccess(context: Context): RootAccessStatus
+}
+
+interface RootTunRuntimeRecoveryContract {
+    fun isBinderAlive(service: IInterface?): Boolean
+    fun isBinderConnectionFailure(error: Throwable): Boolean
+    fun binderFailureReason(error: Throwable): String
+    fun handleBinderGone(context: Context, reason: String?)
+}
+
+interface RootTunForegroundServiceContract {
+    fun start(context: Context)
+    fun stop(context: Context)
+}
+
 @Serializable
 data class RootTunLogChunk(
     val nextSeq: Long = 0L,
     val items: List<String> = emptyList(),
-) {
-    companion object {
-        fun from(value: RuntimeLogChunk): RootTunLogChunk {
-            return RootTunLogChunk(
-                nextSeq = value.nextSeq,
-                items = value.items,
-            )
-        }
-    }
+)
+
+interface RootTunStateStoreContract {
+    fun snapshot(): RootTunStatus
+    fun isRunning(): Boolean
+    fun updateStatus(status: RootTunStatus)
+    fun markIdle(error: String? = null)
+    fun clear()
+}
+
+interface RootTunStateStoreFactoryContract {
+    fun create(context: Context): RootTunStateStoreContract
+}
+
+interface RootPackageQueryContract {
+    fun hasRootAccess(): Boolean
+    fun queryInstalledPackageNames(): Set<String>?
 }

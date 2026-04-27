@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 package com.github.yumelira.yumebox
 
 import android.app.Application
-import android.content.res.Configuration
+import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
@@ -31,14 +31,20 @@ import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
+import com.github.yumelira.yumebox.data.gateway.writeRuntimeLog
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
+import com.github.yumelira.yumebox.data.logging.AppLogBridge
+import com.github.yumelira.yumebox.data.logging.AppLogTree
+import com.github.yumelira.yumebox.data.logging.CrashHandler
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.substore.util.AppUtil
+import com.github.yumelira.yumebox.feature.substore.util.AppUtil
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.koin.androidContext
@@ -58,14 +64,17 @@ class App : Application() {
         super.onCreate()
 
         instance = this
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        try {
+            runBlocking { executeStartupSequence() }
+        } catch (e: Exception) {
+            Timber.e(e, "Fatal error during application startup")
+            CrashHandler.init(this)
         }
+    }
 
-        StartupGate.verify(this)
-        Global.init(this)
-        MMKV.initialize(this)
-
+    private suspend fun executeStartupSequence() {
+        initSystem()
+        initDataStore()
         val koinApp = startKoin {
             androidContext(this@App)
             modules(appModule)
@@ -81,9 +90,21 @@ class App : Application() {
         PlatformIdentifier.getPlatformIdentifier()
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        AppLanguageManager.refreshSystemLanguage()
+    private suspend fun initSystem() = withContext(Dispatchers.IO) {
+        if (Timber.forest().isEmpty()) {
+            Timber.plant(AppLogTree())
+        }
+        CrashHandler.init(this@App)
+        AppLogBridge.runtimeLogWriter = ::writeRuntimeLog
+        StartupGate.verify(this@App)
+        Timber.d("System initialization completed")
+    }
+
+    private suspend fun initDataStore() = withContext(Dispatchers.IO) {
+        Global.init(this@App)
+        MMKV.disableProcessModeChecker()
+        MMKV.initialize(this@App)
+        Timber.d("Data stores initialized")
     }
 
     private fun scheduleDeferredStartupTasks(koin: Koin, featureStore: FeatureStore) {

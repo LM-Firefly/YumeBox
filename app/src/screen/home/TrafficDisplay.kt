@@ -25,7 +25,9 @@ package com.github.yumelira.yumebox.screen.home
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -41,8 +43,8 @@ import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.formatBytesForDisplay
 import com.github.yumelira.yumebox.core.model.TunnelState
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
@@ -66,18 +68,9 @@ fun TrafficDisplay(
 ) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
-
-    val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
-                enabled = isEnabled,
-                interactionSource = interactionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick
-            )
             .padding(top = componentSizes.homeTrafficTopPadding, bottom = spacing.space16),
         verticalArrangement = Arrangement.spacedBy(spacing.space24)
     ) {
@@ -91,6 +84,8 @@ fun TrafficDisplay(
             uploadSpeed = trafficNow.upload,
             controlState = controlState,
             proxyMode = proxyMode,
+            isEnabled = isEnabled,
+            onClick = onClick,
         )
     }
 }
@@ -125,6 +120,7 @@ private fun DownloadSection(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProfileModeBadge(
     profileName: String?,
@@ -139,11 +135,13 @@ private fun ProfileModeBadge(
     Surface(
         color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(componentSizes.statusCapsuleHeight)
+        modifier = Modifier
+            .heightIn(min = 28.dp)
+            .widthIn(max = 288.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = spacing.space12),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(spacing.space8)
         ) {
             Text(
@@ -152,7 +150,15 @@ private fun ProfileModeBadge(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 ),
-                color = MiuixTheme.colorScheme.primary
+                color = MiuixTheme.colorScheme.primary,
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        velocity = 30.dp
+                    ),
+                maxLines = 1,
+                softWrap = false
             )
 
             Box(
@@ -205,6 +211,8 @@ private fun UploadSection(
     uploadSpeed: Long,
     controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
 ) {
     val spacing = AppTheme.spacing
 
@@ -235,7 +243,11 @@ private fun UploadSection(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
         ) {
-            ProxyStatusCapsule(controlState = controlState)
+            ProxyStatusCapsule(
+                controlState = controlState,
+                isEnabled = isEnabled,
+                onClick = onClick,
+            )
             AnimatedVisibility(
                 visible = isRunning,
                 enter = slideInHorizontally(
@@ -247,23 +259,39 @@ private fun UploadSection(
                     animationSpec = tween(AnimationSpecs.DURATION_INSTANT, easing = AnimationSpecs.EmphasizedAccelerate)
                 ) + fadeOut(tween(AnimationSpecs.DURATION_INSTANT, easing = AnimationSpecs.ExitEasing))
             ) {
-                ProxyTypeCapsule(proxyMode = proxyMode)
+                ProxyTypeCapsule(
+                    proxyMode = proxyMode,
+                    isEnabled = isEnabled,
+                    onClick = onClick,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
+private fun ProxyTypeCapsule(
+    proxyMode: ProxyMode,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
-
     val primary = MiuixTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
         color = primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
-        modifier = Modifier.height(componentSizes.statusCapsuleHeight)
+        modifier = Modifier
+            .height(componentSizes.statusCapsuleHeight)
+            .clickable(
+                enabled = isEnabled,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -297,17 +325,28 @@ private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
 }
 
 @Composable
-private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
+private fun ProxyStatusCapsule(
+    controlState: HomeProxyControlState,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
-
     val primary = MiuixTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
         color = primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
         modifier = Modifier
             .height(componentSizes.statusCapsuleHeight)
+            .clickable(
+                enabled = isEnabled,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
     ) {
         AnimatedContent(
@@ -365,5 +404,5 @@ private fun TunnelState.Mode?.toDisplayName(): String = when (this) {
     TunnelState.Mode.Direct -> "Direct"
     TunnelState.Mode.Global -> "Global"
     TunnelState.Mode.Rule -> "Rule"
-    else -> "Rule"
+    else -> "--"
 }

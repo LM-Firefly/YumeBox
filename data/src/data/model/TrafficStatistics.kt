@@ -119,11 +119,5 @@ data class ConnectionTrafficBaseline(
 
 enum class StatisticsTimeRange(val days: Int) {
     TODAY(1),
-    WEEK(7);
-
-    val label: String
-        get() = when (this) {
-            TODAY -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Today
-            WEEK -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Week
-        }
+    WEEK(7)
 }

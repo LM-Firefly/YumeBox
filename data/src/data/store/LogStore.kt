@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,12 +25,16 @@ package com.github.yumelira.yumebox.data.store
 import android.app.Application
 import android.net.Uri
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.enums.enumEntries
 
 class LogStore(
@@ -109,6 +113,48 @@ class LogStore(
         }
     }
 
+    suspend fun exportMergedLog(fileName: String): String? = withContext(Dispatchers.IO) {
+        val source = resolveLogFile(fileName) ?: return@withContext null
+        try {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val base = source.name.removeSuffix(logRecordGateway.logSuffix)
+            val targetName = "merged_${base}_$timestamp${logRecordGateway.logSuffix}"
+            val target = File(logDir, targetName)
+            source.inputStream().use { input ->
+                target.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            targetName
+        } catch (_: IOException) {
+            null
+        } catch (_: SecurityException) {
+            null
+        }
+    }
+
+    suspend fun exportRecentLogsToUri(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            application.contentResolver.openOutputStream(targetUri)?.use { out ->
+                out.bufferedWriter().use { writer ->
+                    val recentLogs = AppLogBuffer.getSnapshot()
+                    if (recentLogs.isNotEmpty()) {
+                        recentLogs.forEach { writer.appendLine(it) }
+                    } else {
+                        val recentFile = logDir.listFiles(::isManagedLogFile)
+                            ?.maxByOrNull { it.lastModified() }
+                        recentFile?.forEachLine { writer.appendLine(it) }
+                    }
+                }
+            } ?: return@withContext false
+            true
+        } catch (_: IOException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
     suspend fun readTempLogEntries(maxEntries: Int = 2000): List<LogEntry> = withContext(Dispatchers.IO) {
         val currentlyRecording = isRecording()
         val currentFileName = logRecordGateway.currentLogFileName
@@ -151,7 +197,7 @@ class LogStore(
         if (!isRecording()) return
         if (fileName != null && !isCurrentRecordingFile(fileName)) return
         stopRecording()
-        PollingTimers.awaitTick(logRecordGateway.stopWaitSpec)
+        delay(logRecordGateway.stopWaitMillis)
     }
 
     private fun readTailLogEntries(file: File, maxEntries: Int): List<LogEntry> {

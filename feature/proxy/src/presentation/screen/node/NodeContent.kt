@@ -19,7 +19,8 @@
  */
 
 
-package com.github.yumelira.yumebox.presentation.screen.node
+package com.github.yumelira.yumebox.feature.proxy.presentation.screen.node
+
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.annotation.SuppressLint
 import androidx.compose.animation.*
@@ -45,7 +46,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.data.model.normalizeProxySheetHeightFraction
-import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.data.model.ProxyDisplayMode
+import com.github.yumelira.yumebox.core.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import dev.chrisbanes.haze.HazeProgressive
@@ -158,6 +160,7 @@ internal fun rememberNodeSheetHeight(sheetHeightFraction: Float): Dp {
 @Composable
 internal fun NodeGroupSheetContent(
     groups: List<ProxyGroupInfo>,
+    displayMode: ProxyDisplayMode,
     testingGroupNames: Set<String>,
     sheetHeightFraction: Float,
     onGroupClick: (ProxyGroupInfo) -> Unit,
@@ -183,6 +186,7 @@ internal fun NodeGroupSheetContent(
     ) {
         nodeGroupItems(
             groups = groups,
+            displayMode = displayMode,
             onGroupClick = onGroupClick,
             testingGroupNames = testingGroupNames,
             itemVerticalPadding = UiDp.dp0,
@@ -193,7 +197,9 @@ internal fun NodeGroupSheetContent(
 @Composable
 fun NodeSheetContent(
     group: ProxyGroupInfo,
+    displayMode: ProxyDisplayMode = ProxyDisplayMode.DOUBLE_DETAILED,
     onSelectProxy: (String) -> Unit,
+    onForceSelectProxy: ((String) -> Unit)? = null,
     isDelayTesting: Boolean,
     testingProxyNames: Set<String>,
     onTestDelay: () -> Unit,
@@ -201,6 +207,7 @@ fun NodeSheetContent(
     sheetHeightFraction: Float,
     listState: LazyListState = rememberLazyListState(),
     singleNodeTestEnabled: Boolean = true,
+    pinnedProxyName: String = "",
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
 
@@ -254,9 +261,17 @@ fun NodeSheetContent(
         nodeGridItems(
             proxies = group.proxies,
             selectedProxyName = group.now,
+            pinnedProxyName = pinnedProxyName,
+            displayMode = displayMode,
             onProxyClick = { proxyName ->
                 if (group.type == Proxy.Type.Selector) {
                     onSelectProxy(proxyName)
+                } else if (
+                    (group.type == Proxy.Type.URLTest || group.type == Proxy.Type.Fallback) &&
+                    onForceSelectProxy != null
+                ) {
+                    val target = if (proxyName == group.fixed) "" else proxyName
+                    onForceSelectProxy(target)
                 } else {
                     onTestDelay()
                 }

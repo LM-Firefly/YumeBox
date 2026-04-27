@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -22,21 +22,22 @@
 
 package com.github.yumelira.yumebox.screen.settings
 
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
 import androidx.lifecycle.ViewModel
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
-import com.github.yumelira.yumebox.data.model.AppColorTheme
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.core.model.AppColorTheme
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.presentation.theme.DEFAULT_CUSTOM_THEME_SEED_ARGB
 
 class AppSettingsViewModel(
-    private val settings: AppSettingsStore,
-    private val featureStore: FeatureStore,
+    appStateManager: AppStateManager,
     private val controller: AppSettingsController,
 ) : ViewModel() {
+    private val settings = appStateManager.appSettingsStore
+    private val featureStore = appStateManager.featureStore
 
     val initialSetupCompleted: Preference<Boolean> = settings.initialSetupCompleted
     val privacyPolicyAccepted: Preference<Boolean> = settings.privacyPolicyAccepted
@@ -68,6 +69,7 @@ class AppSettingsViewModel(
     val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
     val screenshotProtectionEnabled: Preference<Boolean> = settings.screenshotProtectionEnabled
     val biometricUnlockEnabled: Preference<Boolean> = settings.biometricUnlockEnabled
+    val logLevel: Preference<Int> = settings.logLevel
     val exitUiWhenBackground: Preference<Boolean> = featureStore.exitUiWhenBackground
 
     val customUserAgent: Preference<String> = settings.customUserAgent
@@ -110,6 +112,10 @@ class AppSettingsViewModel(
 
     fun applyCustomUserAgent(userAgent: String) = controller.applyCustomUserAgent(userAgent)
 
+    fun onLogLevelChange(level: Int) {
+        logLevel.set(level)
+        AppLogBuffer.minLogLevel = level
+    }
     fun setInitialSetupCompleted(completed: Boolean) = initialSetupCompleted.set(completed)
     fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)
 }

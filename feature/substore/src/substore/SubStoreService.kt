@@ -20,12 +20,12 @@
 
 
 
-package com.github.yumelira.yumebox.substore
+package com.github.yumelira.yumebox.feature.substore
 
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.github.yumelira.yumebox.substore.engine.NativeLibraryManager
+import com.github.yumelira.yumebox.feature.substore.engine.NativeLibraryManager
 import timber.log.Timber
 
 class SubStoreService : Service() {

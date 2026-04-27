@@ -20,18 +20,21 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.session
+package com.github.yumelira.yumebox.runtime.service.runtime.session
 
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.StatusProvider
-import com.github.yumelira.yumebox.service.ClashService
-import com.github.yumelira.yumebox.service.TunService
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimeServiceContract
+import com.github.yumelira.yumebox.runtime.api.service.ProxyServiceContracts
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeTargetMode
+import com.github.yumelira.yumebox.runtime.service.StatusProvider
+import com.github.yumelira.yumebox.runtime.service.ClashService
+import com.github.yumelira.yumebox.runtime.service.TunService
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
 
-object RuntimeServiceLauncher {
+object RuntimeServiceLauncher : LocalRuntimeServiceContract {
     const val EXTRA_REQUEST_SOURCE = "runtime_request_source"
 
     const val SOURCE_UI = "ui"
@@ -86,6 +89,32 @@ object RuntimeServiceLauncher {
             StatusProvider.markRuntimeIdle(mode)
             store.append("${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: failed=${error.message}")
             throw error
+        }
+    }
+
+    override fun start(
+        context: Context,
+        mode: RuntimeTargetMode,
+        source: String,
+    ) {
+        start(context = context, mode = mode.toProxyMode(), source = source)
+    }
+
+    override fun stop(
+        context: Context,
+        clashRequestStopAction: String,
+    ) {
+        val appContext = context.appContextOrSelf
+        appContext.sendBroadcast(Intent(clashRequestStopAction).setPackage(appContext.packageName))
+        appContext.stopService(Intent(appContext, TunService::class.java))
+        appContext.stopService(Intent(appContext, ClashService::class.java))
+    }
+
+    private fun RuntimeTargetMode.toProxyMode(): ProxyMode {
+        return when (this) {
+            RuntimeTargetMode.Tun -> ProxyMode.Tun
+            RuntimeTargetMode.Http -> ProxyMode.Http
+            RuntimeTargetMode.RootTun -> ProxyMode.RootTun
         }
     }
 }

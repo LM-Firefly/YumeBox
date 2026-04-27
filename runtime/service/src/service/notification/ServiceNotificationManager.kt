@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service.notification
+package com.github.yumelira.yumebox.runtime.service.notification
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -33,12 +33,13 @@ import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.runtime.service.R
-import com.github.yumelira.yumebox.service.common.constants.Components
-import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.records.ImportedDao
 import com.tencent.mmkv.MMKV
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 
 class ServiceNotificationManager(
@@ -55,6 +56,8 @@ class ServiceNotificationManager(
     private val settingsStore by lazy { MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE) }
     private val notificationManager by lazy { NotificationManagerCompat.from(service) }
     private var lastNotificationFingerprint: String? = null
+    private var smoothedTrafficNow: Long = 0L
+    private var speedHoldCounter: Int = 0
 
     fun createChannel() {
         notificationManager.createNotificationChannel(
@@ -69,9 +72,10 @@ class ServiceNotificationManager(
         return buildRunningNotification()
     }
 
-    fun startTrafficUpdate(scope: CoroutineScope): Job {
+    fun startTrafficUpdate(scope: CoroutineScope, screenOn: StateFlow<Boolean>): Job {
         return scope.launch(Dispatchers.Default) {
             PollingTimers.ticks(PollingTimerSpecs.ServiceTrafficNotification).collect {
+                if (!screenOn.value) return@collect
                 val notification = buildRunningNotification()
                 val fingerprint = "${notification.extras.getCharSequence(Notification.EXTRA_TITLE)}|" +
                     "${notification.extras.getCharSequence(Notification.EXTRA_TEXT)}"
@@ -96,10 +100,11 @@ class ServiceNotificationManager(
 
         val now = runCatching { Clash.queryTrafficNow() }.getOrDefault(0L)
         val total = runCatching { Clash.queryTrafficTotal() }.getOrDefault(0L)
+        val displayNow = smoothTrafficNow(now)
         return buildNotification(
             NotificationPresentationFactory.createRunning(
                 profileName = profileName,
-                trafficNow = now,
+                trafficNow = displayNow,
                 trafficTotal = total,
             ),
         )
@@ -155,7 +160,27 @@ class ServiceNotificationManager(
         return serviceStore.showTrafficNotification
     }
 
+    private fun smoothTrafficNow(rawNow: Long): Long {
+        return if (rawNow != 0L) {
+            smoothedTrafficNow = rawNow
+            speedHoldCounter = SPEED_HOLD_TICKS
+            rawNow
+        } else if (speedHoldCounter > 0) {
+            speedHoldCounter--
+            smoothedTrafficNow
+        } else {
+            smoothedTrafficNow = 0L
+            0L
+        }
+    }
+
+    fun resetSpeedSmoothing() {
+        smoothedTrafficNow = 0L
+        speedHoldCounter = 0
+    }
+
     companion object {
+        private const val SPEED_HOLD_TICKS = 2
         val VPN_CONFIG = Config(
             notificationId = 1001,
             channelId = "clash_vpn_service",

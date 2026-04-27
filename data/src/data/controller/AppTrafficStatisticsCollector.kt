@@ -28,13 +28,15 @@ import com.github.yumelira.yumebox.data.model.AppTrafficDeltaRecord
 import com.github.yumelira.yumebox.data.model.ConnectionTrafficBaseline
 import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -45,10 +47,10 @@ class AppTrafficStatisticsCollector(
     private val trafficStatisticsStore: TrafficStatisticsStore,
     private val appIdentityResolver: AppIdentityResolver,
     private val queryTrafficTotal: suspend () -> TrafficData,
-    private val queryConnections: suspend () -> ConnectionSnapshot,
+    private val connectionSnapshotFlow: StateFlow<ConnectionSnapshot>,
     private val queryActiveProfileId: suspend () -> String?,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-) {
+) : java.io.Closeable {
     private var collectionJob: Job? = null
     private var monitoringJob: Job? = null
     private val connectionBaselines = linkedMapOf<String, ConnectionTrafficBaseline>()
@@ -92,7 +94,7 @@ class AppTrafficStatisticsCollector(
 
     private suspend fun collectTrafficData() {
         val totalTraffic = queryTrafficTotal()
-        val snapshot = queryConnections()
+        val snapshot = connectionSnapshotFlow.value
         val timestamp = System.currentTimeMillis()
         val currentProfileId = currentProfileId()
             ?: runCatching { queryActiveProfileId() }.getOrNull()
@@ -234,8 +236,8 @@ class AppTrafficStatisticsCollector(
                 appName = identity.appName.ifBlank { current?.appName.orEmpty() },
                 uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
                 downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
-                routeKey = routeKey ?: current?.routeKey,
-                routeLabel = routeLabel ?: current?.routeLabel,
+                routeKey = routeKey,
+                routeLabel = routeLabel,
             )
         }
 
@@ -352,7 +354,10 @@ class AppTrafficStatisticsCollector(
         collectionJob?.cancel()
         collectionJob = null
         connectionBaselines.clear()
+        scope.cancel()
     }
+
+    override fun close() = stop()
 
     companion object {
         private const val TAG = "AppTrafficStatsCollector"
