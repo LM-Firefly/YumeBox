@@ -39,28 +39,23 @@ import java.io.File
 import java.net.InetSocketAddress
 
 object Clash {
-    private val CompilerJson = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-
-    private val ConnectionJson = Json {
+    private val ClashJson = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
 
     fun compilePreview(request: CompileRequest): CompileResult {
         val payload = Bridge.nativeCompilePreview(
-            CompilerJson.encodeToString(CompileRequest.serializer(), request),
+            ClashJson.encodeToString(CompileRequest.serializer(), request),
         )
-        return CompilerJson.decodeFromString(CompileResult.serializer(), payload)
+        return ClashJson.decodeFromString(CompileResult.serializer(), payload)
     }
 
     fun compileToFile(request: CompileRequest): CompileResult {
         val payload = Bridge.nativeCompileToFile(
-            CompilerJson.encodeToString(CompileRequest.serializer(), request),
+            ClashJson.encodeToString(CompileRequest.serializer(), request),
         )
-        return CompilerJson.decodeFromString(CompileResult.serializer(), payload)
+        return ClashJson.decodeFromString(CompileResult.serializer(), payload)
     }
 
     fun reset() {
@@ -90,7 +85,7 @@ object Clash {
 
     fun queryConnections(): ConnectionSnapshot {
         val rawJson = Bridge.nativeQueryConnections()
-        val element = ConnectionJson.parseToJsonElement(rawJson)
+        val element = ClashJson.parseToJsonElement(rawJson)
         val normalized = if (element is JsonObject && element["connections"] == JsonNull) {
             JsonObject(
                 element.toMutableMap().apply {
@@ -100,7 +95,7 @@ object Clash {
         } else {
             element
         }
-        return ConnectionJson.decodeFromJsonElement(
+        return ClashJson.decodeFromJsonElement(
             ConnectionSnapshot.serializer(),
             normalized,
         )

@@ -126,6 +126,7 @@ class HomeViewModel(
     val tunnelMode: StateFlow<TunnelState.Mode?> = proxyFacade.tunnelMode
     private val _homeScreenActive = MutableStateFlow(false)
     private var reconcileJob: Job? = null
+    private var lastReconcileTime = 0L
 
     private val mainProxyNode: StateFlow<com.github.yumelira.yumebox.core.model.Proxy?> =
         proxyFacade.resolvedPrimaryNode
@@ -142,7 +143,6 @@ class HomeViewModel(
         if (running) {
             networkInfoService.startIpMonitoring(
                 isProxyActiveFlow = isRunning,
-                externalRefreshFlow = PollingTimers.ticks(PollingTimerSpecs.HomeIpRefresh).map { Unit },
             )
         } else {
             flowOf(IpMonitoringState.Loading)
@@ -292,6 +292,9 @@ class HomeViewModel(
 
     fun reconcileRuntimeState() {
         if (reconcileJob?.isActive == true) return
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (now - lastReconcileTime < RECONCILE_MIN_INTERVAL_MS) return
+        lastReconcileTime = now
         reconcileJob = viewModelScope.launch {
             runCatching {
                 proxyFacade.reconcileRuntimeState()
@@ -383,8 +386,9 @@ class HomeViewModel(
 
     private fun startSpeedSampling(sampleLimit: Int = 24) {
         viewModelScope.launch {
-            PollingTimers.ticks(PollingTimerSpecs.HomeSpeedSampling).collect {
-                if (!_homeScreenActive.value) return@collect
+            _homeScreenActive.flatMapLatest { active ->
+                if (active) PollingTimers.ticks(PollingTimerSpecs.HomeSpeedSampling) else emptyFlow()
+            }.collect {
                 val snapshot = runtimeSnapshot.value
                 val sample = when {
                     snapshot.phase.running -> TrafficData.from(proxyFacade.trafficNow.value)
@@ -402,12 +406,13 @@ class HomeViewModel(
 
     private fun startConnectionSampling(maxConnections: Int = 256) {
         viewModelScope.launch {
-            proxyFacade.connectionSnapshot.collect { snapshot ->
+            _homeScreenActive.flatMapLatest { active ->
+                if (active) proxyFacade.connectionSnapshot else emptyFlow()
+            }.collect { snapshot ->
                 if (!runtimeSnapshot.value.phase.running) {
                     _connections.value = emptyList()
                     return@collect
                 }
-                if (!_homeScreenActive.value) return@collect
                 _connections.value = snapshot.connections.take(maxConnections)
             }
         }
@@ -491,6 +496,10 @@ class HomeViewModel(
         val profileId: String,
         val mode: ProxyMode,
     )
+
+    companion object {
+        private const val RECONCILE_MIN_INTERVAL_MS = 1_000L
+    }
 
     data class HomeUiState(
         override val isLoading: Boolean = false,

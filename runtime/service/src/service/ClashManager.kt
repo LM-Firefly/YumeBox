@@ -49,11 +49,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -61,69 +62,69 @@ import timber.log.Timber
 import java.io.File
 
 class ClashManager(private val context: Context) : IClashManager,
-    CoroutineScope by CoroutineScope(Dispatchers.IO) {
+    CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.IO) {
     private val store = ServiceStore()
     private val compiledConfigPipeline = CompiledConfigPipeline(context)
     private val runtimeSpecFactory = SessionRuntimeSpecFactory(context)
     private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
     private var logReceiver: ReceiveChannel<LogMessage>? = null
 
-    override fun queryTunnelState(): TunnelState {
+    override suspend fun queryTunnelState(): TunnelState {
         return Clash.queryTunnelState()
     }
 
-    override fun queryTrafficNow(): Long {
+    override suspend fun queryTrafficNow(): Long {
         if (!StatusProvider.serviceRunning) return 0L
         return Clash.queryTrafficNow()
     }
 
-    override fun queryTrafficTotal(): Long {
+    override suspend fun queryTrafficTotal(): Long {
         if (!StatusProvider.serviceRunning) return 0L
         return Clash.queryTrafficTotal()
     }
 
-    override fun queryConnections(): ConnectionSnapshot {
+    override suspend fun queryConnections(): ConnectionSnapshot {
         return Clash.queryConnections()
     }
 
-    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+    override suspend fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         return queryProfileProxyGroups(excludeNotSelectable).map(ProxyGroup::name)
     }
 
-    override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+    override suspend fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         if (store.activeProfile == null) return emptyList()
         val spec = when (configuredProxyMode()) {
             ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
             ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
             ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
         }
-        return runBlocking(Dispatchers.Default) {
+        return withContext(Dispatchers.Default) {
             compiledConfigPipeline.previewGroups(spec, excludeNotSelectable)
         }
     }
 
-    override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+    override suspend fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         val groupNames = resolveRuntimeProxyGroupNames(excludeNotSelectable)
         return groupNames.mapNotNull(::queryRuntimeProxyGroupOrNull)
     }
 
-    override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+    override suspend fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         return resolveRuntimeProxyGroupNames(excludeNotSelectable)
     }
 
-    override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
+    override suspend fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
         return Clash.queryGroup(name, proxySort)
     }
 
-    override fun queryConfiguration(): UiConfiguration {
+    override suspend fun queryConfiguration(): UiConfiguration {
         return Clash.queryConfiguration()
     }
 
-    override fun queryProviders(): ProviderList {
+    override suspend fun queryProviders(): ProviderList {
         return ProviderList(Clash.queryProviders())
     }
 
-    override fun patchSelector(group: String, name: String): Boolean {
+    override suspend fun patchSelector(group: String, name: String): Boolean {
         return Clash.patchSelector(group, name).also { patched ->
             val current = store.activeProfile ?: return@also
 
@@ -141,7 +142,7 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 
-    override fun patchForceSelector(group: String, name: String): Boolean {
+    override suspend fun patchForceSelector(group: String, name: String): Boolean {
         return Clash.patchForceSelector(group, name).also { patched ->
             val current = store.activeProfile ?: return@also
             val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
@@ -157,11 +158,11 @@ class ClashManager(private val context: Context) : IClashManager,
         }
     }
 
-    override fun closeConnection(id: String): Boolean {
+    override suspend fun closeConnection(id: String): Boolean {
         return Clash.closeConnection(id)
     }
 
-    override fun closeAllConnections() {
+    override suspend fun closeAllConnections() {
         Clash.closeAllConnections()
     }
 
@@ -190,7 +191,7 @@ class ClashManager(private val context: Context) : IClashManager,
     override suspend fun healthCheckProxy(group: String, proxyName: String): Int {
         Timber.d("ClashManager healthCheckProxy: group=%s proxy=%s", group, proxyName)
         val json = Clash.healthCheckProxy(proxyName).await()
-        val obj = kotlinx.serialization.json.Json.parseToJsonElement(json)
+        val obj = Json.parseToJsonElement(json)
         return obj.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
     }
 

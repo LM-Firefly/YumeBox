@@ -31,10 +31,12 @@ import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.IInterface
+import android.os.PowerManager
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.*
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.core.util.throttleWhenScreenOff
 import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.util.ProxyChainResolver
@@ -160,6 +162,20 @@ class ProxyFacade(
     private var pendingGroupsRefreshJob: Job? = null
     private val pendingGroupRefreshJobs = ConcurrentHashMap<String, Job>()
 
+    private val _screenOn = MutableStateFlow(
+        appContext.getSystemService(PowerManager::class.java)?.isInteractive != false,
+    )
+    val screenOn: StateFlow<Boolean> = _screenOn.asStateFlow()
+
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_ON -> _screenOn.value = true
+                Intent.ACTION_SCREEN_OFF -> _screenOn.value = false
+            }
+        }
+    }
+
     private val serviceEventsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action ?: return) {
@@ -190,6 +206,7 @@ class ProxyFacade(
     init {
         RuntimeContractResolver.warmUp(appContext)
         registerServiceEventReceiver()
+        registerScreenStateReceiver()
         observeProxyGroupSyncPriority()
         initializeRuntimeSnapshot()
     }
@@ -733,12 +750,15 @@ class ProxyFacade(
         scope.launch { refreshPreviewStateSafely() }
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun startTrafficPolling() {
         if (trafficPollingJob?.isActive == true) return
         trafficPollingJob = scope.launch {
             var tick = 0
             var consecutiveFailures = 0
-            PollingTimers.ticks(PollingTimerSpecs.RuntimeTrafficPolling).collect {
+            PollingTimers.ticks(PollingTimerSpecs.RuntimeTrafficPolling)
+                .throttleWhenScreenOff(_screenOn)
+                .collect {
                 val snapshot = _runtimeSnapshot.value
                 if (!snapshot.running) {
                     consecutiveFailures = 0
@@ -804,6 +824,18 @@ class ProxyFacade(
             }
         }.onFailure { error ->
             Timber.w(error, "Failed to register service event receiver")
+        }
+    }
+
+    private fun registerScreenStateReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+        }
+        runCatching {
+            appContext.registerReceiver(screenStateReceiver, filter)
+        }.onFailure { error ->
+            Timber.w(error, "Failed to register screen state receiver")
         }
     }
 
@@ -1026,6 +1058,7 @@ class ProxyFacade(
         return requests.values.maxByOrNull { it.ordinal } ?: ProxyGroupSyncPriority.OFF
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private fun restartProxyGroupSyncLoop(priority: ProxyGroupSyncPriority) {
         if (activeProxyGroupSyncPriority == priority && proxyGroupSyncJob?.isActive == true) {
             return
@@ -1042,7 +1075,9 @@ class ProxyFacade(
             ProxyGroupSyncPriority.OFF -> return
         }
         proxyGroupSyncJob = scope.launch {
-            PollingTimers.ticks(timerSpec).collect {
+            PollingTimers.ticks(timerSpec)
+                .throttleWhenScreenOff(_screenOn)
+                .collect {
                 refreshRuntimeProxyGroupsSafely()
             }
         }

@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -214,9 +215,7 @@ class FeatureViewModel(
         viewModelScope.launch {
             if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value) return@launch
             downloadSubStoreFrontend()
-            while (_isDownloadingSubStoreFrontend.value) {
-                delay(200L)
-            }
+            _isDownloadingSubStoreFrontend.first { !it }
             downloadSubStoreBackend()
         }
     }

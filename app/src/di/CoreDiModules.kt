@@ -199,6 +199,7 @@ val appDataRuntimeModule = module {
                 proxyFacade.refreshCurrentProfile()
                 proxyFacade.currentProfile.value?.uuid?.toString()
             },
+            screenOn = proxyFacade.screenOn,
         )
     }
 }

@@ -33,6 +33,7 @@ import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
 import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -48,118 +49,106 @@ class RuntimeClashManager(
     private var rootLogJob: Job? = null
     private var rootLogSeq: Long = 0L
 
-    override fun queryTunnelState(): TunnelState {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryTunnelState(appContext) } },
+    override suspend fun queryTunnelState(): TunnelState {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryTunnelState(appContext) },
             localCall = { local.queryTunnelState() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryTrafficNow(): Long {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryTrafficNow(appContext) } },
+    override suspend fun queryTrafficNow(): Long {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryTrafficNow(appContext) },
             localCall = { local.queryTrafficNow() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryTrafficTotal(): Long {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryTrafficTotal(appContext) } },
+    override suspend fun queryTrafficTotal(): Long {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryTrafficTotal(appContext) },
             localCall = { local.queryTrafficTotal() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryConnections(): ConnectionSnapshot {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryConnections(appContext) } },
+    override suspend fun queryConnections(): ConnectionSnapshot {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryConnections(appContext) },
             localCall = { local.queryConnections() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+    override suspend fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         return local.queryProfileProxyGroupNames(excludeNotSelectable)
     }
 
-    override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+    override suspend fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         return local.queryProfileProxyGroups(excludeNotSelectable)
     }
 
-    override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
-        return queryWithRuntime(
-            rootCall = {
-                runBlocking {
-                    RootTunController.queryAllProxyGroups(appContext, excludeNotSelectable)
-                }
-            },
+    override suspend fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryAllProxyGroups(appContext, excludeNotSelectable) },
             localCall = { local.queryAllProxyGroups(excludeNotSelectable) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return queryWithRuntime(
-            rootCall = {
-                runBlocking {
-                    RootTunController.queryProxyGroupNames(appContext, excludeNotSelectable)
-                }
-            },
+    override suspend fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryProxyGroupNames(appContext, excludeNotSelectable) },
             localCall = { local.queryProxyGroupNames(excludeNotSelectable) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
-        return queryWithRuntime(
-            rootCall = {
-                runBlocking {
-                    RootTunController.queryProxyGroup(appContext, name, proxySort)
-                }
-            },
+    override suspend fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryProxyGroup(appContext, name, proxySort) },
             localCall = { local.queryProxyGroup(name, proxySort) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryConfiguration(): UiConfiguration {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryConfiguration(appContext) } },
+    override suspend fun queryConfiguration(): UiConfiguration {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryConfiguration(appContext) },
             localCall = { local.queryConfiguration() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProviders(): ProviderList {
-        val providers = queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryProviders(appContext) } },
+    override suspend fun queryProviders(): ProviderList {
+        val providers = queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryProviders(appContext) },
             localCall = { local.queryProviders().toList() },
             fallbackOnRootFailure = false,
         )
         return ProviderList(providers)
     }
 
-    override fun patchSelector(group: String, name: String): Boolean {
+    override suspend fun patchSelector(group: String, name: String): Boolean {
         return local.patchSelector(group, name)
     }
 
-    override fun patchForceSelector(group: String, name: String): Boolean {
+    override suspend fun patchForceSelector(group: String, name: String): Boolean {
         return local.patchForceSelector(group, name)
     }
 
-    override fun closeConnection(id: String): Boolean {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.closeConnection(appContext, id) } },
+    override suspend fun closeConnection(id: String): Boolean {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.closeConnection(appContext, id) },
             localCall = { local.closeConnection(id) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun closeAllConnections() {
-        queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.closeAllConnections(appContext) } },
+    override suspend fun closeAllConnections() {
+        queryWithRuntimeSuspend(
+            rootCall = { RootTunController.closeAllConnections(appContext) },
             localCall = { local.closeAllConnections() },
             fallbackOnRootFailure = false,
         )
@@ -177,7 +166,7 @@ class RuntimeClashManager(
         return queryWithRuntimeSuspend(
             rootCall = {
                 val payload = RootTunController.healthCheckProxy(appContext, group, proxyName)
-                val json = kotlinx.serialization.json.Json.parseToJsonElement(payload)
+                val json = Json.parseToJsonElement(payload)
                 json.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
             },
             localCall = { local.healthCheckProxy(group, proxyName) },

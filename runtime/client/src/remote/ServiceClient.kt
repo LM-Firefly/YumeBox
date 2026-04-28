@@ -32,9 +32,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import timber.log.Timber
 
 object ServiceClient {
+    private const val CONNECT_TIMEOUT_MS = 10_000L
     private val mutex = Mutex()
     private var initialized = false
     private var localClashManager: IClashManager? = null
@@ -52,18 +54,20 @@ object ServiceClient {
                 val startedAt = System.currentTimeMillis()
 
                 try {
-                    initializeServiceGlobal(appContext)
-                    val localManager = instantiateServiceObject<IClashManager>(
-                        className = "com.github.yumelira.yumebox.runtime.service.ClashManager",
-                        context = appContext,
-                    )
-                    localClashManager = localManager
-                    clashManager = RuntimeClashManager(appContext, localManager)
-                    profileManager = instantiateServiceObject<IProfileManager>(
-                        className = "com.github.yumelira.yumebox.runtime.service.ProfileManager",
-                        context = appContext,
-                    )
-                    initialized = true
+                    withTimeout(CONNECT_TIMEOUT_MS) {
+                        initializeServiceGlobal(appContext)
+                        val localManager = instantiateServiceObject<IClashManager>(
+                            className = "com.github.yumelira.yumebox.runtime.service.ClashManager",
+                            context = appContext,
+                        )
+                        localClashManager = localManager
+                        clashManager = RuntimeClashManager(appContext, localManager)
+                        profileManager = instantiateServiceObject<IProfileManager>(
+                            className = "com.github.yumelira.yumebox.runtime.service.ProfileManager",
+                            context = appContext,
+                        )
+                        initialized = true
+                    }
                     Timber.d(
                         "ServiceClient gateway initialized in pid=${android.os.Process.myPid()}, process=${android.app.Application.getProcessName()}, cost=${System.currentTimeMillis() - startedAt}ms"
                     )

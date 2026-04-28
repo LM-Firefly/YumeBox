@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,11 +20,26 @@
 
 
 
-package com.github.yumelira.yumebox.runtime.service.runtime.util
+package com.github.yumelira.yumebox.runtime.service
 
+import android.net.VpnService
+import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.common.util.initializeServiceGlobal
+import com.github.yumelira.yumebox.runtime.service.runtime.util.cancelAndJoinBlocking
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
-fun CoroutineScope.cancelAndJoinBlocking() {
-    coroutineContext.job.cancel()
+abstract class BaseVpnService : VpnService(), CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default) {
+    override fun onCreate() {
+        super.onCreate()
+
+        initializeServiceGlobal(appContextOrSelf)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        cancelAndJoinBlocking()
+    }
 }

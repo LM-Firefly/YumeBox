@@ -119,7 +119,7 @@ class HomeViewModel(
             } else {
                 networkInfoService.startIpMonitoring(
                     isProxyActiveFlow = isRunning,
-                    externalRefreshFlow = PollingTimers.ticks(PollingTimerSpecs.HomeIpRefresh).map { Unit },
+                    // externalRefreshFlow intentionally omitted: refresh driven by proxy-state changes only.
                 )
             }
         }

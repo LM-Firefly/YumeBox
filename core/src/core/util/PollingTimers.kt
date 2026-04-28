@@ -29,8 +29,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.isActive
 import java.util.concurrent.ConcurrentHashMap
 
@@ -80,10 +82,12 @@ object PollingTimers {
     private val schedulerScope = CoroutineScope(
         SupervisorJob() + Dispatchers.Default.limitedParallelism(1),
     )
-    private val tickerCache = ConcurrentHashMap<PollingTimerSpec, SharedFlow<Long>>()
+    private data class TimerKey(val intervalMillis: Long, val initialDelayMillis: Long)
+    private val tickerCache = ConcurrentHashMap<TimerKey, SharedFlow<Long>>()
 
     fun ticks(spec: PollingTimerSpec): Flow<Long> {
-        return tickerCache.computeIfAbsent(spec) {
+        val key = TimerKey(spec.intervalMillis, spec.initialDelayMillis)
+        return tickerCache.computeIfAbsent(key) {
             flow {
                 if (spec.initialDelayMillis > 0L) {
                     delay(spec.initialDelayMillis)
@@ -97,6 +101,21 @@ object PollingTimers {
                 started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
                 replay = 0,
             )
+        }
+    }
+}
+
+@kotlinx.coroutines.ExperimentalCoroutinesApi
+fun Flow<Long>.throttleWhenScreenOff(
+    screenOn: StateFlow<Boolean>,
+    slowIntervalMs: Long = 5_000L,
+): Flow<Long> = screenOn.transformLatest { isScreenOn ->
+    if (isScreenOn) {
+        this@throttleWhenScreenOff.collect { emit(it) }
+    } else {
+        while (true) {
+            emit(SystemClock.elapsedRealtime())
+            delay(slowIntervalMs)
         }
     }
 }

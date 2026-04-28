@@ -24,6 +24,8 @@ import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.core.util.throttleWhenScreenOff
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import com.github.yumelira.yumebox.data.model.AppTrafficDeltaRecord
 import com.github.yumelira.yumebox.data.model.ConnectionTrafficBaseline
 import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
@@ -49,6 +51,7 @@ class AppTrafficStatisticsCollector(
     private val queryTrafficTotal: suspend () -> TrafficData,
     private val connectionSnapshotFlow: StateFlow<ConnectionSnapshot>,
     private val queryActiveProfileId: suspend () -> String?,
+    private val screenOn: StateFlow<Boolean>? = null,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : java.io.Closeable {
     private var collectionJob: Job? = null
@@ -76,13 +79,16 @@ class AppTrafficStatisticsCollector(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun startTrafficMonitoring(parentScope: CoroutineScope): Job {
         return parentScope.launch {
             lastTotalUpload = trafficStatisticsStore.getLastTrafficUpload()
             lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
             lastProfileId = trafficStatisticsStore.getLastProfileId()
             connectionBaselines.clear()
-            PollingTimers.ticks(PollingTimerSpecs.TrafficStatsCollection).collect {
+            val ticks = PollingTimers.ticks(PollingTimerSpecs.TrafficStatsCollection)
+                .let { flow -> screenOn?.let { flow.throttleWhenScreenOff(it, 60_000L) } ?: flow }
+            ticks.collect {
                 runCatching { collectTrafficData() }
                     .onFailure { error ->
                         if (error is CancellationException) throw error

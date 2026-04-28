@@ -49,6 +49,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,7 +69,7 @@ class ProxyTileService : TileService() {
         applicationInfo.loadLabel(packageManager).toString().ifBlank { "YumeBox" }
     }
 
-    private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var updateJob: Job? = null
     private var toggleJob: Job? = null
 
@@ -278,10 +279,7 @@ class ProxyTileService : TileService() {
             }
         }
 
-        tile.icon = Icon.createWithResource(
-            this,
-            if (isRunning) R.drawable.ic_logo_service else R.drawable.ic_logo_service
-        )
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
 
         tile.updateTile()
     }

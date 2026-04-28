@@ -27,29 +27,24 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.VpnService
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 import com.github.yumelira.yumebox.runtime.service.common.log.Log
 import com.github.yumelira.yumebox.runtime.service.common.util.CoreRuntimeConfig
 import com.github.yumelira.yumebox.runtime.api.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.runtime.api.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.runtime.service.notification.ServiceNotificationManager
 import com.github.yumelira.yumebox.runtime.service.runtime.session.*
 import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
-import com.github.yumelira.yumebox.runtime.service.runtime.util.cancelAndJoinBlocking
 import com.github.yumelira.yumebox.runtime.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.runtime.service.runtime.util.sendClashStopped
 import com.github.yumelira.yumebox.runtime.service.runtime.util.sendProfileLoaded
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.*
 
-class TunService : VpnService(), CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default) {
+class TunService : BaseVpnService() {
     private var reason: String? = null
     private val powerController by lazy { ServicePowerController(this) }
     private val notificationManager by lazy {
@@ -89,7 +84,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(SupervisorJob(
         super.onCreate()
         powerController.start()
         runCatching {
-            initializeServiceGlobal(appContextOrSelf)
             startupLogStore.append("LOCAL_TUN service: onCreate begin")
 
             notificationManager.createChannel()
@@ -198,7 +192,6 @@ class TunService : VpnService(), CoroutineScope by CoroutineScope(SupervisorJob(
 
         powerController.stop()
         super.onDestroy()
-        cancelAndJoinBlocking()
     }
 
     override fun onTrimMemory(level: Int) {
