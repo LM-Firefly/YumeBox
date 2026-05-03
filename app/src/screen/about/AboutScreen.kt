@@ -36,6 +36,7 @@ import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.core.bridge.Bridge
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -49,6 +50,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -67,7 +69,12 @@ fun AboutScreen(navigator: DestinationsNavigator) {
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.About.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
+            )
         },
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
@@ -87,7 +94,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                         contentDescription = "App Icon",
                         modifier = Modifier
                             .size(UiDp.dp120)
-                            .clip(RoundedCornerShape(UiDp.dp24)),
+                            .clip(miuixShape(UiDp.dp24)),
                         tint = Color.Unspecified,
                     )
 

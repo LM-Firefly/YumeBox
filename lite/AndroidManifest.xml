@@ -25,7 +25,7 @@
         android:label="${appName}"
         android:supportsRtl="true"
         android:theme="@style/Theme.YumeBox"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false">
 
         <meta-data
             android:name="org.chromium.webapk.shell_apk"
@@ -82,7 +82,7 @@
             android:theme="@style/Theme.YumeBox.Translucent.Popup" />
 
         <provider
-            android:name="com.github.yumelira.yumebox.service.StatusProvider"
+            android:name="com.github.yumelira.yumebox.runtime.service.StatusProvider"
             android:authorities="${applicationId}.status"
             android:enabled="true"
             android:exported="false" />

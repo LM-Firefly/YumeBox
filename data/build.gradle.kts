@@ -33,7 +33,6 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation(project(":locale"))
-    implementation(project(":runtime:api"))
 
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")

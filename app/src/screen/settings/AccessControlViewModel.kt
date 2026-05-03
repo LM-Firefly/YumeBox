@@ -29,8 +29,9 @@ import com.github.yumelira.yumebox.core.presentation.AndroidContractStateViewMod
 import com.github.yumelira.yumebox.core.presentation.LoadableState
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
-import com.github.yumelira.yumebox.service.root.RootPackageShell
+import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,12 +44,14 @@ import kotlinx.coroutines.withContext
 
 class AccessControlViewModel(
     application: Application,
-    private val settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: AccessControlController,
+    private val proxyFacade: ProxyFacade,
 ) : AndroidContractStateViewModel<AccessControlViewModel.UiState, AccessControlViewModel.AccessControlUiEffect>(
     application,
     UiState(),
 ) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
 
     data class AppInfo(
         val packageName: String,
@@ -81,7 +84,7 @@ class AccessControlViewModel(
         val searchQuery: String = "",
         val showSystemApps: Boolean = false,
         val sortMode: SortMode = SortMode.LABEL,
-        val selectedFirst: Boolean = false,
+        val selectedFirst: Boolean = true,
         val needsMiuiPermission: Boolean = false,
         override val message: String? = null,
         override val error: String? = null,
@@ -115,7 +118,7 @@ class AccessControlViewModel(
         val context = getApplication<Application>()
         val permission = "com.android.permission.GET_INSTALLED_APPS"
 
-        if (RootPackageShell.hasRootAccess()) {
+        if (proxyFacade.hasRootPackageAccess()) {
             loadApps()
             return
         }
@@ -152,6 +155,8 @@ class AccessControlViewModel(
             _uiState.update { it.copy(isLoading = true) }
 
             val selectedPackages = settings.accessControlPackages.value
+            val showSystemApps = settings.accessControlShowSystemApps.value
+            val selectedFirst = settings.accessControlSelectedFirst.value
             val apps = runCatching {
                 withContext(Dispatchers.IO) {
                     loadInstalledApps()
@@ -166,6 +171,8 @@ class AccessControlViewModel(
                     isLoading = false,
                     apps = apps,
                     selectedPackages = selectedPackages,
+                    showSystemApps = showSystemApps,
+                    selectedFirst = selectedFirst,
                 )
             }
         }
@@ -204,7 +211,7 @@ class AccessControlViewModel(
         pm: PackageManager,
         selfPackageName: String,
     ): List<ApplicationInfo> {
-        val packageNames = RootPackageShell.queryInstalledPackageNames()
+        val packageNames = proxyFacade.queryInstalledRootPackageNames()
             ?: throw SecurityException("Unable to query installed packages from root shell")
 
         return packageNames
@@ -256,10 +263,12 @@ class AccessControlViewModel(
 
     fun onSelectedFirstChange(selectedFirst: Boolean) {
         _uiState.update { state -> state.copy(selectedFirst = selectedFirst) }
+        settings.accessControlSelectedFirst.set(selectedFirst)
     }
 
     fun onShowSystemAppsChange(show: Boolean) {
         _uiState.update { state -> state.copy(showSystemApps = show) }
+        settings.accessControlShowSystemApps.set(show)
     }
 
     fun onAppSelectionChange(packageName: String, selected: Boolean) {

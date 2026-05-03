@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,24 +20,17 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.util
+package com.github.yumelira.yumebox.runtime.service.runtime.util
 
-import android.os.Looper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 fun CoroutineScope.cancelAndJoinBlocking() {
-    val scope = this
-    val job = scope.coroutineContext.job
-
+    val job = coroutineContext.job
     job.cancel()
-
-    if (Looper.myLooper() == Looper.getMainLooper()) {
-        return
-    }
-
-    runBlocking {
-        job.join()
-    }
+    runBlocking { withTimeoutOrNull(CANCEL_JOIN_TIMEOUT_MS) { job.join() } }
 }
+
+private const val CANCEL_JOIN_TIMEOUT_MS = 1_500L

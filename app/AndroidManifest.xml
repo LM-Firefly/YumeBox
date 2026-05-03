@@ -36,7 +36,7 @@
             android:label="${appName}"
             android:supportsRtl="true"
             android:theme="@style/Theme.YumeBox"
-            android:usesCleartextTraffic="true">
+            android:usesCleartextTraffic="false">
         <activity
                 android:name=".MainActivity"
                 android:enableOnBackInvokedCallback="false"
@@ -114,7 +114,7 @@
                 android:value="https://play.google.com/store"/>
 
         <provider
-                android:name=".service.StatusProvider"
+                android:name=".runtime.service.StatusProvider"
                 android:authorities="${applicationId}.status"
                 android:enabled="true"
                 android:exported="false"/>

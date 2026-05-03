@@ -24,6 +24,9 @@
 *.iml
 .navigation/
 captures/
+.vs/
+.vscode/
+CppProperties.json
 
 # Native build
 .cxx/
@@ -34,6 +37,10 @@ cmake-build-*/
 *.a
 *.o
 *.obj
+/feature/override/pkg/
+/lite/pkg/
+/platform/pkg/
+/runtime/client/pkg/
 
 # Signing & secrets
 *.jks

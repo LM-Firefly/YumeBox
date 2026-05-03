@@ -26,23 +26,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.GeoFileType
-import com.github.yumelira.yumebox.core.model.GeoXItem
 import com.github.yumelira.yumebox.core.model.geoXItems
-import com.github.yumelira.yumebox.core.util.runtimeHomeDir
 import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.ConnectionScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.koin.compose.koinInject
+import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -56,7 +52,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val downloadClient: SubStoreDownloadClient = koinInject()
+    val viewModel: MetaFeatureViewModel = koinViewModel()
 
     val showGeoXDownloadSheet = remember { mutableStateOf(false) }
 
@@ -65,6 +61,8 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             TopBar(
                 title = MLang.MetaFeature.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
             )
         },
     ) { innerPadding ->
@@ -126,7 +124,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
             show = showGeoXDownloadSheet,
             context = context,
             scope = scope,
-            downloadClient = downloadClient,
+            viewModel = viewModel,
         )
     }
 }
@@ -136,7 +134,7 @@ private fun GeoXDownloadSheet(
     show: MutableState<Boolean>,
     context: android.content.Context,
     scope: kotlinx.coroutines.CoroutineScope,
-    downloadClient: SubStoreDownloadClient,
+    viewModel: MetaFeatureViewModel,
 ) {
     val selectedItems = remember { mutableStateMapOf<GeoFileType, Boolean>() }
 
@@ -158,7 +156,10 @@ private fun GeoXDownloadSheet(
                         return@AppBottomSheetConfirmAction
                     }
                     show.value = false
-                    downloadGeoXFiles(context, scope, downloadClient, itemsToDownload)
+                    scope.launch {
+                        val count = viewModel.downloadGeoXFiles(context, itemsToDownload)
+                        context.toast(MLang.MetaFeature.Download.DownloadComplete.format(count, itemsToDownload.size))
+                    }
                 },
             )
         },
@@ -182,26 +183,4 @@ private fun GeoXDownloadSheet(
                 }
             }
         })
-}
-
-private fun downloadGeoXFiles(
-    context: android.content.Context,
-    scope: kotlinx.coroutines.CoroutineScope,
-    downloadClient: SubStoreDownloadClient,
-    items: List<GeoXItem>,
-) {
-    scope.launch {
-        var successCount = 0
-        withContext(Dispatchers.IO) {
-            val runtimeHome = context.runtimeHomeDir
-            runtimeHome.mkdirs()
-            items.forEach { item ->
-                val targetFile = File(runtimeHome, item.fileName)
-                if (downloadClient.download(item.url, targetFile)) {
-                    successCount++
-                }
-            }
-        }
-        context.toast(MLang.MetaFeature.Download.DownloadComplete.format(successCount, items.size))
-    }
 }

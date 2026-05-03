@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -22,21 +22,27 @@
 
 package com.github.yumelira.yumebox.screen.settings
 
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
-import com.github.yumelira.yumebox.data.model.AppColorTheme
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.core.model.AppColorTheme
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.presentation.theme.DEFAULT_CUSTOM_THEME_SEED_ARGB
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 class AppSettingsViewModel(
-    private val settings: AppSettingsStore,
-    private val featureStore: FeatureStore,
+    appStateManager: AppStateManager,
     private val controller: AppSettingsController,
 ) : ViewModel() {
+    private val settings = appStateManager.appSettingsStore
+    private val featureStore = appStateManager.featureStore
 
     val initialSetupCompleted: Preference<Boolean> = settings.initialSetupCompleted
     val privacyPolicyAccepted: Preference<Boolean> = settings.privacyPolicyAccepted
@@ -68,9 +74,76 @@ class AppSettingsViewModel(
     val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
     val screenshotProtectionEnabled: Preference<Boolean> = settings.screenshotProtectionEnabled
     val biometricUnlockEnabled: Preference<Boolean> = settings.biometricUnlockEnabled
+    val logLevel: Preference<Int> = settings.logLevel
     val exitUiWhenBackground: Preference<Boolean> = featureStore.exitUiWhenBackground
 
     val customUserAgent: Preference<String> = settings.customUserAgent
+
+    data class MainScreenSettings(
+        val bottomBarAutoHide: Boolean,
+        val bottomBarUseLegacyStyle: Boolean,
+        val topBarBlurEnabled: Boolean,
+        val acgMainUiEnabled: Boolean,
+        val acgWallpaperUri: String,
+        val acgWallpaperZoom: Float,
+        val acgWallpaperBiasX: Float,
+        val acgWallpaperBiasY: Float,
+    )
+
+    private data class DisplayPrefs(
+        val bottomBarAutoHide: Boolean,
+        val bottomBarUseLegacyStyle: Boolean,
+        val topBarBlurEnabled: Boolean,
+        val acgMainUiEnabled: Boolean,
+    )
+
+    private data class WallpaperPrefs(
+        val uri: String,
+        val zoom: Float,
+        val biasX: Float,
+        val biasY: Float,
+    )
+
+    val mainScreenSettings: StateFlow<MainScreenSettings> = combine(
+        combine(
+            bottomBarAutoHide.state,
+            bottomBarUseLegacyStyle.state,
+            topBarBlurEnabled.state,
+            acgMainUiEnabled.state,
+            ::DisplayPrefs,
+        ),
+        combine(
+            acgWallpaperUri.state,
+            acgWallpaperZoom.state,
+            acgWallpaperBiasX.state,
+            acgWallpaperBiasY.state,
+            ::WallpaperPrefs,
+        ),
+    ) { display, wallpaper ->
+        MainScreenSettings(
+            bottomBarAutoHide = display.bottomBarAutoHide,
+            bottomBarUseLegacyStyle = display.bottomBarUseLegacyStyle,
+            topBarBlurEnabled = display.topBarBlurEnabled,
+            acgMainUiEnabled = display.acgMainUiEnabled,
+            acgWallpaperUri = wallpaper.uri,
+            acgWallpaperZoom = wallpaper.zoom,
+            acgWallpaperBiasX = wallpaper.biasX,
+            acgWallpaperBiasY = wallpaper.biasY,
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        MainScreenSettings(
+            bottomBarAutoHide = bottomBarAutoHide.value,
+            bottomBarUseLegacyStyle = bottomBarUseLegacyStyle.value,
+            topBarBlurEnabled = topBarBlurEnabled.value,
+            acgMainUiEnabled = acgMainUiEnabled.value,
+            acgWallpaperUri = acgWallpaperUri.value,
+            acgWallpaperZoom = acgWallpaperZoom.value,
+            acgWallpaperBiasX = acgWallpaperBiasX.value,
+            acgWallpaperBiasY = acgWallpaperBiasY.value,
+        ),
+    )
 
     fun onThemeModeChange(mode: ThemeMode) = themeMode.set(mode)
     fun onAppLanguageChange(language: AppLanguage) = controller.applyAppLanguage(language)
@@ -110,6 +183,10 @@ class AppSettingsViewModel(
 
     fun applyCustomUserAgent(userAgent: String) = controller.applyCustomUserAgent(userAgent)
 
+    fun onLogLevelChange(level: Int) {
+        logLevel.set(level)
+        AppLogBuffer.minLogLevel = level
+    }
     fun setInitialSetupCompleted(completed: Boolean) = initialSetupCompleted.set(completed)
     fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)
 }

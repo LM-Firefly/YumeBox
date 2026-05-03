@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 package com.github.yumelira.yumebox.data.gateway
 
 import android.app.Application
-import com.github.yumelira.yumebox.core.util.PollingTimerSpec
+import timber.log.Timber
 import java.io.File
 
 interface LogRecordGateway {
@@ -31,9 +31,46 @@ interface LogRecordGateway {
     val currentLogFileName: String?
     val logPrefix: String
     val logSuffix: String
-    val stopWaitSpec: PollingTimerSpec
+    val stopWaitMillis: Long
 
     fun start(application: Application)
     fun stop(application: Application)
     fun getLogDir(application: Application): File
+}
+
+private const val LOG_RECORD_GATEWAY_CLASS = "com.github.yumelira.yumebox.runtime.service.LogRecordServiceGateway"
+private const val LOG_RECORD_SERVICE_CLASS = "com.github.yumelira.yumebox.runtime.service.LogRecordService"
+
+fun createLogRecordGateway(): LogRecordGateway {
+    return runCatching {
+        val gatewayClass = Class.forName(LOG_RECORD_GATEWAY_CLASS)
+        gatewayClass.getDeclaredConstructor().newInstance() as? LogRecordGateway
+    }.getOrNull() ?: NoOpLogRecordGateway
+}
+
+fun writeRuntimeLog(line: String) {
+    runCatching {
+        val serviceClass = Class.forName(LOG_RECORD_SERVICE_CLASS)
+        serviceClass.getDeclaredMethod("writeLog", String::class.java).invoke(null, line)
+    }.onFailure {
+        Timber.v(it, "Runtime log bridge unavailable, skipped log append")
+    }
+}
+
+private object NoOpLogRecordGateway : LogRecordGateway {
+    override val isRecording: Boolean
+        get() = false
+    override val currentLogFileName: String?
+        get() = null
+    override val logPrefix: String
+        get() = ""
+    override val logSuffix: String
+        get() = ".log"
+    override val stopWaitMillis: Long
+        get() = 300L
+    override fun start(application: Application) = Unit
+    override fun stop(application: Application) = Unit
+    override fun getLogDir(application: Application): File {
+        return File(application.filesDir, "logs").apply { mkdirs() }
+    }
 }
