@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  */
 
 
-package com.github.yumelira.yumebox.feature.editor.screen
+package com.github.yumelira.yumebox.feature.editor.presentation.screen
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
@@ -28,9 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
-import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
+import com.github.yumelira.yumebox.feature.editor.presentation.editor.CodeEditor
+import com.github.yumelira.yumebox.feature.editor.presentation.editor.rememberConfiguredCodeEditorState
+import com.github.yumelira.yumebox.presentation.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import top.yukonga.miuix.kmp.basic.Icon

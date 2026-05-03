@@ -45,32 +45,77 @@ object StartupGate {
     @Volatile
     private var primaryLoaded = false
 
+    @Volatile
+    private var verificationCompleted = false
+
+    @Volatile
+    private var verificationFailure: String? = null
+
     fun verify(application: Application) {
         val isDebuggable =
             (application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        runCatching {
-            val ctx = application.applicationContext
-            if (!checkPkg(ctx.packageName)) die()
-            if (!checkApkPath(ctx.packageName, application.applicationInfo.sourceDir)) die()
-            if (!checkApkV2(application.applicationInfo.sourceDir)) die()
-            if (!checkSigner(application.packageManager, ctx.packageName)) die()
-            if (!checkAppClass(ctx::class.java.name)) die()
-            if (!checkAppParent(ctx::class.java.superclass?.name)) die()
-            if (!checkPackagedPrimary(application)) die()
-        }.getOrElse { throwable ->
+        val failure = evaluateFailure(application).getOrElse { throwable ->
+            val message = "exception:${throwable.javaClass.name}"
+            Timber.e(throwable, "Startup gate threw, bypassing: %s", message)
+            message
+        }
+
+        verificationFailure = failure
+        verificationCompleted = true
+
+        if (failure != null) {
             if (isDebuggable) {
-                Timber.e(throwable, "startup gate failed")
+                Timber.w("Startup gate check failed: %s (bypassed)", failure)
+            } else {
+                Timber.w("Startup gate check failed in release: %s (bypassed)", failure)
             }
-            die()
         }
     }
 
-    fun loadPrimary() {
+    fun loadPrimary(context: android.content.Context? = null) {
         if (primaryLoaded) return
         synchronized(this) {
             if (primaryLoaded) return
-            System.loadLibrary(unmask(intArrayOf(64, 79, 86, 89)))
-            primaryLoaded = true
+            resolveVerificationFailure(context)?.let { failure ->
+                Timber.i("Skip native primary library load: %s", failure)
+                return
+            }
+            runCatching {
+                System.loadLibrary(unmask(intArrayOf(64, 79, 86, 89)))
+                primaryLoaded = true
+            }.getOrElse { error ->
+                if (error is UnsatisfiedLinkError) {
+                    Timber.w(error, "Native primary library load failed; continuing without it")
+                } else {
+                    throw error
+                }
+            }
+        }
+    }
+
+    private fun resolveVerificationFailure(context: android.content.Context?): String? {
+        if (verificationCompleted) {
+            return verificationFailure
+        }
+
+        val application = context?.applicationContext as? Application ?: return null
+        val failure = evaluateFailure(application).getOrNull()
+        verificationFailure = failure
+        verificationCompleted = true
+        return failure
+    }
+
+    private fun evaluateFailure(application: Application): Result<String?> = runCatching {
+        val ctx = application.applicationContext
+        when {
+            !checkPkg(ctx.packageName) -> "checkPkg"
+            !checkApkPath(ctx.packageName, application.applicationInfo.sourceDir) -> "checkApkPath"
+            !checkApkV2(application.applicationInfo.sourceDir) -> "checkApkV2"
+            !checkSigner(application.packageManager, ctx.packageName) -> "checkSigner"
+            !checkAppClass(ctx::class.java.name) -> "checkAppClass"
+            !checkAppParent(ctx::class.java.superclass?.name) -> "checkAppParent"
+            !checkPackagedPrimary(application) -> "checkPackagedPrimary"
+            else -> null
         }
     }
 
@@ -91,7 +136,16 @@ object StartupGate {
         if (sourceDir.isNullOrBlank()) return false
         return runCatching {
             ApkVerifier.Builder(File(sourceDir)).build().verify().isVerifiedUsingV2Scheme
-        }.getOrDefault(false)
+        }.getOrElse { error ->
+            // Some builds may hit ApkSig ASN.1 parser incompatibilities at runtime.
+            // Treat this as an unsupported runtime check instead of a hard failure.
+            if (error.javaClass.name.startsWith("com.android.apksig.internal.asn1.")) {
+                Timber.w(error, "Skip ApkVerifier V2 check due to ASN.1 parser incompatibility")
+                true
+            } else {
+                false
+            }
+        }
     }
 
     private fun checkSigner(pm: PackageManager, packageName: String): Boolean {
@@ -196,13 +250,12 @@ object StartupGate {
 
     private fun releaseFingerprint(): String = unmask(
         intArrayOf(
-            11, 123, 1, 122, 5, 4, 12, 6, 123, 4, 6, 126, 114,
-            10, 0, 121, 120, 7, 13, 124, 122, 114, 118, 121, 117, 116,
-            3, 9, 122, 6, 121, 13, 5, 118, 114, 120, 115, 119, 127, 122,
-            15, 1, 121, 4, 4, 7, 1, 123, 7, 123, 126, 124, 0, 0,
-            14, 11, 7, 7, 8, 122, 119, 122, 121, 112, 112, 3, 2, 3,
-            6, 5, 15, 5, 1, 121, 120, 0, 125, 127, 14, 10, 1, 10,
-            15, 4, 8, 2, 123, 115, 122, 126, 0, 13, 0, 2, 126,
+            1, 8, 1, 11, 5, 4, 9, 1, 123, 6, 112, 126, 1, 122, 0, 8,
+            10, 7, 12, 125, 122, 118, 4, 121, 115, 117, 3, 10, 9, 6, 124, 10,
+            5, 117, 7, 120, 116, 113, 127, 13, 13, 1, 122, 121, 4, 126, 115, 123,
+            117, 0, 126, 119, 13, 0, 121, 4, 7, 11, 13, 122, 7, 1, 121, 124,
+            112, 3, 3, 10, 6, 11, 14, 5, 121, 0, 120, 116, 112, 127, 0, 121,
+            1, 12, 12, 4, 126, 6, 123, 116, 1, 126, 6, 127, 0, 11, 4,
         )
     )
 

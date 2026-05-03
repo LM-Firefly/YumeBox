@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -24,11 +24,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.data.model.TunStack
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
@@ -38,12 +37,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class VpnSettingsViewModel(
-    private val appSettingsStore: AppSettingsStore,
-    private val networkSettingsStore: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val appSettingsController: AppSettingsController,
     private val networkSettingsController: NetworkSettingsController,
     private val proxyFacade: ProxyFacade,
 ) : ViewModel() {
+    private val appSettingsStore = appStateManager.appSettingsStore
+    private val networkSettingsStore = appStateManager.networkSettingsStore
+
     val themeMode: Preference<ThemeMode> = appSettingsStore.themeMode
     val invertOnPrimaryColors: Preference<Boolean> = appSettingsStore.invertOnPrimaryColors
     val appLanguage: Preference<AppLanguage> = appSettingsStore.appLanguage

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -22,28 +22,44 @@
 
 package com.github.yumelira.yumebox
 
+import android.app.Activity
 import android.app.Application
-import android.content.res.Configuration
+import android.os.Bundle
+import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
-import com.github.yumelira.yumebox.common.util.PlatformIdentifier
 import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
+import com.github.yumelira.yumebox.core.FirstRunInitializer
 import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.core.util.AppForegroundState
+import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
+import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
+import com.github.yumelira.yumebox.data.gateway.writeRuntimeLog
+import com.github.yumelira.yumebox.data.logging.AppLogBridge
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
+import com.github.yumelira.yumebox.data.logging.AppLogTree
+import com.github.yumelira.yumebox.data.logging.CrashHandler
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.substore.util.AppUtil
+import com.github.yumelira.yumebox.runtime.client.common.util.ProxyAutoStartHelper
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.Koin
+import org.koin.core.qualifier.named
 import timber.log.Timber
 
 class App : Application() {
@@ -58,32 +74,59 @@ class App : Application() {
         super.onCreate()
 
         instance = this
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: Activity) = AppForegroundState.onActivityResumed()
+            override fun onActivityPaused(activity: Activity) = AppForegroundState.onActivityPaused()
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
+        try {
+            if (Timber.forest().isEmpty()) Timber.plant(AppLogTree())
+            CrashHandler.init(this)
+            AppLogBridge.runtimeLogWriter = ::writeRuntimeLog
+            Global.init(this)
+            Components.register(
+                mainActivityClassName = MainActivity::class.java.name,
+                proxySheetActivityClassName = ProxySheetActivity::class.java.name,
+            )
+            MMKV.disableProcessModeChecker()
+            MMKV.initialize(this)
+            Timber.d("System initialization completed")
+            val koinApp = startKoin {
+                androidContext(this@App)
+                modules(appModule)
+            }
+            val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
+            AppLogBuffer.minLogLevel = appSettingsStorage.logLevel.value
+            AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
+            PredictiveBackCompat.apply(applicationInfo, appSettingsStorage.predictiveBackEnabled.value)
+            val featureStore: FeatureStore = koinApp.koin.get()
+            featureStore.syncAppVersion(BuildConfig.VERSION_CODE)
+            scheduleDeferredStartupTasks(koinApp.koin, featureStore)
+        } catch (e: Exception) {
+            Timber.e(e, "Fatal error during application startup")
+            CrashHandler.init(this)
         }
-
-        StartupGate.verify(this)
-        Global.init(this)
-        MMKV.initialize(this)
-
-        val koinApp = startKoin {
-            androidContext(this@App)
-            modules(appModule)
-        }
-        val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
-        AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
-        PredictiveBackCompat.apply(applicationInfo, appSettingsStorage.predictiveBackEnabled.value)
-
-        val featureStore: FeatureStore = koinApp.koin.get()
-        featureStore.syncAppVersion(BuildConfig.VERSION_CODE)
-        scheduleDeferredStartupTasks(koinApp.koin, featureStore)
-
-        PlatformIdentifier.getPlatformIdentifier()
+        startupScope.launch { runCatching { StartupGate.verify(this@App) } }
+        startupScope.launch { observeAndBroadcastForegroundState() }
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        AppLanguageManager.refreshSystemLanguage()
+    private suspend fun observeAndBroadcastForegroundState() {
+        AppForegroundState.foreground
+            .collect { isForeground ->
+                runCatching {
+                    val intent = android.content.Intent(
+                        Intents.actionAppForeground(packageName)
+                    ).apply {
+                        setPackage(packageName)
+                        putExtra(Intents.EXTRA_APP_FOREGROUND, isForeground)
+                    }
+                    sendBroadcast(intent)
+                }
+            }
     }
 
     private fun scheduleDeferredStartupTasks(koin: Koin, featureStore: FeatureStore) {
@@ -97,7 +140,7 @@ class App : Application() {
             if (featureStore.isFirstTimeOpen()) {
                 withContext(Dispatchers.IO) {
                     runCatching {
-                        AppUtil.initFirstOpen()
+                        koin.getAll<FirstRunInitializer>().forEach { it.initialize() }
                         featureStore.markFirstOpenHandled()
                     }.onFailure { error ->
                         Timber.w(error, "First-open asset initialization failed")
@@ -105,5 +148,34 @@ class App : Application() {
                 }
             }
         }
+        startupScope.launch {
+            StartupTaskCoordinator.awaitRuntimeWarmup()
+            if (!AutoStartSessionGate.tryBeginForegroundAutoActions()) return@launch
+            var handled = false
+            try {
+                ProxyAutoStartHelper.checkAndAutoStart(
+                    context = this@App,
+                    featureStore = featureStore,
+                    proxyFacade = koin.get(),
+                    profilesRepository = koin.get(),
+                    appSettingsStorage = koin.get(),
+                    networkSettingsStorage = koin.get(),
+                    serviceCache = koin.get(qualifier = named("service_cache")),
+                )
+                handled = true
+            } finally {
+                AutoStartSessionGate.finishForegroundAutoActions(markHandled = handled)
+            }
+        }
+    }
+
+    override fun onTerminate() {
+        runCatching {
+            val koin = GlobalContext.getOrNull()
+            koin?.getOrNull<ProxyFacade>()?.shutdown()
+            koin?.getOrNull<AppIdentityResolver>()?.close()
+        }
+        runCatching { startupScope.cancel() }
+        super.onTerminate()
     }
 }

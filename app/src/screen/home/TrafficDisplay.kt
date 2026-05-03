@@ -25,13 +25,19 @@ package com.github.yumelira.yumebox.screen.home
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -40,17 +46,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.formatBytesForDisplay
+import com.github.yumelira.yumebox.core.model.Profile
 import com.github.yumelira.yumebox.core.model.TunnelState
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import dev.oom_wg.purejoy.mlang.MLang
+import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.ListPopupColumn
+import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.overlay.OverlayListPopup
+import top.yukonga.miuix.kmp.theme.miuixCapsuleShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -58,39 +70,48 @@ fun TrafficDisplay(
     trafficNow: TrafficData,
     profileName: String?,
     tunnelMode: TunnelState.Mode?,
+    currentProfileId: String?,
+    profileOptions: List<Profile>,
     controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
     isEnabled: Boolean,
     onClick: () -> Unit,
+    onProfileNameClick: () -> Unit = {},
+    onProfileSelected: (String) -> Unit = {},
+    onTunnelModeClick: () -> Unit = {},
+    onTunnelModeSelected: (TunnelState.Mode) -> Unit = {},
+    onProxyModeClick: () -> Unit = {},
+    onProxyModeSelected: (ProxyMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
-
-    val interactionSource = remember { MutableInteractionSource() }
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
-                enabled = isEnabled,
-                interactionSource = interactionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick
-            )
             .padding(top = componentSizes.homeTrafficTopPadding, bottom = spacing.space16),
         verticalArrangement = Arrangement.spacedBy(spacing.space24)
     ) {
         DownloadSection(
             downloadSpeed = trafficNow.download,
             profileName = profileName,
-            tunnelMode = tunnelMode
+            tunnelMode = tunnelMode,
+            currentProfileId = currentProfileId,
+            profileOptions = profileOptions,
+            onProfileNameClick = onProfileNameClick,
+            onProfileSelected = onProfileSelected,
+            onTunnelModeClick = onTunnelModeClick,
+            onTunnelModeSelected = onTunnelModeSelected,
         )
 
         UploadSection(
             uploadSpeed = trafficNow.upload,
             controlState = controlState,
             proxyMode = proxyMode,
+            isEnabled = isEnabled,
+            onClick = onClick,
+            onProxyModeClick = onProxyModeClick,
+            onProxyModeSelected = onProxyModeSelected,
         )
     }
 }
@@ -99,7 +120,13 @@ fun TrafficDisplay(
 private fun DownloadSection(
     downloadSpeed: Long,
     profileName: String?,
-    tunnelMode: TunnelState.Mode?
+    tunnelMode: TunnelState.Mode?,
+    currentProfileId: String?,
+    profileOptions: List<Profile>,
+    onProfileNameClick: () -> Unit = {},
+    onProfileSelected: (String) -> Unit = {},
+    onTunnelModeClick: () -> Unit = {},
+    onTunnelModeSelected: (TunnelState.Mode) -> Unit = {},
 ) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
@@ -118,57 +145,170 @@ private fun DownloadSection(
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
 
-            ProfileModeBadge(profileName = profileName, tunnelMode = tunnelMode)
+            ProfileModeBadge(
+                profileName = profileName,
+                tunnelMode = tunnelMode,
+                currentProfileId = currentProfileId,
+                profileOptions = profileOptions,
+                onProfileNameClick = onProfileNameClick,
+                onProfileSelected = onProfileSelected,
+                onTunnelModeClick = onTunnelModeClick,
+                onTunnelModeSelected = onTunnelModeSelected,
+            )
         }
 
         SpeedValue(speed = downloadSpeed)
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ProfileModeBadge(
     profileName: String?,
-    tunnelMode: TunnelState.Mode?
+    tunnelMode: TunnelState.Mode?,
+    currentProfileId: String?,
+    profileOptions: List<Profile>,
+    onProfileNameClick: () -> Unit = {},
+    onProfileSelected: (String) -> Unit = {},
+    onTunnelModeClick: () -> Unit = {},
+    onTunnelModeSelected: (TunnelState.Mode) -> Unit = {},
 ) {
     if (profileName == null && tunnelMode == null) return
 
     val spacing = AppTheme.spacing
-    val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
+    val enabledProfiles = remember(profileOptions) { profileOptions }
+    var showProfilePopup by rememberSaveable { mutableStateOf(false) }
+    var showModePopup by rememberSaveable { mutableStateOf(false) }
+    val modeOptions = remember { listOf(TunnelState.Mode.Rule, TunnelState.Mode.Global, TunnelState.Mode.Direct) }
 
-    Surface(
-        color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
-        shape = RoundedCornerShape(50),
-        modifier = Modifier.height(componentSizes.statusCapsuleHeight)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.space8)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = spacing.space12),
-            horizontalArrangement = Arrangement.spacedBy(spacing.space8)
-        ) {
-            Text(
-                text = profileName ?: MLang.Home.Traffic.NoProfile,
-                style = MiuixTheme.textStyles.footnote1.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MiuixTheme.colorScheme.primary
-            )
-
-            Box(
+        Box {
+            Surface(
+                color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
+                shape = miuixCapsuleShape(),
                 modifier = Modifier
-                    .size(spacing.space4)
-                    .background(MiuixTheme.colorScheme.primary, CircleShape)
-            )
+                    .heightIn(min = 28.dp)
+                    .widthIn(max = 200.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = {
+                            onProfileNameClick()
+                            if (enabledProfiles.isNotEmpty()) {
+                                showProfilePopup = true
+                            }
+                        }
+                    )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.space6)
+                ) {
+                    Text(
+                        text = profileName ?: MLang.Home.Traffic.NoProfile,
+                        style = MiuixTheme.textStyles.footnote1.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MiuixTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .basicMarquee(
+                                iterations = Int.MAX_VALUE,
+                                velocity = 30.dp
+                            ),
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            }
 
-            Text(
-                text = tunnelMode.toDisplayName(),
-                style = MiuixTheme.textStyles.footnote1.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MiuixTheme.colorScheme.primary
-            )
+            OverlayListPopup(
+                show = showProfilePopup,
+                alignment = PopupPositionProvider.Align.BottomStart,
+                onDismissRequest = { showProfilePopup = false },
+            ) {
+                ListPopupColumn {
+                    enabledProfiles.forEachIndexed { index, profile ->
+                        DropdownImpl(
+                            text = profile.name,
+                            optionSize = enabledProfiles.size,
+                            isSelected = currentProfileId == profile.uuid.toString(),
+                            onSelectedIndexChange = {
+                                showProfilePopup = false
+                                onProfileSelected(profile.uuid.toString())
+                            },
+                            index = index,
+                        )
+                    }
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .size(spacing.space4)
+                .background(MiuixTheme.colorScheme.primary, CircleShape)
+        )
+
+        Box {
+            Surface(
+                color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
+                shape = miuixCapsuleShape(),
+                modifier = Modifier
+                    .heightIn(min = 28.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = {
+                            onTunnelModeClick()
+                            showModePopup = true
+                        }
+                    )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.space6)
+                ) {
+                    Text(
+                        text = tunnelMode.toDisplayName(),
+                        style = MiuixTheme.textStyles.footnote1.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MiuixTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            OverlayListPopup(
+                show = showModePopup,
+                alignment = PopupPositionProvider.Align.BottomEnd,
+                onDismissRequest = { showModePopup = false },
+            ) {
+                ListPopupColumn {
+                    modeOptions.forEachIndexed { index, mode ->
+                        DropdownImpl(
+                            text = mode.toDisplayName(),
+                            optionSize = modeOptions.size,
+                            isSelected = mode == tunnelMode,
+                            onSelectedIndexChange = {
+                                showModePopup = false
+                                onTunnelModeSelected(mode)
+                            },
+                            index = index,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -205,6 +345,10 @@ private fun UploadSection(
     uploadSpeed: Long,
     controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+    onProxyModeClick: () -> Unit = {},
+    onProxyModeSelected: (ProxyMode) -> Unit = {},
 ) {
     val spacing = AppTheme.spacing
 
@@ -235,7 +379,11 @@ private fun UploadSection(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
         ) {
-            ProxyStatusCapsule(controlState = controlState)
+            ProxyStatusCapsule(
+                controlState = controlState,
+                isEnabled = isEnabled,
+                onClick = onClick,
+            )
             AnimatedVisibility(
                 visible = isRunning,
                 enter = slideInHorizontally(
@@ -247,67 +395,127 @@ private fun UploadSection(
                     animationSpec = tween(AnimationSpecs.DURATION_INSTANT, easing = AnimationSpecs.EmphasizedAccelerate)
                 ) + fadeOut(tween(AnimationSpecs.DURATION_INSTANT, easing = AnimationSpecs.ExitEasing))
             ) {
-                ProxyTypeCapsule(proxyMode = proxyMode)
+                ProxyTypeCapsule(
+                    proxyMode = proxyMode,
+                    isEnabled = isEnabled,
+                    onProxyModeClick = onProxyModeClick,
+                    onProxyModeSelected = onProxyModeSelected,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
+private fun ProxyTypeCapsule(
+    proxyMode: ProxyMode,
+    isEnabled: Boolean,
+    onProxyModeClick: () -> Unit = {},
+    onProxyModeSelected: (ProxyMode) -> Unit = {},
+) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
-
     val primary = MiuixTheme.colorScheme.primary
-    Surface(
-        color = primary.copy(alpha = opacity.subtle),
-        shape = RoundedCornerShape(50),
-        modifier = Modifier.height(componentSizes.statusCapsuleHeight)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = spacing.space12),
-            horizontalArrangement = Arrangement.spacedBy(spacing.space6)
+    val interactionSource = remember { MutableInteractionSource() }
+    var showPopup by rememberSaveable { mutableStateOf(false) }
+    val proxyModeOptions = remember { listOf(ProxyMode.Tun, ProxyMode.RootTun, ProxyMode.Http) }
+    Box {
+        Surface(
+            color = primary.copy(alpha = opacity.subtle),
+            shape = miuixCapsuleShape(),
+            modifier = Modifier
+                .height(componentSizes.statusCapsuleHeight)
+                .clickable(
+                    enabled = isEnabled,
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = {
+                        onProxyModeClick()
+                        showPopup = true
+                    },
+                )
         ) {
-            Icon(
-                imageVector = when (proxyMode) {
-                    ProxyMode.Tun -> Yume.PlaneTakeoff
-                    ProxyMode.RootTun -> Yume.Tun
-                    ProxyMode.Http -> Yume.Wifi
-                },
-                contentDescription = null,
-                tint = primary,
-                modifier = Modifier.size(spacing.space12)
-            )
-            Text(
-                text = when (proxyMode) {
-                    ProxyMode.Tun -> MLang.Home.ProxyMode.Vpn
-                    ProxyMode.RootTun -> MLang.Home.ProxyMode.Tun
-                    ProxyMode.Http -> MLang.Home.ProxyMode.Http
-                },
-                style = MiuixTheme.textStyles.footnote1.copy(
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = primary
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = spacing.space12),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space6)
+            ) {
+                Icon(
+                    imageVector = when (proxyMode) {
+                        ProxyMode.Tun -> Yume.PlaneTakeoff
+                        ProxyMode.RootTun -> Yume.Tun
+                        ProxyMode.Http -> Yume.Wifi
+                    },
+                    contentDescription = null,
+                    tint = primary,
+                    modifier = Modifier.size(spacing.space12)
+                )
+                Text(
+                    text = when (proxyMode) {
+                        ProxyMode.Tun -> MLang.Home.ProxyMode.Vpn
+                        ProxyMode.RootTun -> MLang.Home.ProxyMode.Tun
+                        ProxyMode.Http -> MLang.Home.ProxyMode.Http
+                    },
+                    style = MiuixTheme.textStyles.footnote1.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = primary
+                )
+            }
+        }
+        OverlayListPopup(
+            show = showPopup,
+            alignment = PopupPositionProvider.Align.BottomStart,
+            onDismissRequest = { showPopup = false },
+        ) {
+            ListPopupColumn {
+                proxyModeOptions.forEachIndexed { index, mode ->
+                    DropdownImpl(
+                        text = when (mode) {
+                            ProxyMode.Tun -> MLang.Home.ProxyMode.Vpn
+                            ProxyMode.RootTun -> MLang.Home.ProxyMode.Tun
+                            ProxyMode.Http -> MLang.Home.ProxyMode.Http
+                        },
+                        optionSize = proxyModeOptions.size,
+                        isSelected = mode == proxyMode,
+                        onSelectedIndexChange = {
+                            showPopup = false
+                            onProxyModeSelected(mode)
+                        },
+                        index = index,
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
+private fun ProxyStatusCapsule(
+    controlState: HomeProxyControlState,
+    isEnabled: Boolean,
+    onClick: () -> Unit,
+) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
-
     val primary = MiuixTheme.colorScheme.primary
+    val interactionSource = remember { MutableInteractionSource() }
     Surface(
         color = primary.copy(alpha = opacity.subtle),
-        shape = RoundedCornerShape(50),
+        shape = miuixCapsuleShape(),
         modifier = Modifier
             .height(componentSizes.statusCapsuleHeight)
+            .clickable(
+                enabled = isEnabled,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .animateContentSize(tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EmphasizedDecelerate))
     ) {
         AnimatedContent(
@@ -365,5 +573,5 @@ private fun TunnelState.Mode?.toDisplayName(): String = when (this) {
     TunnelState.Mode.Direct -> "Direct"
     TunnelState.Mode.Global -> "Global"
     TunnelState.Mode.Rule -> "Rule"
-    else -> "Rule"
+    else -> "--"
 }

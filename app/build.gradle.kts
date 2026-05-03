@@ -20,7 +20,43 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import com.android.build.gradle.tasks.MergeSourceSetFolders
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.Properties
+
+abstract class DownloadGeoFilesTask : DefaultTask() {
+    @get:Input
+    abstract val assetUrls: MapProperty<String, String>
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+    @TaskAction
+    fun download() {
+        val destinationDir = outputDirectory.get().asFile
+        destinationDir.mkdirs()
+        assetUrls.get().forEach { (fileName, url) ->
+            val outputFile = destinationDir.resolve(fileName)
+            val tempFile = destinationDir.resolve("$fileName.download")
+            val hadLocalFile = outputFile.exists()
+            runCatching {
+                val uri = URI(url)
+                uri.toURL().openStream().use { input ->
+                    Files.copy(input, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                }
+                Files.move(tempFile.toPath(), outputFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                logger.lifecycle("$fileName downloaded to ${outputFile.absolutePath}")
+            }.onFailure { error ->
+                tempFile.delete()
+                if (hadLocalFile) {
+                    logger.warn("Failed to download $fileName from $url, keep existing local file and continue build", error)
+                } else {
+                    logger.warn("Failed to download $fileName from $url and no local fallback found, continue build", error)
+                }
+            }
+        }
+    }
+}
 
 plugins {
     id("com.android.application")
@@ -34,12 +70,23 @@ plugins {
 
 val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+val extensionAbiList =
+    gropify.abi.extension.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+val withExtensionTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.equals("assembleReleaseWithExtension", ignoreCase = true) ||
+        taskName.endsWith(":assembleReleaseWithExtension", ignoreCase = true)
+}
+val withExtension = project.hasProperty("withExtension") || withExtensionTaskRequested
+val packagingAbiList = if (withExtension) extensionAbiList else appAbiList
+val projectApplicationId = providers.gradleProperty("project.applicationId")
+    .orElse(gropify.project.namespace.base)
+    .get()
 
 android {
     namespace = gropify.project.namespace.base
 
     defaultConfig {
-        applicationId = gropify.project.namespace.base
+        applicationId = projectApplicationId
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
@@ -119,14 +166,16 @@ android {
             //noinspection WrongGradleMethod
             isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
-            include(*appAbiList.toTypedArray())
+            include(*packagingAbiList.toTypedArray())
             isUniversalApk = true
         }
     }
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (!withExtension) {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
     }
@@ -163,7 +212,11 @@ android {
                 val buildTypeName = variant.buildType ?: "release"
                 output.versionName.set(gropify.project.version.name)
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
-                    "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    if (withExtension) {
+                        "${gropify.project.name}_Extension-${abiName}-${buildTypeName}.apk"
+                    } else {
+                        "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    }
                 )
             }
         }
@@ -180,7 +233,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:substore"))
     implementation(project(":feature:proxy"))
     implementation(project(":feature:override"))
@@ -252,4 +305,46 @@ dependencies {
 
 ksp {
     arg("compose-destinations.defaultTransitions", "none")
+}
+
+// Download GeoFiles Task
+val geoFilesDownloadDir = layout.projectDirectory.dir("assets")
+val geoAssets = mapOf(
+    "geoip.metadb" to gropify.asset.geoip.url,
+    "geosite.dat" to gropify.asset.geosite.url,
+    "ASN.mmdb" to gropify.asset.asn.url,
+)
+
+val downloadGeoFilesTask = tasks.register<DownloadGeoFilesTask>("downloadGeoFiles") {
+    description = "Download GeoIP and GeoSite databases from MetaCubeX"
+    group = "build setup"
+    assetUrls.putAll(geoAssets)
+    outputDirectory.set(geoFilesDownloadDir)
+    onlyIf {
+        assetUrls.get().keys.any { fileName ->
+            !outputDirectory.file(fileName).get().asFile.exists()
+        }
+    }
+}
+
+tasks.configureEach {
+    when {
+        name.startsWith("assemble") ||
+        name.startsWith("lintVitalAnalyze") ||
+        (name.startsWith("generate") && name.contains("LintVitalReportModel")) -> {
+            dependsOn(downloadGeoFilesTask)
+        }
+    }
+}
+
+tasks.withType<MergeSourceSetFolders>().configureEach {
+    dependsOn(downloadGeoFilesTask)
+}
+
+tasks.register<Delete>("cleanGeoFiles") {
+    description = "Clean downloaded GeoIP and GeoSite databases"
+    group = "build setup"
+    delete(geoFilesDownloadDir.dir("geoip.metadb"))
+    delete(geoFilesDownloadDir.dir("geosite.dat"))
+    delete(geoFilesDownloadDir.dir("ASN.mmdb"))
 }

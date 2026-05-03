@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.config
+package com.github.yumelira.yumebox.lite.config
 
 import android.content.Context
 import com.github.yumelira.yumebox.core.Clash
@@ -26,7 +26,7 @@ import com.github.yumelira.yumebox.core.model.CompileRequest
 import com.github.yumelira.yumebox.core.util.YamlCodec
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
+import com.github.yumelira.yumebox.core.importedDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

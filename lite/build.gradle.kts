@@ -20,6 +20,7 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import com.android.build.gradle.tasks.MergeSourceSetFolders
 import java.util.Properties
 
 plugins {
@@ -32,11 +33,15 @@ plugins {
 val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
+val projectApplicationId = providers.gradleProperty("project.applicationId")
+    .orElse(gropify.project.namespace.base)
+    .get()
+
 android {
-    namespace = "${gropify.project.namespace.base}.lite"
+    namespace = gropify.project.namespace.base
 
     defaultConfig {
-        applicationId = "${gropify.project.namespace.base}.lite"
+        applicationId = "$projectApplicationId.lite"
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
@@ -192,7 +197,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:proxy"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
@@ -234,4 +239,18 @@ dependencies {
 
 ksp {
     arg("compose-destinations.defaultTransitions", "none")
+}
+
+tasks.configureEach {
+    when {
+        name.startsWith("assemble") ||
+        name.startsWith("lintVitalAnalyze") ||
+        (name.startsWith("generate") && name.contains("LintVitalReportModel")) -> {
+            dependsOn(":app:downloadGeoFiles")
+        }
+    }
+}
+
+tasks.withType<MergeSourceSetFolders>().configureEach {
+    dependsOn(":app:downloadGeoFiles")
 }

@@ -21,6 +21,10 @@ on:
       raw_apk_artifact_name:
         required: true
         type: string
+      with_extension:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      NDK_CACHE_ROOT: ${{ github.workspace }}/.ndk
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -58,19 +63,31 @@ jobs:
         id: cache-ndk
         uses: actions/cache@v5
         with:
-          path: ${{ env.ANDROID_SDK_ROOT }}/ndk/29.0.14206865
+          path: ${{ env.NDK_CACHE_ROOT }}/29.0.14206865
           key: ${{ runner.os }}-ndk-29.0.14206865-v2
           restore-keys: |
             ${{ runner.os }}-ndk-29.0.14206865-v2-
 
       - name: Install NDK
         if: steps.cache-ndk.outputs.cache-hit != 'true'
-        run: sdkmanager "ndk;29.0.14206865"
+        run: |
+          sdkmanager --sdk_root="${{ env.NDK_CACHE_ROOT }}" --install "ndk;29.0.14206865"
 
       - name: Configure local.properties
         run: |
           echo "sdk.dir=${ANDROID_SDK_ROOT}" > local.properties
-          echo "ndk.dir=${ANDROID_SDK_ROOT}/ndk/29.0.14206865" >> local.properties
+          echo "ndk.dir=${{ env.NDK_CACHE_ROOT }}/29.0.14206865" >> local.properties
+
+      - name: Cache geo files
+        uses: actions/cache@v5
+        with:
+          path: |
+            app/assets/geoip.metadb
+            app/assets/geosite.dat
+            app/assets/ASN.mmdb
+          key: ${{ runner.os }}-geo-assets-${{ hashFiles('gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-geo-assets-
 
       - name: Download native artifact
         uses: actions/download-artifact@v8
@@ -109,10 +126,15 @@ jobs:
         run: |
           set -eu
           chmod +x gradlew
+          EXTRA_ARGS=""
+          if [ "${{ inputs.with_extension }}" = "true" ]; then
+            EXTRA_ARGS="-PwithExtension=true"
+          fi
           ./gradlew --no-daemon \
             -Pupdate.channel="${{ inputs.channel }}" \
             -Pupdate.tag="${{ inputs.release_tag }}" \
             -Pupdate.metaAssetName="${{ inputs.meta_asset_name }}" \
+            $EXTRA_ARGS \
             :${{ inputs.module }}:assembleRelease
 
       - name: Upload raw APK artifact

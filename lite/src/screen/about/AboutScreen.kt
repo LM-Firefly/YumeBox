@@ -21,7 +21,7 @@
 package com.github.yumelira.yumebox.screen.about
 
 import androidx.compose.runtime.Composable
-import com.github.yumelira.yumebox.lite.BuildConfig
+import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.LinkItem
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
@@ -64,15 +64,15 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                 Card {
                     LinkItem(
                         title = "源码",
-                        url = "https://github.com/YumeLira/YumeBox",
+                        url = "https://github.com/LM-Firefly/YumeBox",
                     )
                     LinkItem(
                         title = "许可证",
-                        url = "https://github.com/YumeLira/YumeBox/blob/main/LICENSE",
+                        url = "https://github.com/LM-Firefly/YumeBox/blob/main/LICENSE",
                     )
                     LinkItem(
                         title = "隐私政策",
-                        url = "https://github.com/YumeLira/YumeBox/blob/main/PRIVACY_POLICY.md",
+                        url = "https://github.com/LM-Firefly/YumeBox/blob/main/PRIVACY_POLICY.md",
                     )
                 }
             }

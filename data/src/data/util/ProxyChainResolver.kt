@@ -23,7 +23,7 @@
 package com.github.yumelira.yumebox.data.util
 
 import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.core.domain.model.ProxyGroupInfo
 import timber.log.Timber
 
 class ProxyChainResolver {
@@ -93,6 +93,23 @@ class ProxyChainResolver {
         val asGroup = groups.find { it.name == proxyName }
         if (asGroup != null && asGroup.now.isNotBlank()) {
             buildChainPathRecursive(asGroup.now, groups, visited, path)
+        }
+    }
+
+    fun buildChainPathFromMap(
+        groupName: String,
+        currentNode: String,
+        groups: Map<String, ProxyGroupInfo>,
+        visited: MutableSet<String> = mutableSetOf(),
+    ): List<String> {
+        if (groupName in visited) return listOf(groupName)
+        visited.add(groupName)
+        val nextGroup = groups[currentNode] ?: return listOf(groupName, currentNode)
+        val nextNow = nextGroup.now.trim()
+        return if (nextGroup.type.group && nextNow.isNotBlank()) {
+            listOf(groupName) + buildChainPathFromMap(currentNode, nextNow, groups, visited)
+        } else {
+            listOf(groupName, currentNode)
         }
     }
 }

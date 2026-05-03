@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,12 +25,19 @@ package com.github.yumelira.yumebox.data.store
 import android.app.Application
 import android.net.Uri
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.enums.enumEntries
 
 class LogStore(
@@ -39,6 +46,7 @@ class LogStore(
 ) {
     companion object {
         private const val DEFAULT_MAX_ENTRIES = 2000
+        private const val LOG_TAIL_WINDOW_BYTES = 4L * 1024L * 1024L
         private val LOG_LINE_REGEX = """\[(.+?)] \[(.+?)] (.+)""".toRegex()
         private val LOG_LEVELS = enumEntries<LogMessage.Level>().associateBy { it.name }
     }
@@ -46,12 +54,17 @@ class LogStore(
     private val logDir: File
         get() = logRecordGateway.getLogDir(application)
 
+    private val _isRecordingState = MutableStateFlow(logRecordGateway.isRecording)
+    val isRecordingState: StateFlow<Boolean> = _isRecordingState.asStateFlow()
+
     fun startRecording() {
         logRecordGateway.start(application)
+        _isRecordingState.value = true
     }
 
     fun stopRecording() {
         logRecordGateway.stop(application)
+        _isRecordingState.value = false
     }
 
     fun isRecording(): Boolean {
@@ -109,6 +122,48 @@ class LogStore(
         }
     }
 
+    suspend fun exportMergedLog(fileName: String): String? = withContext(Dispatchers.IO) {
+        val source = resolveLogFile(fileName) ?: return@withContext null
+        try {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val base = source.name.removeSuffix(logRecordGateway.logSuffix)
+            val targetName = "merged_${base}_$timestamp${logRecordGateway.logSuffix}"
+            val target = File(logDir, targetName)
+            source.inputStream().use { input ->
+                target.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            targetName
+        } catch (_: IOException) {
+            null
+        } catch (_: SecurityException) {
+            null
+        }
+    }
+
+    suspend fun exportRecentLogsToUri(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            application.contentResolver.openOutputStream(targetUri)?.use { out ->
+                out.bufferedWriter().use { writer ->
+                    val recentLogs = AppLogBuffer.getSnapshot()
+                    if (recentLogs.isNotEmpty()) {
+                        recentLogs.forEach { writer.appendLine(it) }
+                    } else {
+                        val recentFile = logDir.listFiles(::isManagedLogFile)
+                            ?.maxByOrNull { it.lastModified() }
+                        recentFile?.forEachLine { writer.appendLine(it) }
+                    }
+                }
+            } ?: return@withContext false
+            true
+        } catch (_: IOException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
     suspend fun readTempLogEntries(maxEntries: Int = 2000): List<LogEntry> = withContext(Dispatchers.IO) {
         val currentlyRecording = isRecording()
         val currentFileName = logRecordGateway.currentLogFileName
@@ -151,21 +206,32 @@ class LogStore(
         if (!isRecording()) return
         if (fileName != null && !isCurrentRecordingFile(fileName)) return
         stopRecording()
-        PollingTimers.awaitTick(logRecordGateway.stopWaitSpec)
+        delay(logRecordGateway.stopWaitMillis)
     }
 
     private fun readTailLogEntries(file: File, maxEntries: Int): List<LogEntry> {
-        return file.useLines { lines ->
-            val ring = ArrayDeque<LogEntry>(maxEntries)
-            lines.forEach { line ->
-                val entry = parseLogLine(line) ?: return@forEach
-                if (ring.size == maxEntries) {
-                    ring.removeFirst()
+        val ring = ArrayDeque<LogEntry>(maxEntries)
+        val startOffset = (file.length() - LOG_TAIL_WINDOW_BYTES).coerceAtLeast(0L)
+        file.inputStream().buffered().use { input ->
+            if (startOffset > 0L) {
+                var skipped = 0L
+                while (skipped < startOffset) {
+                    val delta = input.skip(startOffset - skipped)
+                    if (delta <= 0L) break
+                    skipped += delta
                 }
-                ring.addLast(entry)
             }
-            ring.toList()
+            input.bufferedReader().useLines { lines ->
+                lines.forEach { line ->
+                    val entry = parseLogLine(line) ?: return@forEach
+                    if (ring.size == maxEntries) {
+                        ring.removeFirst()
+                    }
+                    ring.addLast(entry)
+                }
+            }
         }
+        return ring.toList()
     }
 
     private fun parseLogLine(line: String): LogEntry? {

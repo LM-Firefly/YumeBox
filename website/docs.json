@@ -48,13 +48,13 @@
     "links": [
       {
         "label": "Support",
-        "href": "https://github.com/YumeLira/YumeBox/issues"
+        "href": "https://github.com/LM-Firefly/YumeBox/issues"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Github",
-      "href": "https://github.com/YumeLira/YumeBox"
+      "href": "https://github.com/LM-Firefly/YumeBox"
     }
   },
   "contextual": {
