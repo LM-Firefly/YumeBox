@@ -192,7 +192,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:proxy"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")

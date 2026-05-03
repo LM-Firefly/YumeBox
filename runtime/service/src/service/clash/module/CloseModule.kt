@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,17 +20,17 @@
 
 
 
-package com.github.yumelira.yumebox.service.clash.module
+package com.github.yumelira.yumebox.runtime.service.clash.module
 
 import android.app.Service
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 
 class CloseModule(service: Service) : Module<CloseModule.RequestClose>(service) {
     object RequestClose
 
     override suspend fun run() {
         val broadcasts = receiveBroadcast {
-            addAction(Intents.ACTION_CLASH_REQUEST_STOP)
+            addAction(Intents.actionClashRequestStop(service.packageName))
         }
 
         broadcasts.receive()

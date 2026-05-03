@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service.remote
+package com.github.yumelira.yumebox.runtime.api.service.remote
 
 import com.github.yumelira.yumebox.core.model.LogMessage
 
