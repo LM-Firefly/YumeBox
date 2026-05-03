@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -25,17 +25,26 @@ import com.github.yumelira.yumebox.lite.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
+import com.github.yumelira.yumebox.data.gateway.writeRuntimeLog
+import com.github.yumelira.yumebox.data.logging.AppLogBridge
+import com.github.yumelira.yumebox.data.logging.AppLogBuffer
+import com.github.yumelira.yumebox.data.logging.AppLogTree
+import com.github.yumelira.yumebox.data.logging.CrashHandler
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.di.featureProxyModules
 import com.github.yumelira.yumebox.di.appModule
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.qualifier.named
 import timber.log.Timber
@@ -46,12 +55,18 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        if (BuildConfig.DEBUG && Timber.forest().isEmpty()) {
-            Timber.plant(Timber.DebugTree())
+        if (Timber.forest().isEmpty()) {
+            Timber.plant(AppLogTree())
         }
+        CrashHandler.init(this)
+        AppLogBridge.runtimeLogWriter = ::writeRuntimeLog
 
         StartupGate.loadPrimary()
         Global.init(this)
+        Components.register(
+            mainActivityClassName = MainActivity::class.java.name,
+            proxySheetActivityClassName = ProxySheetActivity::class.java.name,
+        )
         MMKV.initialize(this)
 
         val koin = startKoin {
@@ -72,6 +87,7 @@ class App : Application() {
         networkSettings: NetworkSettingsStore,
         networkSettingsStore: MMKV,
     ) {
+        AppLogBuffer.minLogLevel = appSettings.logLevel.value
         networkSettings.proxyMode.set(ProxyMode.Tun)
         if (!networkSettingsStore.containsKey("bypassPrivateNetwork")) {
             networkSettings.bypassPrivateNetwork.set(false)
@@ -97,5 +113,15 @@ class App : Application() {
                 Timber.w(error, "Proxy preview warm-up skipped")
             }
         }
+    }
+
+    override fun onTerminate() {
+        runCatching {
+            val koin = GlobalContext.getOrNull()
+            koin?.getOrNull<ProxyFacade>()?.shutdown()
+            koin?.getOrNull<AppIdentityResolver>()?.close()
+        }
+        runCatching { startupScope.cancel() }
+        super.onTerminate()
     }
 }

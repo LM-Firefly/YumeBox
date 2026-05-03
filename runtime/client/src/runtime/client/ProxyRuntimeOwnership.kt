@@ -20,26 +20,23 @@
 
 package com.github.yumelira.yumebox.runtime.client
 
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.LocalRuntimePhase
-import com.github.yumelira.yumebox.service.root.RootTunState
-import com.github.yumelira.yumebox.service.root.RootTunStatus
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStatus
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.detectRuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.toRuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.toRuntimeTargetMode
 
 internal object ProxyRuntimeOwnership {
     fun detectOwner(
         rootStatus: RootTunStatus,
         isLocalSessionActive: (ProxyMode) -> Boolean,
     ): RuntimeOwner {
-        return when {
-            rootStatus.state.isActive || rootStatus.runtimeReady -> RuntimeOwner.RootTun
-            isLocalSessionActive(ProxyMode.Tun) -> RuntimeOwner.LocalTun
-            isLocalSessionActive(ProxyMode.Http) -> RuntimeOwner.LocalHttp
-            else -> RuntimeOwner.None
-        }
+        return rootStatus.detectRuntimeOwner(isLocalSessionActive)
     }
 
     fun startingSnapshot(
@@ -51,7 +48,7 @@ internal object ProxyRuntimeOwnership {
         return RuntimeSnapshot(
             owner = owner,
             phase = RuntimePhase.Starting,
-            targetMode = targetMode,
+            targetMode = targetMode.toRuntimeTargetMode(),
             profileReady = true,
             profileUuid = profile.uuid.toString(),
             profileName = profile.name,
@@ -70,11 +67,11 @@ internal object ProxyRuntimeOwnership {
         return RuntimeSnapshot(
             owner = owner,
             phase = when (owner) {
-                RuntimeOwner.RootTun -> rootPhase(rootStatus)
+                RuntimeOwner.RootTun -> rootStatus.state.toRuntimePhase()
                 RuntimeOwner.LocalTun, RuntimeOwner.LocalHttp -> localPhase.toRuntimePhase()
                 RuntimeOwner.None -> RuntimePhase.Idle
             },
-            targetMode = modeForOwner(owner, configuredMode),
+            targetMode = modeForOwner(owner, configuredMode).toRuntimeTargetMode(),
             profileReady = owner == RuntimeOwner.RootTun && !rootStatus.profileUuid.isNullOrBlank(),
             profileUuid = rootStatus.profileUuid.takeIf { owner == RuntimeOwner.RootTun },
             profileName = rootStatus.profileName.takeIf { owner == RuntimeOwner.RootTun },
@@ -97,7 +94,7 @@ internal object ProxyRuntimeOwnership {
         return current.copy(
             owner = owner,
             phase = RuntimePhase.Running,
-            targetMode = modeForOwner(owner, configuredMode),
+            targetMode = modeForOwner(owner, configuredMode).toRuntimeTargetMode(),
             lastError = null,
         )
     }
@@ -116,26 +113,6 @@ internal object ProxyRuntimeOwnership {
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun -> ProxyMode.RootTun
             RuntimeOwner.None -> configuredMode
-        }
-    }
-
-    private fun rootPhase(status: RootTunStatus): RuntimePhase {
-        return when (status.state) {
-            RootTunState.Idle -> RuntimePhase.Idle
-            RootTunState.Starting -> RuntimePhase.Starting
-            RootTunState.Running -> RuntimePhase.Running
-            RootTunState.Stopping -> RuntimePhase.Stopping
-            RootTunState.Failed -> RuntimePhase.Failed
-        }
-    }
-
-    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase {
-        return when (this) {
-            LocalRuntimePhase.Idle -> RuntimePhase.Idle
-            LocalRuntimePhase.Starting -> RuntimePhase.Starting
-            LocalRuntimePhase.Running -> RuntimePhase.Running
-            LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
-            LocalRuntimePhase.Failed -> RuntimePhase.Failed
         }
     }
 }

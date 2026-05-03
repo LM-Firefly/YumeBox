@@ -48,7 +48,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,19 +66,21 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.Card
-import com.github.yumelira.yumebox.presentation.component.OverrideAnimatedFab
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideAnimatedFab
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SearchPager
 import com.github.yumelira.yumebox.presentation.component.SearchStatus
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopAppBarAnim
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
-import com.github.yumelira.yumebox.presentation.component.rememberOverrideFabController
+import com.github.yumelira.yumebox.feature.override.presentation.component.rememberOverrideFabController
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
@@ -114,8 +116,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
     val spacing = spacing
     val mainLikePadding = rememberStandalonePageMainPadding()
     val viewModel = koinViewModel<AccessControlViewModel>()
-    val uiState by viewModel.uiState.collectAsState()
-    val filteredApps by viewModel.filteredApps.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filteredApps by viewModel.filteredApps.collectAsStateWithLifecycle()
     val settingsFabController = rememberOverrideFabController()
 
     var showSettingsSheet by remember { mutableStateOf(false) }
@@ -188,6 +190,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     TopBar(
                         title = MLang.AccessControl.Title,
                         scrollBehavior = scrollBehavior,
+                        navigationIconPadding = 0.dp,
+                        navigationIcon = { NavigationBackIcon(navigator = navigator) },
                         bottomContent = {
                             Box(
                                 modifier = Modifier

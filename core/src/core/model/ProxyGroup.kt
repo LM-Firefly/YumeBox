@@ -36,6 +36,7 @@ data class ProxyGroup(
     val now: String,
     val icon: String? = null,
     val hidden: Boolean = false,
+    val fixed: String = "",
 ) : Parcelable {
     class SliceProxyList(proxies: List<Proxy>) : List<Proxy> by proxies, Parcelable {
         constructor(parcel: Parcel) : this(Proxy.createListFromParcelSlice(parcel, 0, 50))
@@ -66,6 +67,7 @@ data class ProxyGroup(
         icon = parcel.readString(),
         name = if (parcel.dataAvail() > 0) parcel.readString().orEmpty() else "",
         hidden = if (parcel.dataAvail() > 0) parcel.readByte().toInt() != 0 else false,
+        fixed = if (parcel.dataAvail() > 0) parcel.readString().orEmpty() else "",
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -75,6 +77,7 @@ data class ProxyGroup(
         parcel.writeString(icon)
         parcel.writeString(name)
         parcel.writeByte(if (hidden) 1.toByte() else 0.toByte())
+        parcel.writeString(fixed)
     }
 
     override fun describeContents(): Int {

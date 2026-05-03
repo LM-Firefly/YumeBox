@@ -25,6 +25,9 @@ plugins {
 
 android {
     namespace = "com.github.yumelira.yumebox.runtime.api"
+    buildFeatures {
+        aidl = true
+    }
 }
 
 dependencies {
@@ -37,4 +40,3 @@ dependencies {
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     implementation("com.tencent:mmkv:$mmkvVersion")
 }
-

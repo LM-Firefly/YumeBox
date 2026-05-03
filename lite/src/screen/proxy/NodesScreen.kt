@@ -21,10 +21,10 @@
 package com.github.yumelira.yumebox.screen.proxy
 
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
-import com.github.yumelira.yumebox.presentation.screen.ProxyPager
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.ProxyPager
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
@@ -35,7 +35,7 @@ import org.koin.androidx.compose.koinViewModel
 @androidx.compose.runtime.Composable
 fun NodesScreen(navigator: DestinationsNavigator) {
     val homeViewModel = koinViewModel<HomeViewModel>()
-    val isRunning by homeViewModel.isRunning.collectAsState()
+    val isRunning by homeViewModel.isRunning.collectAsStateWithLifecycle()
 
     ProxyPager(
         mainInnerPadding = PaddingValues(),

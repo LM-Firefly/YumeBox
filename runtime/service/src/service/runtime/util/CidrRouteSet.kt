@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 @file:Suppress("TYPE_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 
-package com.github.yumelira.yumebox.service.runtime.util
+package com.github.yumelira.yumebox.runtime.service.runtime.util
 
 import java.math.BigInteger
 import java.net.InetAddress
@@ -169,6 +169,7 @@ private fun bigIntegerToAddressString(
     val copyLength = raw.size - sourceStart
     System.arraycopy(raw, sourceStart, normalized, byteLength - copyLength, copyLength)
     return InetAddress.getByAddress(normalized).hostAddress
+        ?: throw IllegalStateException("Unable to resolve IP address string")
 }
 
 private fun rootRouteAddress(bitSize: Int): String {

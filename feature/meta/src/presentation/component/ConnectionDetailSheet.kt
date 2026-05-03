@@ -37,16 +37,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
+import com.github.yumelira.yumebox.core.util.buildRuleChain
 import com.github.yumelira.yumebox.common.util.formatBytes
+import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionViewModel
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val CONNECTION_LEADING_ICON_BITMAP_SIZE = 96
@@ -85,6 +89,7 @@ fun ConnectionDetailSheet(
                         state = state,
                         upload = info.upload,
                         download = info.download,
+                        rule = info.rule,
                         chains = info.chains,
                     )
                 }
@@ -132,11 +137,21 @@ private fun ConnectionInfoSection(
     state: ConnectionDetailState,
     upload: Long,
     download: Long,
+    rule: String,
     chains: List<String>,
 ) {
     val spacing = AppTheme.spacing
     val sizes = AppTheme.sizes
     val appColors = AppTheme.colors
+    val viewModel = koinViewModel<ConnectionViewModel>()
+    val appName = remember(state.metadata, viewModel) {
+        viewModel.resolveIdentity(state.metadata).appName
+    }
+    val headerTitle = remember(appName) {
+        appName.takeIf {
+            it.isNotBlank() && it != ConnectionViewModel.UNKNOWN_APP_NAME
+        } ?: MLang.Connection.Detail.Section.Info
+    }
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(spacing.space12),
@@ -151,7 +166,7 @@ private fun ConnectionInfoSection(
                 size = sizes.connectionLeadingIconSize,
                 bitmapSize = CONNECTION_LEADING_ICON_BITMAP_SIZE,
             )
-            SectionTitle(MLang.Connection.Detail.Section.Info)
+            SectionTitle(headerTitle)
         }
 
         InfoRow(label = MLang.Connection.Detail.Label.Protocol, value = state.network.uppercase())
@@ -175,23 +190,30 @@ private fun ConnectionInfoSection(
             valueColor = appColors.protocol.udp,
         )
 
-        if (chains.isNotEmpty()) {
+        if (rule.isNotEmpty() || chains.isNotEmpty()) {
             Spacer(modifier = Modifier.height(spacing.space4))
-            ProxyChainRow(chains = chains)
+            ProxyChainRow(
+                rule = rule,
+                chains = chains,
+            )
         }
     }
 }
 
 @Composable
-private fun ProxyChainRow(chains: List<String>) {
+private fun ProxyChainRow(
+    rule: String,
+    chains: List<String>,
+) {
     val spacing = AppTheme.spacing
     val appColors = AppTheme.colors
+    val displayChains = buildRuleChain(rule = rule, chain = chains)
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(spacing.space2),
         verticalArrangement = Arrangement.spacedBy(spacing.space2),
     ) {
-        chains.forEachIndexed { index, chain ->
-            val isLast = index == chains.lastIndex
+        displayChains.forEachIndexed { index, chain ->
+            val isLast = index == displayChains.lastIndex
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -204,7 +226,7 @@ private fun ProxyChainRow(chains: List<String>) {
 
                 if (!isLast) {
                     Text(
-                        text = "→",
+                        text = "->",
                         style = MiuixTheme.textStyles.footnote1,
                         color = appColors.connection.chainArrow,
                         modifier = Modifier.padding(horizontal = spacing.space2),
@@ -260,7 +282,7 @@ private fun ChainNode(
 
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(radii.radius8))
+            .clip(miuixShape(radii.radius8))
             .background(backgroundColor)
             .padding(
                 horizontal = sizes.nodeChainNodeHorizontalPadding,

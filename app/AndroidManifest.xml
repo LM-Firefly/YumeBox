@@ -114,7 +114,7 @@
                 android:value="https://play.google.com/store"/>
 
         <provider
-                android:name=".service.StatusProvider"
+                android:name=".runtime.service.StatusProvider"
                 android:authorities="${applicationId}.status"
                 android:enabled="true"
                 android:exported="false"/>

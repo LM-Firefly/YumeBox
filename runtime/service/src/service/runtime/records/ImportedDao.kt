@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,9 +20,9 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.records
+package com.github.yumelira.yumebox.runtime.service.runtime.records
 
-import com.github.yumelira.yumebox.service.runtime.entity.Imported
+import com.github.yumelira.yumebox.runtime.service.runtime.entity.Imported
 import java.util.*
 
 object ImportedDao {

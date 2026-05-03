@@ -20,17 +20,18 @@
 
 
 
-package com.github.yumelira.yumebox.feature.editor.screen
+package com.github.yumelira.yumebox.feature.editor.presentation.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
-import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigType
-import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigEditorViewModel
+import com.github.yumelira.yumebox.feature.editor.presentation.editor.CodeEditor
+import com.github.yumelira.yumebox.feature.editor.presentation.editor.rememberConfiguredCodeEditorState
+import com.github.yumelira.yumebox.presentation.language.LanguageScope
+import com.github.yumelira.yumebox.feature.editor.presentation.viewmodel.ConfigType
+import com.github.yumelira.yumebox.feature.editor.presentation.viewmodel.ConfigEditorViewModel
 import com.github.yumelira.yumebox.presentation.component.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.androidx.compose.koinViewModel
@@ -46,7 +47,7 @@ fun ConfigEditorScreen(
     language: LanguageScope = LanguageScope.Yaml,
 ) {
     val viewModel: ConfigEditorViewModel = koinViewModel()
-    val session by viewModel.session.collectAsState()
+    val session by viewModel.session.collectAsStateWithLifecycle()
     val editorState = rememberConfiguredCodeEditorState(
         initialContent = initialContent,
         language = language,

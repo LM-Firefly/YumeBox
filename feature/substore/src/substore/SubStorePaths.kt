@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.substore
+package com.github.yumelira.yumebox.feature.substore
 
 import com.github.yumelira.yumebox.core.Global
 import java.io.File
