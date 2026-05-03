@@ -52,6 +52,8 @@ Proxy = {
 
     Selection = {
         Switched = "Switched to: %s"
+        Pinned = "Pinned to: %s"
+        Unpinned = "Unpinned"
         Failed = "Switch failed"
         Error = "Switch failed: %s"
     }

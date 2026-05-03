@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.substore
+package com.github.yumelira.yumebox.feature.substore
 
 import java.io.IOException
 import java.net.ServerSocket

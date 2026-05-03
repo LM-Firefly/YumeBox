@@ -24,11 +24,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import com.github.yumelira.yumebox.data.model.AccessControlMode
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.data.model.TunStack
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
@@ -57,17 +57,17 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
     val vpnViewModel = koinViewModel<VpnSettingsViewModel>()
     val accessViewModel = koinViewModel<AccessControlViewModel>()
 
-    val themeMode by vpnViewModel.themeMode.state.collectAsState()
-    val invertOnPrimaryColors by vpnViewModel.invertOnPrimaryColors.state.collectAsState()
-    val appLanguage by vpnViewModel.appLanguage.state.collectAsState()
-    val dnsHijack by vpnViewModel.dnsHijack.state.collectAsState()
-    val allowBypass by vpnViewModel.allowBypass.state.collectAsState()
-    val enableIPv6 by vpnViewModel.enableIPv6.state.collectAsState()
-    val systemProxy by vpnViewModel.systemProxy.state.collectAsState()
-    val tunStack by vpnViewModel.tunStack.state.collectAsState()
+    val themeMode by vpnViewModel.themeMode.state.collectAsStateWithLifecycle()
+    val invertOnPrimaryColors by vpnViewModel.invertOnPrimaryColors.state.collectAsStateWithLifecycle()
+    val appLanguage by vpnViewModel.appLanguage.state.collectAsStateWithLifecycle()
+    val dnsHijack by vpnViewModel.dnsHijack.state.collectAsStateWithLifecycle()
+    val allowBypass by vpnViewModel.allowBypass.state.collectAsStateWithLifecycle()
+    val enableIPv6 by vpnViewModel.enableIPv6.state.collectAsStateWithLifecycle()
+    val systemProxy by vpnViewModel.systemProxy.state.collectAsStateWithLifecycle()
+    val tunStack by vpnViewModel.tunStack.state.collectAsStateWithLifecycle()
 
-    val accessUiState by accessViewModel.uiState.collectAsState()
-    val accessControlMode by accessViewModel.accessControlMode.state.collectAsState()
+    val accessUiState by accessViewModel.uiState.collectAsStateWithLifecycle()
+    val accessControlMode by accessViewModel.accessControlMode.state.collectAsStateWithLifecycle()
 
     val scrollBehavior = MiuixScrollBehavior()
     val permissionLauncher = rememberLauncherForActivityResult(

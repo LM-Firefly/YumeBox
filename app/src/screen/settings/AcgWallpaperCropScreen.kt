@@ -69,6 +69,7 @@ import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -195,7 +196,7 @@ fun AcgWallpaperCropScreen(
                     )
                     .fillMaxWidth()
                     .height(UiDp.dp52)
-                    .clip(RoundedCornerShape(UiDp.dp12)),
+                    .clip(miuixShape(UiDp.dp12)),
                 colors = ButtonDefaults.buttonColorsPrimary(),
                 onClick = {
                     viewModel.onAcgWallpaperUriChange(wallpaperUri)

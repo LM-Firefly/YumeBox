@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,35 +20,30 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.content.Context
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.remote.IProfileManager
-import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import com.github.yumelira.yumebox.service.runtime.records.ProfileStore
-import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
-import com.github.yumelira.yumebox.service.runtime.util.generateProfileUUID
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
-import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
-import kotlinx.coroutines.CoroutineScope
+import com.github.yumelira.yumebox.core.importedDir
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.runtime.api.service.remote.IProfileManager
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.entity.Imported
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.runtime.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.runtime.service.runtime.records.ProfileStore
+import com.github.yumelira.yumebox.runtime.service.runtime.util.directoryLastModified
+import com.github.yumelira.yumebox.runtime.service.runtime.util.generateProfileUUID
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendProfileChanged
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.FileNotFoundException
 import java.util.*
 
-class ProfileManager(private val context: Context) : IProfileManager,
-    CoroutineScope by CoroutineScope(Dispatchers.IO) {
+class ProfileManager(private val context: Context) : IProfileManager {
     private val store = ServiceStore()
 
     init {
-        launch {
-            context.importedDir.mkdirs()
-        }
+        context.importedDir.mkdirs()
     }
 
     override suspend fun create(type: Profile.Type, name: String, source: String): UUID {

@@ -32,33 +32,30 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.net.InetSocketAddress
 
 object Clash {
-    private val CompilerJson = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-
-    private val ConnectionJson = Json {
+    private val ClashJson = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
 
     fun compilePreview(request: CompileRequest): CompileResult {
         val payload = Bridge.nativeCompilePreview(
-            CompilerJson.encodeToString(CompileRequest.serializer(), request),
+            ClashJson.encodeToString(CompileRequest.serializer(), request),
         )
-        return CompilerJson.decodeFromString(CompileResult.serializer(), payload)
+        return ClashJson.decodeFromString(CompileResult.serializer(), payload)
     }
 
     fun compileToFile(request: CompileRequest): CompileResult {
         val payload = Bridge.nativeCompileToFile(
-            CompilerJson.encodeToString(CompileRequest.serializer(), request),
+            ClashJson.encodeToString(CompileRequest.serializer(), request),
         )
-        return CompilerJson.decodeFromString(CompileResult.serializer(), payload)
+        return ClashJson.decodeFromString(CompileResult.serializer(), payload)
     }
 
     fun reset() {
@@ -87,9 +84,20 @@ object Clash {
     }
 
     fun queryConnections(): ConnectionSnapshot {
-        return ConnectionJson.decodeFromString(
+        val rawJson = Bridge.nativeQueryConnections()
+        val element = ClashJson.parseToJsonElement(rawJson)
+        val normalized = if (element is JsonObject && element["connections"] == JsonNull) {
+            JsonObject(
+                element.toMutableMap().apply {
+                    put("connections", JsonArray(emptyList()))
+                },
+            )
+        } else {
+            element
+        }
+        return ClashJson.decodeFromJsonElement(
             ConnectionSnapshot.serializer(),
-            Bridge.nativeQueryConnections(),
+            normalized,
         )
     }
 
@@ -183,6 +191,18 @@ object Clash {
         }
     }
 
+    fun inspectCompiledGroupNames(yamlText: String, excludeNotSelectable: Boolean): List<String> {
+        val namesJson = Bridge.nativeInspectCompiledGroupNames(yamlText, excludeNotSelectable)
+            ?: return emptyList()
+        return runCatching {
+            val array = Json.decodeFromString(JsonArray.serializer(), namesJson)
+            array.map {
+                require(it.jsonPrimitive.isString)
+                it.jsonPrimitive.content
+            }
+        }.getOrElse { emptyList() }
+    }
+
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)
             ?.let { Json.decodeFromString(ProxyGroup.serializer(), it) }
@@ -207,6 +227,10 @@ object Clash {
 
     fun patchSelector(selector: String, name: String): Boolean {
         return Bridge.nativePatchSelector(selector, name)
+    }
+
+    fun patchForceSelector(selector: String, name: String): Boolean {
+        return Bridge.nativeForcePatchSelector(selector, name)
     }
 
     fun fetchAndValid(

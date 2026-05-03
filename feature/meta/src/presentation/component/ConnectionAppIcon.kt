@@ -40,13 +40,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.core.graphics.drawable.toBitmap
+import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionViewModel
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AppColors
-import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
+import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private const val CONNECTION_APP_ICON_BITMAP_SIZE = 80
@@ -61,9 +63,9 @@ internal fun ConnectionLeadingIcon(
 ) {
     val sizes = AppTheme.sizes
     val context = LocalContext.current
-    val appIdentityResolver = remember(context) { AppIdentityResolver(context) }
-    val identity = remember(metadata, appIdentityResolver) {
-        appIdentityResolver.resolve(metadata)
+    val viewModel = koinViewModel<ConnectionViewModel>()
+    val identity = remember(metadata, viewModel) {
+        viewModel.resolveIdentity(metadata)
     }
     val resolvedSize = size.takeOrElse { sizes.connectionLeadingIconSize }
     val iconKey = remember(identity, bitmapSize) {
@@ -88,8 +90,7 @@ internal fun ConnectionLeadingIcon(
             bitmap = bitmap,
             contentDescription = identity.appName.ifEmpty { network },
             modifier = modifier
-                .size(resolvedSize)
-                .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius)),
+                .size(resolvedSize),
         )
         return
     }
@@ -115,7 +116,7 @@ private fun ProtocolFallbackIcon(
     Box(
         modifier = modifier
             .size(resolvedSize)
-            .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius))
+            .clip(miuixShape(sizes.connectionLeadingIconCornerRadius))
             .background(neutral.copy(alpha = AppTheme.opacity.ultraSubtle + AppTheme.opacity.ambientShadow)),
         contentAlignment = Alignment.Center,
     ) {

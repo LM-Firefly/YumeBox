@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,15 +20,15 @@
 
 
 
-package com.github.yumelira.yumebox.service.clash.module
+package com.github.yumelira.yumebox.runtime.service.clash.module
 
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import com.github.yumelira.yumebox.service.common.compat.registerReceiverCompat
-import com.github.yumelira.yumebox.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.service.common.compat.registerReceiverCompat
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel

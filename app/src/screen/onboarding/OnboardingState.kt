@@ -31,7 +31,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 
 private const val MIUI_GET_INSTALLED_APPS_PERMISSION = "com.android.permission.GET_INSTALLED_APPS"
@@ -130,7 +130,7 @@ internal fun rememberPermissionState(
 internal fun rememberPrivacyAcceptedState(
     appSettingsViewModel: AppSettingsViewModel,
 ): PrivacyAcceptedState {
-    val accepted by appSettingsViewModel.privacyPolicyAccepted.state.collectAsState()
+    val accepted by appSettingsViewModel.privacyPolicyAccepted.state.collectAsStateWithLifecycle()
     return PrivacyAcceptedState(
         accepted = accepted,
         onAcceptedChange = appSettingsViewModel::setPrivacyPolicyAccepted,
@@ -141,8 +141,8 @@ internal fun rememberPrivacyAcceptedState(
 internal fun rememberThemeCustomizationState(
     appSettingsViewModel: AppSettingsViewModel,
 ): ThemeCustomizationState {
-    val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
+    val themeMode by appSettingsViewModel.themeMode.state.collectAsStateWithLifecycle()
+    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsStateWithLifecycle()
     return ThemeCustomizationState(
         themeMode = themeMode,
         onThemeModeChange = appSettingsViewModel::onThemeModeChange,

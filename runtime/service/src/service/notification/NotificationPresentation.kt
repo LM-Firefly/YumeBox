@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.notification
+package com.github.yumelira.yumebox.runtime.service.notification
 
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed

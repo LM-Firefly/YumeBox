@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.config
+package com.github.yumelira.yumebox.runtime.service.runtime.config
 
 enum class AccessControlMode {
     AcceptAll,

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@ import android.content.res.Resources
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
-import com.github.yumelira.yumebox.data.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.AppLanguage
 import dev.oom_wg.purejoy.mlang.MLang
 import java.util.Locale
 

@@ -28,13 +28,15 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.store.Preference
+import com.github.yumelira.yumebox.runtime.api.service.root.RootAccessStatus
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -50,10 +52,11 @@ import kotlinx.coroutines.launch
 
 class NetworkSettingsViewModel(
     application: Application,
-    settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: NetworkSettingsController,
     private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
 
     val proxyMode: Preference<ProxyMode> = settings.proxyMode
     val bypassPrivateNetwork: Preference<Boolean> = settings.bypassPrivateNetwork
@@ -231,6 +234,10 @@ class NetworkSettingsViewModel(
 
     fun onProxyModeChange(mode: ProxyMode) {
         controller.setProxyMode(mode)
+    }
+
+    suspend fun evaluateRootAccess(): RootAccessStatus {
+        return proxyFacade.evaluateRootAccess()
     }
 
     fun onBypassPrivateNetworkChange(enabled: Boolean) {

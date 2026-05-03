@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.screen
+package com.github.yumelira.yumebox.feature.override.presentation.screen
 
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -46,7 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +61,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -74,13 +75,14 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmA
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
-import com.github.yumelira.yumebox.presentation.component.OverrideAnimatedFab
-import com.github.yumelira.yumebox.presentation.component.OverrideCardActionIconButton
-import com.github.yumelira.yumebox.presentation.component.OverrideStatusBadge
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideAnimatedFab
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideCardActionIconButton
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideStatusBadge
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
-import com.github.yumelira.yumebox.presentation.component.rememberOverrideFabController
+import com.github.yumelira.yumebox.feature.override.presentation.component.rememberOverrideFabController
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
@@ -92,7 +94,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.ShieldCheck
 import com.github.yumelira.yumebox.presentation.icon.yume.ShieldMinus
 import com.github.yumelira.yumebox.presentation.theme.Spacing
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
+import com.github.yumelira.yumebox.feature.override.presentation.viewmodel.OverrideConfigViewModel
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -116,12 +118,13 @@ private val overrideConfigItemGap = Spacing().space12
 
 @Composable
 fun OverrideListScreen(
+    onNavigateBack: () -> Unit,
     onOpenCodeEditor: (OverrideConfig) -> Unit,
 ) {
     val viewModel: OverrideConfigViewModel = koinViewModel()
-    val userConfigs by viewModel.userConfigs.collectAsState()
-    val usageCountMap by viewModel.usageCountMap.collectAsState()
-    val pendingRevealConfigId by viewModel.pendingRevealConfigId.collectAsState()
+    val userConfigs by viewModel.userConfigs.collectAsStateWithLifecycle()
+    val usageCountMap by viewModel.usageCountMap.collectAsStateWithLifecycle()
+    val pendingRevealConfigId by viewModel.pendingRevealConfigId.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -207,6 +210,8 @@ fun OverrideListScreen(
             TopBar(
                 title = MLang.Override.Title,
                 scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(onNavigateBack = onNavigateBack) },
             )
         },
     ) { paddingValues ->

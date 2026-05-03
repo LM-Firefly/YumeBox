@@ -19,29 +19,43 @@
  */
 
 
-package com.github.yumelira.yumebox
+package com.github.yumelira.yumebox.feature.proxy
+
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.data.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetIconAction
+import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`List-chevrons-up-down`
 import com.github.yumelira.yumebox.presentation.icon.yume.Speed
-import com.github.yumelira.yumebox.presentation.screen.node.NodeGroupSheetContent
-import com.github.yumelira.yumebox.presentation.screen.node.NodeSheetContent
-import com.github.yumelira.yumebox.presentation.screen.node.NodeSortPopup
-import com.github.yumelira.yumebox.presentation.screen.rememberProxyGroupSelectionState
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.node.NodeGroupSheetContent
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.node.NodeSheetContent
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.node.NodeSortPopup
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.ProxyChainIndicator
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.rememberProxyGroupSelectionState
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
-import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
+import com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel.ProxyViewModel
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
@@ -49,6 +63,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
+import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -65,8 +80,9 @@ fun ProxySheetContent(
     onDismiss: () -> Unit,
     proxyViewModel: ProxyViewModel = koinViewModel(),
 ) {
-    val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsState()
-    val sortMode by proxyViewModel.sortMode.collectAsState()
+    val proxyGroups by proxyViewModel.sortedProxyGroups.collectAsStateWithLifecycle()
+    val sortMode by proxyViewModel.sortMode.collectAsStateWithLifecycle()
+    val displayMode by proxyViewModel.displayMode.collectAsStateWithLifecycle()
 
     val showSheet = remember { mutableStateOf(true) }
     val showSortPopup = remember { mutableStateOf(false) }
@@ -153,8 +169,10 @@ fun ProxySheetContent(
                     NodeSortPopup(
                         show = showSortPopup.value,
                         onDismiss = { showSortPopup.value = false },
+                        displayMode = displayMode,
                         sortMode = sortMode,
                         alignment = PopupPositionProvider.Align.BottomStart,
+                        onDisplayModeSelected = proxyViewModel::setDisplayMode,
                         onSortSelected = proxyViewModel::setSortMode,
                     )
                 }
@@ -223,9 +241,10 @@ fun ProxySheetContent(
                 proxyGroups.firstOrNull { group -> group.name == name }
             }
             if (targetGroup == null) {
-                val testingGroupNames by proxyViewModel.testingGroupNames.collectAsState()
+                val testingGroupNames by proxyViewModel.testingGroupNames.collectAsStateWithLifecycle()
                 NodeGroupSheetContent(
                     groups = proxyGroups,
+                    displayMode = displayMode,
                     onGroupClick = groupSelection.selectGroup,
                     testingGroupNames = testingGroupNames,
                     sheetHeightFraction = NOTIFICATION_PROXY_SHEET_HEIGHT_FRACTION,
@@ -247,7 +266,7 @@ fun ProxySheetContent(
 @Composable
 private fun ProxySheetNodeContent(
     proxyViewModel: ProxyViewModel,
-    group: com.github.yumelira.yumebox.domain.model.ProxyGroupInfo,
+    group: com.github.yumelira.yumebox.core.domain.model.ProxyGroupInfo,
     onTestDelay: () -> Unit,
     sheetHeightFraction: Float,
     listState: LazyListState,
@@ -259,7 +278,7 @@ private fun ProxySheetNodeContent(
         proxyViewModel.testingGroupNames
             .map { testingGroupNames -> testingGroupNames.contains(group.name) }
             .distinctUntilChanged()
-    }.collectAsState(initial = false)
+    }.collectAsStateWithLifecycle(initialValue = false)
     val testingProxyNames by remember(group.name, groupProxyNames, proxyViewModel) {
         if (groupProxyNames.isEmpty()) {
             flowOf(emptySet<String>())
@@ -270,7 +289,7 @@ private fun ProxySheetNodeContent(
                 }
                 .distinctUntilChanged()
         }
-    }.collectAsState(initial = emptySet())
+    }.collectAsStateWithLifecycle(initialValue = emptySet())
     val onSelectProxy = remember(group.name, group.type, proxyViewModel, onTestDelay) {
         { proxyName: String ->
             if (group.type == Proxy.Type.Selector) {
@@ -280,20 +299,35 @@ private fun ProxySheetNodeContent(
             }
         }
     }
+    val onForceSelectProxy = remember(group.name, proxyViewModel) {
+        { proxyName: String ->
+            proxyViewModel.forceSelectProxy(group.name, proxyName)
+        }
+    }
     val onSingleNodeTestClick = remember(group.name, proxyViewModel) {
         { proxyName: String ->
             proxyViewModel.testProxyDelay(group.name, proxyName)
         }
     }
-
-    NodeSheetContent(
-        group = group,
-        isDelayTesting = isDelayTesting,
-        testingProxyNames = testingProxyNames,
-        onSelectProxy = onSelectProxy,
-        onTestDelay = onTestDelay,
-        onTestProxyDelay = onSingleNodeTestClick,
-        sheetHeightFraction = sheetHeightFraction,
-        listState = listState,
-    )
+    Column {
+        if (group.chainPath.isNotEmpty()) {
+            ProxyChainIndicator(
+                chain = group.chainPath,
+                modifier = Modifier
+                    .fillMaxWidth(),
+            )
+        }
+        NodeSheetContent(
+            group = group,
+            isDelayTesting = isDelayTesting,
+            testingProxyNames = testingProxyNames,
+            onSelectProxy = onSelectProxy,
+            onForceSelectProxy = onForceSelectProxy,
+            onTestDelay = onTestDelay,
+            onTestProxyDelay = onSingleNodeTestClick,
+            sheetHeightFraction = sheetHeightFraction,
+            listState = listState,
+            pinnedProxyName = group.fixed,
+        )
+    }
 }

@@ -20,53 +20,74 @@
 
 
 
-@file:UseSerializers(UUIDSerializer::class)
-
-package com.github.yumelira.yumebox.service.runtime.entity
+package com.github.yumelira.yumebox.runtime.api.service.runtime.entity
 
 import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.core.util.Parcelizer
-import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import java.util.*
 
-@SuppressLint("UnsafeOptInUsageError")
 @Serializable
-data class Profile(
-    val uuid: UUID,
-    val name: String,
-    val type: Type,
-    val source: String,
-    val active: Boolean,
-    val interval: Long,
-    val upload: Long,
-    val download: Long,
-    val total: Long,
-    val expire: Long,
-    val updatedAt: Long,
-) : Parcelable {
-    enum class Type {
-        File, Url, External
-    }
+enum class RuntimeTargetMode {
+    Tun,
+    Http,
+    RootTun,
+}
 
-    override fun writeToParcel(parcel: Parcel, flags: Int) {
-        Parcelizer.encodeToParcel(serializer(), parcel, this)
-    }
+fun RuntimeTargetMode.toProxyMode(): ProxyMode = when (this) {
+    RuntimeTargetMode.Tun -> ProxyMode.Tun
+    RuntimeTargetMode.Http -> ProxyMode.Http
+    RuntimeTargetMode.RootTun -> ProxyMode.RootTun
+}
 
-    override fun describeContents(): Int {
-        return 0
-    }
+fun ProxyMode.toRuntimeTargetMode(): RuntimeTargetMode = when (this) {
+    ProxyMode.Tun -> RuntimeTargetMode.Tun
+    ProxyMode.Http -> RuntimeTargetMode.Http
+    ProxyMode.RootTun -> RuntimeTargetMode.RootTun
+}
 
-    companion object CREATOR : Parcelable.Creator<Profile> {
-        override fun createFromParcel(parcel: Parcel): Profile {
-            return Parcelizer.decodeFromParcel(serializer(), parcel)
-        }
+@Serializable
+enum class RuntimeOwner {
+    None,
+    LocalTun,
+    LocalHttp,
+    RootTun,
+}
 
-        override fun newArray(size: Int): Array<Profile?> {
-            return arrayOfNulls(size)
-        }
-    }
+@Serializable
+enum class RuntimePhase {
+    Idle,
+    Starting,
+    Running,
+    Stopping,
+    Failed;
+    val running: Boolean
+        get() = this == Running
+}
+
+@Serializable
+data class RuntimeSnapshot(
+    val owner: RuntimeOwner = RuntimeOwner.None,
+    val phase: RuntimePhase = RuntimePhase.Idle,
+    val targetMode: RuntimeTargetMode = RuntimeTargetMode.Tun,
+    val profileReady: Boolean = false,
+    val groupsReady: Boolean = false,
+    val trafficReady: Boolean = false,
+    val configReady: Boolean = false,
+    val transportReady: Boolean = false,
+    val logReady: Boolean = false,
+    val profileUuid: String? = null,
+    val profileName: String? = null,
+    val lastError: String? = null,
+    val startedAt: Long? = null,
+    val effectiveFingerprint: String? = null,
+    val generation: Long = 0L,
+    val running: Boolean = phase.running,
+) {
+    val payloadReady: Boolean
+        get() = profileReady && groupsReady && trafficReady
 }

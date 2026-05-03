@@ -32,7 +32,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -58,7 +58,7 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        StartupGate.loadPrimary()
+        StartupGate.loadPrimary(this)
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
@@ -94,11 +94,11 @@ private fun OnboardingActivityTheme(
     content: @Composable () -> Unit,
 ) {
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
-    val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
-    val invertOnPrimaryColors by appSettingsViewModel.invertOnPrimaryColors.state.collectAsState()
-    val smoothCornerEnabled by appSettingsViewModel.smoothCornerEnabled.state.collectAsState()
-    val pageScale by appSettingsViewModel.pageScale.state.collectAsState()
+    val themeMode by appSettingsViewModel.themeMode.state.collectAsStateWithLifecycle()
+    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsStateWithLifecycle()
+    val invertOnPrimaryColors by appSettingsViewModel.invertOnPrimaryColors.state.collectAsStateWithLifecycle()
+    val smoothCornerEnabled by appSettingsViewModel.smoothCornerEnabled.state.collectAsStateWithLifecycle()
+    val pageScale by appSettingsViewModel.pageScale.state.collectAsStateWithLifecycle()
 
     ProvideAndroidPlatformTheme {
         val systemDensity = LocalDensity.current

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -33,8 +33,11 @@ import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.data.store.ProfileLinksStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.data.controller.OverrideService
+import com.github.yumelira.yumebox.data.model.ProfileBinding
+import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +54,9 @@ import java.util.*
 class ProfilesViewModel(
     application: Application,
     private val profilesRepository: ProfilesRepository,
-    profileLinksStorage: ProfileLinksStore
+    profileLinksStorage: ProfileLinksStore,
+    private val bindingProvider: ProfileBindingProvider,
+    private val overrideService: OverrideService,
 ) : AndroidContractStateViewModel<ProfilesUiState, ProfilesViewModel.ProfilesUiEffect>(
     application,
     ProfilesUiState(),
@@ -335,6 +340,23 @@ class ProfilesViewModel(
 
     fun clearMessage() {
         clearMessageState()
+    }
+
+    suspend fun getBinding(profileId: String): ProfileBinding? =
+        bindingProvider.getBinding(profileId)
+
+    suspend fun saveOverrideBinding(
+        profileId: String,
+        overrideIds: List<String>,
+        applyNow: Boolean,
+    ): ProfileBinding? {
+        val normalizedIds = overrideIds.distinct()
+        val current = bindingProvider.getBinding(profileId)
+        val updated = current?.copy(overrideIds = normalizedIds)
+            ?: ProfileBinding(profileId = profileId, overrideIds = normalizedIds)
+        bindingProvider.setBinding(updated)
+        if (applyNow) overrideService.applyOverride(profileId)
+        return bindingProvider.getBinding(profileId)
     }
 
     private fun applyLoading(loading: Boolean) {

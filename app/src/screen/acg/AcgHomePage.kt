@@ -37,6 +37,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
@@ -63,9 +64,9 @@ import com.github.panpf.sketch.util.Size
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ThemeMode
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.calculateWallpaperViewportLayout
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
@@ -81,6 +82,7 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.miuixUnevenShape
 
 @Composable
 fun AcgHomePage(
@@ -101,20 +103,20 @@ fun AcgHomePage(
     val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val controlState by homeViewModel.controlState.collectAsState()
-    val profiles by homeViewModel.profiles.collectAsState()
-    val profilesLoaded by homeViewModel.profilesLoaded.collectAsState()
-    val recommendedProfile by homeViewModel.recommendedProfile.collectAsState()
-    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsState(initial = false)
-    val selectedServerName by homeViewModel.selectedServerName.collectAsState()
-    val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
-    val trafficNow by homeViewModel.trafficNow.collectAsState()
-    val proxyMode by homeViewModel.proxyMode.collectAsState()
-    val runtimeSnapshot by homeViewModel.runtimeSnapshot.collectAsState()
-    val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val acgHomeQuote by appSettingsViewModel.acgHomeQuote.state.collectAsState()
-    val acgHomeQuoteAuthor by appSettingsViewModel.acgHomeQuoteAuthor.state.collectAsState()
-    val sidebarExpanded by appSettingsViewModel.acgSidebarExpanded.state.collectAsState()
+    val controlState by homeViewModel.controlState.collectAsStateWithLifecycle()
+    val profiles by homeViewModel.profiles.collectAsStateWithLifecycle()
+    val profilesLoaded by homeViewModel.profilesLoaded.collectAsStateWithLifecycle()
+    val recommendedProfile by homeViewModel.recommendedProfile.collectAsStateWithLifecycle()
+    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsStateWithLifecycle(initialValue = false)
+    val selectedServerName by homeViewModel.selectedServerName.collectAsStateWithLifecycle()
+    val selectedServerPing by homeViewModel.selectedServerPing.collectAsStateWithLifecycle()
+    val trafficNow by homeViewModel.trafficNow.collectAsStateWithLifecycle()
+    val proxyMode by homeViewModel.proxyMode.collectAsStateWithLifecycle()
+    val runtimeSnapshot by homeViewModel.runtimeSnapshot.collectAsStateWithLifecycle()
+    val themeMode by appSettingsViewModel.themeMode.state.collectAsStateWithLifecycle()
+    val acgHomeQuote by appSettingsViewModel.acgHomeQuote.state.collectAsStateWithLifecycle()
+    val acgHomeQuoteAuthor by appSettingsViewModel.acgHomeQuoteAuthor.state.collectAsStateWithLifecycle()
+    val sidebarExpanded by appSettingsViewModel.acgSidebarExpanded.state.collectAsStateWithLifecycle()
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -293,10 +295,12 @@ fun AcgHomePage(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = contentPanelStart)
-                .graphicsLayer {
-                    shape =
-                        RoundedCornerShape(topStart = contentCorner, bottomStart = contentCorner)
-                    clip = true
+                .let { mod ->
+                    val contentPanelShape = miuixUnevenShape(topStart = contentCorner, bottomStart = contentCorner)
+                    mod.graphicsLayer {
+                        shape = contentPanelShape
+                        clip = true
+                    }
                 }
                 .background(contentSurface),
         ) {
@@ -317,12 +321,15 @@ fun AcgHomePage(
                             },
                         )
                     }
-                    .graphicsLayer {
-                        shape = AcgUi.Shape.hero
-                        clip = true
-                        transformOrigin = TransformOrigin(0.5f, 0f)
-                        scaleX = heroImageScale
-                        scaleY = heroImageScale
+                    .let { mod ->
+                        val heroShape = AcgUi.Shape.hero
+                        mod.graphicsLayer {
+                            shape = heroShape
+                            clip = true
+                            transformOrigin = TransformOrigin(0.5f, 0f)
+                            scaleX = heroImageScale
+                            scaleY = heroImageScale
+                        }
                     }
             ) {
                 AcgWallpaperBackground(

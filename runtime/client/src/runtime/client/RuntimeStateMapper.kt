@@ -22,10 +22,11 @@
 
 package com.github.yumelira.yumebox.runtime.client
 
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.toRuntimeTargetMode
 
 object RuntimeStateMapper {
     fun isRunningOrStarting(snapshot: RuntimeSnapshot): Boolean {
@@ -61,7 +62,7 @@ object RuntimeStateMapper {
         return RuntimeSnapshot(
             owner = RuntimeOwner.None,
             phase = if (lastError.isNullOrBlank()) RuntimePhase.Idle else RuntimePhase.Failed,
-            targetMode = configuredMode,
+            targetMode = configuredMode.toRuntimeTargetMode(),
             lastError = lastError,
             generation = generation,
         )

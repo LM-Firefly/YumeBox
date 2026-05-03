@@ -48,7 +48,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -115,10 +115,10 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
 
-    val currentProfile by viewModel.currentProfile.collectAsState()
-    val controlState by viewModel.controlState.collectAsState()
-    val selectedServerName by viewModel.selectedServerName.collectAsState()
-    val trafficData by viewModel.trafficData.collectAsState()
+    val currentProfile by viewModel.currentProfile.collectAsStateWithLifecycle()
+    val controlState by viewModel.controlState.collectAsStateWithLifecycle()
+    val selectedServerName by viewModel.selectedServerName.collectAsStateWithLifecycle()
+    val trafficData by viewModel.trafficData.collectAsStateWithLifecycle()
 
     val vpnPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
