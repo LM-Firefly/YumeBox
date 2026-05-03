@@ -26,12 +26,12 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.FetchStatus
 import com.github.yumelira.yumebox.core.presentation.AndroidContractStateViewModel
 import com.github.yumelira.yumebox.core.presentation.LoadableState
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.config.TunProfileSync
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.lite.config.TunProfileSync
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

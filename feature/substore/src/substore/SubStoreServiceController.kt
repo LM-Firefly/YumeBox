@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.substore
+package com.github.yumelira.yumebox.feature.substore
 
 import android.content.Context
 import android.content.Intent

@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.feature.editor.theme
+package com.github.yumelira.yumebox.feature.editor.presentation.theme
 
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -24,14 +24,13 @@ package com.github.yumelira.yumebox.runtime.client
 
 import android.content.Context
 import android.content.Intent
+import com.github.yumelira.yumebox.core.appContextOrSelf
 import com.github.yumelira.yumebox.core.data.RepositoryUtils.safeApiCall
-import com.github.yumelira.yumebox.remote.ServiceClient
+import com.github.yumelira.yumebox.runtime.client.remote.ServiceClient
 import com.github.yumelira.yumebox.runtime.client.root.RootTunReloadScheduler
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.core.model.Profile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -47,7 +46,7 @@ class ProfilesRepository(
     private val context: Context,
 ) {
     private val appContext = context.appContextOrSelf
-    private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
+    private val rootTunStateStore by lazy { RuntimeContractResolver.rootTunStateStore(appContext) }
 
     suspend fun createProfile(
         type: Profile.Type,
@@ -55,42 +54,36 @@ class ProfilesRepository(
         source: String = ""
     ): UUID = safeApiCall(TAG, "createProfile") {
         Timber.d("Creating profile: type=$type, name=$name")
-        ServiceClient.connect(context)
-        ServiceClient.profile().create(type, name, source)
+        profileService().create(type, name, source)
     }.getOrThrow()
 
     suspend fun cloneProfile(uuid: UUID): UUID = safeApiCall(TAG, "cloneProfile") {
         Timber.d("Cloning profile: uuid=$uuid")
-        ServiceClient.connect(context)
-        ServiceClient.profile().clone(uuid)
+        profileService().clone(uuid)
     }.getOrThrow()
 
     suspend fun deleteProfile(uuid: UUID) {
         safeApiCall(TAG, "deleteProfile") {
         Timber.d("Deleting profile: uuid=$uuid")
-        ServiceClient.connect(context)
-        ServiceClient.profile().delete(uuid)
+        profileService().delete(uuid)
         }.getOrThrow()
     }
 
     suspend fun queryAllProfiles(): List<Profile> = withContext(Dispatchers.IO) {
         safeApiCall(TAG, "queryAllProfiles") {
-            ServiceClient.connect(context)
-            ServiceClient.profile().queryAll()
+            profileService().queryAll()
         }.getOrThrow()
     }
 
     suspend fun queryActiveProfile(): Profile? = withContext(Dispatchers.IO) {
         safeApiCall(TAG, "queryActiveProfile") {
-            ServiceClient.connect(context)
-            ServiceClient.profile().queryActive()
+            profileService().queryActive()
         }.getOrThrow()
     }
 
     suspend fun queryProfileByUUID(uuid: UUID): Profile? = withContext(Dispatchers.IO) {
         safeApiCall(TAG, "queryProfileByUUID") {
-            ServiceClient.connect(context)
-            ServiceClient.profile().queryByUUID(uuid)
+            profileService().queryByUUID(uuid)
         }.getOrThrow()
     }
 
@@ -99,12 +92,12 @@ class ProfilesRepository(
         safeApiCall(TAG, "setActiveProfile") {
             val startedAt = System.currentTimeMillis()
             Timber.d("Setting active profile: uuid=$uuid")
-            ServiceClient.connect(context)
+            val profileManager = profileService()
 
-            val profile = ServiceClient.profile().queryByUUID(uuid)
+            val profile = profileManager.queryByUUID(uuid)
                 ?: throw IllegalArgumentException("Profile not found: $uuid")
 
-            ServiceClient.profile().setActive(profile)
+            profileManager.setActive(profile)
 
             notifyRuntimeOverrideChanged()
 
@@ -120,8 +113,7 @@ class ProfilesRepository(
     suspend fun clearActiveProfile(profile: Profile) {
         safeApiCall(TAG, "clearActiveProfile") {
         Timber.d("Clearing active profile: uuid=${profile.uuid}")
-        ServiceClient.connect(context)
-        ServiceClient.profile().clearActive(profile)
+        profileService().clearActive(profile)
         notifyRuntimeOverrideChanged()
         }.getOrThrow()
     }
@@ -129,16 +121,14 @@ class ProfilesRepository(
     suspend fun reorderProfiles(uuids: List<UUID>) {
         safeApiCall(TAG, "reorderProfiles") {
         Timber.d("Reordering profiles: count=${uuids.size}")
-        ServiceClient.connect(context)
-        ServiceClient.profile().reorder(uuids)
+        profileService().reorder(uuids)
         }.getOrThrow()
     }
 
     suspend fun updateProfile(uuid: UUID, callback: IFetchObserver? = null) {
         safeApiCall(TAG, "updateProfile") {
             Timber.d("Updating profile: uuid=$uuid")
-            ServiceClient.connect(context)
-            ServiceClient.profile().update(uuid, callback)
+            profileService().update(uuid, callback)
         }.getOrThrow()
     }
 
@@ -150,14 +140,18 @@ class ProfilesRepository(
     ) {
         safeApiCall(TAG, "patchProfile") {
         Timber.d("Patching profile: uuid=$uuid")
-        ServiceClient.connect(context)
-        ServiceClient.profile().patch(uuid, name, source, interval)
+        profileService().patch(uuid, name, source, interval)
         }.getOrThrow()
     }
 
     suspend fun queryAll(): List<Profile> = queryAllProfiles()
 
     suspend fun queryActive(): Profile? = queryActiveProfile()
+
+    private suspend fun profileService(): com.github.yumelira.yumebox.runtime.api.service.remote.IProfileManager {
+        ServiceClient.connect(context)
+        return ServiceClient.profile()
+    }
 
     private fun isRootTunActive(): Boolean {
         val status = rootTunStateStore.snapshot()

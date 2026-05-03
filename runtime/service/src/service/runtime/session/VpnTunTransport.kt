@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.session
+package com.github.yumelira.yumebox.runtime.service.runtime.session
 
 import android.annotation.TargetApi
 import android.app.PendingIntent
@@ -31,13 +31,13 @@ import android.net.VpnService
 import android.os.Build
 import com.github.yumelira.yumebox.core.util.parseInetSocketAddress
 import com.github.yumelira.yumebox.runtime.service.R
-import com.github.yumelira.yumebox.service.common.compat.pendingIntentFlags
-import com.github.yumelira.yumebox.service.common.constants.Components
-import com.github.yumelira.yumebox.service.common.util.SocketOwnerResolver
-import com.github.yumelira.yumebox.service.runtime.config.AccessControlMode
-import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.util.buildIncludedRoutesFromExcludedCidrs
-import com.github.yumelira.yumebox.service.runtime.util.parseCIDR
+import com.github.yumelira.yumebox.runtime.service.common.compat.pendingIntentFlags
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.service.common.util.SocketOwnerResolver
+import com.github.yumelira.yumebox.runtime.service.runtime.config.AccessControlMode
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.util.buildIncludedRoutesFromExcludedCidrs
+import com.github.yumelira.yumebox.runtime.service.runtime.util.parseCIDR
 import java.net.InetAddress
 import java.security.SecureRandom
 

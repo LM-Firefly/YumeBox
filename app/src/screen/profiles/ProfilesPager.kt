@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
@@ -35,22 +36,19 @@ import androidx.core.content.FileProvider
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.data.controller.OverrideService
 import com.github.yumelira.yumebox.data.model.ProfileBinding
-import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
-import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
+import com.github.yumelira.yumebox.presentation.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
-import com.github.yumelira.yumebox.presentation.util.OverrideEditorStore
-import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
+import com.github.yumelira.yumebox.feature.override.presentation.util.OverrideEditorStore
+import com.github.yumelira.yumebox.feature.override.presentation.viewmodel.OverrideConfigViewModel
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
 import com.ramcosta.composedestinations.generated.destinations.OverrideConfigPreviewRouteDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.*
@@ -61,13 +59,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     val navigator = LocalNavigator.current
     val profilesViewModel = koinViewModel<ProfilesViewModel>()
     val homeViewModel = koinViewModel<HomeViewModel>()
-    val profiles by profilesViewModel.profiles.collectAsState()
-    val isRunning by homeViewModel.isRunning.collectAsState()
+    val profiles by profilesViewModel.profiles.collectAsStateWithLifecycle()
+    val isRunning by homeViewModel.isRunning.collectAsStateWithLifecycle()
 
     val overrideConfigViewModel = koinViewModel<OverrideConfigViewModel>()
-    val bindingProvider: ProfileBindingProvider = koinInject()
-    val overrideService: OverrideService = koinInject()
-    val userConfigs by overrideConfigViewModel.userConfigs.collectAsState()
+    val userConfigs by overrideConfigViewModel.userConfigs.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val showAddBottomSheet = remember { mutableStateOf(false) }
@@ -84,7 +80,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     var isDownloading by remember { mutableStateOf(false) }
 
     var importUrlFromScheme by remember { mutableStateOf<String?>(null) }
-    val pendingImportUrl by MainActivity.pendingImportUrl.collectAsState()
+    val pendingImportUrl by MainActivity.pendingImportUrl.collectAsStateWithLifecycle()
     val urlProfiles = remember(profiles) {
         profiles.filter { it.type == Profile.Type.Url }
     }
@@ -284,21 +280,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             onSaveOverrideSettings = { selectedOverrideIds ->
                 scope.launch {
                     val profileId = currentProfileToEdit.uuid.toString()
-                    val normalizedOverrideIds = selectedOverrideIds.distinct()
-                    val currentBinding = profileBinding ?: bindingProvider.getBinding(profileId)
-                    val updatedBinding = currentBinding?.copy(
-                        overrideIds = normalizedOverrideIds,
-                    ) ?: ProfileBinding(
+                    profileBinding = profilesViewModel.saveOverrideBinding(
                         profileId = profileId,
-                        overrideIds = normalizedOverrideIds,
+                        overrideIds = selectedOverrideIds,
+                        applyNow = isRunning && homeViewModel.isCurrentProfile(currentProfileToEdit.uuid),
                     )
-
-                    bindingProvider.setBinding(updatedBinding)
-                    profileBinding = bindingProvider.getBinding(profileId)
-
-                    if (isRunning && homeViewModel.isCurrentProfile(currentProfileToEdit.uuid)) {
-                        overrideService.applyOverride(profileId)
-                    }
                 }
             },
         )
@@ -384,7 +370,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 isEditOptionsDialogVisible = false
                 profileToEdit = profile
                 scope.launch {
-                    profileBinding = bindingProvider.getBinding(profile.uuid.toString())
+                    profileBinding = profilesViewModel.getBinding(profile.uuid.toString())
                 }
                 showSettingsDialog.value = true
             },

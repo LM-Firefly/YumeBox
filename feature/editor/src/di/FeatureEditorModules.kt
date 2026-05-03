@@ -22,7 +22,7 @@
 
 package com.github.yumelira.yumebox.feature.editor.di
 
-import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigEditorViewModel
+import com.github.yumelira.yumebox.feature.editor.presentation.viewmodel.ConfigEditorViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 

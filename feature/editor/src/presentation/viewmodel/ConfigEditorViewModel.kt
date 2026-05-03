@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.feature.editor.viewmodel
+package com.github.yumelira.yumebox.feature.editor.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

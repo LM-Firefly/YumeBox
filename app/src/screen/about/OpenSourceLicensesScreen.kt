@@ -54,6 +54,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -190,7 +191,7 @@ private fun LicenseChip(licenseName: String) {
 
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(radii.radius12))
+            .clip(miuixShape(radii.radius12))
             .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle))
             .padding(horizontal = spacing.space10, vertical = spacing.space4),
     ) {

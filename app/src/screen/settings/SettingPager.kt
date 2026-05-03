@@ -39,15 +39,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.BuildConfig
-import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
-import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.FeatureScreenDestination
@@ -56,13 +53,14 @@ import com.ramcosta.composedestinations.generated.destinations.MetaFeatureScreen
 import com.ramcosta.composedestinations.generated.destinations.NetworkSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.OverrideScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
-import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.theme.miuixCapsuleShape
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -97,7 +95,7 @@ private fun CircularIcon(
                     }
                 }
                 .size(componentSizes.settingsIconContainerSize)
-                .clip(RoundedCornerShape(radii.radius16))
+                .clip(miuixShape(radii.radius16))
                 .background(MiuixTheme.colorScheme.primary),
             contentAlignment = Alignment.Center) {
             Icon(
@@ -119,26 +117,10 @@ private fun CircularIcon(
 @SuppressLint("LocalContextResourcesRead")
 @Composable
 fun SettingPager(mainInnerPadding: PaddingValues) {
-    val viewModel = koinViewModel<SettingViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
     val navigator = LocalNavigator.current
-    val context = LocalContext.current
 
     val versionInfo = BuildConfig.VERSION_NAME
-
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is SettingEvent.OpenWebView -> {
-                    runCatching {
-                        WebViewActivity.start(context, event.url)
-                    }.getOrElse { throwable ->
-                        context.toast(MLang.Settings.Error.WebviewFailed.format(throwable.message))
-                    }
-                }
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -254,7 +236,7 @@ private fun VersionBadge(
 
     Surface(
         color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
-        shape = RoundedCornerShape(50),
+        shape = miuixCapsuleShape(),
         modifier = Modifier
             .height(componentSizes.versionBadgeHeight)
             .padding(end = spacing.space12)

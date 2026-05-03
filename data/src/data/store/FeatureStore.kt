@@ -37,6 +37,7 @@ class FeatureStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalM
     val panelOpenMode by enumFlow(LinkOpenMode.IN_APP)
     val showWebControlInProxy by boolFlow(false)
     val exitUiWhenBackground by boolFlow(false)
+    val subStoreAutoCloseModeOrdinal by intFlow(-1)
 
     var isFirstOpen by bool(true)
 

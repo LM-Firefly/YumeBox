@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -18,10 +18,11 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.notification
+package com.github.yumelira.yumebox.runtime.service.notification
 
 import com.github.yumelira.yumebox.common.util.formatBytes
 import com.github.yumelira.yumebox.common.util.formatSpeed
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 
 internal data class NotificationPresentation(
@@ -143,30 +144,16 @@ internal object NotificationPresentationFactory {
     }
 
     private fun buildSpeedLine(trafficNow: Long): String {
-        val upNow = decodeTrafficHalf(trafficNow ushr 32)
-        val downNow = decodeTrafficHalf(trafficNow and 0xFFFFFFFFL)
+        val (upNow, downNow) = TrafficData.from(trafficNow)
         return "下行 ${formatSpeed(downNow)}  上行 ${formatSpeed(upNow)}"
     }
 
     private fun buildTotalLine(trafficTotal: Long): String {
-        val upTotal = decodeTrafficHalf(trafficTotal ushr 32)
-        val downTotal = decodeTrafficHalf(trafficTotal and 0xFFFFFFFFL)
-        return "总流量 ${formatBytes(upTotal + downTotal)}"
+        val data = TrafficData.from(trafficTotal)
+        return "总流量 ${formatBytes(data.upload + data.download)}"
     }
 
     private fun isSelectableGroup(group: ProxyGroup): Boolean {
         return group.type.group && (group.now.isNotBlank() || group.proxies.isNotEmpty())
-    }
-
-    private fun decodeTrafficHalf(encoded: Long): Long {
-        val type = (encoded ushr 30) and 0x3L
-        val payload = encoded and 0x3FFFFFFFL
-        return when (type.toInt()) {
-            0 -> payload
-            1 -> (payload * 1024L) / 100L
-            2 -> (payload * 1024L * 1024L) / 100L
-            3 -> (payload * 1024L * 1024L * 1024L) / 100L
-            else -> 0L
-        }
     }
 }
