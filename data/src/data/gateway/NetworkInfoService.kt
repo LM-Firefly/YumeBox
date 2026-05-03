@@ -113,13 +113,8 @@ class NetworkInfoService : Closeable {
         }
 
         val refreshFlow = merge(
-            flowOf(Unit),
             _refreshTrigger,
             externalRefreshFlow,
-            isProxyActiveFlow
-                .distinctUntilChanged()
-                .drop(1)
-                .map { },
         )
 
         combine(refreshFlow, isProxyActiveFlow) { _, isProxyActive ->

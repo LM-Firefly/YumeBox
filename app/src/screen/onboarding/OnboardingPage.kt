@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -44,7 +44,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem

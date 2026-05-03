@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,26 +20,26 @@
 
 
 
-package com.github.yumelira.yumebox.remote
+package com.github.yumelira.yumebox.runtime.client.remote
 
 import android.content.Context
-import com.github.yumelira.yumebox.service.ClashManager
-import com.github.yumelira.yumebox.service.ProfileManager
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.IProfileManager
+import com.github.yumelira.yumebox.core.appContextOrSelf
+import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.IProfileManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import timber.log.Timber
 
 object ServiceClient {
+    private const val CONNECT_TIMEOUT_MS = 10_000L
     private val mutex = Mutex()
     private var initialized = false
-    private var localClashManager: ClashManager? = null
+    private var localClashManager: IClashManager? = null
     private var clashManager: IClashManager? = null
     private var profileManager: IProfileManager? = null
 
@@ -54,12 +54,20 @@ object ServiceClient {
                 val startedAt = System.currentTimeMillis()
 
                 try {
-                    initializeServiceGlobal(appContext)
-                    val localManager = ClashManager(appContext)
-                    localClashManager = localManager
-                    clashManager = RuntimeClashManager(appContext, localManager)
-                    profileManager = ProfileManager(appContext)
-                    initialized = true
+                    withTimeout(CONNECT_TIMEOUT_MS) {
+                        Global.init(appContext)
+                        val localManager = instantiateServiceObject<IClashManager>(
+                            className = "com.github.yumelira.yumebox.runtime.service.ClashManager",
+                            context = appContext,
+                        )
+                        localClashManager = localManager
+                        clashManager = RuntimeClashManager(appContext, localManager)
+                        profileManager = instantiateServiceObject<IProfileManager>(
+                            className = "com.github.yumelira.yumebox.runtime.service.ProfileManager",
+                            context = appContext,
+                        )
+                        initialized = true
+                    }
                     Timber.d(
                         "ServiceClient gateway initialized in pid=${android.os.Process.myPid()}, process=${android.app.Application.getProcessName()}, cost=${System.currentTimeMillis() - startedAt}ms"
                     )
@@ -76,20 +84,28 @@ object ServiceClient {
         }
     }
 
-    suspend fun disconnect() {
+    fun disconnect() {
+        runCatching { (clashManager as? RuntimeClashManager)?.close() }
+            .onFailure { Timber.w(it, "Failed to close RuntimeClashManager") }
         localClashManager = null
         clashManager = null
         profileManager = null
         initialized = false
     }
 
-    suspend fun clash(): IClashManager {
+    fun clash(): IClashManager {
         return clashManager ?: throw IllegalStateException("ServiceClient not connected")
     }
 
-    suspend fun profile(): IProfileManager {
+    fun profile(): IProfileManager {
         return profileManager ?: throw IllegalStateException("ServiceClient not connected")
     }
 
     fun isConnected(): Boolean = initialized && clashManager != null && profileManager != null
+
+    private inline fun <reified T> instantiateServiceObject(className: String, context: Context): T {
+        val clazz = Class.forName(className)
+        val instance = clazz.getConstructor(Context::class.java).newInstance(context)
+        return (instance as? T) ?: error("$className does not implement ${T::class.java.name}")
+    }
 }

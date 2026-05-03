@@ -41,6 +41,7 @@ import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.state.IntColorDrawableStateImage
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 
@@ -168,6 +169,6 @@ private fun RoutingIcon(
         contentScale = ContentScale.Crop,
         modifier = Modifier
             .size(size)
-            .clip(RoundedCornerShape(spacing.space14)),
+            .clip(miuixShape(spacing.space14)),
     )
 }

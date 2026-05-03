@@ -52,6 +52,8 @@ Proxy = {
 
     Selection = {
         Switched = "已切换到：%s"
+        Pinned = "已固定节点：%s"
+        Unpinned = "已取消固定"
         Failed = "切换失败"
         Error = "切换失败：%s"
     }

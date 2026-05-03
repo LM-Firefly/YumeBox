@@ -112,13 +112,13 @@ fun ProxyControlButton(
                 .scale(scaleAnim.value)
                 .shadow(
                     elevation = UiDp.dp1,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+                    shape = top.yukonga.miuix.kmp.theme.miuixShape(cornerRadius),
                     clip = false
                 )
                 .border(
                     width = UiDp.dp0_2,
                     color = MiuixTheme.colorScheme.outline,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius)
+                    shape = top.yukonga.miuix.kmp.theme.miuixShape(cornerRadius)
                 ),
             colors = ButtonDefaults.buttonColors(MiuixTheme.colorScheme.background),
             cornerRadius = cornerRadius,

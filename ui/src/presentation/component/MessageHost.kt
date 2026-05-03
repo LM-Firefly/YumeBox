@@ -28,8 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
+import kotlinx.coroutines.delay
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 
@@ -86,13 +85,7 @@ fun MessageHost(
 
         if (message.autoClose) {
             LaunchedEffect(message.title, message.content, message.type, message.autoCloseDelay) {
-                PollingTimers.awaitTick(
-                    PollingTimerSpecs.dynamic(
-                        name = "message_host_autoclose_${message.autoCloseDelay}",
-                        intervalMillis = message.autoCloseDelay,
-                        initialDelayMillis = message.autoCloseDelay,
-                    ),
-                )
+                delay(message.autoCloseDelay)
                 dismissDialog()
             }
         }
