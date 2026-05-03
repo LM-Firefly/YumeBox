@@ -22,15 +22,17 @@
 
 package com.github.yumelira.yumebox.screen.log
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.data.store.LogStore
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -38,43 +40,79 @@ class LogViewModel(
     private val repository: LogStore,
 ) : ViewModel() {
 
-    private val _isRecording = MutableStateFlow(repository.isRecording())
-    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+    val isRecording: StateFlow<Boolean> = repository.isRecordingState
 
-    private val _tempLogEntries = MutableStateFlow<List<LogStore.LogEntry>>(emptyList())
-    val tempLogEntries: StateFlow<List<LogStore.LogEntry>> = _tempLogEntries.asStateFlow()
+    private val _logFiles = MutableStateFlow<List<LogStore.LogFileInfo>>(emptyList())
+    val logFiles: StateFlow<List<LogStore.LogFileInfo>> = _logFiles.asStateFlow()
+
+    init {
+        refreshLogFiles()
+        viewModelScope.launch {
+            repository.isRecordingState
+                .drop(1)
+                .collectLatest {
+                    delay(300)
+                    refreshLogFiles()
+                }
+        }
+    }
 
     fun startRecording() {
         repository.startRecording()
-        _isRecording.value = true
-        _tempLogEntries.value = emptyList()
     }
 
     fun stopRecording() {
         repository.stopRecording()
-        _isRecording.value = false
     }
 
-    fun refreshTempLogEntries() {
-        if (!_isRecording.value) return
+    fun refreshLogFiles() {
         viewModelScope.launch(Dispatchers.IO) {
-            _tempLogEntries.value = repository.readTempLogEntries()
+            _logFiles.value = repository.listLogFiles()
         }
     }
 
-    fun clearTempLog() {
-        _tempLogEntries.value = emptyList()
+    fun isCurrentFileRecording(fileName: String): Boolean {
+        return repository.isCurrentRecordingFile(fileName)
     }
 
-    suspend fun saveTempLog(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
-        val entries = _tempLogEntries.value
-        if (entries.isEmpty()) return@withContext false
+    suspend fun readLogContent(fileName: String): List<LogStore.LogEntry> = withContext(Dispatchers.IO) {
+        repository.readLogEntries(fileName)
+    }
+
+    suspend fun exportMergedLog(fileName: String): String? = withContext(Dispatchers.IO) {
+        repository.exportMergedLog(fileName)
+    }
+
+    fun deleteLogFile(fileName: String) {
+        viewModelScope.launch {
+            val deleted = repository.deleteLogFile(fileName)
+            if (!deleted) return@launch
+            refreshLogFiles()
+        }
+    }
+
+    fun deleteAllLogs() {
+        viewModelScope.launch {
+            if (repository.isRecording()) {
+                repository.stopRecording()
+                delay(300)
+            }
+            repository.deleteAllLogs()
+            refreshLogFiles()
+        }
+    }
+
+    suspend fun exportLogToUri(fileName: String, targetUri: android.net.Uri): Boolean = withContext(Dispatchers.IO) {
         try {
-            repository.writeLogEntries(targetUri, entries)
+            repository.exportLogFile(fileName, targetUri)
             true
         } catch (error: Exception) {
             if (error is CancellationException) throw error
             false
         }
+    }
+
+    suspend fun exportRecentLogsToUri(targetUri: android.net.Uri): Boolean = withContext(Dispatchers.IO) {
+        repository.exportRecentLogsToUri(targetUri)
     }
 }

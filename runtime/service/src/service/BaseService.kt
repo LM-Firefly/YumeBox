@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,20 +20,21 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.app.Service
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
-import com.github.yumelira.yumebox.service.runtime.util.cancelAndJoinBlocking
+import com.github.yumelira.yumebox.core.appContextOrSelf
+import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.runtime.service.runtime.util.cancelAndJoinBlocking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
-abstract class BaseService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
+abstract class BaseService : Service(), CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default) {
     override fun onCreate() {
         super.onCreate()
 
-        initializeServiceGlobal(appContextOrSelf)
+        Global.init(appContextOrSelf)
     }
 
     override fun onDestroy() {

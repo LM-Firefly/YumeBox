@@ -26,6 +26,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,7 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,10 +54,11 @@ import com.github.yumelira.yumebox.common.util.BiometricHelper
 import com.github.yumelira.yumebox.common.util.LocaleUtil
 import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
@@ -93,7 +95,12 @@ fun AppSettingsScreen(
 
     Scaffold(
         topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
+            TopBar(
+                title = MLang.AppSettings.Title,
+                scrollBehavior = scrollBehavior,
+                navigationIconPadding = 0.dp,
+                navigationIcon = { NavigationBackIcon(navigator = navigator) },
+            )
         },
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
@@ -118,8 +125,8 @@ fun AppSettingsScreen(
 
 @Composable
 private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
-    val automaticRestart by viewModel.automaticRestart.state.collectAsState()
-    val autoUpdateCurrentProfileOnStart by viewModel.autoUpdateCurrentProfileOnStart.state.collectAsState()
+    val automaticRestart by viewModel.automaticRestart.state.collectAsStateWithLifecycle()
+    val autoUpdateCurrentProfileOnStart by viewModel.autoUpdateCurrentProfileOnStart.state.collectAsStateWithLifecycle()
     val isChineseLocale = remember { LocaleUtil.isChineseLocale() }
 
     Title(MLang.AppSettings.Section.Behavior)
@@ -151,16 +158,16 @@ private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
 @Composable
 private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     val context = LocalContext.current
-    val themeMode by viewModel.themeMode.state.collectAsState()
-    val appLanguage by viewModel.appLanguage.state.collectAsState()
-    val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsState()
-    val invertOnPrimaryColors by viewModel.invertOnPrimaryColors.state.collectAsState()
-    val predictiveBackEnabled by viewModel.predictiveBackEnabled.state.collectAsState()
-    val smoothCornerEnabled by viewModel.smoothCornerEnabled.state.collectAsState()
-    val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
-    val bottomBarUseLegacyStyle by viewModel.bottomBarUseLegacyStyle.state.collectAsState()
-    val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
-    val pageScale by viewModel.pageScale.state.collectAsState()
+    val themeMode by viewModel.themeMode.state.collectAsStateWithLifecycle()
+    val appLanguage by viewModel.appLanguage.state.collectAsStateWithLifecycle()
+    val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsStateWithLifecycle()
+    val invertOnPrimaryColors by viewModel.invertOnPrimaryColors.state.collectAsStateWithLifecycle()
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.state.collectAsStateWithLifecycle()
+    val smoothCornerEnabled by viewModel.smoothCornerEnabled.state.collectAsStateWithLifecycle()
+    val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsStateWithLifecycle()
+    val bottomBarUseLegacyStyle by viewModel.bottomBarUseLegacyStyle.state.collectAsStateWithLifecycle()
+    val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsStateWithLifecycle()
+    val pageScale by viewModel.pageScale.state.collectAsStateWithLifecycle()
 
     Title(MLang.AppSettings.Interface.ColorThemeTitle)
     Card {
@@ -246,7 +253,7 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
 @Composable
 private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
     val context = LocalContext.current
-    val excludeFromRecents by viewModel.excludeFromRecents.state.collectAsState()
+    val excludeFromRecents by viewModel.excludeFromRecents.state.collectAsStateWithLifecycle()
 
     Title(MLang.AppSettings.Section.Privacy)
     Card {
@@ -284,9 +291,10 @@ private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
 private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val showTrafficNotification by viewModel.showTrafficNotification.state.collectAsState()
-    val singleNodeTest by viewModel.singleNodeTest.state.collectAsState()
-    val exitUiWhenBackground by viewModel.exitUiWhenBackground.state.collectAsState()
+    val showTrafficNotification by viewModel.showTrafficNotification.state.collectAsStateWithLifecycle()
+    val singleNodeTest by viewModel.singleNodeTest.state.collectAsStateWithLifecycle()
+    val logLevel by viewModel.logLevel.state.collectAsStateWithLifecycle()
+    val exitUiWhenBackground by viewModel.exitUiWhenBackground.state.collectAsStateWithLifecycle()
     var batteryOptimizationIgnored by remember {
         mutableStateOf(isBatteryOptimizationIgnored(context))
     }
@@ -318,6 +326,14 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
             checked = showTrafficNotification,
             onCheckedChange = viewModel::onShowTrafficNotificationChange,
         )
+        PreferenceEnumItem(
+            title = MLang.AppSettings.ServiceSection.LogLevelTitle,
+            summary = MLang.AppSettings.ServiceSection.LogLevelSummary,
+            currentValue = logLevel,
+            items = listOf("VERBOSE", "DEBUG", "INFO", "WARN", "ERROR", "ASSERT"),
+            values = listOf(Log.VERBOSE, Log.DEBUG, Log.INFO, Log.WARN, Log.ERROR, Log.ASSERT),
+            onValueChange = viewModel::onLogLevelChange,
+        )
         PreferenceSwitchItem(
             title = MLang.AppSettings.ServiceSection.SingleNodeTestTitle,
             summary = MLang.AppSettings.ServiceSection.SingleNodeTestSummary,
@@ -344,7 +360,7 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
 
 @Composable
 private fun AppNetworkSettingsSection(viewModel: AppSettingsViewModel) {
-    val customUserAgent by viewModel.customUserAgent.state.collectAsState()
+    val customUserAgent by viewModel.customUserAgent.state.collectAsStateWithLifecycle()
 
     Title(MLang.AppSettings.Section.Network)
     Card {
@@ -360,10 +376,10 @@ private fun AppExperimentalSettingsSection(
     viewModel: AppSettingsViewModel,
     navigator: DestinationsNavigator,
 ) {
-    val acgMainUiEnabled by viewModel.acgMainUiEnabled.state.collectAsState()
-    val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsState()
-    val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsState()
-    val acgSidebarExpanded by viewModel.acgSidebarExpanded.state.collectAsState()
+    val acgMainUiEnabled by viewModel.acgMainUiEnabled.state.collectAsStateWithLifecycle()
+    val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsStateWithLifecycle()
+    val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsStateWithLifecycle()
+    val acgSidebarExpanded by viewModel.acgSidebarExpanded.state.collectAsStateWithLifecycle()
     val acgQuoteSummary = remember(acgHomeQuote) {
         acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault }
     }
@@ -417,7 +433,7 @@ private fun BiometricProtectedPreferenceSwitch(
     onConfirmedChange: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
-    val checked by checkedFlow.collectAsState()
+    val checked by checkedFlow.collectAsStateWithLifecycle()
     val showUnavailableDialogState = remember { mutableStateOf(false) }
     var unavailableMessage by remember { mutableStateOf("") }
 
@@ -457,7 +473,7 @@ private fun HideAppIconPreferenceItem(
     onHideAppIconChange: (Boolean) -> Unit,
     context: android.content.Context,
 ) {
-    val hideAppIcon by hideAppIconFlow.collectAsState()
+    val hideAppIcon by hideAppIconFlow.collectAsStateWithLifecycle()
     val showHideIconDialogState = remember { mutableStateOf(false) }
 
     PreferenceSwitchItem(

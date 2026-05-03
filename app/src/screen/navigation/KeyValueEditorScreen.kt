@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.component.AppConfirmDialog
 import com.github.yumelira.yumebox.presentation.component.AppFormDialog
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
@@ -45,6 +46,7 @@ import com.github.yumelira.yumebox.presentation.component.EditorEmptyState
 import com.github.yumelira.yumebox.presentation.component.EditorListItem
 import com.github.yumelira.yumebox.presentation.component.EditorScaffold
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.PreferenceValueItem
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
@@ -181,6 +183,8 @@ fun StringListEditorScreen(
     EditorScaffold(
         title = title,
         scrollBehavior = scrollBehavior,
+        navigationIconPadding = 0.dp,
+        navigationIcon = { NavigationBackIcon(navigator = navigator) },
         actions = listOf(
             EditorAction(
                 icon = MiuixIcons.Reset,
@@ -342,6 +346,7 @@ fun KeyValueEditorScreen(
     EditorScaffold(
         title = title,
         scrollBehavior = scrollBehavior,
+        navigationIcon = { NavigationBackIcon(navigator = navigator) },
         actions = listOf(
             EditorAction(
                 icon = MiuixIcons.Reset,
@@ -354,6 +359,7 @@ fun KeyValueEditorScreen(
                 onClick = { dialogState = KeyValueDialogState.Add },
             ),
         ),
+        navigationIconPadding = 0.dp,
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)

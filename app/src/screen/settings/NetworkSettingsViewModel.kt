@@ -28,13 +28,15 @@ import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.model.AccessControlMode
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.model.TunStack
+import com.github.yumelira.yumebox.data.store.AppStateManager
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.store.Preference
+import com.github.yumelira.yumebox.runtime.api.service.root.RootAccessStatus
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -50,10 +52,11 @@ import kotlinx.coroutines.launch
 
 class NetworkSettingsViewModel(
     application: Application,
-    settings: NetworkSettingsStore,
+    appStateManager: AppStateManager,
     private val controller: NetworkSettingsController,
     private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
+    private val settings: NetworkSettingsStore = appStateManager.networkSettingsStore
 
     val proxyMode: Preference<ProxyMode> = settings.proxyMode
     val bypassPrivateNetwork: Preference<Boolean> = settings.bypassPrivateNetwork
@@ -233,6 +236,10 @@ class NetworkSettingsViewModel(
         controller.setProxyMode(mode)
     }
 
+    suspend fun evaluateRootAccess(): RootAccessStatus {
+        return proxyFacade.evaluateRootAccess()
+    }
+
     fun onBypassPrivateNetworkChange(enabled: Boolean) {
         controller.setAndRestartIfNeeded(bypassPrivateNetwork, enabled)
     }
@@ -284,7 +291,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunIfName() {
         val normalized = _rootTunIfNameDraft.value.trim().ifBlank { DEFAULT_ROOT_TUN_IF_NAME }
         _rootTunIfNameDraft.value = normalized
-        controller.commitDraftAndRestart(rootTunIfName, normalized)
+        controller.setAndRestartIfNeeded(rootTunIfName, normalized)
     }
 
     fun onRootTunMtuDraftChange(value: String) {
@@ -294,7 +301,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunMtu() {
         val parsed = _rootTunMtuDraft.value.trim().toIntOrNull()?.takeIf { it > 0 } ?: return
         _rootTunMtuDraft.value = parsed.toString()
-        controller.commitDraftAndRestart(rootTunMtu, parsed)
+        controller.setAndRestartIfNeeded(rootTunMtu, parsed)
     }
 
     fun onRootTunFakeIpRangeDraftChange(value: String) {
@@ -304,7 +311,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunFakeIpRange() {
         val normalized = _rootTunFakeIpRangeDraft.value.trim().ifBlank { DEFAULT_FAKE_IP_RANGE }
         _rootTunFakeIpRangeDraft.value = normalized
-        controller.commitDraftAndRestart(rootTunFakeIpRange, normalized)
+        controller.setAndRestartIfNeeded(rootTunFakeIpRange, normalized)
     }
 
     fun onRootTunFakeIpRange6DraftChange(value: String) {
@@ -314,7 +321,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunFakeIpRange6() {
         val normalized = _rootTunFakeIpRange6Draft.value.trim().ifBlank { DEFAULT_FAKE_IP_RANGE6 }
         _rootTunFakeIpRange6Draft.value = normalized
-        controller.commitDraftAndRestart(rootTunFakeIpRange6, normalized)
+        controller.setAndRestartIfNeeded(rootTunFakeIpRange6, normalized)
     }
 
     fun startService(mode: ProxyMode) {
