@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -29,10 +29,11 @@ import android.content.ServiceConnection
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import com.github.yumelira.yumebox.core.appContextOrSelf
 import com.github.yumelira.yumebox.core.model.*
-import com.github.yumelira.yumebox.service.RootTunService
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.*
+import com.github.yumelira.yumebox.runtime.api.service.root.IRootTunService
+import com.github.yumelira.yumebox.runtime.api.service.root.*
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import com.topjohnwu.superuser.ipc.RootService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -43,7 +44,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 object RootTunController {
+    private const val IPC_TIMEOUT_MS = 5000L
+    private const val BIND_TIMEOUT_MS = 3000L
     private val mutex = Mutex()
+    private val recovery get() = RuntimeContractResolver.rootTunRuntimeRecovery
 
     @Volatile
     private var binder: IRootTunService? = null
@@ -59,13 +63,24 @@ object RootTunController {
         val appContext = context.appContextOrSelf
         return withContext(Dispatchers.IO) {
             try {
-                block(bind(appContext))
-            } catch (error: Throwable) {
-                if (RootTunRuntimeRecovery.isBinderConnectionFailure(error)) {
-                    invalidateConnection(appContext, RootTunRuntimeRecovery.binderFailureReason(error))
-                    onBinderFailure?.let { return@withContext it() }
+                withTimeout(IPC_TIMEOUT_MS) {
+                    block(bind(appContext))
                 }
-                throw error
+            } catch (error: Throwable) {
+                when {
+                    error is TimeoutCancellationException -> {
+                        throw error
+                    }
+                    recovery.isBinderConnectionFailure(error) -> {
+                        invalidateConnection(appContext, recovery.binderFailureReason(error))
+                        if (onBinderFailure != null) {
+                            return@withContext onBinderFailure()
+                        } else {
+                            throw error
+                        }
+                    }
+                    else -> throw error
+                }
             }
         }
     }
@@ -73,7 +88,7 @@ object RootTunController {
     suspend fun start(context: Context): RootTunOperationResult {
         val appContext = context.appContextOrSelf
         val startupLogStore = RootTunStartupLogStore(appContext)
-        val stateStore = RootTunStateStore(appContext)
+        val stateStore = RuntimeContractResolver.rootTunStateStore(appContext)
         val startAt = System.currentTimeMillis()
 
         val request = RootTunStartRequest(source = "controller.start")
@@ -90,7 +105,7 @@ object RootTunController {
                 lastError = null,
             ),
         )
-        RootTunService.start(appContext)
+        RuntimeContractResolver.rootTunForegroundService.start(appContext)
         startupLogStore.append("ROOT_TUN controller: fgService=${System.currentTimeMillis() - foregroundStartAt}ms")
         return start(appContext, request, stateStore, startupLogStore, startAt)
     }
@@ -98,7 +113,7 @@ object RootTunController {
     private suspend fun start(
         context: Context,
         request: RootTunStartRequest,
-        stateStore: RootTunStateStore,
+        stateStore: RootTunStateStoreContract,
         startupLogStore: RootTunStartupLogStore,
         startedAt: Long,
     ): RootTunOperationResult {
@@ -143,7 +158,7 @@ object RootTunController {
                 }.getOrNull()
             }
             val appContext = context.appContextOrSelf
-            runCatching { RootTunService.stop(appContext) }
+            runCatching { RuntimeContractResolver.rootTunForegroundService.stop(appContext) }
             runCatching { RootService.stop(createIntent(appContext)) }
             disconnect()
 
@@ -166,7 +181,7 @@ object RootTunController {
 
         val appContext = context.appContextOrSelf
         val startupLogStore = RootTunStartupLogStore(appContext)
-        val stateStore = RootTunStateStore(appContext)
+        val stateStore = RuntimeContractResolver.rootTunStateStore(appContext)
         val currentStatus = stateStore.snapshot()
         val request = RootTunStartRequest(source = "controller.reload")
         startupLogStore.append("ROOT_TUN controller: reload request currentTransport=${currentStatus.transportFingerprint}")
@@ -293,6 +308,10 @@ object RootTunController {
         return remoteCall(context) { service -> service.patchSelector(group, name) }
     }
 
+    suspend fun patchForceSelector(context: Context, group: String, name: String): Boolean {
+        return remoteCall(context) { service -> service.patchForceSelector(group, name) }
+    }
+
     suspend fun closeConnection(context: Context, id: String): Boolean {
         return remoteCall(context) { service -> service.closeConnection(id) }
     }
@@ -341,7 +360,9 @@ object RootTunController {
     private suspend fun bind(context: Context): IRootTunService {
         cachedBinder(context)?.let { return it }
 
-        return bindInternal(context)
+        return withTimeout(BIND_TIMEOUT_MS) {
+            bindInternal(context)
+        }
     }
 
     private suspend fun bindInternal(context: Context): IRootTunService {
@@ -418,13 +439,13 @@ object RootTunController {
 
     private fun isRuntimeActive(context: Context): Boolean {
         cachedBinder(context)?.let { return true }
-        val status = RootTunStateStore(context.appContextOrSelf).snapshot()
+        val status = RuntimeContractResolver.rootTunStateStore(context.appContextOrSelf).snapshot()
         return status.state.isActive || status.runtimeReady
     }
 
     private fun cachedBinder(context: Context): IRootTunService? {
         val current = binder ?: return null
-        if (RootTunRuntimeRecovery.isBinderAlive(current)) {
+        if (recovery.isBinderAlive(current)) {
             return current
         }
         invalidateConnection(context.appContextOrSelf, "RootTun binder cache is dead")
@@ -434,21 +455,28 @@ object RootTunController {
     private fun invalidateConnection(context: Context, reason: String?) {
         binder = null
         connection = null
-        RootTunRuntimeRecovery.handleBinderGone(context, reason)
+        recovery.handleBinderGone(context, reason)
     }
 
     private fun createIntent(context: Context): Intent {
-        return Intent(context, RootTunRootService::class.java)
+        return Intent().setClassName(
+            context.packageName,
+            "com.github.yumelira.yumebox.runtime.service.root.RootTunRootService",
+        )
     }
 
     private suspend fun rollbackFailedStart(
         context: Context,
-        stateStore: RootTunStateStore,
+        stateStore: RootTunStateStoreContract,
         error: String,
     ) {
         stateStore.markIdle(error)
-        runCatching { RootTunService.stop(context) }
+        runCatching { RuntimeContractResolver.rootTunForegroundService.stop(context) }
         runCatching { RootService.stop(createIntent(context)) }
         disconnect()
     }
+}
+
+private class RootTunStartupLogStore(@Suppress("UNUSED_PARAMETER") context: Context) {
+    fun append(@Suppress("UNUSED_PARAMETER") line: String) = Unit
 }

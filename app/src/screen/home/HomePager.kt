@@ -24,6 +24,7 @@ import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.Modifier
@@ -35,11 +36,12 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.ramcosta.composedestinations.generated.destinations.ConnectionScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
@@ -55,19 +57,21 @@ fun HomePager(
     val homeViewModel = koinViewModel<HomeViewModel>()
     val navigator = LocalNavigator.current
 
-    val controlState by homeViewModel.controlState.collectAsState()
-    val uiState by homeViewModel.uiState.collectAsState()
-    val trafficNow by homeViewModel.trafficNow.collectAsState()
-    val profiles by homeViewModel.profiles.collectAsState()
-    val profilesLoaded by homeViewModel.profilesLoaded.collectAsState()
-    val ipMonitoringState by homeViewModel.ipMonitoringState.collectAsState()
-    val recommendedProfile by homeViewModel.recommendedProfile.collectAsState()
-    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsState(initial = false)
-    val currentProfile by homeViewModel.currentProfile.collectAsState()
-    val selectedServerName by homeViewModel.selectedServerName.collectAsState()
-    val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
-    val speedHistory by homeViewModel.speedHistory.collectAsState()
-    val proxyMode by homeViewModel.proxyMode.collectAsState()
+    val controlState by homeViewModel.controlState.collectAsStateWithLifecycle()
+    val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val trafficNow by homeViewModel.trafficNow.collectAsStateWithLifecycle()
+    val profiles by homeViewModel.profiles.collectAsStateWithLifecycle()
+    val profilesLoaded by homeViewModel.profilesLoaded.collectAsStateWithLifecycle()
+    val ipMonitoringState by homeViewModel.ipMonitoringState.collectAsStateWithLifecycle()
+    val recommendedProfile by homeViewModel.recommendedProfile.collectAsStateWithLifecycle()
+    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsStateWithLifecycle(initialValue = false)
+    val currentProfile by homeViewModel.currentProfile.collectAsStateWithLifecycle()
+    val selectedServerName by homeViewModel.selectedServerName.collectAsStateWithLifecycle()
+    val selectedServerPing by homeViewModel.selectedServerPing.collectAsStateWithLifecycle()
+    val speedHistory by homeViewModel.speedHistory.collectAsStateWithLifecycle()
+    val connections by homeViewModel.connections.collectAsStateWithLifecycle()
+    val tunnelMode by homeViewModel.tunnelMode.collectAsStateWithLifecycle()
+    val proxyMode by homeViewModel.proxyMode.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -142,28 +146,24 @@ fun HomePager(
                             TrafficData.ZERO
                         },
                         profileName = currentProfile?.name?.takeIf { isRunning },
-                        tunnelMode = null,
+                        tunnelMode = tunnelMode?.takeIf { isRunning },
                         controlState = controlState,
                         proxyMode = proxyMode,
                         isEnabled = isProxyEnabled,
                         onClick = {
-                            if (!hasEnabledProfile || recommendedProfile == null) {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                            if (isRunning) {
+                                coroutineScope.launch { homeViewModel.stopProxy() }
+                                return@TrafficDisplay
+                            }
+                            val targetProfile = recommendedProfile
+                            if (!hasEnabledProfile || targetProfile == null) {
                                 context.toast(MLang.ProfilesVM.Error.ProfileNotExist)
                                 return@TrafficDisplay
                             }
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                            handleProxyToggle(
-                                isRunning = isRunning,
-                                recommendedProfile = recommendedProfile,
-                                onStart = { profile ->
-                                    homeViewModel.startProxy(
-                                        profileId = profile.uuid.toString(),
-                                        mode = null
-                                    )
-                                },
-                                onStop = {
-                                    coroutineScope.launch { homeViewModel.stopProxy() }
-                                }
+                            homeViewModel.startProxy(
+                                profileId = targetProfile.uuid.toString(),
+                                mode = null,
                             )
                         }
                     )
@@ -176,34 +176,30 @@ fun HomePager(
                         IpInfoDisplay(
                             state = if (isRunning) ipMonitoringState else com.github.yumelira.yumebox.data.gateway.IpMonitoringState.Loading
                         )
-                    }
-
-                    SpeedChart(
-                        speedHistory = speedHistory,
-                        isRunning = isRunning,
-                        onClick = {
-                            navigator.navigate(TrafficStatisticsScreenDestination) {
-                                launchSingleTop = true
+                        SpeedChart(
+                            speedHistory = speedHistory,
+                            isRunning = isRunning,
+                            onClick = {
+                                navigator.navigate(TrafficStatisticsScreenDestination) {
+                                    launchSingleTop = true
+                                }
                             }
+                        )
+                        if (isRunning) {
+                            TopologyChart(
+                                connections = connections,
+                                onClick = {
+                                    navigator.navigate(ConnectionScreenDestination) {
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
 
             item { Spacer(modifier = Modifier.height(UiDp.dp32)) }
         }
-    }
-}
-
-private fun handleProxyToggle(
-    isRunning: Boolean,
-    recommendedProfile: com.github.yumelira.yumebox.service.runtime.entity.Profile?,
-    onStart: (com.github.yumelira.yumebox.service.runtime.entity.Profile) -> Unit,
-    onStop: () -> Unit
-) {
-    if (!isRunning) {
-        recommendedProfile?.let { profile -> onStart(profile) }
-    } else {
-        onStop()
     }
 }

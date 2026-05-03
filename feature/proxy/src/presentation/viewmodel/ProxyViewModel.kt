@@ -20,22 +20,22 @@
 
 
 
-package com.github.yumelira.yumebox.presentation.viewmodel
+package com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.presentation.ContractStateViewModel
 import com.github.yumelira.yumebox.core.presentation.LoadableState
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
+import com.github.yumelira.yumebox.data.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.data.model.ProxySortMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
-import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.core.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.ProxyGroupSyncPriority
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -55,6 +55,9 @@ class ProxyViewModel(
 
     val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxySortMode.DEFAULT)
+
+    val displayMode: StateFlow<ProxyDisplayMode> = proxyDisplaySettingsStore.displayMode.state
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxyDisplayMode.DOUBLE_DETAILED)
 
     val singleNodeTest: StateFlow<Boolean> = appSettings.singleNodeTest.state
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -137,14 +140,14 @@ class ProxyViewModel(
                 if (groupName != null) {
                     showMessage(MLang.Proxy.Testing.Group.format(groupName))
                     proxyFacade.healthCheck(groupName)
-                    PollingTimers.awaitTick(PollingTimerSpecs.ProxyHealthcheckRefresh)
+                    delay(1_500L)
                     proxyFacade.refreshProxyGroup(groupName)
                     showMessage(MLang.Proxy.Testing.RequestSent)
                 } else {
                     showMessage(MLang.Proxy.Testing.All)
                     proxyFacade.healthCheckAll()
                     if (currentGroups.isNotEmpty()) {
-                        PollingTimers.awaitTick(PollingTimerSpecs.ProxyHealthcheckRefresh)
+                        delay(1_500L)
                         proxyFacade.refreshProxyGroups()
                     }
                 }
@@ -153,7 +156,7 @@ class ProxyViewModel(
             setLoading(false)
 
             if (testingTargets.isNotEmpty()) {
-                PollingTimers.awaitTick(PollingTimerSpecs.ProxyTestingSortHold)
+                delay(2_200L)
                 _testingGroupNames.update { it - testingTargets }
             }
 
@@ -165,6 +168,10 @@ class ProxyViewModel(
 
     fun setSortMode(mode: ProxySortMode) {
         proxyDisplaySettingsStore.sortMode.set(mode)
+    }
+
+    fun setDisplayMode(mode: ProxyDisplayMode) {
+        proxyDisplaySettingsStore.displayMode.set(mode)
     }
 
     fun selectProxy(groupName: String, proxyName: String) {
@@ -182,13 +189,36 @@ class ProxyViewModel(
         }
     }
 
+    fun forceSelectProxy(groupName: String, proxyName: String) {
+        viewModelScope.launch {
+            runCatching {
+                val success = proxyFacade.forceSelectProxy(groupName, proxyName)
+                if (success) {
+                    val target = proxyName.ifBlank { MLang.Proxy.Mode.Rule }
+                    showMessage(MLang.Proxy.Selection.Switched.format(target))
+                } else {
+                    showError(MLang.Proxy.Selection.Failed)
+                }
+            }.onFailure { error ->
+                showError(MLang.Proxy.Selection.Error.format(error.message))
+            }
+        }
+    }
+
+    fun testProxyDelay(proxyName: String) {
+        val groupName = proxyGroups.value.firstOrNull { group ->
+            group.proxies.any { it.name == proxyName }
+        }?.name ?: return
+        testProxyDelay(groupName, proxyName)
+    }
+
     fun testProxyDelay(groupName: String, proxyName: String) {
         viewModelScope.launch {
             _testingProxyNames.update { it + proxyName }
             runCatching {
                 proxyFacade.healthCheckProxy(groupName, proxyName)
             }
-            PollingTimers.awaitTick(PollingTimerSpecs.ProxySwitchFeedback)
+            delay(500L)
             _testingProxyNames.update { it - proxyName }
         }
     }

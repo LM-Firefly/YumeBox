@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.presentation.util
+package com.github.yumelira.yumebox.feature.proxy.presentation.util
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.*

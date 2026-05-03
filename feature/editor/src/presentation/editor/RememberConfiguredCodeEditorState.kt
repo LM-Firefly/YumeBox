@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -18,11 +18,11 @@
  *
  */
 
-package com.github.yumelira.yumebox.feature.editor.editor
+package com.github.yumelira.yumebox.feature.editor.presentation.editor
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
+import com.github.yumelira.yumebox.presentation.language.LanguageScope
 
 @Composable
 fun rememberConfiguredCodeEditorState(

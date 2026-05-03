@@ -21,18 +21,12 @@
 package com.github.yumelira.yumebox.runtime.client
 
 import android.content.Context
-import android.content.Intent
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.remote.ServiceClient
+import com.github.yumelira.yumebox.core.appContextOrSelf
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.ProxyServiceContracts
 import com.github.yumelira.yumebox.runtime.client.root.RootTunController
-import com.github.yumelira.yumebox.service.ClashService
-import com.github.yumelira.yumebox.service.TunService
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.RootAccessSupport
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.toRuntimeTargetMode
 
 internal class ProxyRuntimeControl(
     context: Context,
@@ -43,7 +37,7 @@ internal class ProxyRuntimeControl(
     suspend fun start(owner: RuntimeOwner, mode: ProxyMode) {
         when (owner) {
             RuntimeOwner.RootTun -> {
-                RootAccessSupport.requireRootTunAccess(appContext)
+                RuntimeContractResolver.rootAccessSupport.requireRootTunAccess(appContext)
                 val result = RootTunController.start(appContext)
                 if (!result.success) {
                     error(result.error ?: "RootTun start failed")
@@ -51,10 +45,10 @@ internal class ProxyRuntimeControl(
             }
 
             RuntimeOwner.LocalTun,
-            RuntimeOwner.LocalHttp -> RuntimeServiceLauncher.start(
+            RuntimeOwner.LocalHttp -> RuntimeContractResolver.localRuntimeService.start(
                 context = appContext,
-                mode = mode,
-                source = RuntimeServiceLauncher.SOURCE_UI,
+                mode = mode.toRuntimeTargetMode(),
+                source = ProxyServiceContracts.SOURCE_UI,
             )
 
             RuntimeOwner.None -> Unit
@@ -71,24 +65,12 @@ internal class ProxyRuntimeControl(
             }
 
             RuntimeOwner.LocalTun,
-            RuntimeOwner.LocalHttp -> stopLocalRuntime()
+            RuntimeOwner.LocalHttp -> RuntimeContractResolver.localRuntimeService.stop(
+                context = appContext,
+                clashRequestStopAction = clashRequestStopAction(),
+            )
 
             RuntimeOwner.None -> Unit
-        }
-    }
-
-    private suspend fun stopLocalRuntime() {
-        withContext(Dispatchers.IO) {
-            runCatching {
-                ServiceClient.connect(appContext)
-                ServiceClient.clash().requestStop()
-            }.onFailure {
-                appContext.sendBroadcast(
-                    Intent(clashRequestStopAction()).setPackage(appContext.packageName),
-                )
-            }
-            appContext.stopService(Intent(appContext, TunService::class.java))
-            appContext.stopService(Intent(appContext, ClashService::class.java))
         }
     }
 }

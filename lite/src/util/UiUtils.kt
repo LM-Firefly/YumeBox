@@ -26,7 +26,6 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
 import java.net.URI
-import java.util.Locale
 
 fun Context.openUrl(url: String) {
     runCatching {
@@ -40,20 +39,9 @@ fun Context.showToast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 }
 
-fun formatBytesPerSecond(bytes: Long): String = "${formatBytes(bytes)}/s"
+fun formatBytesPerSecond(bytes: Long): String = com.github.yumelira.yumebox.common.util.formatSpeed(bytes)
 
-fun formatBytes(bytes: Long): String {
-    if (bytes <= 0L) return "0 B"
-    val units = arrayOf("B", "KB", "MB", "GB", "TB")
-    var value = bytes.toDouble()
-    var unitIndex = 0
-    while (value >= 1024.0 && unitIndex < units.lastIndex) {
-        value /= 1024.0
-        unitIndex += 1
-    }
-    val decimals = if (value >= 100 || unitIndex == 0) 0 else 1
-    return String.format(Locale.US, "%.${decimals}f %s", value, units[unitIndex])
-}
+fun formatBytes(bytes: Long): String = com.github.yumelira.yumebox.common.util.formatBytes(bytes)
 
 fun deriveProfileNameFromUrl(url: String): String {
     return runCatching {

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,12 +20,12 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.github.yumelira.yumebox.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
 import timber.log.Timber
 
 class DialerReceiver : BroadcastReceiver() {

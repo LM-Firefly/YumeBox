@@ -23,21 +23,26 @@
 package com.github.yumelira.yumebox.core
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import java.io.File
 
-object Global : CoroutineScope by CoroutineScope(Dispatchers.IO) {
+object Global {
     val application: Context
         get() = _application
 
     private lateinit var _application: Context
 
     fun init(application: Context) {
+        if (::_application.isInitialized) return
         _application = application.applicationContext ?: application
     }
-
-    fun destroy() {
-        cancel()
-    }
 }
+
+interface FirstRunInitializer {
+    fun initialize()
+}
+
+val Context.appContextOrSelf: Context
+    get() = applicationContext ?: this
+
+val Context.importedDir: File
+    get() = filesDir.resolve("imported")

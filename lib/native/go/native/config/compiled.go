@@ -72,6 +72,35 @@ func QueryProxyGroupsFromCompiledYaml(yamlText string, profileDir string, exclud
 	return buildProxyGroupsFromParsed(cfg, groupNames, excludeNotSelectable), nil
 }
 
+func QueryGroupNamesFromCompiledYaml(yamlText string, excludeNotSelectable bool) ([]string, error) {
+	configData := []byte(yamlText)
+	rawCfg, err := config.UnmarshalRawConfig(configData)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(rawCfg.ProxyGroup))
+	seen := make(map[string]struct{}, len(rawCfg.ProxyGroup))
+	for _, mapping := range rawCfg.ProxyGroup {
+		name, _ := mapping["name"].(string)
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		if excludeNotSelectable {
+			typeName, _ := mapping["type"].(string)
+			if strings.TrimSpace(typeName) != "select" {
+				continue
+			}
+		}
+		seen[name] = struct{}{}
+		names = append(names, name)
+	}
+	return names, nil
+}
+
 func QueryConfigFromCompiledYaml(yamlText string) (map[string]any, error) {
 	var root map[string]any
 	if err := yaml.Unmarshal([]byte(yamlText), &root); err != nil {

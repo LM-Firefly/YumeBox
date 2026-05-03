@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -85,6 +86,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.shapes.SmoothUnevenRoundedCornerShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.miuixUnevenShape
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -157,10 +159,11 @@ val LocalBottomBarUseLegacyStyle = compositionLocalOf { false }
 
 object MainBottomBarDefaults {
     val CornerRadius = UiDp.dp28
-    val Shape = SmoothUnevenRoundedCornerShape(
-        topStart = CornerRadius,
-        topEnd = CornerRadius,
-    )
+    val Shape: androidx.compose.ui.graphics.Shape
+        @Composable get() = miuixUnevenShape(
+            topStart = CornerRadius,
+            topEnd = CornerRadius,
+        )
     val BorderWidth = UiDp.dp0_26
     val OutlineHorizontalInset = UiDp.dp0
     val ItemHeight = UiDp.dp60
@@ -491,6 +494,9 @@ private fun LegacyBottomBarContent(
 ) {
     val bottomBarScrollBehavior = LocalBottomBarScrollBehavior.current
     val mainPagerState = LocalMainPagerState.current
+    val hazeState = LocalBottomBarHazeState.current
+    val hazeStyle = LocalBottomBarHazeStyle.current
+    val hazeEnabled = hazeState != null && hazeStyle != null
     val pagerState = mainPagerState.pagerState
     val page by remember(mainPagerState) {
         derivedStateOf { mainPagerState.selectedPage }
@@ -568,7 +574,11 @@ private fun LegacyBottomBarContent(
     }
     val selectedColor = MiuixTheme.colorScheme.primary
     val unselectedColor = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.secondaryText)
-    val containerColor = MiuixTheme.colorScheme.background
+    val containerColor = if (hazeEnabled) {
+        MiuixTheme.colorScheme.background.copy(alpha = opacity.elevatedSurface)
+    } else {
+        MiuixTheme.colorScheme.background
+    }
     val indicatorContainerColor = selectedColor.copy(alpha = opacity.subtle)
 
     LegacyBottomNavigationBar(
@@ -577,6 +587,9 @@ private fun LegacyBottomBarContent(
         tabsCount = BottomBarDestination.entries.size,
         containerColor = containerColor,
         indicatorContainerColor = indicatorContainerColor,
+        hazeEnabled = hazeEnabled,
+        hazeState = hazeState,
+        hazeStyle = hazeStyle,
         modifier = Modifier
             .fillMaxWidth()
             .padding(
@@ -585,11 +598,11 @@ private fun LegacyBottomBarContent(
                 top = MainBottomBarDefaults.TopPadding,
                 bottom = bottomSafeInset + MainBottomBarDefaults.FloatingBottomPadding,
             )
+            .offset { IntOffset(0, animatedTranslationY.value.toInt()) }
             .graphicsLayer {
                 alpha = animatedAlpha
                 scaleX = animatedScale
                 scaleY = animatedScale
-                translationY = animatedTranslationY.value
                 transformOrigin = TransformOrigin(0.5f, 1f)
             },
     ) {
@@ -629,6 +642,9 @@ private fun LegacyBottomNavigationBar(
     tabsCount: Int,
     containerColor: Color,
     indicatorContainerColor: Color,
+    hazeEnabled: Boolean = false,
+    hazeState: HazeState? = null,
+    hazeStyle: HazeStyle? = null,
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
@@ -683,6 +699,13 @@ private fun LegacyBottomNavigationBar(
             }
             .height(UiDp.dp56)
             .clip(Capsule())
+            .then(
+                if (hazeEnabled) {
+                    Modifier.bottomBarHazeEffect(hazeState, hazeStyle)
+                } else {
+                    Modifier
+                },
+            )
             .background(containerColor, Capsule()),
         contentAlignment = Alignment.CenterStart,
     ) {

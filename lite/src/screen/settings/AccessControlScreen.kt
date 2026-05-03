@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -131,8 +132,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
     val mainLikePadding = rememberStandalonePageMainPadding()
     val combinedBottomPadding = mainLikePadding.calculateBottomPadding() + spacing.space12
     val viewModel = koinViewModel<AccessControlViewModel>()
-    val uiState by viewModel.uiState.collectAsState()
-    val filteredApps by viewModel.filteredApps.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filteredApps by viewModel.filteredApps.collectAsStateWithLifecycle()
 
     var showSettingsSheet by remember { mutableStateOf(false) }
     var searchStatus by remember {
@@ -192,6 +193,8 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     TopBar(
                         title = "访问控制",
                         scrollBehavior = scrollBehavior,
+                        navigationIconPadding = 0.dp,
+                        navigationIcon = { NavigationBackIcon(navigator = navigator) },
                         actions = {
                             IconButton(onClick = { showSettingsSheet = true }) {
                                 Icon(

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,23 +20,33 @@
 
 
 
-package com.github.yumelira.yumebox.service.root
+package com.github.yumelira.yumebox.runtime.service.root
 
 import android.content.Intent
 import android.os.IBinder
 import com.github.yumelira.yumebox.core.Global
-import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
-import com.github.yumelira.yumebox.service.runtime.session.RootTunTransport
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
-import com.github.yumelira.yumebox.service.runtime.session.SessionRuntime
-import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunLogChunk
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunOperationResult
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStartRequest
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunState
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunStatus
+import com.github.yumelira.yumebox.runtime.api.service.root.IRootTunService
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RootTunTransport
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeSpec
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntime
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntimeSpecFactory
 import com.tencent.mmkv.MMKV
 import com.topjohnwu.superuser.ipc.RootService
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 
 class RootTunRootService : RootService() {
+    private companion object {
+        const val BINDER_CALL_TIMEOUT_MS = 5_000L
+    }
     private lateinit var runtime: SessionRuntime
     private lateinit var stateStore: RootTunStateStore
     private lateinit var startupLogStore: RootTunStartupLogStore
@@ -159,6 +169,10 @@ class RootTunRootService : RootService() {
             return runtime.patchSelector(group, name)
         }
 
+        override fun patchForceSelector(group: String, name: String): Boolean {
+            return runtime.patchForceSelector(group, name)
+        }
+
         override fun closeConnection(id: String): Boolean {
             return runtime.closeConnection(id)
         }
@@ -167,13 +181,17 @@ class RootTunRootService : RootService() {
             runtime.closeAllConnections()
         }
 
-        override fun healthCheck(group: String): String? = runBlocking { runtime.healthCheck(group) }
+        override fun healthCheck(group: String): String? =
+            runBlocking { withTimeoutOrNull(BINDER_CALL_TIMEOUT_MS) { runtime.healthCheck(group) } }
 
         override fun healthCheckProxy(group: String, proxyName: String): String =
-            runBlocking { runtime.healthCheckProxy(group, proxyName) }
+            runBlocking {
+                withTimeoutOrNull(BINDER_CALL_TIMEOUT_MS) { runtime.healthCheckProxy(group, proxyName) }
+                    ?: "{\"delay\":-1}"
+            }
 
         override fun updateProvider(type: String, name: String): String? =
-            runBlocking { runtime.updateProvider(type, name) }
+            runBlocking { withTimeoutOrNull(BINDER_CALL_TIMEOUT_MS) { runtime.updateProvider(type, name) } }
 
         override fun requestStop() {
             runtime.requestStop()
@@ -182,9 +200,13 @@ class RootTunRootService : RootService() {
         }
 
         override fun queryRecentLogsJson(sinceSeq: Long): String {
+            val chunk = runtime.queryRecentLogsJson(sinceSeq)
             return RootTunJson.Default.encodeToString(
                 RootTunLogChunk.serializer(),
-                RootTunLogChunk.from(runtime.queryRecentLogsJson(sinceSeq)),
+                RootTunLogChunk(
+                    nextSeq = chunk.nextSeq,
+                    items = chunk.items,
+                ),
             )
         }
     }
@@ -192,7 +214,7 @@ class RootTunRootService : RootService() {
     override fun onCreate() {
         super.onCreate()
         Global.init(this)
-        initializeServiceGlobal(this)
+        MMKV.disableProcessModeChecker()
         MMKV.initialize(this)
         stateStore = RootTunStateStore(this)
         startupLogStore = RootTunStartupLogStore(this)
@@ -234,7 +256,7 @@ class RootTunRootService : RootService() {
         return spec
     }
 
-    private fun encodeResult(result: com.github.yumelira.yumebox.service.runtime.session.RuntimeOperationResult): String {
+    private fun encodeResult(result: com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeOperationResult): String {
         return RootTunJson.Default.encodeToString(
             RootTunOperationResult.serializer(),
             RootTunOperationResult(success = result.success, error = result.error),

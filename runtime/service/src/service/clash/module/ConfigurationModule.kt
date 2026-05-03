@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,23 +20,23 @@
 
 
 
-package com.github.yumelira.yumebox.service.clash.module
+package com.github.yumelira.yumebox.runtime.service.clash.module
 
 import android.app.Service
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.core.importedDir
 import com.github.yumelira.yumebox.core.model.ProxyGroup
-import com.github.yumelira.yumebox.service.StatusProvider
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.service.StatusProvider
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 import com.github.yumelira.yumebox.core.model.ProxySort
-import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
-import com.github.yumelira.yumebox.service.runtime.records.SelectionRestoreExecutor
-import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
-import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
-import com.github.yumelira.yumebox.service.runtime.util.mergeProxyGroupNames
-import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionRestoreExecutor
+import com.github.yumelira.yumebox.runtime.service.runtime.session.CompiledConfigPipeline
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.runtime.service.runtime.util.mergeProxyGroupNames
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendProfileLoaded
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import java.io.File
@@ -51,9 +51,10 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
     private val reload = Channel<Unit>(Channel.CONFLATED)
 
     override suspend fun run() {
+        val pkg = service.packageName
         val broadcasts = receiveBroadcast {
-            addAction(Intents.ACTION_PROFILE_CHANGED)
-            addAction(Intents.ACTION_OVERRIDE_CHANGED)
+            addAction(Intents.actionProfileChanged(pkg))
+            addAction(Intents.actionOverrideChanged(pkg))
         }
 
         var loaded: UUID? = null
@@ -63,7 +64,7 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
         while (true) {
             val changed: UUID? = select {
                 broadcasts.onReceive {
-                    if (it.action == Intents.ACTION_PROFILE_CHANGED)
+                    if (it.action == Intents.actionProfileChanged(pkg))
                         UUID.fromString(it.getStringExtra(Intents.EXTRA_UUID))
                     else
                         null
@@ -90,11 +91,13 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 Clash.loadCompiledConfig(service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")).await()
 
                 val restoreSelections = SelectionDao.queryRestorableSelections(active.uuid)
+                val restorePins = SelectionDao.getAllPins(active.uuid)
                 val runtimeFile = service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")
                 val runtimeGroups = resolveRuntimeProxyGroups(runtimeFile, spec.profileDir)
                 SelectionRestoreExecutor.restore(
                     profileUuid = active.uuid,
                     selections = restoreSelections,
+                    pins = restorePins,
                     runtimeGroups = runtimeGroups,
                     tag = "LOCAL",
                 )
@@ -114,11 +117,10 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
             if (!runtimeFile.isFile) {
                 emptyList()
             } else {
-                Clash.inspectCompiledGroups(
+                Clash.inspectCompiledGroupNames(
                     runtimeFile.readText(),
-                    File(profileDir),
                     excludeNotSelectable = false,
-                ).map(ProxyGroup::name)
+                )
             }
         }.getOrDefault(emptyList())
 

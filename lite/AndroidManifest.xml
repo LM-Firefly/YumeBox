@@ -82,7 +82,7 @@
             android:theme="@style/Theme.YumeBox.Translucent.Popup" />
 
         <provider
-            android:name="com.github.yumelira.yumebox.service.StatusProvider"
+            android:name="com.github.yumelira.yumebox.runtime.service.StatusProvider"
             android:authorities="${applicationId}.status"
             android:enabled="true"
             android:exported="false" />

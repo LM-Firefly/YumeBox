@@ -1,6 +1,7 @@
 package tunnel
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -35,6 +36,7 @@ type ProxyGroup struct {
 	Now     string   `json:"now"`
 	Icon    string   `json:"icon,omitempty"`
 	Hidden  bool     `json:"hidden"`
+	Fixed   string   `json:"fixed"`
 	Proxies []*Proxy `json:"proxies"`
 }
 
@@ -90,11 +92,24 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		return nil
 	}
 
-	g, ok := p.Adapter().(outboundgroup.ProxyGroup)
+	adapter := p.Adapter()
+	g, ok := adapter.(outboundgroup.ProxyGroup)
 	if !ok {
 		log.Warnln("Query group `%s`: invalid type %s", name, p.Type().String())
 
 		return nil
+	}
+
+	fixed := ""
+	if marshaler, ok := adapter.(json.Marshaler); ok {
+		if data, err := marshaler.MarshalJSON(); err == nil {
+			var mapData map[string]any
+			if err := json.Unmarshal(data, &mapData); err == nil {
+				if value, ok := mapData["fixed"].(string); ok {
+					fixed = value
+				}
+			}
+		}
 	}
 
 	proxies := convertProxies(g.Proxies(), uiSubtitlePattern)
@@ -129,6 +144,7 @@ func QueryProxyGroup(name string, sortMode SortMode, uiSubtitlePattern *regexp2.
 		Now:     g.Now(),
 		Icon:    proxyGroupIcon(g),
 		Hidden:  g.Hidden(),
+		Fixed:   fixed,
 		Proxies: proxies,
 	}
 }
@@ -180,6 +196,28 @@ func PatchSelector(selector, name string) bool {
 
 	closeConnByGroup(selector)
 
+	return true
+}
+
+func PatchForceSelector(selector, name string) bool {
+	p := tunnel.Proxies()[selector]
+	if p == nil {
+		log.Warnln("Force patch selector `%s`: not found", selector)
+		return false
+	}
+	adapter := p.Adapter()
+	if _, ok := adapter.(outboundgroup.ProxyGroup); !ok {
+		log.Warnln("Force patch selector `%s`: invalid type %s", selector, p.Type().String())
+		return false
+	}
+	s, ok := adapter.(interface{ ForceSet(string) })
+	if !ok {
+		log.Warnln("Force patch selector `%s`: not supported", selector)
+		return false
+	}
+	s.ForceSet(name)
+	log.Infoln("Force patch selector %s -> %s", selector, name)
+	closeConnByGroup(selector)
 	return true
 }
 

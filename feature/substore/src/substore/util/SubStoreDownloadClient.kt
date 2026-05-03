@@ -18,11 +18,12 @@
  *
  */
 
-package com.github.yumelira.yumebox.substore.util
+package com.github.yumelira.yumebox.feature.substore.util
 
 import android.app.Application
 import com.github.yumelira.yumebox.common.util.ByteFormatter.formatSpeed
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.util.AssetDownloader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
@@ -60,7 +61,7 @@ data class SubscriptionInfo(
 class SubStoreDownloadClient(
     private val application: Application,
     private val appSettings: AppSettingsStore,
-) {
+) : AssetDownloader {
     companion object {
         private const val DEFAULT_USER_AGENT = "ClashMetaForAndroid"
         private const val UPDATE_INTERVAL_MS = 500L
@@ -74,10 +75,13 @@ class SubStoreDownloadClient(
             .build()
     }
 
+    override suspend fun download(url: String, targetFile: File): Boolean =
+        download(url, targetFile, onProgress = null)
+
     suspend fun download(
         url: String,
         targetFile: File,
-        onProgress: ((DownloadProgress) -> Unit)? = null,
+        onProgress: ((DownloadProgress) -> Unit)?,
     ): Boolean = withContext(Dispatchers.IO) {
         val (success, _) = downloadWithSubscriptionInfo(url, targetFile, onProgress)
         success

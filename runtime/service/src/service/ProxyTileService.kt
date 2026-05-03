@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -32,22 +32,29 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.util.throttleWhenScreenOff
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.service.R
-import com.github.yumelira.yumebox.service.common.constants.Components
-import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.ProxyServiceContracts
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeTargetMode
+import com.github.yumelira.yumebox.runtime.service.root.RootTunServiceBridge
+import com.github.yumelira.yumebox.runtime.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeServiceLauncher
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -61,26 +68,34 @@ class ProxyTileService : TileService() {
         NetworkSettingsStore(MMKVProvider().getMMKV("network_settings"))
     }
     private val rootTunStateStore by lazy { RootTunStateStore(applicationContext) }
+    private val powerController by lazy { ServicePowerController(applicationContext).also { it.start() } }
     private val tileLabelText: String by lazy {
         applicationInfo.loadLabel(packageManager).toString().ifBlank { "YumeBox" }
     }
 
-    private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var updateJob: Job? = null
     private var toggleJob: Job? = null
 
     override fun onDestroy() {
         super.onDestroy()
+        runCatching { powerController.stop() }
         scope.cancel()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onStartListening() {
         super.onStartListening()
         updateJob?.cancel()
         updateJob = scope.launch {
-            PollingTimers.ticks(PollingTimerSpecs.ProxyTileRefresh).collect {
-                updateTileState(currentSnapshot().running)
-            }
+            PollingTimers.ticks(PollingTimerSpecs.ProxyTileRefresh)
+                .throttleWhenScreenOff(powerController.screenOn, slowIntervalMs = 60_000L)
+                .collect {
+                    val running = currentSnapshot().running
+                    withContext(Dispatchers.Main.immediate) {
+                        updateTileState(running)
+                    }
+                }
         }
     }
 
@@ -93,8 +108,8 @@ class ProxyTileService : TileService() {
         super.onClick()
         if (toggleJob?.isActive == true) return
 
-        toggleJob = scope.launch {
-            val snapshot = currentSnapshot()
+        toggleJob = scope.launch(Dispatchers.Main.immediate) {
+            val snapshot = withContext(Dispatchers.Default) { currentSnapshot() }
             val isRunning = snapshot.running
             val currentMode = effectiveMode(snapshot)
 
@@ -146,7 +161,7 @@ class ProxyTileService : TileService() {
                             RuntimeServiceLauncher.start(
                                 this@ProxyTileService,
                                 ProxyMode.Tun,
-                                RuntimeServiceLauncher.SOURCE_TILE,
+                                ProxyServiceContracts.SOURCE_TILE,
                             )
                         }
                         ProxyMode.RootTun -> {
@@ -161,7 +176,7 @@ class ProxyTileService : TileService() {
                             RuntimeServiceLauncher.start(
                                 this@ProxyTileService,
                                 ProxyMode.Http,
-                                RuntimeServiceLauncher.SOURCE_TILE,
+                                ProxyServiceContracts.SOURCE_TILE,
                             )
                         }
                     }
@@ -169,14 +184,9 @@ class ProxyTileService : TileService() {
             } catch (error: Exception) {
                 Timber.e(error, "Error toggling proxy from tile")
             } finally {
-                PollingTimers.awaitTick(
-                    PollingTimerSpecs.dynamic(
-                        name = "proxy_tile_toggle_state_sync",
-                        intervalMillis = 300L,
-                        initialDelayMillis = 300L,
-                    ),
-                )
-                updateTileState(currentSnapshot().running)
+                delay(300L)
+                val running = withContext(Dispatchers.Default) { currentSnapshot().running }
+                updateTileState(running)
             }
         }
     }
@@ -197,24 +207,24 @@ class ProxyTileService : TileService() {
             RuntimeSnapshot(
                 owner = RuntimeOwner.None,
                 phase = RuntimePhase.Idle,
-                targetMode = configuredMode,
+                targetMode = configuredMode.toRuntimeTargetMode(),
             )
         } else {
             RuntimeSnapshot(
                 owner = owner,
                 phase = when (owner) {
                     RuntimeOwner.RootTun -> when (rootStatus.state) {
-                        com.github.yumelira.yumebox.service.root.RootTunState.Idle -> RuntimePhase.Idle
-                        com.github.yumelira.yumebox.service.root.RootTunState.Starting -> RuntimePhase.Starting
-                        com.github.yumelira.yumebox.service.root.RootTunState.Running -> RuntimePhase.Running
-                        com.github.yumelira.yumebox.service.root.RootTunState.Stopping -> RuntimePhase.Stopping
-                        com.github.yumelira.yumebox.service.root.RootTunState.Failed -> RuntimePhase.Failed
+                        com.github.yumelira.yumebox.runtime.api.service.root.RootTunState.Idle -> RuntimePhase.Idle
+                        com.github.yumelira.yumebox.runtime.api.service.root.RootTunState.Starting -> RuntimePhase.Starting
+                        com.github.yumelira.yumebox.runtime.api.service.root.RootTunState.Running -> RuntimePhase.Running
+                        com.github.yumelira.yumebox.runtime.api.service.root.RootTunState.Stopping -> RuntimePhase.Stopping
+                        com.github.yumelira.yumebox.runtime.api.service.root.RootTunState.Failed -> RuntimePhase.Failed
                     }
                     RuntimeOwner.LocalTun -> tunPhase
                     RuntimeOwner.LocalHttp -> httpPhase
                     RuntimeOwner.None -> RuntimePhase.Idle
                 },
-                targetMode = modeForOwner(owner) ?: configuredMode,
+                targetMode = (modeForOwner(owner) ?: configuredMode).toRuntimeTargetMode(),
             )
         }
     }
@@ -234,10 +244,26 @@ class ProxyTileService : TileService() {
                 RuntimeOwner.LocalTun -> ProxyMode.Tun
                 RuntimeOwner.LocalHttp -> ProxyMode.Http
                 RuntimeOwner.RootTun -> ProxyMode.RootTun
-                RuntimeOwner.None -> snapshot.targetMode
+                RuntimeOwner.None -> snapshot.targetMode.toProxyMode()
             }
 
-            else -> snapshot.targetMode
+            else -> snapshot.targetMode.toProxyMode()
+        }
+    }
+
+    private fun ProxyMode.toRuntimeTargetMode(): RuntimeTargetMode {
+        return when (this) {
+            ProxyMode.Tun -> RuntimeTargetMode.Tun
+            ProxyMode.Http -> RuntimeTargetMode.Http
+            ProxyMode.RootTun -> RuntimeTargetMode.RootTun
+        }
+    }
+
+    private fun RuntimeTargetMode.toProxyMode(): ProxyMode {
+        return when (this) {
+            RuntimeTargetMode.Tun -> ProxyMode.Tun
+            RuntimeTargetMode.Http -> ProxyMode.Http
+            RuntimeTargetMode.RootTun -> ProxyMode.RootTun
         }
     }
 
@@ -265,10 +291,7 @@ class ProxyTileService : TileService() {
             }
         }
 
-        tile.icon = Icon.createWithResource(
-            this,
-            if (isRunning) R.drawable.ic_logo_service else R.drawable.ic_logo_service
-        )
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
 
         tile.updateTile()
     }

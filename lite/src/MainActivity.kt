@@ -28,7 +28,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
@@ -36,8 +36,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
-import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.runtime.client.common.util.IntentController
 import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
@@ -72,14 +72,14 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        StartupGate.loadPrimary()
+        StartupGate.loadPrimary(this)
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
 
         super.onCreate(savedInstanceState)
-        intentController = IntentController(lifecycleScope)
+        intentController = IntentController(lifecycleScope, packageName)
         handleIntent(intent)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -93,11 +93,11 @@ class MainActivity : FragmentActivity() {
         }
 
         setContent {
-            val themeMode by appSettingsStorage.themeMode.state.collectAsState()
-            val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsState()
-            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
-            val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsState()
-            val pendingImportValue by pendingImportUrl.collectAsState()
+            val themeMode by appSettingsStorage.themeMode.state.collectAsStateWithLifecycle()
+            val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsStateWithLifecycle()
+            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsStateWithLifecycle()
+            val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsStateWithLifecycle()
+            val pendingImportValue by pendingImportUrl.collectAsStateWithLifecycle()
             val navController = rememberNavController()
 
             LaunchedEffect(pendingImportValue) {

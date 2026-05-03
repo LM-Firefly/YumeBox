@@ -20,7 +20,7 @@
 
 
 
-package com.github.yumelira.yumebox.presentation.util
+package com.github.yumelira.yumebox.feature.proxy.presentation.util
 
 private val NODE_KEYWORDS = listOf(
     "IEPL", "BGP", "APL", "IPLC", "CMI", "CN2", "GIA", "MPLS",

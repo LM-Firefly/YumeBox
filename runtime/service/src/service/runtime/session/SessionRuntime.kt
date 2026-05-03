@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of YumeBox.
  *
  * YumeBox is free software: you can redistribute it and/or modify
@@ -20,21 +20,24 @@
 
 
 
-package com.github.yumelira.yumebox.service.runtime.session
+package com.github.yumelira.yumebox.runtime.service.runtime.session
 
+import com.github.yumelira.yumebox.core.appContextOrSelf
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.*
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.service.ServiceNetworkObserver
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
-import com.github.yumelira.yumebox.service.runtime.records.SelectionRestoreExecutor
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
-import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
-import com.github.yumelira.yumebox.service.runtime.util.mergeProxyGroupNames
+import com.github.yumelira.yumebox.runtime.service.ServiceNetworkObserver
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionRestoreExecutor
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeSnapshot
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeTargetMode
+import com.github.yumelira.yumebox.runtime.service.runtime.util.mergeProxyGroupNames
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.builtins.serializer
 import timber.log.Timber
 import java.io.File
@@ -47,13 +50,14 @@ class SessionRuntime(
     private val host: RuntimeHost,
     private val transport: RuntimeTransport,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val screenOn: StateFlow<Boolean> = MutableStateFlow(true),
 ) {
     private val compiledConfigPipeline = CompiledConfigPipeline(host.context.appContextOrSelf)
     private val lock = Any()
     @Volatile
     private var interruptReason: String? = null
     private var currentSpec: RuntimeSpec? = null
-    private var currentSnapshot: RuntimeSnapshot = RuntimeSnapshot(targetMode = host.mode)
+    private var currentSnapshot: RuntimeSnapshot = RuntimeSnapshot(targetMode = host.mode.toRuntimeTargetMode())
     private var networkObserver: ServiceNetworkObserver? = null
     private val queryCache = SessionRuntimeQueryCache()
     private val telemetry = SessionRuntimeTelemetry(
@@ -220,7 +224,7 @@ class SessionRuntime(
 
     fun queryProviders(): List<Provider> {
         if (currentSnapshot.phase != RuntimePhase.Running) return emptyList()
-        return ensureRuntimeSnapshot().providers
+        return runCatching { Clash.queryProviders() }.getOrDefault(emptyList())
     }
 
     fun patchSelector(group: String, name: String): Boolean {
@@ -239,6 +243,26 @@ class SessionRuntime(
                     profileUuid?.let { SelectionDao.remove(it, group) }
                 }
             }
+        }
+    }
+
+    fun patchForceSelector(group: String, name: String): Boolean {
+        val profileUuid = currentSnapshot.profileUuid?.let(UUID::fromString)
+        return Clash.patchForceSelector(group, name).also { patched ->
+            var supportsPinnedSelection = false
+            if (currentSnapshot.phase == RuntimePhase.Running || currentSnapshot.phase == RuntimePhase.Starting) {
+                val refreshedGroup = refreshRuntimeProxyGroup(group)
+                supportsPinnedSelection = refreshedGroup?.let {
+                    it.type == Proxy.Type.URLTest || it.type == Proxy.Type.Fallback
+                } == true
+            }
+            SelectionDao.persistForcePinnedSelection(
+                profileUUID = profileUuid,
+                proxyGroup = group,
+                requestedNode = name,
+                patched = patched,
+                supportsPinnedSelection = supportsPinnedSelection,
+            )
         }
     }
 
@@ -274,7 +298,7 @@ class SessionRuntime(
                 refreshRuntimeProxyGroup(group)
             }
         }.getOrElse {
-            """{"delay":-1,"error":${com.github.yumelira.yumebox.service.root.RootTunJson.Default.encodeToString(String.serializer(), it.message ?: "health check proxy failed")}}"""
+            """{"delay":-1,"error":${com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson.Default.encodeToString(String.serializer(), it.message ?: "health check proxy failed")}}"""
         }
     }
 
@@ -304,7 +328,7 @@ class SessionRuntime(
             RuntimeSnapshot(
                 owner = spec.owner,
                 phase = RuntimePhase.Starting,
-                targetMode = host.mode,
+                targetMode = host.mode.toRuntimeTargetMode(),
                 profileUuid = spec.profileUuid,
                 profileName = spec.profileName,
                 profileReady = true,
@@ -320,7 +344,6 @@ class SessionRuntime(
         ensureNotInterrupted(spec)
         startObservers()
         notifyCurrentTimeZone()
-        startConnectionTracking()
         ensureNotInterrupted(spec)
 
         transport.prepare(spec)
@@ -407,7 +430,6 @@ class SessionRuntime(
             ),
         )
         stopLogStream()
-        stopConnectionTracking()
         stopObservers()
         runCatching { transport.stop() }
         teardownCore()
@@ -417,7 +439,7 @@ class SessionRuntime(
             RuntimeSnapshot(
                 owner = RuntimeOwner.None,
                 phase = if (reason.isNullOrBlank()) RuntimePhase.Idle else RuntimePhase.Failed,
-                targetMode = host.mode,
+                targetMode = host.mode.toRuntimeTargetMode(),
                 lastError = reason,
             ),
         )
@@ -438,7 +460,7 @@ class SessionRuntime(
             RuntimeSnapshot(
                 owner = spec.owner,
                 phase = RuntimePhase.Failed,
-                targetMode = host.mode,
+                targetMode = host.mode.toRuntimeTargetMode(),
                 profileUuid = spec.profileUuid,
                 profileName = spec.profileName,
                 profileReady = false,
@@ -489,15 +511,7 @@ class SessionRuntime(
             }
             if (attempt < PROXY_GROUP_READY_RETRY_COUNT - 1) {
                 startupLog(spec, "runtime verify: actualGroups=0 retry=${attempt + 1}")
-                runBlocking {
-                    PollingTimers.awaitTick(
-                        PollingTimerSpecs.dynamic(
-                            name = "runtime_group_ready_retry",
-                            intervalMillis = PROXY_GROUP_READY_RETRY_DELAY_MS,
-                            initialDelayMillis = PROXY_GROUP_READY_RETRY_DELAY_MS,
-                        ),
-                    )
-                }
+                Thread.sleep(PROXY_GROUP_READY_RETRY_DELAY_MS)
             }
         }
 
@@ -520,8 +534,7 @@ class SessionRuntime(
             return emptyList()
         }
         return runCatching {
-            Clash.inspectCompiledGroups(yamlText, File(spec.profileDir), excludeNotSelectable = false)
-                .map { it.name }
+            Clash.inspectCompiledGroupNames(yamlText, excludeNotSelectable = false)
                 .filter { it.isNotBlank() }
         }.getOrElse { error ->
             startupLog(spec, "runtime verify: inspect failed=${error.message}")
@@ -532,7 +545,8 @@ class SessionRuntime(
     private fun restoreSelections(spec: RuntimeSpec) {
         val profileUuid = UUID.fromString(spec.profileUuid)
         val restoreSelections = SelectionDao.queryRestorableSelections(profileUuid)
-        if (restoreSelections.isEmpty()) {
+        val restorePins = SelectionDao.getAllPins(profileUuid)
+        if (restoreSelections.isEmpty() && restorePins.isEmpty()) {
             return
         }
         val runtimeGroups = runCatching {
@@ -541,6 +555,7 @@ class SessionRuntime(
         SelectionRestoreExecutor.restore(
             profileUuid = profileUuid,
             selections = restoreSelections,
+            pins = restorePins,
             runtimeGroups = runtimeGroups,
             tag = spec.owner.name,
         )
@@ -651,14 +666,6 @@ class SessionRuntime(
         telemetry.stopLogStream()
     }
 
-    private fun startConnectionTracking() {
-        telemetry.startConnectionTracking()
-    }
-
-    private fun stopConnectionTracking() {
-        telemetry.stopConnectionTracking()
-    }
-
     private fun publishSnapshot(snapshot: RuntimeSnapshot) {
         currentSnapshot = snapshot.copy(running = snapshot.phase.running)
         host.onSnapshotChanged(currentSnapshot)
@@ -711,6 +718,14 @@ class SessionRuntime(
         if (isBlank()) return "empty"
         val digest = MessageDigest.getInstance("SHA-256").digest(toByteArray())
         return digest.take(8).joinToString("") { "%02x".format(it) }
+    }
+
+    private fun com.github.yumelira.yumebox.core.model.ProxyMode.toRuntimeTargetMode(): RuntimeTargetMode {
+        return when (this) {
+            com.github.yumelira.yumebox.core.model.ProxyMode.Tun -> RuntimeTargetMode.Tun
+            com.github.yumelira.yumebox.core.model.ProxyMode.Http -> RuntimeTargetMode.Http
+            com.github.yumelira.yumebox.core.model.ProxyMode.RootTun -> RuntimeTargetMode.RootTun
+        }
     }
 
     private companion object {
