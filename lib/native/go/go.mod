@@ -1,11 +1,11 @@
 module cfa
 
-go 1.20
+go 1.24.0
 
 require (
 	github.com/dlclark/regexp2 v1.12.0
 	github.com/metacubex/mihomo v1.7.0
-	golang.org/x/sync v0.11.0
+	golang.org/x/sync v0.18.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -101,14 +101,14 @@ require (
 	gitlab.com/go-extension/aes-ccm v0.0.0-20230221065045-e58665ef23c7 // indirect
 	gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20240904232852-e7e105dedf7e // indirect
-	golang.org/x/mod v0.20.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.38.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
 
