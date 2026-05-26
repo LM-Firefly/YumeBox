@@ -103,6 +103,9 @@ internal fun Proxy.Type.displayName(): String =
         Proxy.Type.Sudoku -> "Sudoku"
         Proxy.Type.Masque -> "Masque"
         Proxy.Type.TrustTunnel -> "TrustTunnel"
+        Proxy.Type.OpenVPN -> "OpenVPN"
+        Proxy.Type.Tailscale -> "Tailscale"
+        Proxy.Type.GostRelay -> "GostRelay"
     }
 
 internal fun Proxy.Type.iconLabel(): String =
@@ -138,6 +141,9 @@ internal fun Proxy.Type.iconLabel(): String =
         Proxy.Type.Sudoku -> "SU"
         Proxy.Type.Masque -> "MQ"
         Proxy.Type.TrustTunnel -> "TT"
+        Proxy.Type.OpenVPN -> "OP"
+        Proxy.Type.Tailscale -> "Tl"
+        Proxy.Type.GostRelay -> "GR"
     }
 
 @Composable
