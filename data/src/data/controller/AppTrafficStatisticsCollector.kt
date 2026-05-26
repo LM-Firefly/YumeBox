@@ -94,8 +94,8 @@ class AppTrafficStatisticsCollector(
         val totalTraffic = queryTrafficTotal()
         val snapshot = queryConnections()
         val timestamp = System.currentTimeMillis()
-        val currentProfileId = currentProfileId()
-            ?: runCatching { queryActiveProfileId() }.getOrNull()
+        val currentProfileId =
+            currentProfileId() ?: runCatching { queryActiveProfileId() }.getOrNull()
 
         if (lastTotalUpload < 0L || lastTotalDownload < 0L) {
             initializeTotals(
@@ -143,14 +143,16 @@ class AppTrafficStatisticsCollector(
         }
 
         val trafficDeltas = linkedMapOf<String, AppTrafficDeltaRecord>()
-        val attributedTotals = collectConnectionDeltas(
-            connections = snapshot.connections,
-            trafficDeltas = trafficDeltas,
-        )
+        val attributedTotals =
+            collectConnectionDeltas(
+                connections = snapshot.connections,
+                trafficDeltas = trafficDeltas,
+            )
         val totalUploadDelta = totalTraffic.upload - lastTotalUpload
         val totalDownloadDelta = totalTraffic.download - lastTotalDownload
         val unattributedUpload = (totalUploadDelta - attributedTotals.upload).coerceAtLeast(0L)
-        val unattributedDownload = (totalDownloadDelta - attributedTotals.download).coerceAtLeast(0L)
+        val unattributedDownload =
+            (totalDownloadDelta - attributedTotals.download).coerceAtLeast(0L)
         if (unattributedUpload > 0L || unattributedDownload > 0L) {
             trafficDeltas[TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY] =
                 TrafficStatisticsBuckets.buildUnattributedRecord(
@@ -182,10 +184,8 @@ class AppTrafficStatisticsCollector(
 
         connections.forEach { connection ->
             activeIds += connection.id
-            val (uploadDelta, downloadDelta) = collectConnectionDelta(
-                connection = connection,
-                trafficDeltas = trafficDeltas,
-            )
+            val (uploadDelta, downloadDelta) =
+                collectConnectionDelta(connection = connection, trafficDeltas = trafficDeltas)
             attributedUpload += uploadDelta
             attributedDownload += downloadDelta
         }
@@ -201,14 +201,15 @@ class AppTrafficStatisticsCollector(
         val baseline = connectionBaselines[connection.id]
         val identity = resolveIdentity(connection, baseline)
 
-        val updatedBaseline = ConnectionTrafficBaseline(
-            id = connection.id,
-            upload = connection.upload,
-            download = connection.download,
-            appKey = identity.appKey,
-            packageName = identity.packageName,
-            appName = identity.appName,
-        )
+        val updatedBaseline =
+            ConnectionTrafficBaseline(
+                id = connection.id,
+                upload = connection.upload,
+                download = connection.download,
+                appKey = identity.appKey,
+                packageName = identity.packageName,
+                appName = identity.appName,
+            )
 
         if (baseline == null) {
             connectionBaselines[connection.id] = updatedBaseline
@@ -228,15 +229,16 @@ class AppTrafficStatisticsCollector(
             val routeLabel = resolveRouteLabel(connection, routeKey)
             val trafficKey = buildTrafficBucketKey(identity.appKey, routeKey)
             val current = trafficDeltas[trafficKey]
-            trafficDeltas[trafficKey] = AppTrafficDeltaRecord(
-                appKey = identity.appKey,
-                packageName = identity.packageName ?: current?.packageName,
-                appName = identity.appName.ifBlank { current?.appName.orEmpty() },
-                uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
-                downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
-                routeKey = routeKey ?: current?.routeKey,
-                routeLabel = routeLabel ?: current?.routeLabel,
-            )
+            trafficDeltas[trafficKey] =
+                AppTrafficDeltaRecord(
+                    appKey = identity.appKey,
+                    packageName = identity.packageName ?: current?.packageName,
+                    appName = identity.appName.ifBlank { current?.appName.orEmpty() },
+                    uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
+                    downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
+                    routeKey = routeKey ?: current?.routeKey,
+                    routeLabel = routeLabel ?: current?.routeLabel,
+                )
         }
 
         connectionBaselines[connection.id] = updatedBaseline
@@ -261,14 +263,15 @@ class AppTrafficStatisticsCollector(
         connectionBaselines.clear()
         connections.forEach { connection ->
             val identity = appIdentityResolver.resolve(connection.metadata)
-            connectionBaselines[connection.id] = ConnectionTrafficBaseline(
-                id = connection.id,
-                upload = connection.upload,
-                download = connection.download,
-                appKey = identity.appKey,
-                packageName = identity.packageName,
-                appName = identity.appName,
-            )
+            connectionBaselines[connection.id] =
+                ConnectionTrafficBaseline(
+                    id = connection.id,
+                    upload = connection.upload,
+                    download = connection.download,
+                    appKey = identity.appKey,
+                    packageName = identity.packageName,
+                    appName = identity.appName,
+                )
         }
     }
 
@@ -303,12 +306,13 @@ class AppTrafficStatisticsCollector(
         }
         trafficStatisticsStore.recordAppTrafficBatch(
             timestamp = timestamp,
-            records = listOf(
-                TrafficStatisticsBuckets.buildUnattributedRecord(
-                    uploadDelta = uploadDelta,
-                    downloadDelta = downloadDelta,
+            records =
+                listOf(
+                    TrafficStatisticsBuckets.buildUnattributedRecord(
+                        uploadDelta = uploadDelta,
+                        downloadDelta = downloadDelta,
+                    )
                 ),
-            ),
         )
     }
 
@@ -320,10 +324,7 @@ class AppTrafficStatisticsCollector(
         lastProfileId = null
     }
 
-    private fun buildTrafficBucketKey(
-        appKey: String,
-        routeKey: String?,
-    ): String {
+    private fun buildTrafficBucketKey(appKey: String, routeKey: String?): String {
         return if (routeKey.isNullOrBlank()) appKey else "$appKey::$routeKey"
     }
 
@@ -335,10 +336,7 @@ class AppTrafficStatisticsCollector(
             ?: TrafficStatisticsBuckets.UNATTRIBUTED_ROUTE_KEY
     }
 
-    private fun resolveRouteLabel(
-        connection: ConnectionInfo,
-        routeKey: String?,
-    ): String {
+    private fun resolveRouteLabel(connection: ConnectionInfo, routeKey: String?): String {
         return connection.chains.lastOrNull()?.takeIf(String::isNotBlank)
             ?: connection.providerChains.lastOrNull()?.takeIf(String::isNotBlank)
             ?: routeKey

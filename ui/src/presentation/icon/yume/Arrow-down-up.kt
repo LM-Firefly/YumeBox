@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -38,40 +36,67 @@ val Yume.`Arrow-down-up`: ImageVector
         if (`_arrow-down-up` != null) {
             return `_arrow-down-up`!!
         }
-        `_arrow-down-up` = Builder(name = "Arrow-down-up", defaultWidth = 24.0.dp, defaultHeight =
-                24.0.dp, viewportWidth = 24.0f, viewportHeight = 24.0f).apply {
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveToRelative(3.0f, 16.0f)
-                lineToRelative(4.0f, 4.0f)
-                lineToRelative(4.0f, -4.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(7.0f, 20.0f)
-                verticalLineTo(4.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveToRelative(21.0f, 8.0f)
-                lineToRelative(-4.0f, -4.0f)
-                lineToRelative(-4.0f, 4.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(17.0f, 4.0f)
-                verticalLineToRelative(16.0f)
-            }
-        }
-        .build()
+        `_arrow-down-up` =
+            Builder(
+                    name = "Arrow-down-up",
+                    defaultWidth = 24.0.dp,
+                    defaultHeight = 24.0.dp,
+                    viewportWidth = 24.0f,
+                    viewportHeight = 24.0f,
+                )
+                .apply {
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveToRelative(3.0f, 16.0f)
+                        lineToRelative(4.0f, 4.0f)
+                        lineToRelative(4.0f, -4.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(7.0f, 20.0f)
+                        verticalLineTo(4.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveToRelative(21.0f, 8.0f)
+                        lineToRelative(-4.0f, -4.0f)
+                        lineToRelative(-4.0f, 4.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(17.0f, 4.0f)
+                        verticalLineToRelative(16.0f)
+                    }
+                }
+                .build()
         return `_arrow-down-up`!!
     }
 

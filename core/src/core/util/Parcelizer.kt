@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.util
 
 import android.os.Parcel
@@ -38,13 +36,18 @@ object Parcelizer {
     private class ParcelDecoder(private val parcel: Parcel) : Decoder, CompositeDecoder {
         override val serializersModule: SerializersModule = SerializersModule {}
 
-        @ExperimentalSerializationApi
-        override fun decodeSequentially(): Boolean = true
+        @ExperimentalSerializationApi override fun decodeSequentially(): Boolean = true
+
         override fun decodeByteElement(descriptor: SerialDescriptor, index: Int) = decodeByte()
+
         override fun decodeCharElement(descriptor: SerialDescriptor, index: Int) = decodeChar()
+
         override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int) = decodeDouble()
+
         override fun decodeElementIndex(descriptor: SerialDescriptor) = decodeInt()
+
         override fun decodeFloatElement(descriptor: SerialDescriptor, index: Int) = decodeFloat()
+
         override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int) =
             decodeBoolean()
 
@@ -54,8 +57,11 @@ object Parcelizer {
         }
 
         override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) = decodeInt()
+
         override fun decodeLongElement(descriptor: SerialDescriptor, index: Int) = decodeLong()
+
         override fun decodeShortElement(descriptor: SerialDescriptor, index: Int) = decodeShort()
+
         override fun decodeStringElement(descriptor: SerialDescriptor, index: Int) = decodeString()
 
         @ExperimentalSerializationApi
@@ -73,9 +79,7 @@ object Parcelizer {
             previousValue: T?,
         ): T = decodeSerializableValue(deserializer)
 
-        override fun endStructure(descriptor: SerialDescriptor) {
-
-        }
+        override fun endStructure(descriptor: SerialDescriptor) {}
 
         override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
             return this
@@ -195,9 +199,7 @@ object Parcelizer {
             value: T,
         ) = encodeSerializableValue(serializer, value)
 
-        override fun endStructure(descriptor: SerialDescriptor) {
-
-        }
+        override fun endStructure(descriptor: SerialDescriptor) {}
 
         override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
             return this

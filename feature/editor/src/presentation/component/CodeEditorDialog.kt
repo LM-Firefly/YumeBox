@@ -23,7 +23,6 @@ package com.github.yumelira.yumebox.feature.editor.component
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
 import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
@@ -44,22 +43,16 @@ fun CodeEditorDialog(
     onValueChange: (String?) -> Unit,
     onDismiss: () -> Unit = {},
 ) {
-    val editorState = rememberConfiguredCodeEditorState(
-        initialContent = value ?: "",
-        language = language,
-        readOnly = false,
-    )
+    val editorState =
+        rememberConfiguredCodeEditorState(
+            initialContent = value ?: "",
+            language = language,
+            readOnly = false,
+        )
 
     if (show) {
-        AppDialog(
-            show = show,
-            title = title,
-            onDismissRequest = onDismiss,
-        ) {
-            Column(
-                modifier = Modifier.padding(UiDp.dp20)
-            ) {
-
+        AppDialog(show = show, title = title, onDismissRequest = onDismiss) {
+            Column(modifier = Modifier.padding(UiDp.dp20)) {
                 subtitle?.let { text ->
                     Text(
                         text = text,
@@ -71,9 +64,7 @@ fun CodeEditorDialog(
 
                 CodeEditor(
                     state = editorState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = UiDp.dp280, max = UiDp.dp400),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = UiDp.dp280, max = UiDp.dp400),
                     onTextChange = {},
                 )
 

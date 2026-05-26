@@ -18,51 +18,36 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ProfileBinding(
-    val profileId: String,
-    val overrideIds: List<String> = emptyList(),
-) {
+data class ProfileBinding(val profileId: String, val overrideIds: List<String> = emptyList()) {
     companion object {
 
         fun disabled(profileId: String): ProfileBinding {
-            return ProfileBinding(
-                profileId = profileId,
-                overrideIds = emptyList(),
-            )
+            return ProfileBinding(profileId = profileId, overrideIds = emptyList())
         }
 
         fun withOverrides(profileId: String, overrideIds: List<String>): ProfileBinding {
-            return ProfileBinding(
-                profileId = profileId,
-                overrideIds = overrideIds,
-            )
+            return ProfileBinding(profileId = profileId, overrideIds = overrideIds)
         }
 
         fun withOverride(profileId: String, overrideId: String): ProfileBinding {
-            return ProfileBinding(
-                profileId = profileId,
-                overrideIds = listOf(overrideId),
-            )
+            return ProfileBinding(profileId = profileId, overrideIds = listOf(overrideId))
         }
     }
 
     fun addOverride(overrideId: String, index: Int? = null): ProfileBinding {
         if (overrideIds.contains(overrideId)) return this
 
-        val newList = if (index != null) {
-            overrideIds.toMutableList().apply {
-                add(index.coerceAtMost(size), overrideId)
+        val newList =
+            if (index != null) {
+                overrideIds.toMutableList().apply { add(index.coerceAtMost(size), overrideId) }
+            } else {
+                overrideIds + overrideId
             }
-        } else {
-            overrideIds + overrideId
-        }
 
         return copy(overrideIds = newList)
     }

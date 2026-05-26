@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.records
 
 import com.github.yumelira.yumebox.service.runtime.entity.Imported

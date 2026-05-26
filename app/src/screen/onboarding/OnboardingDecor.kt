@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.onboarding
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -44,12 +43,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import kotlinx.coroutines.delay
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal val PagePadding = AppConstants.UI.DEFAULT_HORIZONTAL_PADDING
 internal val DetailWidth = UiDp.dp560
@@ -59,43 +57,35 @@ internal const val LinkTermsTag = "terms"
 internal const val LinkPolicyTag = "policy"
 internal val DetailPreviewBadgeSize = UiDp.dp108
 internal val DetailPreviewIconSize = UiDp.dp68
-internal val StartupTypewriterPhrases = listOf(
-    "YumeBox",
-    "Hello Word",
-)
+internal val StartupTypewriterPhrases = listOf("YumeBox", "Hello Word")
 
 @Composable
-internal fun DreamBackdrop(
-    modifier: Modifier = Modifier,
-    boosted: Boolean = true,
-) {
+internal fun DreamBackdrop(modifier: Modifier = Modifier, boosted: Boolean = true) {
     val opacity = AppTheme.opacity
 
     val surface = MiuixTheme.colorScheme.surface
     val primary = MiuixTheme.colorScheme.primary
-    val baseTint = remember(surface, boosted) {
-        lerp(surface, primary, if (boosted) 0.035f else 0.02f)
-    }
+    val baseTint =
+        remember(surface, boosted) { lerp(surface, primary, if (boosted) 0.035f else 0.02f) }
     Canvas(modifier = modifier.fillMaxSize()) {
         drawRect(
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    surface,
-                    baseTint,
-                    lerp(surface, primary, 0.02f),
-                ),
-                start = Offset(0f, 0f),
-                end = Offset(size.width, size.height),
-            ),
+            brush =
+                Brush.linearGradient(
+                    colors = listOf(surface, baseTint, lerp(surface, primary, 0.02f)),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, size.height),
+                )
         )
         drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = opacity.ambientLight),
-                    Color.Transparent,
-                    Color.Black.copy(alpha = opacity.ambientShadow),
-                ),
-            ),
+            brush =
+                Brush.verticalGradient(
+                    colors =
+                        listOf(
+                            Color.White.copy(alpha = opacity.ambientLight),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = opacity.ambientShadow),
+                        )
+                )
         )
     }
 }
@@ -106,25 +96,18 @@ internal fun DetailBackdrop(modifier: Modifier = Modifier) {
 
     val surface = MiuixTheme.colorScheme.surface
     val primary = MiuixTheme.colorScheme.primary
-    val accent = remember(surface) {
-        lerp(surface, primary, 0.045f)
-    }
+    val accent = remember(surface) { lerp(surface, primary, 0.045f) }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(surface),
-    ) {
+    Box(modifier = modifier.fillMaxSize().background(surface)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        accent.copy(alpha = opacity.subtleStrong),
-                        Color.Transparent,
-                    ),
-                    startY = 0f,
-                    endY = size.height * 0.28f,
-                ),
+                brush =
+                    Brush.verticalGradient(
+                        colors =
+                            listOf(accent.copy(alpha = opacity.subtleStrong), Color.Transparent),
+                        startY = 0f,
+                        endY = size.height * 0.28f,
+                    )
             )
         }
     }
@@ -146,18 +129,16 @@ internal fun RevealBlock(
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
-        enter = fadeIn(
-            animationSpec = tween(
-                durationMillis = RevealDurationMs,
-                easing = LinearOutSlowInEasing,
-            ),
-        ) + slideInVertically(
-            animationSpec = tween(
-                durationMillis = RevealDurationMs,
-                easing = FastOutSlowInEasing,
-            ),
-            initialOffsetY = { it / 7 },
-        ),
+        enter =
+            fadeIn(
+                animationSpec =
+                    tween(durationMillis = RevealDurationMs, easing = LinearOutSlowInEasing)
+            ) +
+                slideInVertically(
+                    animationSpec =
+                        tween(durationMillis = RevealDurationMs, easing = FastOutSlowInEasing),
+                    initialOffsetY = { it / 7 },
+                ),
     ) {
         content()
     }
@@ -179,18 +160,16 @@ internal fun RevealScaleBlock(
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
-        enter = fadeIn(
-            animationSpec = tween(
-                durationMillis = RevealDurationMs,
-                easing = LinearOutSlowInEasing,
-            ),
-        ) + scaleIn(
-            animationSpec = tween(
-                durationMillis = RevealDurationMs,
-                easing = FastOutSlowInEasing,
-            ),
-            initialScale = 0.92f,
-        ),
+        enter =
+            fadeIn(
+                animationSpec =
+                    tween(durationMillis = RevealDurationMs, easing = LinearOutSlowInEasing)
+            ) +
+                scaleIn(
+                    animationSpec =
+                        tween(durationMillis = RevealDurationMs, easing = FastOutSlowInEasing),
+                    initialScale = 0.92f,
+                ),
     ) {
         content()
     }

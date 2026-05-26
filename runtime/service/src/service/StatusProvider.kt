@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.annotation.SuppressLint
@@ -52,12 +50,7 @@ class StatusProvider : ContentProvider() {
         return when (method) {
             METHOD_CURRENT_PROFILE -> {
                 syncCachedRuntimeState()
-                if (serviceRunning)
-                    Bundle().apply {
-                        putString("name", currentProfile)
-                    }
-                else
-                    null
+                if (serviceRunning) Bundle().apply { putString("name", currentProfile) } else null
             }
             else -> super.call(method, arg, extras)
         }
@@ -72,7 +65,7 @@ class StatusProvider : ContentProvider() {
         projection: Array<out String>?,
         selection: String?,
         selectionArgs: Array<out String>?,
-        sortOrder: String?
+        sortOrder: String?,
     ): Cursor? {
         throw IllegalArgumentException("Stub!")
     }
@@ -81,7 +74,7 @@ class StatusProvider : ContentProvider() {
         uri: Uri,
         values: ContentValues?,
         selection: String?,
-        selectionArgs: Array<out String>?
+        selectionArgs: Array<out String>?,
     ): Int {
         throw IllegalArgumentException("Stub!")
     }
@@ -109,11 +102,8 @@ class StatusProvider : ContentProvider() {
     companion object {
         const val METHOD_CURRENT_PROFILE = "currentProfile"
 
-        private val legacyRuntimeFiles = listOf(
-            "service_running.lock",
-            "service_autostart.lock",
-            "service_running_mode.txt",
-        )
+        private val legacyRuntimeFiles =
+            listOf("service_running.lock", "service_autostart.lock", "service_running_mode.txt")
         private const val SERVICE_CACHE_ID = "service_cache"
         private const val KEY_TUN_STARTING = "local_tun_starting"
         private const val KEY_RUNTIME_MODE = "local_runtime_mode"
@@ -132,8 +122,7 @@ class StatusProvider : ContentProvider() {
         var localRuntimePhase: LocalRuntimePhase = LocalRuntimePhase.Idle
             private set
 
-        @Volatile
-        var currentProfile: String? = null
+        @Volatile var currentProfile: String? = null
 
         fun markRuntimeStarting(mode: ProxyMode) {
             markRuntimePhase(mode, LocalRuntimePhase.Starting)
@@ -189,7 +178,9 @@ class StatusProvider : ContentProvider() {
                 return
             }
 
-            if (persistedMode == ProxyMode.RootTun || persistedPhase == LocalRuntimePhase.Starting) {
+            if (
+                persistedMode == ProxyMode.RootTun || persistedPhase == LocalRuntimePhase.Starting
+            ) {
                 updateInMemoryRuntimeState(persistedMode, persistedPhase)
                 return
             }
@@ -207,18 +198,21 @@ class StatusProvider : ContentProvider() {
         fun isLocalRuntimeServiceAlive(mode: ProxyMode): Boolean {
             if (mode == ProxyMode.RootTun) return false
             val application = runCatching { Global.application }.getOrNull() ?: return false
-            val activityManager = application.getSystemService(ActivityManager::class.java) ?: return false
-            val targetClassName = when (mode) {
-                ProxyMode.Tun -> TunService::class.java.name
-                ProxyMode.Http -> ClashService::class.java.name
-                ProxyMode.RootTun -> return false
-            }
+            val activityManager =
+                application.getSystemService(ActivityManager::class.java) ?: return false
+            val targetClassName =
+                when (mode) {
+                    ProxyMode.Tun -> TunService::class.java.name
+                    ProxyMode.Http -> ClashService::class.java.name
+                    ProxyMode.RootTun -> return false
+                }
 
             return runCatching {
-                queryRunningServiceClassNames(activityManager).any { className ->
-                    className == targetClassName
+                    queryRunningServiceClassNames(activityManager).any { className ->
+                        className == targetClassName
+                    }
                 }
-            }.getOrDefault(false)
+                .getOrDefault(false)
         }
 
         fun markTunStarting() {
@@ -235,9 +229,7 @@ class StatusProvider : ContentProvider() {
 
         fun clearLegacyStateFiles() {
             val filesDir = Global.application.filesDir
-            legacyRuntimeFiles.forEach { name ->
-                runCatching { filesDir.resolve(name).delete() }
-            }
+            legacyRuntimeFiles.forEach { name -> runCatching { filesDir.resolve(name).delete() } }
         }
 
         private fun serviceCache(): MMKV {
@@ -249,22 +241,16 @@ class StatusProvider : ContentProvider() {
                 clearTunStarting()
             }
             val activeMode = mode.takeIf { phase.isActive }
-            val startedAt = resolveRuntimeStartedAt(
-                mode = activeMode,
-                phase = phase,
-            )
-            persistRuntimeState(
-                mode = activeMode,
-                phase = phase,
-                startedAt = startedAt,
-            )
-            updateInMemoryRuntimeState(
-                mode = activeMode,
-                phase = phase,
-            )
+            val startedAt = resolveRuntimeStartedAt(mode = activeMode, phase = phase)
+            persistRuntimeState(mode = activeMode, phase = phase, startedAt = startedAt)
+            updateInMemoryRuntimeState(mode = activeMode, phase = phase)
         }
 
-        private fun persistRuntimeState(mode: ProxyMode?, phase: LocalRuntimePhase, startedAt: Long? = null) {
+        private fun persistRuntimeState(
+            mode: ProxyMode?,
+            phase: LocalRuntimePhase,
+            startedAt: Long? = null,
+        ) {
             val cache = serviceCache()
             if (phase == LocalRuntimePhase.Idle || mode == null) {
                 cache.removeValueForKey(KEY_RUNTIME_MODE)
@@ -283,25 +269,23 @@ class StatusProvider : ContentProvider() {
 
         private fun readPersistedRuntimeState(): Pair<ProxyMode?, LocalRuntimePhase> {
             val cache = serviceCache()
-            val phase = cache.decodeString(KEY_RUNTIME_PHASE)
-                ?.let { value -> enumEntries<LocalRuntimePhase>().firstOrNull { it.name == value } }
-                ?: LocalRuntimePhase.Idle
-            val mode = cache.decodeString(KEY_RUNTIME_MODE)
-                ?.let { value -> enumEntries<ProxyMode>().firstOrNull { it.name == value } }
-                ?.takeIf { phase.isActive }
+            val phase =
+                cache.decodeString(KEY_RUNTIME_PHASE)?.let { value ->
+                    enumEntries<LocalRuntimePhase>().firstOrNull { it.name == value }
+                } ?: LocalRuntimePhase.Idle
+            val mode =
+                cache
+                    .decodeString(KEY_RUNTIME_MODE)
+                    ?.let { value -> enumEntries<ProxyMode>().firstOrNull { it.name == value } }
+                    ?.takeIf { phase.isActive }
             return mode to phase
         }
 
         private fun readPersistedRuntimeStartedAt(): Long? {
-            return serviceCache()
-                .decodeLong(KEY_RUNTIME_STARTED_AT, 0L)
-                .takeIf { it > 0L }
+            return serviceCache().decodeLong(KEY_RUNTIME_STARTED_AT, 0L).takeIf { it > 0L }
         }
 
-        private fun resolveRuntimeStartedAt(
-            mode: ProxyMode?,
-            phase: LocalRuntimePhase,
-        ): Long? {
+        private fun resolveRuntimeStartedAt(mode: ProxyMode?, phase: LocalRuntimePhase): Long? {
             if (!phase.isActive || mode == null) {
                 return null
             }
@@ -311,9 +295,8 @@ class StatusProvider : ContentProvider() {
 
             val (persistedMode, persistedPhase) = readPersistedRuntimeState()
             val persistedStartedAt = readPersistedRuntimeStartedAt()
-            return persistedStartedAt.takeIf {
-                persistedMode == mode && persistedPhase.isActive
-            } ?: System.currentTimeMillis()
+            return persistedStartedAt.takeIf { persistedMode == mode && persistedPhase.isActive }
+                ?: System.currentTimeMillis()
         }
 
         private fun updateInMemoryRuntimeState(mode: ProxyMode?, phase: LocalRuntimePhase) {
@@ -330,12 +313,11 @@ class StatusProvider : ContentProvider() {
 
         @SuppressLint("Deprecated")
         private fun queryRunningServiceClassNames(activityManager: ActivityManager): List<String> {
-            return activityManager.getRunningServices(Int.MAX_VALUE)
-                .mapNotNull { service ->
-                    service.service
-                        ?.takeIf { it.packageName == Global.application.packageName }
-                        ?.className
-                }
+            return activityManager.getRunningServices(Int.MAX_VALUE).mapNotNull { service ->
+                service.service
+                    ?.takeIf { it.packageName == Global.application.packageName }
+                    ?.className
+            }
         }
     }
 }

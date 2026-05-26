@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox
 
 import android.app.Activity
@@ -48,9 +46,10 @@ class WebViewActivity : ComponentActivity() {
             context: Context,
             initialUrl: String = "file://${context.filesDir}/frontend/index.html",
         ) {
-            val intent = Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_INITIAL_URL, initialUrl)
-            }
+            val intent =
+                Intent(context, WebViewActivity::class.java).apply {
+                    putExtra(EXTRA_INITIAL_URL, initialUrl)
+                }
             if (context !is Activity) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -60,24 +59,21 @@ class WebViewActivity : ComponentActivity() {
 
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
-    private val fileChooserLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris ->
-        filePathCallback?.onReceiveValue(uris.toTypedArray())
-        filePathCallback = null
-    }
+    private val fileChooserLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            filePathCallback?.onReceiveValue(uris.toTypedArray())
+            filePathCallback = null
+        }
 
-    fun launchFilePicker(
-        callback: ValueCallback<Array<Uri>>?,
-        mimeTypes: Array<String>
-    ) {
+    fun launchFilePicker(callback: ValueCallback<Array<Uri>>?, mimeTypes: Array<String>) {
         filePathCallback?.onReceiveValue(null)
         filePathCallback = callback
-        val types = if (mimeTypes.isEmpty() || (mimeTypes.size == 1 && mimeTypes[0].isEmpty())) {
-            arrayOf("*/*")
-        } else {
-            mimeTypes
-        }
+        val types =
+            if (mimeTypes.isEmpty() || (mimeTypes.size == 1 && mimeTypes[0].isEmpty())) {
+                arrayOf("*/*")
+            } else {
+                mimeTypes
+            }
         fileChooserLauncher.launch(types)
     }
 
@@ -95,11 +91,14 @@ class WebViewActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val isDarkMode =
-            (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+            (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
         val useLightNavigationBarIcons = !isDarkMode
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.setSystemBarsAppearance(
-                if (useLightNavigationBarIcons) WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS else 0,
+                if (useLightNavigationBarIcons)
+                    WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+                else 0,
                 WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
             )
         } else {
@@ -108,10 +107,9 @@ class WebViewActivity : ComponentActivity() {
                 .isAppearanceLightNavigationBars = useLightNavigationBarIcons
         }
 
-        val initialUrl = intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://${filesDir}/frontend/index.html"
+        val initialUrl =
+            intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://${filesDir}/frontend/index.html"
 
-        setContent {
-            WebViewScreen(initialUrl = initialUrl)
-        }
+        setContent { WebViewScreen(initialUrl = initialUrl) }
     }
 }

@@ -18,10 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.settings
 
-import com.github.yumelira.yumebox.presentation.theme.UiDp
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
@@ -44,7 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -55,8 +53,8 @@ import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
+import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.PreferenceArrowItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
@@ -68,6 +66,7 @@ import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.WarningBottomSheet
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -81,20 +80,15 @@ import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import androidx.core.net.toUri
 
 @Composable
 @Destination<RootGraph>
-fun AppSettingsScreen(
-    navigator: DestinationsNavigator,
-) {
+fun AppSettingsScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<AppSettingsViewModel>()
 
     Scaffold(
-        topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
-        },
+        topBar = { TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior) }
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -106,12 +100,7 @@ fun AppSettingsScreen(
             item { AppPrivacySettingsSection(viewModel) }
             item { AppServiceSettingsSection(viewModel) }
             item { AppNetworkSettingsSection(viewModel) }
-            item {
-                AppExperimentalSettingsSection(
-                    viewModel = viewModel,
-                    navigator = navigator,
-                )
-            }
+            item { AppExperimentalSettingsSection(viewModel = viewModel, navigator = navigator) }
         }
     }
 }
@@ -119,7 +108,8 @@ fun AppSettingsScreen(
 @Composable
 private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
     val automaticRestart by viewModel.automaticRestart.state.collectAsState()
-    val autoUpdateCurrentProfileOnStart by viewModel.autoUpdateCurrentProfileOnStart.state.collectAsState()
+    val autoUpdateCurrentProfileOnStart by
+        viewModel.autoUpdateCurrentProfileOnStart.state.collectAsState()
     val isChineseLocale = remember { LocaleUtil.isChineseLocale() }
 
     Title(MLang.AppSettings.Section.Behavior)
@@ -141,7 +131,7 @@ private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
                 title = MLang.AppSettings.Behavior.OneChinaTitle,
                 summary = MLang.AppSettings.Behavior.OneChinaSummary,
                 checked = true,
-                onCheckedChange = { },
+                onCheckedChange = {},
                 enabled = false,
             )
         }
@@ -168,11 +158,12 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
             title = MLang.AppSettings.Interface.ThemeModeTitle,
             summary = MLang.AppSettings.Interface.ThemeModeSummary,
             currentValue = themeMode,
-            items = listOf(
-                MLang.AppSettings.Interface.ThemeModeSystem,
-                MLang.AppSettings.Interface.ThemeModeLight,
-                MLang.AppSettings.Interface.ThemeModeDark,
-            ),
+            items =
+                listOf(
+                    MLang.AppSettings.Interface.ThemeModeSystem,
+                    MLang.AppSettings.Interface.ThemeModeLight,
+                    MLang.AppSettings.Interface.ThemeModeDark,
+                ),
             values = ThemeMode.entries,
             onValueChange = viewModel::onThemeModeChange,
         )
@@ -193,11 +184,12 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
             title = MLang.AppSettings.Interface.LanguageTitle,
             summary = MLang.AppSettings.Interface.LanguageSummary,
             currentValue = appLanguage,
-            items = listOf(
-                MLang.AppSettings.Interface.LanguageSystem,
-                MLang.AppSettings.Interface.LanguageChinese,
-                MLang.AppSettings.Interface.LanguageEnglish,
-            ),
+            items =
+                listOf(
+                    MLang.AppSettings.Interface.LanguageSystem,
+                    MLang.AppSettings.Interface.LanguageChinese,
+                    MLang.AppSettings.Interface.LanguageEnglish,
+                ),
             values = AppLanguage.entries,
             onValueChange = viewModel::onAppLanguageChange,
         )
@@ -236,10 +228,7 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
             checked = smoothCornerEnabled,
             onCheckedChange = viewModel::onSmoothCornerEnabledChange,
         )
-        PageScalePreferenceItem(
-            pageScale = pageScale,
-            onApply = viewModel::onPageScaleChange,
-        )
+        PageScalePreferenceItem(pageScale = pageScale, onApply = viewModel::onPageScaleChange)
     }
 }
 
@@ -290,13 +279,14 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
     var batteryOptimizationIgnored by remember {
         mutableStateOf(isBatteryOptimizationIgnored(context))
     }
-    val batteryOptimizationSummary = remember(batteryOptimizationIgnored) {
-        if (batteryOptimizationIgnored) {
-            MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryEnabled
-        } else {
-            MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryDisabled
+    val batteryOptimizationSummary =
+        remember(batteryOptimizationIgnored) {
+            if (batteryOptimizationIgnored) {
+                MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryEnabled
+            } else {
+                MLang.AppSettings.ServiceSection.BatteryOptimizationSummaryDisabled
+            }
         }
-    }
 
     DisposableEffect(lifecycleOwner, context) {
         val observer = LifecycleEventObserver { _, event ->
@@ -305,9 +295,7 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Title(MLang.AppSettings.Section.Service)
@@ -364,12 +352,14 @@ private fun AppExperimentalSettingsSection(
     val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsState()
     val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsState()
     val acgSidebarExpanded by viewModel.acgSidebarExpanded.state.collectAsState()
-    val acgQuoteSummary = remember(acgHomeQuote) {
-        acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault }
-    }
-    val acgQuoteAuthorSummary = remember(acgHomeQuoteAuthor) {
-        acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault }
-    }
+    val acgQuoteSummary =
+        remember(acgHomeQuote) {
+            acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault }
+        }
+    val acgQuoteAuthorSummary =
+        remember(acgHomeQuoteAuthor) {
+            acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault }
+        }
     Title(MLang.AppSettings.Section.Experimental)
     Card {
         PreferenceSwitchItem(
@@ -442,11 +432,10 @@ private fun BiometricProtectedPreferenceSwitch(
     WarningBottomSheet(
         show = showUnavailableDialogState,
         title = MLang.AppSettings.Privacy.BiometricUnavailableTitle,
-        messages = listOf(
-            unavailableMessage.ifBlank {
-                MLang.AppSettings.Privacy.BiometricUnavailableMessage
-            },
-        ),
+        messages =
+            listOf(
+                unavailableMessage.ifBlank { MLang.AppSettings.Privacy.BiometricUnavailableMessage }
+            ),
         onConfirm = { showUnavailableDialogState.value = false },
     )
 }
@@ -477,10 +466,11 @@ private fun HideAppIconPreferenceItem(
     WarningBottomSheet(
         show = showHideIconDialogState,
         title = MLang.AppSettings.WarningDialog.Title,
-        messages = listOf(
-            MLang.AppSettings.WarningDialog.HideIconMsg1,
-            MLang.AppSettings.WarningDialog.HideIconMsg2,
-        ),
+        messages =
+            listOf(
+                MLang.AppSettings.WarningDialog.HideIconMsg1,
+                MLang.AppSettings.WarningDialog.HideIconMsg2,
+            ),
         onConfirm = {
             onHideAppIconChange(true)
             AppIconHelper.toggleIcon(context, true)
@@ -524,34 +514,34 @@ private fun AcgWallpaperPreferenceItem(
     wallpaperBiasY: Float,
 ) {
     val context = LocalContext.current
-    val wallpaperPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        runCatching {
-            context.contentResolver.takePersistableUriPermission(
-                uri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            )
+    val wallpaperPickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
+            uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+            navigator.navigate(
+                AcgWallpaperCropScreenDestination(
+                    wallpaperUri = uri.toString(),
+                    initialZoom = wallpaperZoom,
+                    initialBiasX = wallpaperBiasX,
+                    initialBiasY = wallpaperBiasY,
+                )
+            ) {
+                launchSingleTop = true
+            }
         }
-        navigator.navigate(
-            AcgWallpaperCropScreenDestination(
-                wallpaperUri = uri.toString(),
-                initialZoom = wallpaperZoom,
-                initialBiasX = wallpaperBiasX,
-                initialBiasY = wallpaperBiasY,
-            ),
-        ) {
-            launchSingleTop = true
-        }
-    }
 
     PreferenceArrowItem(
         title = MLang.AppSettings.Experimental.WallpaperTitle,
         summary = MLang.AppSettings.Experimental.WallpaperSummary,
         onClick = {
             wallpaperPickerLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
         },
     )
@@ -583,11 +573,7 @@ private fun requestBiometricConfirmation(
         return
     }
 
-    BiometricHelper.authenticate(
-        activity = activity,
-        title = title,
-        onSuccess = onSuccess,
-    )
+    BiometricHelper.authenticate(activity = activity, title = title, onSuccess = onSuccess)
 }
 
 private fun isBatteryOptimizationIgnored(context: android.content.Context): Boolean {
@@ -605,19 +591,19 @@ private fun openBatteryOptimizationSettings(
                 Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                     data = "package:${context.packageName}".toUri()
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                },
+                }
             )
         }
         add(
             Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
+            }
         )
         add(
             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", context.packageName, null)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            },
+            }
         )
     }
 
@@ -630,10 +616,7 @@ private fun openBatteryOptimizationSettings(
 }
 
 @Composable
-private fun PageScalePreferenceItem(
-    pageScale: Float,
-    onApply: (Float) -> Unit,
-) {
+private fun PageScalePreferenceItem(pageScale: Float, onApply: (Float) -> Unit) {
     var pageScaleLocal by remember(pageScale) { mutableFloatStateOf(pageScale) }
     val pageScalePercentText = remember(pageScaleLocal) { "${(pageScaleLocal * 100).toInt()}%" }
     val showPageScaleDialogState = remember { mutableStateOf(false) }
@@ -671,23 +654,16 @@ private fun PageScalePreferenceItem(
 }
 
 @Composable
-private fun CustomUserAgentPreferenceItem(
-    customUserAgent: String,
-    onConfirm: (String) -> Unit,
-) {
-    val customUserAgentSummary = remember(customUserAgent) {
-        customUserAgent.ifEmpty {
-            MLang.AppSettings.Network.CustomUserAgentSummaryDefault
+private fun CustomUserAgentPreferenceItem(customUserAgent: String, onConfirm: (String) -> Unit) {
+    val customUserAgentSummary =
+        remember(customUserAgent) {
+            customUserAgent.ifEmpty { MLang.AppSettings.Network.CustomUserAgentSummaryDefault }
         }
-    }
     val showEditCustomUserAgentDialog = remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
     var localTextFieldValue by remember {
         mutableStateOf(
-            TextFieldValue(
-                text = customUserAgent,
-                selection = TextRange(customUserAgent.length),
-            ),
+            TextFieldValue(text = customUserAgent, selection = TextRange(customUserAgent.length))
         )
     }
 
@@ -695,10 +671,11 @@ private fun CustomUserAgentPreferenceItem(
         title = MLang.AppSettings.Network.CustomUserAgentTitle,
         summary = customUserAgentSummary,
         onClick = {
-            localTextFieldValue = TextFieldValue(
-                text = customUserAgent,
-                selection = TextRange(customUserAgent.length),
-            )
+            localTextFieldValue =
+                TextFieldValue(
+                    text = customUserAgent,
+                    selection = TextRange(customUserAgent.length),
+                )
             showEditCustomUserAgentDialog.value = true
         },
         holdDownState = showEditCustomUserAgentDialog.value,
@@ -721,13 +698,14 @@ private fun CustomUserAgentPreferenceItem(
             showEditCustomUserAgentDialog.value = false
         },
         singleLine = true,
-        keyboardActions = KeyboardActions(
-            onDone = {
-                onConfirm(localTextFieldValue.text)
-                focusManager.clearFocus()
-                showEditCustomUserAgentDialog.value = false
-            },
-        ),
+        keyboardActions =
+            KeyboardActions(
+                onDone = {
+                    onConfirm(localTextFieldValue.text)
+                    focusManager.clearFocus()
+                    showEditCustomUserAgentDialog.value = false
+                }
+            ),
     )
 }
 
@@ -739,9 +717,8 @@ private fun PageScaleDialog(
     onApply: (Float) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    var scaleText by remember(show, pageScale) {
-        mutableStateOf((pageScale * 100).toInt().toString())
-    }
+    var scaleText by
+        remember(show, pageScale) { mutableStateOf((pageScale * 100).toInt().toString()) }
 
     AppTextFieldDialog(
         show = show,

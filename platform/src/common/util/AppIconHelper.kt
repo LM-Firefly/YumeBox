@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.common.util
 
 import android.content.ComponentName
@@ -40,34 +38,39 @@ object AppIconHelper {
 
     private fun setIconState(context: Context, hide: Boolean) {
         runCatching {
-            val componentName = ComponentName(context.packageName, MAIN_ACTIVITY_ALIAS)
-            val currentState = context.packageManager.getComponentEnabledSetting(componentName)
-            val targetState = if (hide) {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                val componentName = ComponentName(context.packageName, MAIN_ACTIVITY_ALIAS)
+                val currentState = context.packageManager.getComponentEnabledSetting(componentName)
+                val targetState =
+                    if (hide) {
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                    } else {
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                    }
+
+                if (
+                    currentState == targetState ||
+                        (!hide && currentState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT)
+                ) {
+                    return
+                }
+
+                val mainActivityComponent =
+                    ComponentName(context.packageName, "com.github.yumelira.yumebox.MainActivity")
+                context.packageManager.setComponentEnabledSetting(
+                    mainActivityComponent,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP,
+                )
+
+                context.packageManager.setComponentEnabledSetting(
+                    componentName,
+                    targetState,
+                    PackageManager.DONT_KILL_APP,
+                )
             }
-
-            if (currentState == targetState || (!hide && currentState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT)) {
-                return
+            .onFailure { error ->
+                Timber.w(error, "Failed to ${if (hide) "hide" else "show"} app icon")
             }
-
-            val mainActivityComponent =
-                ComponentName(context.packageName, "com.github.yumelira.yumebox.MainActivity")
-            context.packageManager.setComponentEnabledSetting(
-                mainActivityComponent,
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                PackageManager.DONT_KILL_APP,
-            )
-
-            context.packageManager.setComponentEnabledSetting(
-                componentName,
-                targetState,
-                PackageManager.DONT_KILL_APP,
-            )
-        }.onFailure { error ->
-            Timber.w(error, "Failed to ${if (hide) "hide" else "show"} app icon")
-        }
     }
 
     fun toggleIcon(context: Context, hide: Boolean) {

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.content.Context
@@ -38,7 +36,7 @@ import kotlinx.coroutines.launch
 
 class ProvidersViewModel(
     private val proxyFacade: ProxyFacade,
-    private val providersRepository: ProvidersController
+    private val providersRepository: ProvidersController,
 ) : ViewModel() {
 
     private val _providers = MutableStateFlow<List<Provider>>(emptyList())
@@ -58,13 +56,18 @@ class ProvidersViewModel(
 
             _uiState.update { it.copy(isLoading = true) }
             val result = providersRepository.queryProviders()
-            result.onSuccess { providerList ->
-                _providers.value = providerList.sorted()
-            }.onFailure { error ->
-                _uiState.update {
-                    it.copy(error = MLang.Providers.Message.FetchFailed.format(error.message ?: "Unknown error"))
+            result
+                .onSuccess { providerList -> _providers.value = providerList.sorted() }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            error =
+                                MLang.Providers.Message.FetchFailed.format(
+                                    error.message ?: "Unknown error"
+                                )
+                        )
+                    }
                 }
-            }
             _uiState.update { it.copy(isLoading = false) }
         }
     }
@@ -74,21 +77,33 @@ class ProvidersViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
             val result = providersRepository.updateProvider(provider)
-            result.onSuccess {
-                refreshProviders()
-                _uiState.update { it.copy(message = MLang.Providers.Message.UpdateSuccess.format(provider.name)) }
-            }.onFailure { error ->
-                _uiState.update {
-                    it.copy(error = MLang.Providers.Message.UpdateFailed.format(error.message ?: "Unknown error"))
+            result
+                .onSuccess {
+                    refreshProviders()
+                    _uiState.update {
+                        it.copy(
+                            message = MLang.Providers.Message.UpdateSuccess.format(provider.name)
+                        )
+                    }
                 }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            error =
+                                MLang.Providers.Message.UpdateFailed.format(
+                                    error.message ?: "Unknown error"
+                                )
+                        )
+                    }
+                }
             _uiState.update { it.copy(updatingProviders = it.updatingProviders - providerKey) }
         }
     }
 
     fun updateAllProviders() {
         viewModelScope.launch {
-            val httpProviders = _providers.value.filter { it.vehicleType == Provider.VehicleType.HTTP }
+            val httpProviders =
+                _providers.value.filter { it.vehicleType == Provider.VehicleType.HTTP }
             if (httpProviders.isEmpty()) return@launch
 
             _uiState.update { it.copy(isUpdatingAll = true) }
@@ -96,24 +111,32 @@ class ProvidersViewModel(
             _uiState.update { it.copy(updatingProviders = providerKeys) }
 
             val result = providersRepository.updateAllProviders(httpProviders)
-            result.onSuccess { updateResult ->
-                refreshProviders()
-                if (updateResult.failedProviders.isEmpty()) {
-                    _uiState.update { it.copy(message = MLang.Providers.Message.AllUpdated) }
-                } else {
+            result
+                .onSuccess { updateResult ->
+                    refreshProviders()
+                    if (updateResult.failedProviders.isEmpty()) {
+                        _uiState.update { it.copy(message = MLang.Providers.Message.AllUpdated) }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                error =
+                                    MLang.Providers.Message.UpdateFailed.format(
+                                        "Failed providers: ${updateResult.failedProviders.joinToString(", ")}"
+                                    )
+                            )
+                        }
+                    }
+                }
+                .onFailure { error ->
                     _uiState.update {
                         it.copy(
-                            error = MLang.Providers.Message.UpdateFailed.format(
-                                "Failed providers: ${updateResult.failedProviders.joinToString(", ")}"
-                            )
+                            error =
+                                MLang.Providers.Message.UpdateFailed.format(
+                                    error.message ?: "Unknown error"
+                                )
                         )
                     }
                 }
-            }.onFailure { error ->
-                _uiState.update {
-                    it.copy(error = MLang.Providers.Message.UpdateFailed.format(error.message ?: "Unknown error"))
-                }
-            }
 
             _uiState.update { it.copy(isUpdatingAll = false, updatingProviders = emptySet()) }
         }
@@ -133,14 +156,25 @@ class ProvidersViewModel(
             _uiState.update { it.copy(updatingProviders = it.updatingProviders + providerKey) }
 
             val result = providersRepository.uploadProviderFile(context, provider, uri)
-            result.onSuccess {
-                refreshProviders()
-                _uiState.update { it.copy(message = MLang.Providers.Message.UploadSuccess.format(provider.name)) }
-            }.onFailure { error ->
-                _uiState.update {
-                    it.copy(error = MLang.Providers.Message.UploadFailed.format(error.message ?: "Unknown error"))
+            result
+                .onSuccess {
+                    refreshProviders()
+                    _uiState.update {
+                        it.copy(
+                            message = MLang.Providers.Message.UploadSuccess.format(provider.name)
+                        )
+                    }
                 }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            error =
+                                MLang.Providers.Message.UploadFailed.format(
+                                    error.message ?: "Unknown error"
+                                )
+                        )
+                    }
+                }
 
             _uiState.update { it.copy(updatingProviders = it.updatingProviders - providerKey) }
         }
@@ -151,6 +185,6 @@ class ProvidersViewModel(
         val isUpdatingAll: Boolean = false,
         val updatingProviders: Set<String> = emptySet(),
         val message: String? = null,
-        val error: String? = null
+        val error: String? = null,
     )
 }

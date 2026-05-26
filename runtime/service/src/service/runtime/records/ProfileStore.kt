@@ -18,8 +18,6 @@
  *
  */
 
-
-
 @file:UseSerializers(UUIDSerializer::class)
 
 package com.github.yumelira.yumebox.service.runtime.records
@@ -28,10 +26,10 @@ import com.github.yumelira.yumebox.service.runtime.entity.Imported
 import com.github.yumelira.yumebox.service.runtime.entity.Selection
 import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
 import com.tencent.mmkv.MMKV
+import java.util.*
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
-import java.util.*
 
 object ProfileStore {
     private const val IMPORTED_KEY = "imported"
@@ -77,7 +75,8 @@ object ProfileStore {
     }
 
     fun removeAllSelectionScopeKeys() {
-        mmkv.allKeys()
+        mmkv
+            .allKeys()
             ?.filter { it.startsWith(SELECTION_SCOPE_KEY_PREFIX) }
             ?.forEach(mmkv::removeValueForKey)
     }
@@ -88,23 +87,23 @@ object ProfileStore {
             return
         }
 
-        val migratedSelections = loadSelections()
-            .asSequence()
-            .mapNotNull { selection ->
-                val groupName = selection.proxy.trim()
-                val selectedProxy = selection.selected.trim()
-                if (groupName.isEmpty() || selectedProxy.isEmpty()) {
-                    null
-                } else {
-                    selection.copy(
-                        proxy = groupName,
-                        selected = selectedProxy,
-                    )
+        val migratedSelections =
+            loadSelections()
+                .asSequence()
+                .mapNotNull { selection ->
+                    val groupName = selection.proxy.trim()
+                    val selectedProxy = selection.selected.trim()
+                    if (groupName.isEmpty() || selectedProxy.isEmpty()) {
+                        null
+                    } else {
+                        selection.copy(proxy = groupName, selected = selectedProxy)
+                    }
                 }
-            }
-            .groupBy { it.uuid to it.proxy }
-            .values
-            .mapNotNull { items -> items.maxByOrNull(Selection::updatedAt) ?: items.lastOrNull() }
+                .groupBy { it.uuid to it.proxy }
+                .values
+                .mapNotNull { items ->
+                    items.maxByOrNull(Selection::updatedAt) ?: items.lastOrNull()
+                }
 
         saveSelections(migratedSelections)
         removeAllSelectionScopeKeys()

@@ -18,18 +18,12 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.di
 
 import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigEditorViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val featureEditorViewModelModule = module {
-    viewModel { ConfigEditorViewModel() }
-}
+val featureEditorViewModelModule = module { viewModel { ConfigEditorViewModel() } }
 
-val featureEditorModules = listOf(
-    featureEditorViewModelModule,
-)
+val featureEditorModules = listOf(featureEditorViewModelModule)

@@ -18,40 +18,37 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.di
 
+import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.data.controller.AccessControlController
-import com.github.yumelira.yumebox.data.controller.AppSettingsController
-import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
-import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
 import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
 import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
+import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
-import com.github.yumelira.yumebox.data.store.LogStore
-import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
-import com.github.yumelira.yumebox.data.gateway.NetworkInfoService
-import com.github.yumelira.yumebox.data.store.OverrideConfigProvider
-import com.github.yumelira.yumebox.data.store.OverrideConfigStore
+import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.controller.OverrideResolver
 import com.github.yumelira.yumebox.data.controller.OverrideService
-import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
-import com.github.yumelira.yumebox.data.store.ProfileBindingStore
 import com.github.yumelira.yumebox.data.controller.ProvidersController
+import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
+import com.github.yumelira.yumebox.data.gateway.NetworkInfoService
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.data.store.LogStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.data.store.OverrideConfigProvider
+import com.github.yumelira.yumebox.data.store.OverrideConfigStore
+import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
+import com.github.yumelira.yumebox.data.store.ProfileBindingStore
 import com.github.yumelira.yumebox.data.store.ProfileLinksStore
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
 import com.github.yumelira.yumebox.runtime.client.root.RootTunReloadScheduler
-import com.github.yumelira.yumebox.domain.model.TrafficData
-import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,7 +100,9 @@ val appDataRuntimeModule = module {
         AccessControlController(
             store = get(),
             isRunning = { proxyFacade.isRunning.value },
-            resolveActiveMode = { RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner) },
+            resolveActiveMode = {
+                RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner)
+            },
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
         )
     }
@@ -159,12 +158,8 @@ val appDataRuntimeModule = module {
             currentProfileId = { proxyFacade.currentProfile.value?.uuid?.toString() },
             trafficStatisticsStore = get(),
             appIdentityResolver = get(),
-            queryTrafficTotal = {
-                TrafficData.from(proxyFacade.queryTrafficTotal())
-            },
-            queryConnections = {
-                proxyFacade.queryConnections()
-            },
+            queryTrafficTotal = { TrafficData.from(proxyFacade.queryTrafficTotal()) },
+            queryConnections = { proxyFacade.queryConnections() },
             queryActiveProfileId = {
                 proxyFacade.refreshCurrentProfile()
                 proxyFacade.currentProfile.value?.uuid?.toString()
@@ -173,7 +168,4 @@ val appDataRuntimeModule = module {
     }
 }
 
-val coreDiModules: List<Module> = listOf(
-    appFoundationModule,
-    appDataRuntimeModule,
-)
+val coreDiModules: List<Module> = listOf(appFoundationModule, appDataRuntimeModule)

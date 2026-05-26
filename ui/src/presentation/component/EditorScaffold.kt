@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -60,9 +59,7 @@ fun EditorScaffold(
                 scrollBehavior = scrollBehavior,
                 actions = {
                     actions.forEachIndexed { index, action ->
-                        IconButton(
-                            onClick = action.onClick,
-                        ) {
+                        IconButton(onClick = action.onClick) {
                             Icon(
                                 imageVector = action.icon,
                                 contentDescription = action.contentDescription,
@@ -77,16 +74,8 @@ fun EditorScaffold(
 }
 
 @Composable
-fun EditorEmptyState(
-    title: String,
-    hint: String,
-    modifier: Modifier = Modifier,
-) {
-    CenteredText(
-        firstLine = title,
-        secondLine = hint,
-        modifier = modifier,
-    )
+fun EditorEmptyState(title: String, hint: String, modifier: Modifier = Modifier) {
+    CenteredText(firstLine = title, secondLine = hint, modifier = modifier)
 }
 
 @Composable
@@ -103,10 +92,10 @@ fun EditorListItem(
 ) {
     Card(modifier = modifier.padding(vertical = UiDp.dp4)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -116,35 +105,31 @@ fun EditorListItem(
                 modifier = Modifier.width(UiDp.dp40),
             )
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = UiDp.dp8),
+                modifier = Modifier.weight(1f).padding(horizontal = UiDp.dp8),
                 verticalArrangement = Arrangement.spacedBy(UiDp.dp4),
             ) {
-                Text(
-                    text = title,
-                    style = MiuixTheme.textStyles.body1,
-                )
-                summary?.takeIf { it.isNotBlank() }?.let {
+                Text(text = title, style = MiuixTheme.textStyles.body1)
+                summary
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let {
+                        Text(
+                            text = it,
+                            style = MiuixTheme.textStyles.body2,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        )
+                    }
+            }
+            trailingText
+                ?.takeIf { it.isNotBlank() }
+                ?.let {
                     Text(
                         text = it,
                         style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        modifier = Modifier.padding(end = UiDp.dp8),
                     )
                 }
-            }
-            trailingText?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    text = it,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    modifier = Modifier.padding(end = UiDp.dp8),
-                )
-            }
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier,
-            ) {
+            IconButton(onClick = onDelete, modifier = Modifier) {
                 Icon(
                     imageVector = deleteIcon,
                     contentDescription = deleteContentDescription,

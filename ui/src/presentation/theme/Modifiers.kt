@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.theme
 
 import android.annotation.SuppressLint
@@ -41,38 +39,30 @@ fun Modifier.screenPadding(): Modifier {
 
 @SuppressLint("SuspiciousModifierThen")
 @Composable
-fun Modifier.sectionVSpacing(
-    top: Boolean = true,
-    bottom: Boolean = true,
-): Modifier {
+fun Modifier.sectionVSpacing(top: Boolean = true, bottom: Boolean = true): Modifier {
     val s = AppTheme.spacing
     return this.then(
         Modifier.padding(
             top = if (top) s.space16 else UiDp.dp0,
             bottom = if (bottom) s.space16 else UiDp.dp0,
-        ),
+        )
     )
 }
 
 @SuppressLint("SuspiciousModifierThen")
 @Composable
-fun Modifier.sectionHPadding(
-    start: Boolean = true,
-    end: Boolean = true,
-): Modifier {
+fun Modifier.sectionHPadding(start: Boolean = true, end: Boolean = true): Modifier {
     val s = AppTheme.spacing
     return this.then(
         Modifier.padding(
             start = if (start) s.contentHorizontal else UiDp.dp0,
             end = if (end) s.contentHorizontal else UiDp.dp0,
-        ),
+        )
     )
 }
 
 @Composable
-fun Modifier.topPadding(
-    amount: Dp = AppTheme.spacing.space8,
-): Modifier {
+fun Modifier.topPadding(amount: Dp = AppTheme.spacing.space8): Modifier {
     return this.padding(top = amount)
 }
 

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.model
 
 import kotlinx.serialization.SerialName
@@ -38,10 +36,8 @@ data class ConnectionSnapshot(
 data class ConnectionInfo(
     val id: String = "",
     val metadata: JsonObject = JsonObject(emptyMap()),
-    @SerialName("upload")
-    val upload: Long = 0L,
-    @SerialName("download")
-    val download: Long = 0L,
+    @SerialName("upload") val upload: Long = 0L,
+    @SerialName("download") val download: Long = 0L,
     val start: String = "",
     val chains: List<String> = emptyList(),
     val providerChains: List<String> = emptyList(),

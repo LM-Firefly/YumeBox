@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.common.util
 
 import android.os.Build
@@ -28,9 +26,8 @@ object DeviceUtil {
 
     fun is32BitDevice(): Boolean {
         val supportedABIs = Build.SUPPORTED_ABIS
-        return supportedABIs.isNotEmpty() && supportedABIs.all { abi ->
-            abi.contains("armeabi-v7a") || abi.contains("x86")
-        }
+        return supportedABIs.isNotEmpty() &&
+            supportedABIs.all { abi -> abi.contains("armeabi-v7a") || abi.contains("x86") }
     }
 
     fun getPreferredAbi(): String {

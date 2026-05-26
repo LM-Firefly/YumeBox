@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.store
 
 import com.tencent.mmkv.MMKV

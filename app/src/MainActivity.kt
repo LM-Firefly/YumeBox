@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox
 
 import android.app.ActivityManager
@@ -39,8 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import androidx.lifecycle.lifecycleScope
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
@@ -48,8 +46,8 @@ import com.github.yumelira.yumebox.common.util.IntentController
 import com.github.yumelira.yumebox.common.util.ProxyAutoStartHelper
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
-import com.github.yumelira.yumebox.di.APPLICATION_SCOPE_NAME
 import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.di.APPLICATION_SCOPE_NAME
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import com.github.yumelira.yumebox.presentation.component.StartupBiometricContent
@@ -66,11 +64,11 @@ import com.tencent.mmkv.MMKV
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.qualifier.named
@@ -84,18 +82,24 @@ class MainActivity : FragmentActivity() {
         private const val EXTRA_EXIT_UI_WHEN_BACKGROUND = "exit_ui_when_background"
         private val _pendingImportUrl = MutableStateFlow<String?>(null)
         val pendingImportUrl: StateFlow<String?> = _pendingImportUrl.asStateFlow()
+
         fun clearPendingImportUrl() {
             _pendingImportUrl.value = null
         }
     }
 
-    private val appSettingsStorage: com.github.yumelira.yumebox.data.store.AppSettingsStore by inject()
+    private val appSettingsStorage: com.github.yumelira.yumebox.data.store.AppSettingsStore by
+        inject()
     private val featureStore: FeatureStore by inject()
-    private val networkSettingsStorage: com.github.yumelira.yumebox.data.store.NetworkSettingsStore by inject()
-    private val profilesRepository: com.github.yumelira.yumebox.runtime.client.ProfilesRepository by inject()
+    private val networkSettingsStorage:
+        com.github.yumelira.yumebox.data.store.NetworkSettingsStore by
+        inject()
+    private val profilesRepository: com.github.yumelira.yumebox.runtime.client.ProfilesRepository by
+        inject()
     private val proxyFacade: com.github.yumelira.yumebox.runtime.client.ProxyFacade by inject()
     private val serviceCache: MMKV by inject(qualifier = named("service_cache"))
-    private val applicationScope: CoroutineScope by inject(qualifier = named(APPLICATION_SCOPE_NAME))
+    private val applicationScope: CoroutineScope by
+        inject(qualifier = named(APPLICATION_SCOPE_NAME))
 
     private lateinit var intentController: IntentController
 
@@ -124,7 +128,10 @@ class MainActivity : FragmentActivity() {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
                 requestPermissions(
                     arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
                     REQUEST_NOTIFICATION_PERMISSION,
@@ -135,19 +142,27 @@ class MainActivity : FragmentActivity() {
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
             val themeMode = appSettingsViewModel.themeMode.state.collectAsState().value
-            val themeSeedColorArgb = appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
-            val invertOnPrimaryColors = appSettingsViewModel.invertOnPrimaryColors.state.collectAsState().value
-            val smoothCornerEnabled = appSettingsViewModel.smoothCornerEnabled.state.collectAsState().value
-            val excludeFromRecents = appSettingsViewModel.excludeFromRecents.state.collectAsState().value
-            val topBarBlurEnabled = appSettingsViewModel.topBarBlurEnabled.state.collectAsState().value
+            val themeSeedColorArgb =
+                appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
+            val invertOnPrimaryColors =
+                appSettingsViewModel.invertOnPrimaryColors.state.collectAsState().value
+            val smoothCornerEnabled =
+                appSettingsViewModel.smoothCornerEnabled.state.collectAsState().value
+            val excludeFromRecents =
+                appSettingsViewModel.excludeFromRecents.state.collectAsState().value
+            val topBarBlurEnabled =
+                appSettingsViewModel.topBarBlurEnabled.state.collectAsState().value
             val pageScale = appSettingsViewModel.pageScale.state.collectAsState().value
-            val screenshotProtectionEnabled = appSettingsViewModel.screenshotProtectionEnabled.state.collectAsState().value
-            val biometricUnlockEnabled by appSettingsViewModel.biometricUnlockEnabled.state.collectAsState()
+            val screenshotProtectionEnabled =
+                appSettingsViewModel.screenshotProtectionEnabled.state.collectAsState().value
+            val biometricUnlockEnabled by
+                appSettingsViewModel.biometricUnlockEnabled.state.collectAsState()
 
-            val biometricGateState = rememberStartupBiometricGateState(
-                activity = this@MainActivity,
-                biometricUnlockEnabled = biometricUnlockEnabled,
-            )
+            val biometricGateState =
+                rememberStartupBiometricGateState(
+                    activity = this@MainActivity,
+                    biometricUnlockEnabled = biometricUnlockEnabled,
+                )
 
             LaunchedEffect(excludeFromRecents) {
                 this@MainActivity.applyExcludeFromRecents(excludeFromRecents)
@@ -159,9 +174,10 @@ class MainActivity : FragmentActivity() {
 
             ProvideAndroidPlatformTheme {
                 val systemDensity = LocalDensity.current
-                val scaledDensity = remember(systemDensity, pageScale) {
-                    Density(systemDensity.density * pageScale, systemDensity.fontScale)
-                }
+                val scaledDensity =
+                    remember(systemDensity, pageScale) {
+                        Density(systemDensity.density * pageScale, systemDensity.fontScale)
+                    }
                 CompositionLocalProvider(LocalDensity provides scaledDensity) {
                     YumeTheme(
                         themeMode = themeMode,
@@ -176,7 +192,8 @@ class MainActivity : FragmentActivity() {
                             ) {
                                 StartupBiometricContent(
                                     isAuthenticating = biometricGateState.isAuthenticating,
-                                    biometricErrorMessage = biometricGateState.biometricErrorMessage,
+                                    biometricErrorMessage =
+                                        biometricGateState.biometricErrorMessage,
                                     onRetry = biometricGateState.retryAuthentication,
                                     onExit = { finishAndRemoveTask() },
                                 )
@@ -184,20 +201,24 @@ class MainActivity : FragmentActivity() {
                         } else {
                             val topBarHazeState = remember { HazeState() }
                             val topBarBackground = MiuixTheme.colorScheme.surface
-                            val topBarHazeStyle = remember(topBarBackground) {
-                                HazeStyle(
-                                    backgroundColor = topBarBackground,
-                                    tint = HazeTint(topBarBackground.copy(0.8f)),
-                                )
-                            }
+                            val topBarHazeStyle =
+                                remember(topBarBackground) {
+                                    HazeStyle(
+                                        backgroundColor = topBarBackground,
+                                        tint = HazeTint(topBarBackground.copy(0.8f)),
+                                    )
+                                }
                             val navController = rememberNavController()
 
                             CompositionLocalProvider(
-                                LocalTopBarHazeState provides if (topBarBlurEnabled) topBarHazeState else null,
-                                LocalTopBarHazeStyle provides if (topBarBlurEnabled) topBarHazeStyle else null,
+                                LocalTopBarHazeState provides
+                                    if (topBarBlurEnabled) topBarHazeState else null,
+                                LocalTopBarHazeStyle provides
+                                    if (topBarBlurEnabled) topBarHazeStyle else null,
                             ) {
                                 Surface(
-                                    modifier = Modifier.fillMaxSize(), color = MiuixTheme.colorScheme.surface
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = MiuixTheme.colorScheme.surface,
                                 ) {
                                     DestinationsNavHost(
                                         navGraph = NavGraphs.root,
@@ -211,7 +232,6 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             }
-
         }
 
         applicationScope.launch {
@@ -292,14 +312,15 @@ class MainActivity : FragmentActivity() {
         runCatching {
             val am = getSystemService(ActivityManager::class.java) ?: return@runCatching
             val currentTaskId = taskId
-            val task = am.appTasks.firstOrNull { appTask: ActivityManager.AppTask ->
-                val taskInfo = appTask.taskInfo ?: return@firstOrNull false
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    taskInfo.taskId == currentTaskId
-                } else {
-                    taskInfo.id == currentTaskId
+            val task =
+                am.appTasks.firstOrNull { appTask: ActivityManager.AppTask ->
+                    val taskInfo = appTask.taskInfo ?: return@firstOrNull false
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        taskInfo.taskId == currentTaskId
+                    } else {
+                        taskInfo.id == currentTaskId
+                    }
                 }
-            }
             task?.setExcludeFromRecents(exclude)
         }
     }

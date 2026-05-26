@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.annotation.SuppressLint
@@ -99,7 +97,10 @@ class ProxyTileService : TileService() {
             val currentMode = effectiveMode(snapshot)
 
             val tileState = qsTile?.state
-            if ((isRunning && tileState == Tile.STATE_INACTIVE) || (!isRunning && tileState == Tile.STATE_ACTIVE)) {
+            if (
+                (isRunning && tileState == Tile.STATE_INACTIVE) ||
+                    (!isRunning && tileState == Tile.STATE_ACTIVE)
+            ) {
                 updateTileState(isRunning)
                 return@launch
             }
@@ -108,7 +109,10 @@ class ProxyTileService : TileService() {
                 if (isRunning) {
                     updateTilePendingState(isStarting = false)
                     withContext(Dispatchers.IO) {
-                        if (snapshot.owner == RuntimeOwner.RootTun || currentMode == ProxyMode.RootTun) {
+                        if (
+                            snapshot.owner == RuntimeOwner.RootTun ||
+                                currentMode == ProxyMode.RootTun
+                        ) {
                             val result = RootTunServiceBridge.stop(applicationContext)
                             if (!result.success) {
                                 error(result.error ?: "RootTun stop failed")
@@ -118,16 +122,15 @@ class ProxyTileService : TileService() {
                         }
                     }
                 } else {
-                    val activeProfile = withContext(Dispatchers.IO) {
-                        profileManager.queryActive()
-                    }
+                    val activeProfile = withContext(Dispatchers.IO) { profileManager.queryActive() }
                     if (activeProfile == null) {
                         updateTileInactiveState(subtitle = MLang.Service.Tile.ClickToOpen)
 
-                        val intent = Intent(Intent.ACTION_MAIN).apply {
-                            component = Components.MAIN_ACTIVITY
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
+                        val intent =
+                            Intent(Intent.ACTION_MAIN).apply {
+                                component = Components.MAIN_ACTIVITY
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
                         startActivityAndCollapseCompat(intent, requestCode = 1001)
                         return@launch
                     }
@@ -150,9 +153,10 @@ class ProxyTileService : TileService() {
                             )
                         }
                         ProxyMode.RootTun -> {
-                            val result = withContext(Dispatchers.IO) {
-                                RootTunServiceBridge.start(applicationContext)
-                            }
+                            val result =
+                                withContext(Dispatchers.IO) {
+                                    RootTunServiceBridge.start(applicationContext)
+                                }
                             if (!result.success) {
                                 error(result.error ?: "RootTun start failed")
                             }
@@ -174,7 +178,7 @@ class ProxyTileService : TileService() {
                         name = "proxy_tile_toggle_state_sync",
                         intervalMillis = 300L,
                         initialDelayMillis = 300L,
-                    ),
+                    )
                 )
                 updateTileState(currentSnapshot().running)
             }
@@ -186,12 +190,13 @@ class ProxyTileService : TileService() {
         val rootStatus = rootTunStateStore.snapshot()
         val tunPhase = StatusProvider.queryRuntimePhase(ProxyMode.Tun).toRuntimePhase()
         val httpPhase = StatusProvider.queryRuntimePhase(ProxyMode.Http).toRuntimePhase()
-        val owner = when {
-            rootStatus.state.isActive || rootStatus.runtimeReady -> RuntimeOwner.RootTun
-            tunPhase != RuntimePhase.Idle -> RuntimeOwner.LocalTun
-            httpPhase != RuntimePhase.Idle -> RuntimeOwner.LocalHttp
-            else -> RuntimeOwner.None
-        }
+        val owner =
+            when {
+                rootStatus.state.isActive || rootStatus.runtimeReady -> RuntimeOwner.RootTun
+                tunPhase != RuntimePhase.Idle -> RuntimeOwner.LocalTun
+                httpPhase != RuntimePhase.Idle -> RuntimeOwner.LocalHttp
+                else -> RuntimeOwner.None
+            }
 
         return if (owner == RuntimeOwner.None) {
             RuntimeSnapshot(
@@ -202,18 +207,25 @@ class ProxyTileService : TileService() {
         } else {
             RuntimeSnapshot(
                 owner = owner,
-                phase = when (owner) {
-                    RuntimeOwner.RootTun -> when (rootStatus.state) {
-                        com.github.yumelira.yumebox.service.root.RootTunState.Idle -> RuntimePhase.Idle
-                        com.github.yumelira.yumebox.service.root.RootTunState.Starting -> RuntimePhase.Starting
-                        com.github.yumelira.yumebox.service.root.RootTunState.Running -> RuntimePhase.Running
-                        com.github.yumelira.yumebox.service.root.RootTunState.Stopping -> RuntimePhase.Stopping
-                        com.github.yumelira.yumebox.service.root.RootTunState.Failed -> RuntimePhase.Failed
-                    }
-                    RuntimeOwner.LocalTun -> tunPhase
-                    RuntimeOwner.LocalHttp -> httpPhase
-                    RuntimeOwner.None -> RuntimePhase.Idle
-                },
+                phase =
+                    when (owner) {
+                        RuntimeOwner.RootTun ->
+                            when (rootStatus.state) {
+                                com.github.yumelira.yumebox.service.root.RootTunState.Idle ->
+                                    RuntimePhase.Idle
+                                com.github.yumelira.yumebox.service.root.RootTunState.Starting ->
+                                    RuntimePhase.Starting
+                                com.github.yumelira.yumebox.service.root.RootTunState.Running ->
+                                    RuntimePhase.Running
+                                com.github.yumelira.yumebox.service.root.RootTunState.Stopping ->
+                                    RuntimePhase.Stopping
+                                com.github.yumelira.yumebox.service.root.RootTunState.Failed ->
+                                    RuntimePhase.Failed
+                            }
+                        RuntimeOwner.LocalTun -> tunPhase
+                        RuntimeOwner.LocalHttp -> httpPhase
+                        RuntimeOwner.None -> RuntimePhase.Idle
+                    },
                 targetMode = modeForOwner(owner) ?: configuredMode,
             )
         }
@@ -230,12 +242,13 @@ class ProxyTileService : TileService() {
 
     private fun effectiveMode(snapshot: RuntimeSnapshot): ProxyMode {
         return when {
-            snapshot.running -> when (snapshot.owner) {
-                RuntimeOwner.LocalTun -> ProxyMode.Tun
-                RuntimeOwner.LocalHttp -> ProxyMode.Http
-                RuntimeOwner.RootTun -> ProxyMode.RootTun
-                RuntimeOwner.None -> snapshot.targetMode
-            }
+            snapshot.running ->
+                when (snapshot.owner) {
+                    RuntimeOwner.LocalTun -> ProxyMode.Tun
+                    RuntimeOwner.LocalHttp -> ProxyMode.Http
+                    RuntimeOwner.RootTun -> ProxyMode.RootTun
+                    RuntimeOwner.None -> snapshot.targetMode
+                }
 
             else -> snapshot.targetMode
         }
@@ -258,17 +271,19 @@ class ProxyTileService : TileService() {
         tile.label = tileLabelText
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            tile.subtitle = if (isRunning) {
-                MLang.Service.Tile.ClickToStopProxy
-            } else {
-                MLang.Service.Tile.ClickToStartProxy
-            }
+            tile.subtitle =
+                if (isRunning) {
+                    MLang.Service.Tile.ClickToStopProxy
+                } else {
+                    MLang.Service.Tile.ClickToStartProxy
+                }
         }
 
-        tile.icon = Icon.createWithResource(
-            this,
-            if (isRunning) R.drawable.ic_logo_service else R.drawable.ic_logo_service
-        )
+        tile.icon =
+            Icon.createWithResource(
+                this,
+                if (isRunning) R.drawable.ic_logo_service else R.drawable.ic_logo_service,
+            )
 
         tile.updateTile()
     }
@@ -279,11 +294,12 @@ class ProxyTileService : TileService() {
         tile.label = tileLabelText
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            tile.subtitle = if (isStarting) {
-                MLang.Service.Tile.Connecting
-            } else {
-                MLang.Service.Tile.Disconnecting
-            }
+            tile.subtitle =
+                if (isStarting) {
+                    MLang.Service.Tile.Connecting
+                } else {
+                    MLang.Service.Tile.Disconnecting
+                }
         }
 
         tile.icon = Icon.createWithResource(this, R.drawable.ic_logo_service)
@@ -305,13 +321,14 @@ class ProxyTileService : TileService() {
 
     private fun startActivityAndCollapseCompat(intent: Intent, requestCode: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            val pendingIntent = PendingIntent.getActivity(this, requestCode, intent, pendingIntentFlags)
+            val pendingIntentFlags =
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            val pendingIntent =
+                PendingIntent.getActivity(this, requestCode, intent, pendingIntentFlags)
             startActivityAndCollapse(pendingIntent)
             return
         }
 
-        @Suppress("DEPRECATION")
-        startActivityAndCollapse(intent)
+        @Suppress("DEPRECATION") startActivityAndCollapse(intent)
     }
 }

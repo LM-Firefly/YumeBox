@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.screen.node
 
 import androidx.compose.runtime.Composable
@@ -30,11 +28,8 @@ import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
-internal val NodeSortModes = listOf(
-    ProxySortMode.DEFAULT,
-    ProxySortMode.BY_NAME,
-    ProxySortMode.BY_LATENCY,
-)
+internal val NodeSortModes =
+    listOf(ProxySortMode.DEFAULT, ProxySortMode.BY_NAME, ProxySortMode.BY_LATENCY)
 
 @Composable
 internal fun NodeSortPopup(

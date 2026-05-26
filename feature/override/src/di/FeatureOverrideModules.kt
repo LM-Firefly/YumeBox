@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
@@ -37,6 +35,4 @@ val featureOverrideViewModelModule = module {
     }
 }
 
-val featureOverrideModules = listOf(
-    featureOverrideViewModelModule,
-)
+val featureOverrideModules = listOf(featureOverrideViewModelModule)

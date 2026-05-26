@@ -32,9 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class LogViewModel(
-    private val repository: LogStore,
-) : ViewModel() {
+class LogViewModel(private val repository: LogStore) : ViewModel() {
     private val recordingFlow = MutableStateFlow(repository.isRecording())
     private val logEntriesFlow = MutableStateFlow<List<LogStore.LogEntry>>(emptyList())
 
@@ -59,17 +57,15 @@ class LogViewModel(
         }
     }
 
-    suspend fun saveTempLog(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
-        val entries = logEntriesFlow.value
-        if (entries.isEmpty()) return@withContext false
-        try {
-            repository.writeLogEntries(
-                targetUri = targetUri,
-                entries = entries,
-            )
-        } catch (error: Exception) {
-            if (error is CancellationException) throw error
-            false
+    suspend fun saveTempLog(targetUri: Uri): Boolean =
+        withContext(Dispatchers.IO) {
+            val entries = logEntriesFlow.value
+            if (entries.isEmpty()) return@withContext false
+            try {
+                repository.writeLogEntries(targetUri = targetUri, entries = entries)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                false
+            }
         }
-    }
 }

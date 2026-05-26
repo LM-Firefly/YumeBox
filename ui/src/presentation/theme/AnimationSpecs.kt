@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.theme
 
 import androidx.compose.animation.core.*
@@ -37,10 +35,7 @@ object AnimationSpecs {
     const val DURATION_FAST = 280
 
     val ButtonPress: AnimationSpec<Float> = tween(DURATION_FAST, easing = StandardEasing)
-    val ButtonPressSpring: SpringSpec<Float> = spring(
-        dampingRatio = 0.8f,
-        stiffness = 400f
-    )
+    val ButtonPressSpring: SpringSpec<Float> = spring(dampingRatio = 0.8f, stiffness = 400f)
     val IconTransition: AnimationSpec<Float> = tween(320, easing = Legacy)
 
     object Proxy {

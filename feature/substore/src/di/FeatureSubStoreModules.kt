@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
@@ -36,6 +34,4 @@ val featureSubStoreViewModelModule = module {
     viewModel { FeatureViewModel(get(), androidApplication(), get()) }
 }
 
-val featureSubStoreModules: List<Module> = listOf(
-    featureSubStoreViewModelModule,
-)
+val featureSubStoreModules: List<Module> = listOf(featureSubStoreViewModelModule)

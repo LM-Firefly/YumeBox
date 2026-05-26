@@ -32,11 +32,9 @@ import java.util.Locale
 
 object AppLanguageManager {
 
-    @Volatile
-    private var activeLanguage: AppLanguage = AppLanguage.System
+    @Volatile private var activeLanguage: AppLanguage = AppLanguage.System
 
-    @Volatile
-    private var activeLocale: Locale = Locale.getDefault()
+    @Volatile private var activeLocale: Locale = Locale.getDefault()
 
     fun apply(language: AppLanguage) {
         activeLanguage = language
@@ -48,7 +46,7 @@ object AppLanguageManager {
                 AppLanguage.System -> LocaleListCompat.getEmptyLocaleList()
                 AppLanguage.Zh -> LocaleListCompat.forLanguageTags("zh-Hans")
                 AppLanguage.En -> LocaleListCompat.forLanguageTags("en")
-            },
+            }
         )
 
         Locale.setDefault(locale)
@@ -86,10 +84,7 @@ object AppLanguageManager {
         }
     }
 
-    private fun applyLocale(
-        configuration: Configuration,
-        locale: Locale,
-    ) {
+    private fun applyLocale(configuration: Configuration, locale: Locale) {
         configuration.setLocale(locale)
         configuration.setLayoutDirection(locale)
     }

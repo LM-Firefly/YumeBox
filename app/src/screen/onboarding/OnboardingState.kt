@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.content.Context
@@ -61,36 +59,34 @@ internal fun rememberPermissionState(
     context: Context,
     lifecycleOwner: LifecycleOwner,
 ): PermissionState {
-    val miuiDynamicSupported = remember {
-        isMiuiGetInstalledAppsDynamicSupported(context)
-    }
+    val miuiDynamicSupported = remember { isMiuiGetInstalledAppsDynamicSupported(context) }
 
-    var notificationGranted by remember {
-        mutableStateOf(isNotificationGranted(context))
-    }
+    var notificationGranted by remember { mutableStateOf(isNotificationGranted(context)) }
     var appListGranted by remember {
         mutableStateOf(isAppListPermissionGranted(context, miuiDynamicSupported))
     }
 
-    val requestNotificationPermission = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            notificationGranted = granted
-            if (!granted) {
-                openAppNotificationSettings(context)
-            }
-        },
-    )
+    val requestNotificationPermission =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                notificationGranted = granted
+                if (!granted) {
+                    openAppNotificationSettings(context)
+                }
+            },
+        )
 
-    val requestMiuiGetInstalledAppsPermission = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            appListGranted = granted
-            if (!granted) {
-                openAppDetailsSettings(context)
-            }
-        },
-    )
+    val requestMiuiGetInstalledAppsPermission =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                appListGranted = granted
+                if (!granted) {
+                    openAppDetailsSettings(context)
+                }
+            },
+        )
 
     DisposableEffect(lifecycleOwner, context, miuiDynamicSupported) {
         val observer = LifecycleEventObserver { _, event ->
@@ -100,9 +96,7 @@ internal fun rememberPermissionState(
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     return PermissionState(
@@ -128,7 +122,7 @@ internal fun rememberPermissionState(
 
 @Composable
 internal fun rememberPrivacyAcceptedState(
-    appSettingsViewModel: AppSettingsViewModel,
+    appSettingsViewModel: AppSettingsViewModel
 ): PrivacyAcceptedState {
     val accepted by appSettingsViewModel.privacyPolicyAccepted.state.collectAsState()
     return PrivacyAcceptedState(
@@ -139,7 +133,7 @@ internal fun rememberPrivacyAcceptedState(
 
 @Composable
 internal fun rememberThemeCustomizationState(
-    appSettingsViewModel: AppSettingsViewModel,
+    appSettingsViewModel: AppSettingsViewModel
 ): ThemeCustomizationState {
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
     val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
@@ -152,50 +146,46 @@ internal fun rememberThemeCustomizationState(
 }
 
 internal fun openAppNotificationSettings(context: Context) {
-    val intent = Intent().apply {
-        action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
-        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-    runCatching {
-        context.startActivity(intent)
-    }.recoverCatching {
-        openAppDetailsSettings(context)
-    }
+    val intent =
+        Intent().apply {
+            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    runCatching { context.startActivity(intent) }
+        .recoverCatching { openAppDetailsSettings(context) }
 }
 
 internal fun openAppDetailsSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = android.net.Uri.fromParts("package", context.packageName, null)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
+    val intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = android.net.Uri.fromParts("package", context.packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
     context.startActivity(intent)
 }
 
 internal fun isMiuiGetInstalledAppsDynamicSupported(context: Context): Boolean {
     return runCatching {
-        val permissionInfo = context.packageManager.getPermissionInfo(
-            MIUI_GET_INSTALLED_APPS_PERMISSION,
-            0,
-        )
-        permissionInfo.packageName == "com.lbe.security.miui"
-    }.getOrDefault(false)
+            val permissionInfo =
+                context.packageManager.getPermissionInfo(MIUI_GET_INSTALLED_APPS_PERMISSION, 0)
+            permissionInfo.packageName == "com.lbe.security.miui"
+        }
+        .getOrDefault(false)
 }
 
-internal fun isAppListPermissionGranted(
-    context: Context,
-    miuiDynamicSupported: Boolean,
-): Boolean {
+internal fun isAppListPermissionGranted(context: Context, miuiDynamicSupported: Boolean): Boolean {
     if (miuiDynamicSupported) {
         return context.checkSelfPermission(MIUI_GET_INSTALLED_APPS_PERMISSION) ==
             PackageManager.PERMISSION_GRANTED
     }
 
     return runCatching {
-        context.packageManager
-            .getInstalledApplications(0)
-            .any { it.packageName != context.packageName }
-    }.getOrDefault(false)
+            context.packageManager.getInstalledApplications(0).any {
+                it.packageName != context.packageName
+            }
+        }
+        .getOrDefault(false)
 }
 
 internal fun isNotificationGranted(context: Context): Boolean {

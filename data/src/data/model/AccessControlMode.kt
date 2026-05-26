@@ -18,15 +18,11 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 enum class AccessControlMode {
 
     ALLOW_ALL,
-
     ALLOW_SPECIFIC,
-
-    DENY_SPECIFIC
+    DENY_SPECIFIC,
 }

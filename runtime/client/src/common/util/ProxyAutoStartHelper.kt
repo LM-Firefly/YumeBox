@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.common.util
 
 import android.content.Context
@@ -65,13 +63,14 @@ object ProxyAutoStartHelper {
             return
         }
 
-        val activeProfile = try {
-            profilesRepository.queryActiveProfile()
-        } catch (error: Exception) {
-            if (error is CancellationException) throw error
-            Timber.tag(TAG).e(error, "Failed to load active profile")
-            return
-        }
+        val activeProfile =
+            try {
+                profilesRepository.queryActiveProfile()
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                Timber.tag(TAG).e(error, "Failed to load active profile")
+                return
+            }
 
         tryUpdateActiveProfileOnStart(
             appSettingsStorage = appSettingsStorage,
@@ -132,7 +131,8 @@ object ProxyAutoStartHelper {
                 return
             }
             AutoStartUpdatePolicy.Decision.UnsupportedProfileType -> {
-                Timber.tag(TAG).d("Skip auto update: unsupported profile type=${activeProfile?.type}")
+                Timber.tag(TAG)
+                    .d("Skip auto update: unsupported profile type=${activeProfile?.type}")
                 return
             }
             AutoStartUpdatePolicy.Decision.SkipColdStartReason -> return

@@ -57,16 +57,16 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
+import java.util.UUID
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.AddCircle
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Reset
-import java.util.UUID
+import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 object EditorDataHolder {
     var listEditorTitle: String = ""
@@ -122,57 +122,59 @@ object EditorDataHolder {
     }
 }
 
-private data class TextDraftItem(
-    val id: String,
-    val value: String,
-)
+private data class TextDraftItem(val id: String, val value: String)
 
-private data class KeyValueDraftItem(
-    val id: String,
-    val key: String,
-    val value: String,
-)
+private data class KeyValueDraftItem(val id: String, val key: String, val value: String)
 
 private sealed interface StringListDialogState {
     data object None : StringListDialogState
+
     data object Add : StringListDialogState
+
     data class Edit(val itemId: String) : StringListDialogState
+
     data object Reset : StringListDialogState
+
     data object AddRule : StringListDialogState
 }
 
 private sealed interface KeyValueDialogState {
     data object None : KeyValueDialogState
+
     data object Add : KeyValueDialogState
+
     data class Edit(val itemId: String) : KeyValueDialogState
+
     data object Reset : KeyValueDialogState
 }
 
 @Destination<RootGraph>
 @Composable
-fun StringListEditorScreen(
-    navigator: DestinationsNavigator,
-) {
+fun StringListEditorScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
     val items = remember { mutableStateListOf<TextDraftItem>() }
     val title = EditorDataHolder.listEditorTitle
     val placeholder = EditorDataHolder.listEditorPlaceholder
     val isOverrideRuleEditor = title == MLang.Override.Label.RulesReplace
-    var dialogState by remember { mutableStateOf<StringListDialogState>(StringListDialogState.None) }
+    var dialogState by remember {
+        mutableStateOf<StringListDialogState>(StringListDialogState.None)
+    }
 
     LaunchedEffect(title, placeholder) {
         items.clear()
         items.addAll(
             EditorDataHolder.listEditorItems.map { value ->
                 TextDraftItem(id = UUID.randomUUID().toString(), value = value)
-            },
+            }
         )
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            EditorDataHolder.listEditorCallback?.invoke(items.map(TextDraftItem::value).ifEmpty { null })
+            EditorDataHolder.listEditorCallback?.invoke(
+                items.map(TextDraftItem::value).ifEmpty { null }
+            )
             EditorDataHolder.clearListEditor()
         }
     }
@@ -181,24 +183,26 @@ fun StringListEditorScreen(
     EditorScaffold(
         title = title,
         scrollBehavior = scrollBehavior,
-        actions = listOf(
-            EditorAction(
-                icon = MiuixIcons.Reset,
-                contentDescription = "Reset",
-                onClick = { dialogState = StringListDialogState.Reset },
+        actions =
+            listOf(
+                EditorAction(
+                    icon = MiuixIcons.Reset,
+                    contentDescription = "Reset",
+                    onClick = { dialogState = StringListDialogState.Reset },
+                ),
+                EditorAction(
+                    icon = Yume.`Badge-plus`,
+                    contentDescription = "Add",
+                    onClick = {
+                        dialogState =
+                            if (isOverrideRuleEditor) {
+                                StringListDialogState.AddRule
+                            } else {
+                                StringListDialogState.Add
+                            }
+                    },
+                ),
             ),
-            EditorAction(
-                icon = Yume.`Badge-plus`,
-                contentDescription = "Add",
-                onClick = {
-                    dialogState = if (isOverrideRuleEditor) {
-                        StringListDialogState.AddRule
-                    } else {
-                        StringListDialogState.Add
-                    }
-                },
-            ),
-        ),
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)
@@ -206,10 +210,12 @@ fun StringListEditorScreen(
             EditorEmptyState(
                 title = MLang.Component.Editor.Empty.Title,
                 hint = MLang.Component.Editor.Empty.Hint,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .let { mod -> if (topBarHazeState != null) mod.hazeSource(topBarHazeState) else mod }
-                    .padding(combinedInnerPadding),
+                modifier =
+                    Modifier.fillMaxSize()
+                        .let { mod ->
+                            if (topBarHazeState != null) mod.hazeSource(topBarHazeState) else mod
+                        }
+                        .padding(combinedInnerPadding),
             )
         } else {
             ScreenLazyColumn(
@@ -218,14 +224,10 @@ fun StringListEditorScreen(
                 innerPadding = combinedInnerPadding,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item {
-                    Title(MLang.Component.Editor.CountItems.format(items.size))
-                }
-                items(
-                    items = items,
-                    key = { it.id },
-                ) { item ->
-                    val index = remember(items, item.id) { items.indexOfFirst { it.id == item.id } + 1 }
+                item { Title(MLang.Component.Editor.CountItems.format(items.size)) }
+                items(items = items, key = { it.id }) { item ->
+                    val index =
+                        remember(items, item.id) { items.indexOfFirst { it.id == item.id } + 1 }
                     EditorListItem(
                         index = index,
                         title = item.value,
@@ -305,9 +307,7 @@ fun StringListEditorScreen(
 
 @Destination<RootGraph>
 @Composable
-fun KeyValueEditorScreen(
-    navigator: DestinationsNavigator,
-) {
+fun KeyValueEditorScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
     val items = remember { mutableStateListOf<KeyValueDraftItem>() }
@@ -320,19 +320,15 @@ fun KeyValueEditorScreen(
         items.clear()
         items.addAll(
             EditorDataHolder.mapEditorItems.map { (key, value) ->
-                KeyValueDraftItem(
-                    id = UUID.randomUUID().toString(),
-                    key = key,
-                    value = value,
-                )
-            },
+                KeyValueDraftItem(id = UUID.randomUUID().toString(), key = key, value = value)
+            }
         )
     }
 
     DisposableEffect(Unit) {
         onDispose {
             EditorDataHolder.mapEditorCallback?.invoke(
-                items.associate { it.key to it.value }.ifEmpty { null },
+                items.associate { it.key to it.value }.ifEmpty { null }
             )
             EditorDataHolder.clearMapEditor()
         }
@@ -342,18 +338,19 @@ fun KeyValueEditorScreen(
     EditorScaffold(
         title = title,
         scrollBehavior = scrollBehavior,
-        actions = listOf(
-            EditorAction(
-                icon = MiuixIcons.Reset,
-                contentDescription = "Reset",
-                onClick = { dialogState = KeyValueDialogState.Reset },
+        actions =
+            listOf(
+                EditorAction(
+                    icon = MiuixIcons.Reset,
+                    contentDescription = "Reset",
+                    onClick = { dialogState = KeyValueDialogState.Reset },
+                ),
+                EditorAction(
+                    icon = MiuixIcons.AddCircle,
+                    contentDescription = "Add",
+                    onClick = { dialogState = KeyValueDialogState.Add },
+                ),
             ),
-            EditorAction(
-                icon = MiuixIcons.AddCircle,
-                contentDescription = "Add",
-                onClick = { dialogState = KeyValueDialogState.Add },
-            ),
-        ),
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)
@@ -361,10 +358,12 @@ fun KeyValueEditorScreen(
             EditorEmptyState(
                 title = MLang.Component.Editor.Empty.Title,
                 hint = MLang.Component.Editor.Empty.Hint,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .let { mod -> if (topBarHazeState != null) mod.hazeSource(topBarHazeState) else mod }
-                    .padding(combinedInnerPadding),
+                modifier =
+                    Modifier.fillMaxSize()
+                        .let { mod ->
+                            if (topBarHazeState != null) mod.hazeSource(topBarHazeState) else mod
+                        }
+                        .padding(combinedInnerPadding),
             )
         } else {
             ScreenLazyColumn(
@@ -373,14 +372,10 @@ fun KeyValueEditorScreen(
                 innerPadding = combinedInnerPadding,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item {
-                    Title(MLang.Component.Editor.CountItems.format(items.size))
-                }
-                items(
-                    items = items,
-                    key = { it.id },
-                ) { item ->
-                    val index = remember(items, item.id) { items.indexOfFirst { it.id == item.id } + 1 }
+                item { Title(MLang.Component.Editor.CountItems.format(items.size)) }
+                items(items = items, key = { it.id }) { item ->
+                    val index =
+                        remember(items, item.id) { items.indexOfFirst { it.id == item.id } + 1 }
                     EditorListItem(
                         index = index,
                         title = item.key,
@@ -455,54 +450,51 @@ fun KeyValueEditorScreen(
     }
 }
 
-private val RULE_TYPE_PRESETS = listOf(
-    "DOMAIN",
-    "DOMAIN-SUFFIX",
-    "DOMAIN-KEYWORD",
-    "DOMAIN-WILDCARD",
-    "DOMAIN-REGEX",
-    "GEOSITE",
-    "IP-CIDR",
-    "IP-CIDR6",
-    "IP-SUFFIX",
-    "IP-ASN",
-    "GEOIP",
-    "SRC-GEOIP",
-    "SRC-IP-ASN",
-    "SRC-IP-CIDR",
-    "SRC-IP-SUFFIX",
-    "DST-PORT",
-    "SRC-PORT",
-    "IN-PORT",
-    "IN-TYPE",
-    "IN-USER",
-    "IN-NAME",
-    "PROCESS-PATH",
-    "PROCESS-PATH-WILDCARD",
-    "PROCESS-PATH-REGEX",
-    "PROCESS-NAME",
-    "PROCESS-NAME-WILDCARD",
-    "PROCESS-NAME-REGEX",
-    "UID",
-    "NETWORK",
-    "DSCP",
-    "RULE-SET",
-    "AND",
-    "OR",
-    "NOT",
-    "SUB-RULE",
-    "MATCH",
-)
+private val RULE_TYPE_PRESETS =
+    listOf(
+        "DOMAIN",
+        "DOMAIN-SUFFIX",
+        "DOMAIN-KEYWORD",
+        "DOMAIN-WILDCARD",
+        "DOMAIN-REGEX",
+        "GEOSITE",
+        "IP-CIDR",
+        "IP-CIDR6",
+        "IP-SUFFIX",
+        "IP-ASN",
+        "GEOIP",
+        "SRC-GEOIP",
+        "SRC-IP-ASN",
+        "SRC-IP-CIDR",
+        "SRC-IP-SUFFIX",
+        "DST-PORT",
+        "SRC-PORT",
+        "IN-PORT",
+        "IN-TYPE",
+        "IN-USER",
+        "IN-NAME",
+        "PROCESS-PATH",
+        "PROCESS-PATH-WILDCARD",
+        "PROCESS-PATH-REGEX",
+        "PROCESS-NAME",
+        "PROCESS-NAME-WILDCARD",
+        "PROCESS-NAME-REGEX",
+        "UID",
+        "NETWORK",
+        "DSCP",
+        "RULE-SET",
+        "AND",
+        "OR",
+        "NOT",
+        "SUB-RULE",
+        "MATCH",
+    )
 
-private val RULE_EXTRA_SUPPORTED_TYPES = setOf(
-    "IP-CIDR",
-    "IP-CIDR6",
-    "IP-SUFFIX",
-    "IP-ASN",
-    "GEOIP",
-)
+private val RULE_EXTRA_SUPPORTED_TYPES =
+    setOf("IP-CIDR", "IP-CIDR6", "IP-SUFFIX", "IP-ASN", "GEOIP")
 
-private fun supportsRuleExtra(ruleType: String): Boolean = ruleType.uppercase() in RULE_EXTRA_SUPPORTED_TYPES
+private fun supportsRuleExtra(ruleType: String): Boolean =
+    ruleType.uppercase() in RULE_EXTRA_SUPPORTED_TYPES
 
 @Composable
 private fun SimpleTextEditorDialog(
@@ -512,14 +504,12 @@ private fun SimpleTextEditorDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var textFieldValue by remember(initialValue) {
-        mutableStateOf(
-            TextFieldValue(
-                text = initialValue,
-                selection = TextRange(initialValue.length),
-            ),
-        )
-    }
+    var textFieldValue by
+        remember(initialValue) {
+            mutableStateOf(
+                TextFieldValue(text = initialValue, selection = TextRange(initialValue.length))
+            )
+        }
     AppTextFieldDialog(
         show = true,
         title = title,
@@ -550,22 +540,18 @@ private fun KeyValueFormDialog(
     initialValue: String,
     currentEditingKey: String? = null,
 ) {
-    var keyTextFieldValue by remember(initialKey) {
-        mutableStateOf(
-            TextFieldValue(
-                text = initialKey,
-                selection = TextRange(initialKey.length),
-            ),
-        )
-    }
-    var valueTextFieldValue by remember(initialValue) {
-        mutableStateOf(
-            TextFieldValue(
-                text = initialValue,
-                selection = TextRange(initialValue.length),
-            ),
-        )
-    }
+    var keyTextFieldValue by
+        remember(initialKey) {
+            mutableStateOf(
+                TextFieldValue(text = initialKey, selection = TextRange(initialKey.length))
+            )
+        }
+    var valueTextFieldValue by
+        remember(initialValue) {
+            mutableStateOf(
+                TextFieldValue(text = initialValue, selection = TextRange(initialValue.length))
+            )
+        }
     var error by remember { mutableStateOf<String?>(null) }
 
     AppFormDialog(
@@ -575,11 +561,13 @@ private fun KeyValueFormDialog(
         onConfirm = {
             val normalizedKey = keyTextFieldValue.text.trim()
             val normalizedValue = valueTextFieldValue.text.trim()
-            error = when {
-                normalizedKey.isBlank() -> MLang.Component.Editor.Error.KeyEmpty
-                normalizedKey != currentEditingKey && normalizedKey in existingKeys -> MLang.Component.Editor.Error.KeyExists
-                else -> null
-            }
+            error =
+                when {
+                    normalizedKey.isBlank() -> MLang.Component.Editor.Error.KeyEmpty
+                    normalizedKey != currentEditingKey && normalizedKey in existingKeys ->
+                        MLang.Component.Editor.Error.KeyExists
+                    else -> null
+                }
             if (error == null) {
                 onConfirm(normalizedKey, normalizedValue)
             }
@@ -607,11 +595,7 @@ private fun KeyValueFormDialog(
 }
 
 @Composable
-private fun RuleEditorDialog(
-    title: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
+private fun RuleEditorDialog(title: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var ruleType by remember { mutableStateOf("DOMAIN-SUFFIX") }
     var payloadTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var target by remember { mutableStateOf(MLang.Component.Editor.Rule.TargetReject) }
@@ -626,12 +610,12 @@ private fun RuleEditorDialog(
             MLang.Component.Editor.Rule.TargetMatch,
         )
     }
-    val selectedRuleTypeIndex = remember(ruleType) {
-        RULE_TYPE_PRESETS.indexOfFirst { it.equals(ruleType, ignoreCase = true) }.coerceAtLeast(0)
-    }
-    val selectedTargetIndex = remember(target) {
-        targetItems.indexOf(target).coerceAtLeast(0)
-    }
+    val selectedRuleTypeIndex =
+        remember(ruleType) {
+            RULE_TYPE_PRESETS.indexOfFirst { it.equals(ruleType, ignoreCase = true) }
+                .coerceAtLeast(0)
+        }
+    val selectedTargetIndex = remember(target) { targetItems.indexOf(target).coerceAtLeast(0) }
 
     AppFormDialog(
         show = true,
@@ -646,19 +630,21 @@ private fun RuleEditorDialog(
                 return@AppFormDialog
             }
 
-            val result = if (target == MLang.Component.Editor.Rule.TargetMatch) {
-                "MATCH"
-            } else {
-                buildList {
-                    add(normalizedType)
-                    add(normalizedPayload)
-                    add(target)
-                    if (supportsRuleExtra(normalizedType)) {
-                        if (useSrc) add("src")
-                        if (useNoResolve) add("no-resolve")
-                    }
-                }.joinToString(",")
-            }
+            val result =
+                if (target == MLang.Component.Editor.Rule.TargetMatch) {
+                    "MATCH"
+                } else {
+                    buildList {
+                            add(normalizedType)
+                            add(normalizedPayload)
+                            add(target)
+                            if (supportsRuleExtra(normalizedType)) {
+                                if (useSrc) add("src")
+                                if (useNoResolve) add("no-resolve")
+                            }
+                        }
+                        .joinToString(",")
+                }
             onConfirm(result)
         },
         error = error,

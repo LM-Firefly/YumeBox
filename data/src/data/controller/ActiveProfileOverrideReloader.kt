@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.controller
 
 import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
@@ -35,10 +33,7 @@ class ActiveProfileOverrideReloader(
         val activeProfile = queryActiveProfile() ?: return true
         val applied = overrideService.applyOverride(activeProfile.uuid.toString())
         if (!applied) {
-            Timber.e(
-                "Failed to reapply active profile override: profile=%s",
-                activeProfile.uuid,
-            )
+            Timber.e("Failed to reapply active profile override: profile=%s", activeProfile.uuid)
         }
         return applied
     }

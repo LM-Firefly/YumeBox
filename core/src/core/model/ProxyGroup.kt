@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.model
 
 import android.os.Parcel
@@ -59,7 +57,9 @@ data class ProxyGroup(
         }
     }
 
-    constructor(parcel: Parcel) : this(
+    constructor(
+        parcel: Parcel
+    ) : this(
         type = Proxy.Type.entries[parcel.readInt()],
         proxies = SliceProxyList(parcel),
         now = parcel.readString().orEmpty(),

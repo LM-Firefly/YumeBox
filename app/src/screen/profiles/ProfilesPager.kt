@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.profiles
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.compose.foundation.layout.*
@@ -30,7 +29,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.MainActivity
@@ -42,6 +40,7 @@ import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.util.OverrideEditorStore
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
@@ -85,9 +84,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     var importUrlFromScheme by remember { mutableStateOf<String?>(null) }
     val pendingImportUrl by MainActivity.pendingImportUrl.collectAsState()
-    val urlProfiles = remember(profiles) {
-        profiles.filter { it.type == Profile.Type.Url }
-    }
+    val urlProfiles = remember(profiles) { profiles.filter { it.type == Profile.Type.Url } }
 
     var scannedUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pendingImportUrl) {
@@ -126,11 +123,11 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                                     isDownloading = false
                                 }
                             }
-                        }
+                        },
                     ) {
                         Icon(
                             ShellIcons.UpdateProfiles,
-                            contentDescription = MLang.ProfilesPage.Action.UpdateAll
+                            contentDescription = MLang.ProfilesPage.Action.UpdateAll,
                         )
                     }
 
@@ -142,17 +139,18 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     ) {
                         Icon(
                             ShellIcons.AddProfile,
-                            contentDescription = MLang.ProfilesPage.Action.AddProfile
+                            contentDescription = MLang.ProfilesPage.Action.AddProfile,
                         )
                     }
-                })
-        },
+                },
+            )
+        }
     ) { innerPadding ->
         if (profiles.isEmpty()) {
 
             CenteredText(
                 firstLine = MLang.ProfilesPage.Empty.NoProfiles,
-                secondLine = MLang.ProfilesPage.Empty.Hint
+                secondLine = MLang.ProfilesPage.Empty.Hint,
             )
         } else {
             val lazyListState = rememberLazyListState()
@@ -167,21 +165,16 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 innerPadding = combinePaddingValues(innerPadding, mainInnerPadding),
                 topPadding = UiDp.dp20,
             ) {
-                items(
-                    items = profiles,
-                    key = { it.uuid.toString() }
-                ) { profile ->
-                    ReorderableItem(
-                        reorderableLazyListState,
-                        key = profile.uuid.toString()
-                    ) { isDragging ->
+                items(items = profiles, key = { it.uuid.toString() }) { profile ->
+                    ReorderableItem(reorderableLazyListState, key = profile.uuid.toString()) {
+                        isDragging ->
                         ProfileCard(
                             profile = profile,
                             workDir = App.instance.filesDir.resolve("imported"),
                             isDownloading = isDownloading,
-                            modifier = Modifier
-                                .longPressDraggableHandle()
-                                .alpha(if (isDragging) 0.9f else 1f),
+                            modifier =
+                                Modifier.longPressDraggableHandle()
+                                    .alpha(if (isDragging) 0.9f else 1f),
                             onExport = { profile ->
                                 if (!isDownloading) {
                                     profileToShare = profile
@@ -241,7 +234,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             showAddBottomSheet.value = false
             profilesViewModel.clearDownloadProgress()
         },
-        profilesViewModel = profilesViewModel
+        profilesViewModel = profilesViewModel,
     )
 
     showDeleteDialog?.let { profile ->
@@ -249,9 +242,9 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             show = isDeleteDialogVisible,
             profileName = profile.name,
             onConfirm = {
-            isDeleteDialogVisible = false
-            profilesViewModel.deleteProfile(profile.uuid)
-        },
+                isDeleteDialogVisible = false
+                profilesViewModel.deleteProfile(profile.uuid)
+            },
             onDismiss = { isDeleteDialogVisible = false },
             onDismissFinished = { showDeleteDialog = null },
         )
@@ -264,9 +257,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             profile = currentProfileToEdit,
             userConfigs = userConfigs,
             binding = profileBinding,
-            onDismiss = {
-                showSettingsDialog.value = false
-            },
+            onDismiss = { showSettingsDialog.value = false },
             onDismissFinished = {
                 profileToEdit = null
                 profileBinding = null
@@ -277,7 +268,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                         currentProfileToEdit.uuid,
                         newName,
                         newSource,
-                        currentProfileToEdit.interval
+                        currentProfileToEdit.interval,
                     )
                 }
             },
@@ -286,12 +277,12 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                     val profileId = currentProfileToEdit.uuid.toString()
                     val normalizedOverrideIds = selectedOverrideIds.distinct()
                     val currentBinding = profileBinding ?: bindingProvider.getBinding(profileId)
-                    val updatedBinding = currentBinding?.copy(
-                        overrideIds = normalizedOverrideIds,
-                    ) ?: ProfileBinding(
-                        profileId = profileId,
-                        overrideIds = normalizedOverrideIds,
-                    )
+                    val updatedBinding =
+                        currentBinding?.copy(overrideIds = normalizedOverrideIds)
+                            ?: ProfileBinding(
+                                profileId = profileId,
+                                overrideIds = normalizedOverrideIds,
+                            )
 
                     bindingProvider.setBinding(updatedBinding)
                     profileBinding = bindingProvider.getBinding(profileId)
@@ -305,57 +296,65 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     }
 
     profileToShare?.let { profile ->
-        ShareOptionsDialog(show = showShareDialog.value, profile = profile, onDismiss = {
-            showShareDialog.value = false
-        }, onDismissFinished = {
-            profileToShare = null
-        }, onShareFile = { profile ->
-            val file = importedConfigFile(profile)
+        ShareOptionsDialog(
+            show = showShareDialog.value,
+            profile = profile,
+            onDismiss = { showShareDialog.value = false },
+            onDismissFinished = { profileToShare = null },
+            onShareFile = { profile ->
+                val file = importedConfigFile(profile)
 
-            if (!file.exists()) {
-                context.toast(MLang.ProfilesPage.ShareDialog.ImportedConfigMissing.format(file.absolutePath))
-            } else {
-                runCatching {
-                    val uri = FileProvider.getUriForFile(
-                        context, "${context.packageName}.fileprovider", file
+                if (!file.exists()) {
+                    context.toast(
+                        MLang.ProfilesPage.ShareDialog.ImportedConfigMissing.format(
+                            file.absolutePath
+                        )
                     )
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "application/x-yaml"
-                        putExtra(Intent.EXTRA_STREAM, uri)
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(
-                        Intent.createChooser(
-                            intent, MLang.ProfilesPage.ShareDialog.ShareFile
-                        ).apply {
+                } else {
+                    runCatching {
+                            val uri =
+                                FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file,
+                                )
+                            val intent =
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/x-yaml"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                            context.startActivity(
+                                Intent.createChooser(
+                                        intent,
+                                        MLang.ProfilesPage.ShareDialog.ShareFile,
+                                    )
+                                    .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            )
+                        }
+                        .onFailure { context.toast(it.message ?: "Share failed") }
+                }
+                showShareDialog.value = false
+            },
+            onShareLink = { profile ->
+                val context = App.instance
+                val url = if (profile.type == Profile.Type.Url) profile.source else null
+                url?.let {
+                    val intent =
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, it)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        })
-                }.onFailure {
-                    context.toast(it.message ?: "Share failed")
-                }
-            }
-            showShareDialog.value = false
-        }, onShareLink = { profile ->
-            val context = App.instance
-            val url = if (profile.type == Profile.Type.Url) profile.source else null
-            url?.let {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, it)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(
-                    Intent.createChooser(
-                        intent, MLang.ProfilesPage.ShareDialog.ShareLink
-                    ).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    })
-            } ?: run {
-                context.toast(MLang.ProfilesPage.ShareDialog.NoLink)
-            }
-            showShareDialog.value = false
-        })
+                        }
+                    context.startActivity(
+                        Intent.createChooser(intent, MLang.ProfilesPage.ShareDialog.ShareLink)
+                            .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                    )
+                } ?: run { context.toast(MLang.ProfilesPage.ShareDialog.NoLink) }
+                showShareDialog.value = false
+            },
+        )
     }
 
     showEditOptionsDialog?.let { profile ->
@@ -366,7 +365,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 isEditOptionsDialogVisible = false
                 openProfileConfigPreview(
                     targetFile = importedConfigFile(profile),
-                    missingMessage = MLang.ProfilesPage.SettingsDialog.ConfigMissing.format(importedConfigFile(profile).absolutePath),
+                    missingMessage =
+                        MLang.ProfilesPage.SettingsDialog.ConfigMissing.format(
+                            importedConfigFile(profile).absolutePath
+                        ),
                     editable = true,
                     onReadFailed = context::toast,
                 ) { configContent, callback ->

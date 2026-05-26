@@ -18,19 +18,17 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.clash.module
 
 import android.net.VpnService
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.common.util.SocketOwnerResolver
 import com.github.yumelira.yumebox.core.util.parseInetSocketAddress
+import com.github.yumelira.yumebox.service.common.util.SocketOwnerResolver
+import java.net.InetSocketAddress
+import java.security.SecureRandom
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
-import java.net.InetSocketAddress
-import java.security.SecureRandom
 
 class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
     data class TunDevice(
@@ -48,9 +46,7 @@ class TunModule(private val vpn: VpnService) : Module<Unit>(vpn) {
         try {
             return close.receive()
         } finally {
-            withContext(NonCancellable) {
-                requestStop()
-            }
+            withContext(NonCancellable) { requestStop() }
         }
     }
 

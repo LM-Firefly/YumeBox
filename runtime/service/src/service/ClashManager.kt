@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.content.Context
@@ -38,15 +36,16 @@ import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFac
 import com.github.yumelira.yumebox.service.runtime.util.mergeProxyGroupNames
 import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.tencent.mmkv.MMKV
+import java.io.File
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
-import java.io.File
 
-class ClashManager(private val context: Context) : IClashManager, CoroutineScope by CoroutineScope(Dispatchers.IO) {
+class ClashManager(private val context: Context) :
+    IClashManager, CoroutineScope by CoroutineScope(Dispatchers.IO) {
     private val store = ServiceStore()
     private val compiledConfigPipeline = CompiledConfigPipeline(context)
     private val runtimeSpecFactory = SessionRuntimeSpecFactory(context)
@@ -77,11 +76,12 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
 
     override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         if (store.activeProfile == null) return emptyList()
-        val spec = when (configuredProxyMode()) {
-            ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
-            ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
-            ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
-        }
+        val spec =
+            when (configuredProxyMode()) {
+                ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
+                ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
+                ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
+            }
         return runBlocking(Dispatchers.Default) {
             compiledConfigPipeline.previewGroups(spec, excludeNotSelectable)
         }
@@ -117,7 +117,8 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
                 return@also
             }
 
-            val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            val patchedGroup =
+                runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
             if (patchedGroup?.type == Proxy.Type.Selector) {
                 SelectionDao.upsertManualSelection(current, group, name)
             } else {
@@ -135,9 +136,7 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
     }
 
     override fun requestStop() {
-        runCatching {
-            context.sendBroadcastSelf(Intent(Intents.ACTION_CLASH_REQUEST_STOP))
-        }
+        runCatching { context.sendBroadcastSelf(Intent(Intents.ACTION_CLASH_REQUEST_STOP)) }
 
         runCatching {
             context.stopService(Intent(context, TunService::class.java))
@@ -168,18 +167,20 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
     }
 
     private fun configuredProxyMode(): ProxyMode {
-        val raw = networkSettings.decodeString("proxyMode", ProxyMode.Tun.name) ?: ProxyMode.Tun.name
+        val raw =
+            networkSettings.decodeString("proxyMode", ProxyMode.Tun.name) ?: ProxyMode.Tun.name
         return runCatching { ProxyMode.valueOf(raw) }.getOrDefault(ProxyMode.Tun)
     }
 
     private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         val runtimeNames = Clash.queryGroupNames(excludeNotSelectable)
         val activeProfile = store.activeProfile ?: return runtimeNames
-        val spec = when (configuredProxyMode()) {
-            ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
-            ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
-            ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
-        }
+        val spec =
+            when (configuredProxyMode()) {
+                ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
+                ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
+                ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
+            }
         if (spec.profileUuid != activeProfile.toString()) {
             return runtimeNames
         }
@@ -188,13 +189,16 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
         if (!runtimeFile.isFile) {
             return runtimeNames
         }
-        val expectedNames = runCatching {
-            Clash.inspectCompiledGroups(
-                runtimeFile.readText(),
-                File(spec.profileDir),
-                excludeNotSelectable,
-            ).map(ProxyGroup::name)
-        }.getOrDefault(emptyList())
+        val expectedNames =
+            runCatching {
+                    Clash.inspectCompiledGroups(
+                            runtimeFile.readText(),
+                            File(spec.profileDir),
+                            excludeNotSelectable,
+                        )
+                        .map(ProxyGroup::name)
+                }
+                .getOrDefault(emptyList())
         if (expectedNames.isEmpty()) {
             return runtimeNames
         }
@@ -207,7 +211,12 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
         if (group.name.isBlank()) {
             return null
         }
-        return if (group.type == Proxy.Type.Unknown && group.proxies.isEmpty() && group.now.isBlank() && group.icon.isNullOrBlank()) {
+        return if (
+            group.type == Proxy.Type.Unknown &&
+                group.proxies.isEmpty() &&
+                group.now.isBlank() &&
+                group.icon.isNullOrBlank()
+        ) {
             null
         } else {
             group
@@ -223,25 +232,24 @@ class ClashManager(private val context: Context) : IClashManager, CoroutineScope
             }
 
             if (observer != null) {
-                logReceiver = Clash.subscribeLogcat().also { receiver ->
-                    launch {
-                        try {
-                            while (isActive) {
-                                observer.newItem(receiver.receive())
-                            }
-                        } catch (_: CancellationException) {
+                logReceiver =
+                    Clash.subscribeLogcat().also { receiver ->
+                        launch {
+                            try {
+                                while (isActive) {
+                                    observer.newItem(receiver.receive())
+                                }
+                            } catch (_: CancellationException) {} catch (error: Exception) {
+                                Log.w("UI crashed", error)
+                            } finally {
+                                withContext(NonCancellable) {
+                                    receiver.cancel()
 
-                        } catch (error: Exception) {
-                            Log.w("UI crashed", error)
-                        } finally {
-                            withContext(NonCancellable) {
-                                receiver.cancel()
-
-                                Clash.forceGc()
+                                    Clash.forceGc()
+                                }
                             }
                         }
                     }
-                }
             }
         }
     }

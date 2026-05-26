@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.home
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
@@ -37,12 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Play
 import com.github.yumelira.yumebox.presentation.icon.yume.Square
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Button
@@ -59,7 +58,7 @@ fun ProxyControlButton(
     hasProfiles: Boolean,
     profilesLoaded: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val scaleAnim = remember { Animatable(1f) }
@@ -72,7 +71,7 @@ fun ProxyControlButton(
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(UiDp.dp16)
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
     ) {
         if (profilesLoaded) {
             if (!hasProfiles) {
@@ -87,75 +86,89 @@ fun ProxyControlButton(
                 coroutineScope.launch {
                     scaleAnim.animateTo(
                         targetValue = 0.90f,
-                        animationSpec = tween(
-                            AnimationSpecs.DURATION_INSTANT,
-                            easing = AnimationSpecs.EmphasizedAccelerate
-                        )
+                        animationSpec =
+                            tween(
+                                AnimationSpecs.DURATION_INSTANT,
+                                easing = AnimationSpecs.EmphasizedAccelerate,
+                            ),
                     )
                     scaleAnim.animateTo(
                         targetValue = 1.02f,
-                        animationSpec = AnimationSpecs.ButtonPressSpring
+                        animationSpec = AnimationSpecs.ButtonPressSpring,
                     )
                     scaleAnim.animateTo(
                         targetValue = 1f,
-                        animationSpec = spring(
-                            dampingRatio = 1f,
-                            stiffness = 500f
-                        )
+                        animationSpec = spring(dampingRatio = 1f, stiffness = 500f),
                     )
                 }
                 onClick()
             },
             enabled = isEnabled,
-            modifier = Modifier
-                .fillMaxWidth(buttonWidthFraction)
-                .scale(scaleAnim.value)
-                .shadow(
-                    elevation = UiDp.dp1,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
-                    clip = false
-                )
-                .border(
-                    width = UiDp.dp0_2,
-                    color = MiuixTheme.colorScheme.outline,
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius)
-                ),
+            modifier =
+                Modifier.fillMaxWidth(buttonWidthFraction)
+                    .scale(scaleAnim.value)
+                    .shadow(
+                        elevation = UiDp.dp1,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+                        clip = false,
+                    )
+                    .border(
+                        width = UiDp.dp0_2,
+                        color = MiuixTheme.colorScheme.outline,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+                    ),
             colors = ButtonDefaults.buttonColors(MiuixTheme.colorScheme.background),
             cornerRadius = cornerRadius,
-            minHeight = UiDp.dp36
+            minHeight = UiDp.dp36,
         ) {
             AnimatedContent(
                 targetState = isRunning,
                 transitionSpec = {
                     val iconTransition = AnimationSpecs.IconTransition as FiniteAnimationSpec<Float>
-                    val enterTransition = slideInVertically(
-                        initialOffsetY = { it / 5 },
-                        animationSpec = tween(AnimationSpecs.DURATION_INSTANT + 40, easing = AnimationSpecs.EnterEasing)
-                    ) + fadeIn(
-                        animationSpec = tween(AnimationSpecs.DURATION_INSTANT + 40, easing = AnimationSpecs.EnterEasing)
-                    ) + scaleIn(
-                        initialScale = 0.8f,
-                        animationSpec = iconTransition
-                    )
+                    val enterTransition =
+                        slideInVertically(
+                            initialOffsetY = { it / 5 },
+                            animationSpec =
+                                tween(
+                                    AnimationSpecs.DURATION_INSTANT + 40,
+                                    easing = AnimationSpecs.EnterEasing,
+                                ),
+                        ) +
+                            fadeIn(
+                                animationSpec =
+                                    tween(
+                                        AnimationSpecs.DURATION_INSTANT + 40,
+                                        easing = AnimationSpecs.EnterEasing,
+                                    )
+                            ) +
+                            scaleIn(initialScale = 0.8f, animationSpec = iconTransition)
 
-                    val exitTransition = slideOutVertically(
-                        targetOffsetY = { -it / 5 },
-                        animationSpec = tween(AnimationSpecs.DURATION_INSTANT + 20, easing = AnimationSpecs.ExitEasing)
-                    ) + fadeOut(
-                        animationSpec = tween(AnimationSpecs.DURATION_INSTANT + 20, easing = AnimationSpecs.ExitEasing)
-                    ) + scaleOut(
-                        targetScale = 0.8f,
-                        animationSpec = iconTransition
-                    )
+                    val exitTransition =
+                        slideOutVertically(
+                            targetOffsetY = { -it / 5 },
+                            animationSpec =
+                                tween(
+                                    AnimationSpecs.DURATION_INSTANT + 20,
+                                    easing = AnimationSpecs.ExitEasing,
+                                ),
+                        ) +
+                            fadeOut(
+                                animationSpec =
+                                    tween(
+                                        AnimationSpecs.DURATION_INSTANT + 20,
+                                        easing = AnimationSpecs.ExitEasing,
+                                    )
+                            ) +
+                            scaleOut(targetScale = 0.8f, animationSpec = iconTransition)
 
                     enterTransition.togetherWith(exitTransition)
                 },
-                label = "IconTransition"
+                label = "IconTransition",
             ) { running ->
                 Icon(
                     imageVector = if (running) Yume.Square else Yume.Play,
                     contentDescription = null,
-                    tint = MiuixTheme.colorScheme.primary
+                    tint = MiuixTheme.colorScheme.primary,
                 )
             }
         }
@@ -167,6 +180,6 @@ private fun HintText(text: String) {
     Text(
         text = text,
         style = MiuixTheme.textStyles.body2,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
     )
 }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.screen
 
 import androidx.activity.compose.BackHandler
@@ -29,8 +27,8 @@ import androidx.compose.ui.Modifier
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
 import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
-import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigType
 import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigEditorViewModel
+import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigType
 import com.github.yumelira.yumebox.presentation.component.*
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.androidx.compose.koinViewModel
@@ -47,11 +45,12 @@ fun ConfigEditorScreen(
 ) {
     val viewModel: ConfigEditorViewModel = koinViewModel()
     val session by viewModel.session.collectAsState()
-    val editorState = rememberConfiguredCodeEditorState(
-        initialContent = initialContent,
-        language = language,
-        readOnly = false,
-    )
+    val editorState =
+        rememberConfiguredCodeEditorState(
+            initialContent = initialContent,
+            language = language,
+            readOnly = false,
+        )
     val showDiscardDialog = remember { mutableStateOf(false) }
     val scrollBehavior = MiuixScrollBehavior()
 
@@ -80,10 +79,11 @@ fun ConfigEditorScreen(
     Scaffold(
         topBar = {
             TopBar(
-                title = when (configType) {
-                    ConfigType.Override -> "编辑覆写配置"
-                    ConfigType.Profile -> "编辑订阅配置"
-                },
+                title =
+                    when (configType) {
+                        ConfigType.Override -> "编辑覆写配置"
+                        ConfigType.Profile -> "编辑订阅配置"
+                    },
                 scrollBehavior = scrollBehavior,
             )
         }
@@ -92,9 +92,7 @@ fun ConfigEditorScreen(
             CodeEditor(
                 state = editorState,
                 modifier = Modifier.fillMaxSize(),
-                onTextChange = { content ->
-                    viewModel.updateDraft(content)
-                }
+                onTextChange = { content -> viewModel.updateDraft(content) },
             )
         }
 
@@ -102,7 +100,7 @@ fun ConfigEditorScreen(
             show = showDiscardDialog.value,
             title = "放弃修改",
             summary = "当前有未保存的修改，确定要放弃吗？",
-            onDismissRequest = { showDiscardDialog.value = false }
+            onDismissRequest = { showDiscardDialog.value = false },
         ) {
             DialogButtonRow(
                 onCancel = { showDiscardDialog.value = false },
@@ -112,7 +110,7 @@ fun ConfigEditorScreen(
                     navigator.navigateUp()
                 },
                 cancelText = "取消",
-                confirmText = "放弃"
+                confirmText = "放弃",
             )
         }
     }

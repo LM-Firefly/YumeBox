@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.diagnostic
 
 import io.github.rosemoe.sora.lang.diagnostic.DiagnosticDetail
@@ -56,8 +54,8 @@ object JsonDiagnosticsProvider {
                             0,
                             DiagnosticDetail(
                                 briefMessage = "JSON 格式错误",
-                                detailedMessage = "JSON 必须以 '{' 或 '[' 开头"
-                            )
+                                detailedMessage = "JSON 必须以 '{' 或 '[' 开头",
+                            ),
                         )
                     )
                 }
@@ -92,8 +90,8 @@ object JsonDiagnosticsProvider {
             0,
             DiagnosticDetail(
                 briefMessage = "JSON 语法错误",
-                detailedMessage = formatErrorMessage(message)
-            )
+                detailedMessage = formatErrorMessage(message),
+            ),
         )
     }
 

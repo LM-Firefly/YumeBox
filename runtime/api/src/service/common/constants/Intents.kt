@@ -18,33 +18,58 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.common.constants
 
 import com.github.yumelira.yumebox.service.common.util.packageName
 
 object Intents {
-    private fun action(packageName: String, actionName: String): String = "$packageName.action.$actionName"
-    private fun intentAction(packageName: String, actionName: String): String = "$packageName.intent.action.$actionName"
+    private fun action(packageName: String, actionName: String): String =
+        "$packageName.action.$actionName"
+
+    private fun intentAction(packageName: String, actionName: String): String =
+        "$packageName.intent.action.$actionName"
 
     fun actionProvideUrl(packageName: String): String = "$packageName.action.PROVIDE_URL"
+
     fun actionStartClash(packageName: String): String = "$packageName.action.START_CLASH"
+
     fun actionStopClash(packageName: String): String = "$packageName.action.STOP_CLASH"
+
     fun actionToggleClash(packageName: String): String = "$packageName.action.TOGGLE_CLASH"
-    fun actionServiceRecreated(packageName: String): String = intentAction(packageName, "CLASH_RECREATED")
+
+    fun actionServiceRecreated(packageName: String): String =
+        intentAction(packageName, "CLASH_RECREATED")
+
     fun actionClashStarted(packageName: String): String = intentAction(packageName, "CLASH_STARTED")
+
     fun actionClashStopped(packageName: String): String = intentAction(packageName, "CLASH_STOPPED")
-    fun actionClashRequestStop(packageName: String): String = intentAction(packageName, "CLASH_REQUEST_STOP")
-    fun actionProfileChanged(packageName: String): String = intentAction(packageName, "PROFILE_CHANGED")
-    fun actionProfileLoaded(packageName: String): String = intentAction(packageName, "PROFILE_LOADED")
-    fun actionOverrideChanged(packageName: String): String = intentAction(packageName, "OVERRIDE_CHANGED")
-    fun actionRootRuntimeFailed(packageName: String): String = intentAction(packageName, "ROOT_RUNTIME_FAILED")
-    fun actionProxyGroupsUpdated(packageName: String): String = intentAction(packageName, "PROXY_GROUPS_UPDATED")
+
+    fun actionClashRequestStop(packageName: String): String =
+        intentAction(packageName, "CLASH_REQUEST_STOP")
+
+    fun actionProfileChanged(packageName: String): String =
+        intentAction(packageName, "PROFILE_CHANGED")
+
+    fun actionProfileLoaded(packageName: String): String =
+        intentAction(packageName, "PROFILE_LOADED")
+
+    fun actionOverrideChanged(packageName: String): String =
+        intentAction(packageName, "OVERRIDE_CHANGED")
+
+    fun actionRootRuntimeFailed(packageName: String): String =
+        intentAction(packageName, "ROOT_RUNTIME_FAILED")
+
+    fun actionProxyGroupsUpdated(packageName: String): String =
+        intentAction(packageName, "PROXY_GROUPS_UPDATED")
+
     fun actionPatchSelector(packageName: String): String = action(packageName, "PATCH_SELECTOR")
+
     fun actionPatchOverride(packageName: String): String = action(packageName, "PATCH_OVERRIDE")
+
     fun actionClearOverride(packageName: String): String = action(packageName, "CLEAR_OVERRIDE")
+
     fun actionHealthCheck(packageName: String): String = action(packageName, "HEALTH_CHECK")
+
     fun actionHealthCheckAll(packageName: String): String = action(packageName, "HEALTH_CHECK_ALL")
 
     val ACTION_PROVIDE_URL: String

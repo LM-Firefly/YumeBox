@@ -47,10 +47,7 @@ internal object NotificationPresentationFactory {
         )
     }
 
-    fun createStatus(
-        profileName: String,
-        status: String,
-    ): NotificationPresentation {
+    fun createStatus(profileName: String, status: String): NotificationPresentation {
         return NotificationPresentation(
             title = profileName,
             content = status,
@@ -63,17 +60,15 @@ internal object NotificationPresentationFactory {
         queryGroup: (String) -> ProxyGroup?,
         queryGroupNames: () -> List<String>,
     ): String? {
-        val startGroup = queryGroup("Proxy")
-            ?.takeIf(::isSelectableGroup)
-            ?: queryGroupNames()
-                .asSequence()
-                .mapNotNull(queryGroup)
-                .firstOrNull(::isSelectableGroup)
-            ?: return null
+        val startGroup =
+            queryGroup("Proxy")?.takeIf(::isSelectableGroup)
+                ?: queryGroupNames()
+                    .asSequence()
+                    .mapNotNull(queryGroup)
+                    .firstOrNull(::isSelectableGroup)
+                ?: return null
 
-        val seed = startGroup.now.ifBlank {
-            startGroup.proxies.firstOrNull()?.name.orEmpty()
-        }
+        val seed = startGroup.now.ifBlank { startGroup.proxies.firstOrNull()?.name.orEmpty() }
         return resolveSelection(seed, queryGroup, mutableSetOf())
     }
 
@@ -82,23 +77,22 @@ internal object NotificationPresentationFactory {
         queryGroupNames: suspend () -> List<String>,
     ): String? {
         val directGroup = queryGroup("Proxy")
-        val startGroup = if (directGroup != null && isSelectableGroup(directGroup)) {
-            directGroup
-        } else {
-            var matched: ProxyGroup? = null
-            for (name in queryGroupNames()) {
-                val group = queryGroup(name)
-                if (group != null && isSelectableGroup(group)) {
-                    matched = group
-                    break
+        val startGroup =
+            if (directGroup != null && isSelectableGroup(directGroup)) {
+                directGroup
+            } else {
+                var matched: ProxyGroup? = null
+                for (name in queryGroupNames()) {
+                    val group = queryGroup(name)
+                    if (group != null && isSelectableGroup(group)) {
+                        matched = group
+                        break
+                    }
                 }
-            }
-            matched
-        } ?: return null
+                matched
+            } ?: return null
 
-        val seed = startGroup.now.ifBlank {
-            startGroup.proxies.firstOrNull()?.name.orEmpty()
-        }
+        val seed = startGroup.now.ifBlank { startGroup.proxies.firstOrNull()?.name.orEmpty() }
         return resolveSelectionSuspend(seed, queryGroup, mutableSetOf())
     }
 
@@ -113,9 +107,7 @@ internal object NotificationPresentationFactory {
 
         val group = queryGroup(normalized)
         if (group != null && isSelectableGroup(group)) {
-            val next = group.now.ifBlank {
-                group.proxies.firstOrNull()?.name.orEmpty()
-            }
+            val next = group.now.ifBlank { group.proxies.firstOrNull()?.name.orEmpty() }
             return resolveSelection(next, queryGroup, visited) ?: normalized
         }
 
@@ -133,9 +125,7 @@ internal object NotificationPresentationFactory {
 
         val group = queryGroup(normalized)
         if (group != null && isSelectableGroup(group)) {
-            val next = group.now.ifBlank {
-                group.proxies.firstOrNull()?.name.orEmpty()
-            }
+            val next = group.now.ifBlank { group.proxies.firstOrNull()?.name.orEmpty() }
             return resolveSelectionSuspend(next, queryGroup, visited) ?: normalized
         }
 

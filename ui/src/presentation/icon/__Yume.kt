@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon
 
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -32,21 +30,21 @@ object Yume
 private var __AllIcons: ____KtList<ImageVector>? = null
 
 val Yume.AllIcons: ____KtList<ImageVector>
-  get() {
-    if (__AllIcons != null) {
-      return __AllIcons!!
+    get() {
+        if (__AllIcons != null) {
+            return __AllIcons!!
+        }
+        __AllIcons = listOf(Github)
+        return __AllIcons!!
     }
-    __AllIcons= listOf(Github)
-    return __AllIcons!!
-  }
 
 private var __AllIconsNamed: ____KtMap<String, ImageVector>? = null
 
 val Yume.AllIconsNamed: ____KtMap<String, ImageVector>
-  get() {
-    if (__AllIconsNamed != null) {
-      return __AllIconsNamed!!
+    get() {
+        if (__AllIconsNamed != null) {
+            return __AllIconsNamed!!
+        }
+        __AllIconsNamed = mapOf("github" to Github)
+        return __AllIconsNamed!!
     }
-    __AllIconsNamed= mapOf("github" to Github)
-    return __AllIconsNamed!!
-  }

@@ -45,28 +45,20 @@ class NetworkSettingsController(
         store.proxyMode.set(mode)
     }
 
-    fun <T> setAndRestartIfNeeded(
-        preference: Preference<T>,
-        value: T,
-    ) {
+    fun <T> setAndRestartIfNeeded(preference: Preference<T>, value: T) {
         if (preference.value == value) return
         preference.set(value)
         scheduleRestart()
     }
 
-    fun <T> commitDraftAndRestart(
-        preference: Preference<T>,
-        value: T,
-    ) {
+    fun <T> commitDraftAndRestart(preference: Preference<T>, value: T) {
         setAndRestartIfNeeded(preference, value)
     }
 
     suspend fun startService(mode: ProxyMode): Result<Unit> = runCatching {
         store.proxyMode.set(mode)
         beforeRestart(mode)
-        withContext(Dispatchers.IO) {
-            restartProxy(mode)
-        }
+        withContext(Dispatchers.IO) { restartProxy(mode) }
     }
 
     fun requestRestartIfRunning() {
@@ -81,7 +73,7 @@ class NetworkSettingsController(
                     name = "network_settings_restart_debounce",
                     intervalMillis = RESTART_DEBOUNCE_DELAY_MS,
                     initialDelayMillis = RESTART_DEBOUNCE_DELAY_MS,
-                ),
+                )
             )
             if (!isRunning()) return@launch
             val targetMode = store.proxyMode.value

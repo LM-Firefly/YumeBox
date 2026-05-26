@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.content.Context
@@ -34,13 +32,6 @@ import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
 import com.tencent.mmkv.MMKV
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
@@ -51,6 +42,13 @@ import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 object ProfileProcessor {
     private const val DEFAULT_USER_AGENT = "ClashMetaForAndroid"
@@ -58,11 +56,12 @@ object ProfileProcessor {
     private val profileLock = Mutex()
     private val processLock = Mutex()
 
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .followRedirects(true)
-        .build()
+    private val httpClient =
+        OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .build()
 
     private fun resolveUserAgent(): String {
         val settings = MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE)
@@ -77,76 +76,75 @@ object ProfileProcessor {
         val expire: Long = 0,
         val title: String? = null,
         val filename: String? = null,
-        val interval: Int = 24
+        val interval: Int = 24,
     )
 
-    private data class UpdateSnapshot(
-        val imported: Imported,
-        val hasCommittedConfig: Boolean
-    )
+    private data class UpdateSnapshot(val imported: Imported, val hasCommittedConfig: Boolean)
 
     private suspend fun downloadWithSubscriptionInfo(
         url: String,
         targetFile: File,
-        onProgress: ((Int) -> Unit)? = null
-    ): Pair<Boolean, SubscriptionInfo?> = withContext(Dispatchers.IO + NonCancellable) {
-        try {
-            targetFile.parentFile?.mkdirs()
-            if (targetFile.exists()) targetFile.delete()
+        onProgress: ((Int) -> Unit)? = null,
+    ): Pair<Boolean, SubscriptionInfo?> =
+        withContext(Dispatchers.IO + NonCancellable) {
+            try {
+                targetFile.parentFile?.mkdirs()
+                if (targetFile.exists()) targetFile.delete()
 
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", resolveUserAgent())
-                .build()
+                val request =
+                    Request.Builder().url(url).header("User-Agent", resolveUserAgent()).build()
 
-            httpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext Pair(false, null)
-                }
+                httpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        return@withContext Pair(false, null)
+                    }
 
-                val subInfo = parseSubscriptionInfo(
-                    response.headers["Subscription-Userinfo"] ?: response.headers["subscription-userinfo"],
-                    response.headers
-                )
+                    val subInfo =
+                        parseSubscriptionInfo(
+                            response.headers["Subscription-Userinfo"]
+                                ?: response.headers["subscription-userinfo"],
+                            response.headers,
+                        )
 
-                val body = response.body
-                val contentLength = body.contentLength()
-                val inputStream = body.byteStream()
+                    val body = response.body
+                    val contentLength = body.contentLength()
+                    val inputStream = body.byteStream()
 
-                var totalBytesRead = 0L
-                val lastUpdate = AtomicLong(0)
+                    var totalBytesRead = 0L
+                    val lastUpdate = AtomicLong(0)
 
-                targetFile.outputStream().use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
+                    targetFile.outputStream().use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
 
-                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        totalBytesRead += bytesRead
+                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
+                            totalBytesRead += bytesRead
 
-                        val now = System.currentTimeMillis()
-                        if (now - lastUpdate.get() >= 500) {
-                            val progress = if (contentLength > 0) {
-                                ((totalBytesRead * 100) / contentLength).toInt()
-                            } else 0
-                            onProgress?.invoke(progress)
-                            lastUpdate.set(now)
+                            val now = System.currentTimeMillis()
+                            if (now - lastUpdate.get() >= 500) {
+                                val progress =
+                                    if (contentLength > 0) {
+                                        ((totalBytesRead * 100) / contentLength).toInt()
+                                    } else 0
+                                onProgress?.invoke(progress)
+                                lastUpdate.set(now)
+                            }
                         }
                     }
-                }
 
-                Pair(true, subInfo)
+                    Pair(true, subInfo)
+                }
+            } catch (error: Exception) {
+                Log.w("Failed to download with subscription info: $error", error)
+                if (targetFile.exists()) targetFile.delete()
+                Pair(false, null)
             }
-        } catch (error: Exception) {
-            Log.w("Failed to download with subscription info: $error", error)
-            if (targetFile.exists()) targetFile.delete()
-            Pair(false, null)
         }
-    }
 
     private fun parseSubscriptionInfo(
         userinfo: String?,
-        headers: okhttp3.Headers
+        headers: okhttp3.Headers,
     ): SubscriptionInfo {
         var upload = 0L
         var download = 0L
@@ -162,31 +160,33 @@ object ProfileProcessor {
 
         fun findHeaderBySuffix(suffix: String): String? {
             val target = suffix.lowercase(Locale.getDefault())
-            val key = headers.names().firstOrNull {
-                it.lowercase(Locale.getDefault()).endsWith(target)
-            } ?: return null
+            val key =
+                headers.names().firstOrNull { it.lowercase(Locale.getDefault()).endsWith(target) }
+                    ?: return null
             return headers[key]
         }
 
-        fun parseExpireDate(value: String): Long? = runCatching {
-            when {
-                value.matches(Regex("\\d+")) -> value.toLong() * 1000L
-                value.contains("-") -> {
-                    val parts = value.split("-")
-                    if (parts.size < 3) return@runCatching null
+        fun parseExpireDate(value: String): Long? =
+            runCatching {
+                    when {
+                        value.matches(Regex("\\d+")) -> value.toLong() * 1000L
+                        value.contains("-") -> {
+                            val parts = value.split("-")
+                            if (parts.size < 3) return@runCatching null
 
-                    val year = parts[0].toIntOrNull() ?: return@runCatching null
-                    val month = parts[1].toIntOrNull() ?: return@runCatching null
-                    val day = parts[2].toIntOrNull() ?: return@runCatching null
+                            val year = parts[0].toIntOrNull() ?: return@runCatching null
+                            val month = parts[1].toIntOrNull() ?: return@runCatching null
+                            val day = parts[2].toIntOrNull() ?: return@runCatching null
 
-                    val calendar = Calendar.getInstance()
-                    calendar.set(year, month - 1, day, 0, 0, 0)
-                    calendar.set(Calendar.MILLISECOND, 0)
-                    calendar.timeInMillis
+                            val calendar = Calendar.getInstance()
+                            calendar.set(year, month - 1, day, 0, 0, 0)
+                            calendar.set(Calendar.MILLISECOND, 0)
+                            calendar.timeInMillis
+                        }
+                        else -> null
+                    }
                 }
-                else -> null
-            }
-        }.getOrNull()
+                .getOrNull()
 
         val resolvedUserinfo = userinfo ?: findHeaderBySuffix("subscription-userinfo")
 
@@ -217,23 +217,27 @@ object ProfileProcessor {
         }
 
         if (expire == 0L) {
-            expire = (headers["Expires"] ?: findHeaderBySuffix("expires"))?.let { parseExpireDate(it) } ?: 0L
+            expire =
+                (headers["Expires"] ?: findHeaderBySuffix("expires"))?.let { parseExpireDate(it) }
+                    ?: 0L
         }
 
-        val title = decodeSubscriptionTitle(
-            headers["Profile-Title"]
-                ?: headers["Subscription-Title"]
-                ?: findHeaderBySuffix("profile-title")
-                ?: findHeaderBySuffix("subscription-title")
-        )
+        val title =
+            decodeSubscriptionTitle(
+                headers["Profile-Title"]
+                    ?: headers["Subscription-Title"]
+                    ?: findHeaderBySuffix("profile-title")
+                    ?: findHeaderBySuffix("subscription-title")
+            )
 
         val filename = parseFilenameFromHeaders(headers)
 
-        val interval = headers["Profile-Update-Interval"]?.toIntOrNull()
-            ?: headers["Subscription-Update-Interval"]?.toIntOrNull()
-            ?: findHeaderBySuffix("profile-update-interval")?.toIntOrNull()
-            ?: findHeaderBySuffix("subscription-update-interval")?.toIntOrNull()
-            ?: 24
+        val interval =
+            headers["Profile-Update-Interval"]?.toIntOrNull()
+                ?: headers["Subscription-Update-Interval"]?.toIntOrNull()
+                ?: findHeaderBySuffix("profile-update-interval")?.toIntOrNull()
+                ?: findHeaderBySuffix("subscription-update-interval")?.toIntOrNull()
+                ?: 24
 
         return SubscriptionInfo(upload, download, total, expire, title, filename, interval)
     }
@@ -246,8 +250,9 @@ object ProfileProcessor {
             if (candidate.isBlank()) return null
             if (!candidate.matches(Regex("^[A-Za-z0-9+/=]+$"))) return null
             return runCatching {
-                String(Base64.getDecoder().decode(candidate), StandardCharsets.UTF_8).trim()
-            }.getOrNull()
+                    String(Base64.getDecoder().decode(candidate), StandardCharsets.UTF_8).trim()
+                }
+                .getOrNull()
         }
 
         fun decodeRfc5987(value: String): String? {
@@ -255,67 +260,86 @@ object ProfileProcessor {
             val charset = match.groupValues[1].ifBlank { "UTF-8" }
             val encoded = match.groupValues[2]
 
-            return runCatching {
-                URLDecoder.decode(encoded, charset).trim()
-            }.getOrNull()
+            return runCatching { URLDecoder.decode(encoded, charset).trim() }.getOrNull()
         }
 
         return runCatching {
-            val normalized = value.trim().trim('"', '\'')
-            when {
-                normalized.startsWith("base64:", ignoreCase = true) -> {
-                    decodeBase64(normalized.substringAfter(':', "")) ?: value
-                }
-                else -> {
-                    decodeRfc5987(normalized)
-                        ?: runCatching {
-                            URLDecoder.decode(normalized, StandardCharsets.UTF_8.name()).trim()
-                        }.getOrNull()
-                        ?: decodeBase64(normalized)
-                        ?: value
+                val normalized = value.trim().trim('"', '\'')
+                when {
+                    normalized.startsWith("base64:", ignoreCase = true) -> {
+                        decodeBase64(normalized.substringAfter(':', "")) ?: value
+                    }
+                    else -> {
+                        decodeRfc5987(normalized)
+                            ?: runCatching {
+                                    URLDecoder.decode(normalized, StandardCharsets.UTF_8.name())
+                                        .trim()
+                                }
+                                .getOrNull()
+                            ?: decodeBase64(normalized)
+                            ?: value
+                    }
                 }
             }
-        }.getOrElse { value }.takeIf { it.isNotBlank() }
+            .getOrElse { value }
+            .takeIf { it.isNotBlank() }
     }
 
     private fun parseFilenameFromHeaders(headers: okhttp3.Headers): String? {
-        val contentDisposition = headers["Content-Disposition"]
-            ?: headers.names()
-                .firstOrNull { it.lowercase(Locale.getDefault()).endsWith("content-disposition") }
-                ?.let { headers[it] }
-            ?: return null
+        val contentDisposition =
+            headers["Content-Disposition"]
+                ?: headers
+                    .names()
+                    .firstOrNull {
+                        it.lowercase(Locale.getDefault()).endsWith("content-disposition")
+                    }
+                    ?.let { headers[it] }
+                ?: return null
 
         return runCatching {
-            if (contentDisposition.contains("filename*=", ignoreCase = true)) {
-                val regex = """filename\*=([^']*)'([^']*)'([^;]+)""".toRegex(RegexOption.IGNORE_CASE)
-                regex.find(contentDisposition)?.let { match ->
-                    val charset = match.groupValues[1].ifBlank { "UTF-8" }
-                    val encodedFilename = match.groupValues[3].trim().trim('"', '\'')
-                    val safeCharset = runCatching { Charset.forName(charset).name() }.getOrDefault("UTF-8")
-                    URLDecoder.decode(encodedFilename, safeCharset).trim()
-                }
-            } else {
-                val regex = """filename=([^;]+)""".toRegex(RegexOption.IGNORE_CASE)
-                regex.find(contentDisposition)?.groupValues?.getOrNull(1)?.trim()?.trim('"', '\'')
-            }?.takeIf { it.isNotBlank() }
-        }.getOrNull()
+                if (contentDisposition.contains("filename*=", ignoreCase = true)) {
+                        val regex =
+                            """filename\*=([^']*)'([^']*)'([^;]+)"""
+                                .toRegex(RegexOption.IGNORE_CASE)
+                        regex.find(contentDisposition)?.let { match ->
+                            val charset = match.groupValues[1].ifBlank { "UTF-8" }
+                            val encodedFilename = match.groupValues[3].trim().trim('"', '\'')
+                            val safeCharset =
+                                runCatching { Charset.forName(charset).name() }
+                                    .getOrDefault("UTF-8")
+                            URLDecoder.decode(encodedFilename, safeCharset).trim()
+                        }
+                    } else {
+                        val regex = """filename=([^;]+)""".toRegex(RegexOption.IGNORE_CASE)
+                        regex
+                            .find(contentDisposition)
+                            ?.groupValues
+                            ?.getOrNull(1)
+                            ?.trim()
+                            ?.trim('"', '\'')
+                    }
+                    ?.takeIf { it.isNotBlank() }
+            }
+            .getOrNull()
     }
 
     private suspend fun fetchUrlSubscription(
         stagingDir: File,
         source: String,
-        onProgress: (Int) -> Unit
+        onProgress: (Int) -> Unit,
     ): SubscriptionInfo? {
         return try {
             onProgress(5)
             val tempFile = stagingDir.resolve("config.download.yaml")
-            val (success, info) = downloadWithSubscriptionInfo(source, tempFile) { progress ->
-                onProgress(5 + (progress * 0.4).toInt())
-            }
-            val result = if (success) {
-                tempFile.copyTo(stagingDir.resolve("config.yaml"), overwrite = true)
-                info
-            } else null
+            val (success, info) =
+                downloadWithSubscriptionInfo(source, tempFile) { progress ->
+                    onProgress(5 + (progress * 0.4).toInt())
+                }
+            val result =
+                if (success) {
+                    tempFile.copyTo(stagingDir.resolve("config.yaml"), overwrite = true)
+                    info
+                } else null
             tempFile.delete()
             result
         } catch (error: Exception) {
@@ -327,7 +351,7 @@ object ProfileProcessor {
     private fun resolveSubscriptionName(
         snapshotName: String,
         snapshotSource: String,
-        subInfo: SubscriptionInfo?
+        subInfo: SubscriptionInfo?,
     ): String {
         if (!ProfileNameUtils.isAutoGeneratedProfileName(snapshotName)) return snapshotName
 
@@ -345,10 +369,12 @@ object ProfileProcessor {
         withContext(Dispatchers.IO + NonCancellable) {
             processLock.withLock {
                 val targetDir = context.importedDir.resolve(uuid.toString())
-                val stagingDir = context.cacheDir.resolve("profile-staging").resolve(uuid.toString())
+                val stagingDir =
+                    context.cacheDir.resolve("profile-staging").resolve(uuid.toString())
                 val snapshot = profileLock.withLock {
-                    val imported = ImportedDao.queryByUUID(uuid)
-                        ?: throw IllegalArgumentException("profile $uuid not found")
+                    val imported =
+                        ImportedDao.queryByUUID(uuid)
+                            ?: throw IllegalArgumentException("profile $uuid not found")
 
                     stagingDir.deleteRecursively()
                     stagingDir.mkdirs()
@@ -359,7 +385,7 @@ object ProfileProcessor {
 
                     UpdateSnapshot(
                         imported = imported,
-                        hasCommittedConfig = targetDir.resolve("runtime.yaml").isFile
+                        hasCommittedConfig = targetDir.resolve("runtime.yaml").isFile,
                     )
                 }
 
@@ -368,56 +394,68 @@ object ProfileProcessor {
 
                 try {
                     if (snapshot.imported.type == Profile.Type.Url) {
-                        subInfo = fetchUrlSubscription(stagingDir, snapshot.imported.source) { progress ->
-                            try {
-                                cb?.updateStatus(
-                                    com.github.yumelira.yumebox.core.model.FetchStatus(
-                                        action = com.github.yumelira.yumebox.core.model.FetchStatus.Action.FetchConfiguration,
-                                        args = emptyList(),
-                                        progress = progress,
-                                        max = 100
+                        subInfo =
+                            fetchUrlSubscription(stagingDir, snapshot.imported.source) { progress ->
+                                try {
+                                    cb?.updateStatus(
+                                        com.github.yumelira.yumebox.core.model.FetchStatus(
+                                            action =
+                                                com.github.yumelira.yumebox.core.model.FetchStatus
+                                                    .Action
+                                                    .FetchConfiguration,
+                                            args = emptyList(),
+                                            progress = progress,
+                                            max = 100,
+                                        )
                                     )
-                                )
-                            } catch (_: Exception) {
-                                cb = null
+                                } catch (_: Exception) {
+                                    cb = null
+                                }
                             }
-                        }
                     }
 
                     Clash.fetchAndValid(stagingDir, snapshot.imported.source, true) {
-                        try {
-                            cb?.updateStatus(
-                                it
-                            )
-                        } catch (error: Exception) {
-                            cb = null
-                            Log.w("Report fetch status: $error", error)
+                            try {
+                                cb?.updateStatus(it)
+                            } catch (error: Exception) {
+                                cb = null
+                                Log.w("Report fetch status: $error", error)
+                            }
                         }
-                    }.await()
+                        .await()
 
                     profileLock.withLock {
                         if (ImportedDao.exists(snapshot.imported.uuid)) {
                             targetDir.deleteRecursively()
                             stagingDir.copyRecursively(targetDir, overwrite = true)
 
-                            val finalName = if (snapshot.imported.type == Profile.Type.Url) {
-                                resolveSubscriptionName(snapshot.imported.name, snapshot.imported.source, subInfo)
-                            } else snapshot.imported.name
+                            val finalName =
+                                if (snapshot.imported.type == Profile.Type.Url) {
+                                    resolveSubscriptionName(
+                                        snapshot.imported.name,
+                                        snapshot.imported.source,
+                                        subInfo,
+                                    )
+                                } else snapshot.imported.name
 
-                            val updated = Imported(
-                                snapshot.imported.uuid,
-                                finalName,
-                                snapshot.imported.type,
-                                snapshot.imported.source,
-                                if (snapshot.imported.type == Profile.Type.Url && subInfo != null) {
-                                    subInfo.interval.toLong() * 60 * 60 * 1000
-                                } else snapshot.imported.interval,
-                                subInfo?.upload ?: snapshot.imported.upload,
-                                subInfo?.download ?: snapshot.imported.download,
-                                subInfo?.total ?: snapshot.imported.total,
-                                subInfo?.expire ?: snapshot.imported.expire,
-                                snapshot.imported.createdAt
-                            )
+                            val updated =
+                                Imported(
+                                    snapshot.imported.uuid,
+                                    finalName,
+                                    snapshot.imported.type,
+                                    snapshot.imported.source,
+                                    if (
+                                        snapshot.imported.type == Profile.Type.Url &&
+                                            subInfo != null
+                                    ) {
+                                        subInfo.interval.toLong() * 60 * 60 * 1000
+                                    } else snapshot.imported.interval,
+                                    subInfo?.upload ?: snapshot.imported.upload,
+                                    subInfo?.download ?: snapshot.imported.download,
+                                    subInfo?.total ?: snapshot.imported.total,
+                                    subInfo?.expire ?: snapshot.imported.expire,
+                                    snapshot.imported.createdAt,
+                                )
                             ImportedDao.update(updated)
 
                             context.sendProfileChanged(snapshot.imported.uuid)
@@ -425,7 +463,10 @@ object ProfileProcessor {
                     }
                 } catch (error: Exception) {
                     profileLock.withLock {
-                        if (!snapshot.hasCommittedConfig && ImportedDao.exists(snapshot.imported.uuid)) {
+                        if (
+                            !snapshot.hasCommittedConfig &&
+                                ImportedDao.exists(snapshot.imported.uuid)
+                        ) {
                             ImportedDao.remove(snapshot.imported.uuid)
                             SelectionDao.clear(snapshot.imported.uuid)
                             targetDir.deleteRecursively()

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,35 +34,37 @@ val Yume.Close: ImageVector
         if (_X != null) {
             return _X!!
         }
-        _X = ImageVector.Builder(
-            name = "X",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(18f, 6f)
-                lineTo(6f, 18f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveToRelative(6f, 6f)
-                lineToRelative(12f, 12f)
-            }
-        }.build()
+        _X =
+            ImageVector.Builder(
+                    name = "X",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(18f, 6f)
+                        lineTo(6f, 18f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveToRelative(6f, 6f)
+                        lineToRelative(12f, 12f)
+                    }
+                }
+                .build()
 
         return _X!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _X: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _X: ImageVector? = null

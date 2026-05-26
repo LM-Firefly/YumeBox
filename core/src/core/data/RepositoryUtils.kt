@@ -23,16 +23,10 @@ package com.github.yumelira.yumebox.core.data
 import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
-/**
- * Utility functions for Repository layer to reduce boilerplate code.
- */
+/** Utility functions for Repository layer to reduce boilerplate code. */
 object RepositoryUtils {
 
-    suspend fun <T> safeApiCall(
-        tag: String,
-        operation: String,
-        block: suspend () -> T,
-    ): Result<T> {
+    suspend fun <T> safeApiCall(tag: String, operation: String, block: suspend () -> T): Result<T> {
         return try {
             Result.success(block())
         } catch (error: Exception) {
@@ -42,11 +36,7 @@ object RepositoryUtils {
         }
     }
 
-    fun <T> safeCall(
-        tag: String,
-        operation: String,
-        block: () -> T,
-    ): Result<T> {
+    fun <T> safeCall(tag: String, operation: String, block: () -> T): Result<T> {
         return try {
             Result.success(block())
         } catch (error: Exception) {

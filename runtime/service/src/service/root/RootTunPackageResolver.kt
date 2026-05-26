@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.root
 
 import android.content.Context
@@ -49,34 +47,35 @@ internal class RootTunPackageResolver(
         val selectedPackages = store.accessControlPackages
         val packageUidLookup = resolvePackageUidLookup(selectedPackages)
         val packageUidMap = packageUidLookup.packageUidMap
-        val allAppUid = packageUidMap.values
-            .asSequence()
-            .filter { it >= APP_UID_MIN }
-            .filterNot { it == context.applicationInfo.uid }
-            .toSortedSet()
+        val allAppUid =
+            packageUidMap.values
+                .asSequence()
+                .filter { it >= APP_UID_MIN }
+                .filterNot { it == context.applicationInfo.uid }
+                .toSortedSet()
 
-        val selectedUid = selectedPackages
-            .asSequence()
-            .mapNotNull(packageUidMap::get)
-            .filter { it >= APP_UID_MIN }
-            .filterNot { it == context.applicationInfo.uid }
-            .toSortedSet()
+        val selectedUid =
+            selectedPackages
+                .asSequence()
+                .mapNotNull(packageUidMap::get)
+                .filter { it >= APP_UID_MIN }
+                .filterNot { it == context.applicationInfo.uid }
+                .toSortedSet()
 
-        val missingPackages = selectedPackages
-            .filterNot(packageUidMap::containsKey)
-            .toSortedSet()
+        val missingPackages = selectedPackages.filterNot(packageUidMap::containsKey).toSortedSet()
 
-        val includeUid = when (store.accessControlMode) {
-            AccessControlMode.AcceptAll -> allAppUid
-            AccessControlMode.AcceptSelected -> selectedUid
-            AccessControlMode.RejectAll -> emptySet()
-            AccessControlMode.RejectSelected -> {
-                check(packageUidLookup.hasFullPackageAccess) {
-                    "App list permission is required to compute all application UIDs"
+        val includeUid =
+            when (store.accessControlMode) {
+                AccessControlMode.AcceptAll -> allAppUid
+                AccessControlMode.AcceptSelected -> selectedUid
+                AccessControlMode.RejectAll -> emptySet()
+                AccessControlMode.RejectSelected -> {
+                    check(packageUidLookup.hasFullPackageAccess) {
+                        "App list permission is required to compute all application UIDs"
+                    }
+                    allAppUid - selectedUid
                 }
-                allAppUid - selectedUid
-            }
-        }.toList()
+            }.toList()
 
         if (store.accessControlMode == AccessControlMode.AcceptAll) {
             check(packageUidLookup.hasFullPackageAccess) {
@@ -97,10 +96,11 @@ internal class RootTunPackageResolver(
             AccessControlMode.RejectSelected -> resolveFullPackageUidLookup(selectedPackages)
 
             AccessControlMode.AcceptSelected,
-            AccessControlMode.RejectAll -> PackageUidLookup(
-                packageUidMap = resolveSelectedPackageUidMap(selectedPackages),
-                hasFullPackageAccess = false,
-            )
+            AccessControlMode.RejectAll ->
+                PackageUidLookup(
+                    packageUidMap = resolveSelectedPackageUidMap(selectedPackages),
+                    hasFullPackageAccess = false,
+                )
         }
     }
 
@@ -108,33 +108,32 @@ internal class RootTunPackageResolver(
         RootPackageShell.queryPackageUidMap()
             ?.takeIf { it.isNotEmpty() }
             ?.let { packageUidMap ->
-                return PackageUidLookup(
-                    packageUidMap = packageUidMap,
-                    hasFullPackageAccess = true,
-                )
+                return PackageUidLookup(packageUidMap = packageUidMap, hasFullPackageAccess = true)
             }
 
-        val fallback = PackageUidLookup(
-            packageUidMap = resolveSelectedPackageUidMap(selectedPackages),
-            hasFullPackageAccess = false,
-        )
+        val fallback =
+            PackageUidLookup(
+                packageUidMap = resolveSelectedPackageUidMap(selectedPackages),
+                hasFullPackageAccess = false,
+            )
 
         if (!hasInstalledAppsPermission()) {
             return fallback
         }
 
         return runCatching {
-            PackageUidLookup(
-                packageUidMap = installedPackageUidMap(),
-                hasFullPackageAccess = true,
-            )
-        }.getOrElse { error ->
-            if (error is SecurityException) {
-                fallback
-            } else {
-                throw error
+                PackageUidLookup(
+                    packageUidMap = installedPackageUidMap(),
+                    hasFullPackageAccess = true,
+                )
             }
-        }
+            .getOrElse { error ->
+                if (error is SecurityException) {
+                    fallback
+                } else {
+                    throw error
+                }
+            }
     }
 
     private fun resolveSelectedPackageUidMap(packages: Set<String>): Map<String, Int> {
@@ -142,17 +141,14 @@ internal class RootTunPackageResolver(
 
         val resolved = linkedMapOf<String, Int>()
         packages.forEach { packageName ->
-            resolvePackageUid(packageName)?.let { uid ->
-                resolved[packageName] = uid
-            }
+            resolvePackageUid(packageName)?.let { uid -> resolved[packageName] = uid }
         }
 
         val unresolved = packages - resolved.keys
         if (unresolved.isNotEmpty()) {
-            RootPackageShell.queryPackageUidMap(unresolved)
-                ?.forEach { (packageName, uid) ->
-                    resolved[packageName] = uid
-                }
+            RootPackageShell.queryPackageUidMap(unresolved)?.forEach { (packageName, uid) ->
+                resolved[packageName] = uid
+            }
         }
 
         return resolved
@@ -165,10 +161,12 @@ internal class RootTunPackageResolver(
 
     private fun queryPackageInfo(packageName: String): PackageInfo {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            context.packageManager.getPackageInfo(
+                packageName,
+                PackageManager.PackageInfoFlags.of(0),
+            )
         } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(packageName, 0)
+            @Suppress("DEPRECATION") context.packageManager.getPackageInfo(packageName, 0)
         }
     }
 
@@ -176,33 +174,33 @@ internal class RootTunPackageResolver(
         return installedPackages()
             .asSequence()
             .mapNotNull { packageInfo ->
-                packageInfo.applicationInfo?.uid?.let { uid ->
-                    packageInfo.packageName to uid
-                }
+                packageInfo.applicationInfo?.uid?.let { uid -> packageInfo.packageName to uid }
             }
             .toMap()
     }
 
     private fun hasInstalledAppsPermission(): Boolean {
         val permission = MIUI_GET_INSTALLED_APPS_PERMISSION
-        val permissionExists = runCatching {
-            context.packageManager.getPermissionInfo(permission, 0)
-            true
-        }.getOrDefault(false)
+        val permissionExists =
+            runCatching {
+                    context.packageManager.getPermissionInfo(permission, 0)
+                    true
+                }
+                .getOrDefault(false)
 
         if (!permissionExists) {
             return true
         }
 
-        return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(context, permission) ==
+            PackageManager.PERMISSION_GRANTED
     }
 
     private fun installedPackages(): List<PackageInfo> {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
         } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.getInstalledPackages(0)
+            @Suppress("DEPRECATION") context.packageManager.getInstalledPackages(0)
         }
     }
 

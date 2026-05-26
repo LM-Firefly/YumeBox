@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.model
 
 import android.os.Parcel
@@ -36,11 +34,15 @@ data class Provider(
     val path: String = "",
 ) : Parcelable, Comparable<Provider> {
     enum class Type {
-        Proxy, Rule
+        Proxy,
+        Rule,
     }
 
     enum class VehicleType {
-        HTTP, File, Inline, Compatible
+        HTTP,
+        File,
+        Inline,
+        Compatible,
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

@@ -24,12 +24,12 @@ import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -89,7 +89,7 @@ fun TrafficStatisticsScreen() {
                         onClick = {
                             viewModel.clearAllStatistics()
                             context.toast(MLang.TrafficStatistics.Action.ClearSuccess)
-                        },
+                        }
                     ) {
                         Icon(
                             imageVector = MiuixIcons.Delete,
@@ -99,7 +99,7 @@ fun TrafficStatisticsScreen() {
                     }
                 },
             )
-        },
+        }
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -118,19 +118,18 @@ fun TrafficStatisticsScreen() {
             }
 
             item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = spacing.space16),
-                ) {
+                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.space16)) {
                     Column(
-                        modifier = Modifier.padding(horizontal = spacing.space18, vertical = spacing.space18),
+                        modifier =
+                            Modifier.padding(
+                                horizontal = spacing.space18,
+                                vertical = spacing.space18,
+                            ),
                         verticalArrangement = Arrangement.spacedBy(spacing.space16),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(componentSizes.trafficChartHeight),
+                            modifier =
+                                Modifier.fillMaxWidth().height(componentSizes.trafficChartHeight),
                             contentAlignment = Alignment.Center,
                         ) {
                             TrafficDonutChart(
@@ -144,7 +143,8 @@ fun TrafficStatisticsScreen() {
                             ) {
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(componentSizes.textLineCompactSpacing),
+                                    verticalArrangement =
+                                        Arrangement.spacedBy(componentSizes.textLineCompactSpacing),
                                 ) {
                                     Text(
                                         text = formatBytes(activeSummary.total),
@@ -153,11 +153,15 @@ fun TrafficStatisticsScreen() {
                                         fontWeight = FontWeight.SemiBold,
                                     )
                                     Text(
-                                        text = if (uiState.selectedTimeRange == StatisticsTimeRange.TODAY) {
-                                            MLang.TrafficStatistics.Summary.TodayTraffic
-                                        } else {
-                                            MLang.TrafficStatistics.Summary.WeekTraffic
-                                        },
+                                        text =
+                                            if (
+                                                uiState.selectedTimeRange ==
+                                                    StatisticsTimeRange.TODAY
+                                            ) {
+                                                MLang.TrafficStatistics.Summary.TodayTraffic
+                                            } else {
+                                                MLang.TrafficStatistics.Summary.WeekTraffic
+                                            },
                                         style = MiuixTheme.textStyles.footnote1,
                                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                                         textAlign = TextAlign.Center,
@@ -172,13 +176,9 @@ fun TrafficStatisticsScreen() {
             item {
                 Title(MLang.TrafficStatistics.Section.Traffic)
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = spacing.space16),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.space16),
                     verticalArrangement = Arrangement.spacedBy(spacing.space10),
                 ) {
-
-
                     TrafficMetricCard(
                         downloadValue = formatBytes(activeSummary.totalDownload),
                         uploadValue = formatBytes(activeSummary.totalUpload),
@@ -186,21 +186,18 @@ fun TrafficStatisticsScreen() {
                 }
             }
 
-            item {
-                Title(MLang.TrafficStatistics.Section.TopApps)
-            }
+            item { Title(MLang.TrafficStatistics.Section.TopApps) }
 
             if (uiState.topApps.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = spacing.space16),
-                    ) {
+                    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.space16)) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = spacing.space14, vertical = spacing.space18),
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(
+                                        horizontal = spacing.space14,
+                                        vertical = spacing.space18,
+                                    ),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -212,21 +209,15 @@ fun TrafficStatisticsScreen() {
                     }
                 }
             } else {
-                items(
-                    items = uiState.topApps,
-                    key = AppTrafficUsage::appKey,
-                ) { usage ->
+                items(items = uiState.topApps, key = AppTrafficUsage::appKey) { usage ->
                     Box(
-                        modifier = Modifier.padding(
-                            horizontal = spacing.space16,
-                            vertical = componentSizes.listItemVerticalMinimal,
-                        ),
+                        modifier =
+                            Modifier.padding(
+                                horizontal = spacing.space16,
+                                vertical = componentSizes.listItemVerticalMinimal,
+                            )
                     ) {
-                        AppTrafficRow(
-                            context = context,
-                            usage = usage,
-                            total = activeSummary.total,
-                        )
+                        AppTrafficRow(context = context, usage = usage, total = activeSummary.total)
                     }
                 }
             }
@@ -235,18 +226,15 @@ fun TrafficStatisticsScreen() {
 }
 
 @Composable
-private fun TrafficMetricCard(
-    downloadValue: String,
-    uploadValue: String,
-) {
+private fun TrafficMetricCard(downloadValue: String, uploadValue: String) {
     val spacing = AppTheme.spacing
     val semanticColors = AppTheme.colors
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.space14, vertical = spacing.space12),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = spacing.space14, vertical = spacing.space12),
             verticalArrangement = Arrangement.spacedBy(spacing.space18),
         ) {
             TrafficMetricLine(
@@ -264,11 +252,7 @@ private fun TrafficMetricCard(
 }
 
 @Composable
-private fun TrafficMetricLine(
-    label: String,
-    value: String,
-    valueColor: Color,
-) {
+private fun TrafficMetricLine(label: String, value: String, valueColor: Color) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -290,22 +274,16 @@ private fun TrafficMetricLine(
 }
 
 @Composable
-private fun AppTrafficRow(
-    context: Context,
-    usage: AppTrafficUsage,
-    total: Long,
-) {
+private fun AppTrafficRow(context: Context, usage: AppTrafficUsage, total: Long) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
 
     val share = if (total > 0L) usage.totalBytes.toDouble() / total.toDouble() else 0.0
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.space14, vertical = spacing.space12),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = spacing.space14, vertical = spacing.space12),
             horizontalArrangement = Arrangement.spacedBy(spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -326,10 +304,11 @@ private fun AppTrafficRow(
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    text = MLang.TrafficStatistics.Metric.UsageLine.format(
-                        formatBytes(usage.totalDownload),
-                        formatBytes(usage.totalUpload),
-                    ),
+                    text =
+                        MLang.TrafficStatistics.Metric.UsageLine.format(
+                            formatBytes(usage.totalDownload),
+                            formatBytes(usage.totalUpload),
+                        ),
                     style = MiuixTheme.textStyles.footnote1,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
@@ -355,12 +334,7 @@ private fun AppTrafficRow(
 }
 
 @Composable
-private fun AppIconBadge(
-    context: Context,
-    appKey: String,
-    packageName: String?,
-    appName: String,
-) {
+private fun AppIconBadge(context: Context, appKey: String, packageName: String?, appName: String) {
     val componentSizes = AppTheme.sizes
     val semanticColors = AppTheme.colors
     val opacity = AppTheme.opacity
@@ -368,10 +342,12 @@ private fun AppIconBadge(
 
     if (appKey == TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY) {
         Box(
-            modifier = Modifier
-                .size(componentSizes.iconBadgeMedium)
-                .clip(RoundedCornerShape(radii.radius12))
-                .background(semanticColors.traffic.unattributed.copy(alpha = opacity.softOverlay)),
+            modifier =
+                Modifier.size(componentSizes.iconBadgeMedium)
+                    .clip(RoundedCornerShape(radii.radius12))
+                    .background(
+                        semanticColors.traffic.unattributed.copy(alpha = opacity.softOverlay)
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -384,38 +360,41 @@ private fun AppIconBadge(
         return
     }
 
-    val iconBitmap by produceState<ImageBitmap?>(
-        initialValue = null,
-        key1 = packageName,
-    ) {
-        value = withContext(Dispatchers.IO) {
-            packageName?.takeIf { it.isNotBlank() }?.let { target ->
-                runCatching {
-                    context.packageManager.getApplicationIcon(target)
-                        .toBitmap(width = 84, height = 84)
-                        .asImageBitmap()
-                }.getOrNull()
-            }
+    val iconBitmap by
+        produceState<ImageBitmap?>(initialValue = null, key1 = packageName) {
+            value =
+                withContext(Dispatchers.IO) {
+                    packageName
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { target ->
+                            runCatching {
+                                    context.packageManager
+                                        .getApplicationIcon(target)
+                                        .toBitmap(width = 84, height = 84)
+                                        .asImageBitmap()
+                                }
+                                .getOrNull()
+                        }
+                }
         }
-    }
 
     val bitmap = iconBitmap
     if (bitmap != null) {
         Image(
             bitmap = bitmap,
             contentDescription = appName,
-            modifier = Modifier
-                .size(componentSizes.iconBadgeMedium)
-                .clip(RoundedCornerShape(radii.radius12)),
+            modifier =
+                Modifier.size(componentSizes.iconBadgeMedium)
+                    .clip(RoundedCornerShape(radii.radius12)),
         )
         return
     }
 
     Box(
-        modifier = Modifier
-            .size(componentSizes.iconBadgeMedium)
-            .clip(RoundedCornerShape(radii.radius12))
-            .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtleStrong)),
+        modifier =
+            Modifier.size(componentSizes.iconBadgeMedium)
+                .clip(RoundedCornerShape(radii.radius12))
+                .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtleStrong)),
         contentAlignment = Alignment.Center,
     ) {
         Text(

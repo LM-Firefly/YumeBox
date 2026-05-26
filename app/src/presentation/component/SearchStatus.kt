@@ -18,12 +18,11 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 
 @Stable
 data class SearchStatus(
@@ -34,16 +33,21 @@ data class SearchStatus(
     val resultStatus: ResultStatus = ResultStatus.DEFAULT,
 ) {
     fun isExpanded() = current == Status.EXPANDED
+
     fun isCollapsed() = current == Status.COLLAPSED
+
     fun shouldExpand() = current == Status.EXPANDED || current == Status.EXPANDING
+
     fun shouldCollapse() = current == Status.COLLAPSED || current == Status.COLLAPSING
+
     fun isExpanding() = current == Status.EXPANDING
 
-    fun onAnimationComplete(): SearchStatus = when (current) {
-        Status.EXPANDING -> copy(current = Status.EXPANDED)
-        Status.COLLAPSING -> copy(searchText = "", current = Status.COLLAPSED)
-        else -> this
-    }
+    fun onAnimationComplete(): SearchStatus =
+        when (current) {
+            Status.EXPANDING -> copy(current = Status.EXPANDED)
+            Status.COLLAPSING -> copy(searchText = "", current = Status.COLLAPSED)
+            else -> this
+        }
 
     enum class Status {
         EXPANDED,

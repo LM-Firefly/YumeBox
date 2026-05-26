@@ -18,15 +18,13 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.controller
 
 import com.github.yumelira.yumebox.core.model.OverrideSpec
-import com.github.yumelira.yumebox.data.store.OverrideConfigStore
-import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.data.model.OverrideMetadata
 import com.github.yumelira.yumebox.data.model.ProfileBinding
+import com.github.yumelira.yumebox.data.store.OverrideConfigStore
+import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import java.util.*
 
 class OverrideResolver(
@@ -84,27 +82,26 @@ class OverrideResolver(
             return emptyList()
         }
         return buildList {
-            binding.overrideIds.forEach { overrideId ->
-                if (isLegacyPresetOverrideId(overrideId) || OverrideConfigStore.isInternalRuntimeConfig(overrideId)) {
-                    return@forEach
-                }
-                if (configStore.getConfigFilePath(overrideId) != null) {
-                    add(overrideId)
+                binding.overrideIds.forEach { overrideId ->
+                    if (
+                        isLegacyPresetOverrideId(overrideId) ||
+                            OverrideConfigStore.isInternalRuntimeConfig(overrideId)
+                    ) {
+                        return@forEach
+                    }
+                    if (configStore.getConfigFilePath(overrideId) != null) {
+                        add(overrideId)
+                    }
                 }
             }
-        }.distinct()
+            .distinct()
     }
 
-    private suspend fun resolveOrderedSpecs(
-        overrideIds: List<String>,
-    ): List<OverrideSpec> {
+    private suspend fun resolveOrderedSpecs(overrideIds: List<String>): List<OverrideSpec> {
         return overrideIds.mapNotNull { overrideId ->
             val config = configStore.getById(overrideId) ?: return@mapNotNull null
             val file = configStore.getConfigFilePath(overrideId) ?: return@mapNotNull null
-            OverrideSpec(
-                path = file.absolutePath,
-                ext = config.contentType.extension,
-            )
+            OverrideSpec(path = file.absolutePath, ext = config.contentType.extension)
         }
     }
 

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.runtime.Composable
@@ -30,14 +28,11 @@ import top.yukonga.miuix.kmp.layout.DialogDefaults
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 
 object AppDialogDefaults {
-    @Composable
-    fun titleColor(): Color = DialogDefaults.titleColor()
+    @Composable fun titleColor(): Color = DialogDefaults.titleColor()
 
-    @Composable
-    fun summaryColor(): Color = DialogDefaults.summaryColor()
+    @Composable fun summaryColor(): Color = DialogDefaults.summaryColor()
 
-    @Composable
-    fun backgroundColor(): Color = DialogDefaults.backgroundColor()
+    @Composable fun backgroundColor(): Color = DialogDefaults.backgroundColor()
 
     val outsideMargin: DpSize
         get() = DialogDefaults.outsideMargin

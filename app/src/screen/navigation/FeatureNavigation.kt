@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.navigation
 
 import androidx.compose.runtime.Composable
@@ -33,9 +31,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
 @Destination<RootGraph>
-fun FeatureScreen(
-    navigator: DestinationsNavigator,
-) {
+fun FeatureScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     FeatureContent(
         onOpenExternalUrl = { url -> openUrl(context, url) },

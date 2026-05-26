@@ -30,12 +30,12 @@ import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.layout.DialogDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 @Composable
 internal fun DeleteConfirmDialog(
@@ -98,7 +98,10 @@ internal fun ShareOptionsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColorsPrimary(),
                 ) {
-                    Text(MLang.ProfilesPage.ShareDialog.ShareLink, color = MiuixTheme.colorScheme.onPrimary)
+                    Text(
+                        MLang.ProfilesPage.ShareDialog.ShareLink,
+                        color = MiuixTheme.colorScheme.onPrimary,
+                    )
                 }
             }
             Button(

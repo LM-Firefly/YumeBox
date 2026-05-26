@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.onboarding
 
 import androidx.compose.runtime.Composable

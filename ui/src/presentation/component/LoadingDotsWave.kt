@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 
 @Composable
 fun LoadingDotsWave(
@@ -46,24 +45,28 @@ fun LoadingDotsWave(
 ) {
     val transition = rememberInfiniteTransition(label = "LoadingDotsWave")
 
-    val p1 by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 420, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "p1",
-    )
-    val p2 by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = -1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 420, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "p2",
-    )
+    val p1 by
+        transition.animateFloat(
+            initialValue = -1f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis = 420, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "p1",
+        )
+    val p2 by
+        transition.animateFloat(
+            initialValue = 1f,
+            targetValue = -1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis = 420, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "p2",
+        )
 
     Row(
         modifier = modifier,
@@ -76,16 +79,11 @@ fun LoadingDotsWave(
 }
 
 @Composable
-private fun Dot(
-    color: Color,
-    dotSize: Dp,
-    shift: Float,
-    amplitude: Dp,
-) {
+private fun Dot(color: Color, dotSize: Dp, shift: Float, amplitude: Dp) {
     androidx.compose.foundation.layout.Box(
-        modifier = Modifier
-            .size(dotSize)
-            .graphicsLayer { translationY = shift * amplitude.toPx() }
-            .background(color, CircleShape),
+        modifier =
+            Modifier.size(dotSize)
+                .graphicsLayer { translationY = shift * amplitude.toPx() }
+                .background(color, CircleShape)
     )
 }

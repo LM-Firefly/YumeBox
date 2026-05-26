@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.connection
 
 import androidx.compose.animation.*
@@ -47,31 +45,26 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Sort
+import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-private val SortModes = listOf(
-    ConnectionSort.Time,
-    ConnectionSort.Upload,
-    ConnectionSort.Download,
-    ConnectionSort.Host,
-)
+private val SortModes =
+    listOf(ConnectionSort.Time, ConnectionSort.Upload, ConnectionSort.Download, ConnectionSort.Host)
 
-private fun ConnectionSort.getDisplayName(): String = when (this) {
-    ConnectionSort.Time -> MLang.Connection.Sort.Time
-    ConnectionSort.Upload -> MLang.Connection.Sort.Upload
-    ConnectionSort.Download -> MLang.Connection.Sort.Download
-    ConnectionSort.Host -> MLang.Connection.Sort.Host
-}
+private fun ConnectionSort.getDisplayName(): String =
+    when (this) {
+        ConnectionSort.Time -> MLang.Connection.Sort.Time
+        ConnectionSort.Upload -> MLang.Connection.Sort.Upload
+        ConnectionSort.Download -> MLang.Connection.Sort.Download
+        ConnectionSort.Host -> MLang.Connection.Sort.Host
+    }
 
 @Destination<RootGraph>
 @Composable
-fun ConnectionScreen(
-    navigator: DestinationsNavigator,
-) {
+fun ConnectionScreen(navigator: DestinationsNavigator) {
     val viewModel = koinViewModel<ConnectionViewModel>()
     val state by viewModel.state.collectAsState()
     val filteredConnections by viewModel.filteredConnections.collectAsState()
@@ -82,21 +75,23 @@ fun ConnectionScreen(
     var searchText by remember { mutableStateOf(state.searchQuery) }
     var showSortPopup by remember { mutableStateOf(false) }
 
-    var selectedConnection by remember { mutableStateOf<com.github.yumelira.yumebox.core.model.ConnectionInfo?>(null) }
+    var selectedConnection by remember {
+        mutableStateOf<com.github.yumelira.yumebox.core.model.ConnectionInfo?>(null)
+    }
     var showDetailSheet by remember { mutableStateOf(false) }
 
     val tabs = listOf(MLang.Connection.Tab.Active, MLang.Connection.Tab.Closed)
-    var selectedTabIndex by rememberSaveable(state.selectedTab) {
-        mutableIntStateOf(
-            when (state.selectedTab) {
-                ConnectionTab.ACTIVE -> 0
-                ConnectionTab.CLOSED -> 1
-            }
-        )
-    }
-    val selectedSortIndex = remember(state.sortBy) {
-        SortModes.indexOf(state.sortBy).coerceAtLeast(0)
-    }
+    var selectedTabIndex by
+        rememberSaveable(state.selectedTab) {
+            mutableIntStateOf(
+                when (state.selectedTab) {
+                    ConnectionTab.ACTIVE -> 0
+                    ConnectionTab.CLOSED -> 1
+                }
+            )
+        }
+    val selectedSortIndex =
+        remember(state.sortBy) { SortModes.indexOf(state.sortBy).coerceAtLeast(0) }
     val emptyStateText =
         when {
             state.isLoading -> MLang.Connection.Loading
@@ -143,7 +138,8 @@ fun ConnectionScreen(
                     Box {
                         IconButton(
                             modifier = Modifier.padding(end = spacing.space12),
-                            onClick = { showSortPopup = true }) {
+                            onClick = { showSortPopup = true },
+                        ) {
                             Icon(
                                 imageVector = MiuixIcons.Sort,
                                 contentDescription = MLang.Connection.SortBy.trimEnd(':', '：'),
@@ -171,8 +167,7 @@ fun ConnectionScreen(
                             }
                         }
                     }
-                    IconButton(
-                        onClick = { showSearchBar = !showSearchBar }) {
+                    IconButton(onClick = { showSearchBar = !showSearchBar }) {
                         Icon(
                             imageVector = MiuixIcons.Search,
                             contentDescription = MLang.Connection.Search,
@@ -181,20 +176,20 @@ fun ConnectionScreen(
                     }
                 },
             )
-        },
+        }
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
             innerPadding = innerPadding,
-            contentPadding = PaddingValues(
-                start = spacing.screenHorizontal,
-                end = spacing.screenHorizontal,
-                top = innerPadding.calculateTopPadding(),
-                bottom = mainLikePadding.calculateBottomPadding() + spacing.space12,
-            ),
+            contentPadding =
+                PaddingValues(
+                    start = spacing.screenHorizontal,
+                    end = spacing.screenHorizontal,
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = mainLikePadding.calculateBottomPadding() + spacing.space12,
+                ),
         ) {
-
             item {
                 TabRowWithContour(
                     modifier = Modifier.padding(top = spacing.space20),
@@ -207,19 +202,19 @@ fun ConnectionScreen(
             item {
                 AnimatedVisibility(
                     visible = showSearchBar,
-                    enter = expandVertically(
-                        animationSpec = tween(200, easing = FastOutSlowInEasing),
-                        expandFrom = Alignment.Top,
-                    ) + fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
-                    exit = shrinkVertically(
-                        animationSpec = tween(200, easing = FastOutSlowInEasing),
-                        shrinkTowards = Alignment.Top,
-                    ) + fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)),
+                    enter =
+                        expandVertically(
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
+                            expandFrom = Alignment.Top,
+                        ) + fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
+                    exit =
+                        shrinkVertically(
+                            animationSpec = tween(200, easing = FastOutSlowInEasing),
+                            shrinkTowards = Alignment.Top,
+                        ) + fadeOut(animationSpec = tween(200, easing = FastOutSlowInEasing)),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = spacing.space8),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = spacing.space8),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextField(
@@ -236,9 +231,7 @@ fun ConnectionScreen(
             if (filteredConnections.isEmpty()) {
                 item {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(spacing.space32),
+                        modifier = Modifier.fillMaxWidth().padding(spacing.space32),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(

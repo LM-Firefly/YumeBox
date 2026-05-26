@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.theme
 
 import androidx.compose.runtime.Composable
@@ -40,7 +38,7 @@ object EditorThemeManager {
         return remember(isDark) {
             EditorThemeState(
                 isDark = isDark,
-                themeName = if (isDark) "dark-high-contrast" else "light"
+                themeName = if (isDark) "dark-high-contrast" else "light",
             )
         }
     }
@@ -67,7 +65,4 @@ object EditorThemeManager {
     }
 }
 
-data class EditorThemeState(
-    val isDark: Boolean,
-    val themeName: String
-)
+data class EditorThemeState(val isDark: Boolean, val themeName: String)

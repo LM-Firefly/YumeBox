@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -53,25 +51,28 @@ fun NavigationBackIcon(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.92f else 1f,
-        animationSpec = com.github.yumelira.yumebox.presentation.theme.AnimationSpecs.ButtonPress,
-        label = "back_icon_scale",
-    )
+    val scale by
+        animateFloatAsState(
+            targetValue = if (pressed) 0.92f else 1f,
+            animationSpec =
+                com.github.yumelira.yumebox.presentation.theme.AnimationSpecs.ButtonPress,
+            label = "back_icon_scale",
+        )
 
     Box(
-        modifier = modifier
-            .padding(start = spacing.space20)
-            .semantics { role = Role.Button }
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = dropUnlessResumed { navigator.popBackStack() },
-            ),
+        modifier =
+            modifier
+                .padding(start = spacing.space20)
+                .semantics { role = Role.Button }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = dropUnlessResumed { navigator.popBackStack() },
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

@@ -18,8 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.screen.node
+
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -56,83 +56,89 @@ import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
 
 @Composable
-internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? = when {
-    delay == null -> null
-    delay < 0 -> MLang.Proxy.Node.Timeout to AppTheme.colors.latency.timeout
-    delay == 0 -> null
-    delay in 1..300 -> MLang.Home.NodeInfo.DelayValue.format(delay) to AppTheme.colors.latency.fast
-    delay in 301..1000 -> MLang.Home.NodeInfo.DelayValue.format(delay) to AppTheme.colors.latency.moderate
-    delay in 1001..3000 -> MLang.Home.NodeInfo.DelayValue.format(delay) to AppTheme.colors.latency.slow
-    else -> null
-}
+internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? =
+    when {
+        delay == null -> null
+        delay < 0 -> MLang.Proxy.Node.Timeout to AppTheme.colors.latency.timeout
+        delay == 0 -> null
+        delay in 1..300 ->
+            MLang.Home.NodeInfo.DelayValue.format(delay) to AppTheme.colors.latency.fast
+        delay in 301..1000 ->
+            MLang.Home.NodeInfo.DelayValue.format(delay) to AppTheme.colors.latency.moderate
+        delay in 1001..3000 ->
+            MLang.Home.NodeInfo.DelayValue.format(delay) to AppTheme.colors.latency.slow
+        else -> null
+    }
 
-internal fun Proxy.Type.displayName(): String = when (this) {
-    Proxy.Type.Direct -> "Direct"
-    Proxy.Type.Reject -> "Reject"
-    Proxy.Type.RejectDrop -> "RejectDrop"
-    Proxy.Type.Compatible -> "Compatible"
-    Proxy.Type.Pass -> "Pass"
-    Proxy.Type.Relay -> "Relay"
-    Proxy.Type.Selector -> "Selector"
-    Proxy.Type.Fallback -> "Fallback"
-    Proxy.Type.URLTest -> "URLTest"
-    Proxy.Type.LoadBalance -> "LoadBalance"
-    Proxy.Type.Smart -> "Smart"
-    Proxy.Type.Unknown -> "Unknown"
-    Proxy.Type.Shadowsocks -> "SS"
-    Proxy.Type.ShadowsocksR -> "SSR"
-    Proxy.Type.Snell -> "Snell"
-    Proxy.Type.Socks5 -> "SOCKS5"
-    Proxy.Type.Http -> "HTTP"
-    Proxy.Type.Vmess -> "VMess"
-    Proxy.Type.Vless -> "VLESS"
-    Proxy.Type.Trojan -> "Trojan"
-    Proxy.Type.Hysteria -> "Hysteria"
-    Proxy.Type.Hysteria2 -> "Hysteria2"
-    Proxy.Type.Tuic -> "TUIC"
-    Proxy.Type.WireGuard -> "WireGuard"
-    Proxy.Type.Dns -> "DNS"
-    Proxy.Type.Ssh -> "SSH"
-    Proxy.Type.Mieru -> "Mieru"
-    Proxy.Type.AnyTLS -> "AnyTLS"
-    Proxy.Type.Sudoku -> "Sudoku"
-    Proxy.Type.Masque -> "Masque"
-    Proxy.Type.TrustTunnel -> "TrustTunnel"
-}
+internal fun Proxy.Type.displayName(): String =
+    when (this) {
+        Proxy.Type.Direct -> "Direct"
+        Proxy.Type.Reject -> "Reject"
+        Proxy.Type.RejectDrop -> "RejectDrop"
+        Proxy.Type.Compatible -> "Compatible"
+        Proxy.Type.Pass -> "Pass"
+        Proxy.Type.Relay -> "Relay"
+        Proxy.Type.Selector -> "Selector"
+        Proxy.Type.Fallback -> "Fallback"
+        Proxy.Type.URLTest -> "URLTest"
+        Proxy.Type.LoadBalance -> "LoadBalance"
+        Proxy.Type.Smart -> "Smart"
+        Proxy.Type.Unknown -> "Unknown"
+        Proxy.Type.Shadowsocks -> "SS"
+        Proxy.Type.ShadowsocksR -> "SSR"
+        Proxy.Type.Snell -> "Snell"
+        Proxy.Type.Socks5 -> "SOCKS5"
+        Proxy.Type.Http -> "HTTP"
+        Proxy.Type.Vmess -> "VMess"
+        Proxy.Type.Vless -> "VLESS"
+        Proxy.Type.Trojan -> "Trojan"
+        Proxy.Type.Hysteria -> "Hysteria"
+        Proxy.Type.Hysteria2 -> "Hysteria2"
+        Proxy.Type.Tuic -> "TUIC"
+        Proxy.Type.WireGuard -> "WireGuard"
+        Proxy.Type.Dns -> "DNS"
+        Proxy.Type.Ssh -> "SSH"
+        Proxy.Type.Mieru -> "Mieru"
+        Proxy.Type.AnyTLS -> "AnyTLS"
+        Proxy.Type.Sudoku -> "Sudoku"
+        Proxy.Type.Masque -> "Masque"
+        Proxy.Type.TrustTunnel -> "TrustTunnel"
+    }
 
-internal fun Proxy.Type.iconLabel(): String = when (this) {
-    Proxy.Type.Direct -> "DI"
-    Proxy.Type.Reject -> "RJ"
-    Proxy.Type.RejectDrop -> "RD"
-    Proxy.Type.Compatible -> "CP"
-    Proxy.Type.Pass -> "PS"
-    Proxy.Type.Relay -> "RL"
-    Proxy.Type.Selector -> "SE"
-    Proxy.Type.Fallback -> "FB"
-    Proxy.Type.URLTest -> "UT"
-    Proxy.Type.LoadBalance -> "LB"
-    Proxy.Type.Smart -> "SM"
-    Proxy.Type.Unknown -> "UN"
-    Proxy.Type.Shadowsocks -> "SS"
-    Proxy.Type.ShadowsocksR -> "SR"
-    Proxy.Type.Snell -> "SN"
-    Proxy.Type.Socks5 -> "S5"
-    Proxy.Type.Http -> "HT"
-    Proxy.Type.Vmess -> "VM"
-    Proxy.Type.Vless -> "VL"
-    Proxy.Type.Trojan -> "TR"
-    Proxy.Type.Hysteria -> "HY"
-    Proxy.Type.Hysteria2 -> "H2"
-    Proxy.Type.Tuic -> "TU"
-    Proxy.Type.WireGuard -> "WG"
-    Proxy.Type.Dns -> "DN"
-    Proxy.Type.Ssh -> "SH"
-    Proxy.Type.Mieru -> "MI"
-    Proxy.Type.AnyTLS -> "AT"
-    Proxy.Type.Sudoku -> "SU"
-    Proxy.Type.Masque -> "MQ"
-    Proxy.Type.TrustTunnel -> "TT"
-}
+internal fun Proxy.Type.iconLabel(): String =
+    when (this) {
+        Proxy.Type.Direct -> "DI"
+        Proxy.Type.Reject -> "RJ"
+        Proxy.Type.RejectDrop -> "RD"
+        Proxy.Type.Compatible -> "CP"
+        Proxy.Type.Pass -> "PS"
+        Proxy.Type.Relay -> "RL"
+        Proxy.Type.Selector -> "SE"
+        Proxy.Type.Fallback -> "FB"
+        Proxy.Type.URLTest -> "UT"
+        Proxy.Type.LoadBalance -> "LB"
+        Proxy.Type.Smart -> "SM"
+        Proxy.Type.Unknown -> "UN"
+        Proxy.Type.Shadowsocks -> "SS"
+        Proxy.Type.ShadowsocksR -> "SR"
+        Proxy.Type.Snell -> "SN"
+        Proxy.Type.Socks5 -> "S5"
+        Proxy.Type.Http -> "HT"
+        Proxy.Type.Vmess -> "VM"
+        Proxy.Type.Vless -> "VL"
+        Proxy.Type.Trojan -> "TR"
+        Proxy.Type.Hysteria -> "HY"
+        Proxy.Type.Hysteria2 -> "H2"
+        Proxy.Type.Tuic -> "TU"
+        Proxy.Type.WireGuard -> "WG"
+        Proxy.Type.Dns -> "DN"
+        Proxy.Type.Ssh -> "SH"
+        Proxy.Type.Mieru -> "MI"
+        Proxy.Type.AnyTLS -> "AT"
+        Proxy.Type.Sudoku -> "SU"
+        Proxy.Type.Masque -> "MQ"
+        Proxy.Type.TrustTunnel -> "TT"
+    }
 
 @Composable
 internal fun RotatingCircleGauge(
@@ -142,14 +148,14 @@ internal fun RotatingCircleGauge(
     contentDescription: String? = MLang.Proxy.Action.Test,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "circle_gauge_rotation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing),
-        ),
-        label = "circle_gauge_rotation_value",
-    )
+    val rotation by
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec =
+                infiniteRepeatable(animation = tween(durationMillis = 1000, easing = LinearEasing)),
+            label = "circle_gauge_rotation_value",
+        )
 
     Icon(
         imageVector = Yume.CircleGauge,
@@ -175,37 +181,45 @@ internal fun NodeSelectableCard(
     val primary = MiuixTheme.colorScheme.primary
     val backgroundColor = MiuixTheme.colorScheme.background
     val transition = updateTransition(targetState = isSelected, label = "node_card_selection")
-    val borderColor by transition.animateColor(
-        transitionSpec = {
-            if (targetState) {
-                tween(durationMillis = 180, easing = FastOutSlowInEasing)
-            } else {
-                tween(durationMillis = 220, delayMillis = 80, easing = FastOutSlowInEasing)
-            }
-        },
-        label = "node_card_border_color",
-    ) { selected ->
-        if (selected) primary.copy(alpha = opacity.disabled) else Color.Transparent
-    }
+    val borderColor by
+        transition.animateColor(
+            transitionSpec = {
+                if (targetState) {
+                    tween(durationMillis = 180, easing = FastOutSlowInEasing)
+                } else {
+                    tween(durationMillis = 220, delayMillis = 80, easing = FastOutSlowInEasing)
+                }
+            },
+            label = "node_card_border_color",
+        ) { selected ->
+            if (selected) primary.copy(alpha = opacity.disabled) else Color.Transparent
+        }
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .let {
-                if (onClick != null) it.pressable(interactionSource = interactionSource, indication = SinkFeedback())
-                else it
-            }
-            .clip(shape)
-            .background(backgroundColor)
-            .border(sizes.nodeCardBorderWidth, borderColor, shape)
-            .let {
-                if (onClick != null) it.clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick,
-                ) else it
-            }
-            .padding(horizontal = sizes.nodeCardPaddingHorizontal, vertical = paddingVertical),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .let {
+                    if (onClick != null)
+                        it.pressable(
+                            interactionSource = interactionSource,
+                            indication = SinkFeedback(),
+                        )
+                    else it
+                }
+                .clip(shape)
+                .background(backgroundColor)
+                .border(sizes.nodeCardBorderWidth, borderColor, shape)
+                .let {
+                    if (onClick != null)
+                        it.clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onClick,
+                        )
+                    else it
+                }
+                .padding(horizontal = sizes.nodeCardPaddingHorizontal, vertical = paddingVertical),
         content = content,
     )
 }
@@ -225,12 +239,12 @@ internal fun NodeCard(
 ) {
     val spacing = AppTheme.spacing
     val sizes = AppTheme.sizes
-    val onCardClick = remember(proxy.name, onClick) {
-        onClick?.let { click -> { click(proxy.name) } }
-    }
-    val onNodeTestClick = remember(proxy.name, onSingleNodeTestClick) {
-        onSingleNodeTestClick?.let { click -> { click(proxy.name) } }
-    }
+    val onCardClick =
+        remember(proxy.name, onClick) { onClick?.let { click -> { click(proxy.name) } } }
+    val onNodeTestClick =
+        remember(proxy.name, onSingleNodeTestClick) {
+            onSingleNodeTestClick?.let { click -> { click(proxy.name) } }
+        }
     val delayInteractionSource = remember { MutableInteractionSource() }
     val iconInteractionSource = remember { MutableInteractionSource() }
 
@@ -240,9 +254,10 @@ internal fun NodeCard(
         modifier = modifier,
         paddingVertical = sizes.nodeCardPaddingVertical,
     ) {
-        val presentation = remember(proxy.name, proxy.title) {
-            resolveProxyDisplayPresentation(name = proxy.name, title = proxy.title)
-        }
+        val presentation =
+            remember(proxy.name, proxy.title) {
+                resolveProxyDisplayPresentation(name = proxy.name, title = proxy.title)
+            }
         val tags = remember(proxy.name) { extractNodeTags(proxy.name) }
         val delayLabel = nodeLatencyLabel(proxy.delay)
         val typeLabel = remember(proxy.type) { proxy.type.displayName() }
@@ -253,7 +268,6 @@ internal fun NodeCard(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.spacedBy(sizes.nodeCardContentGap),
         ) {
-
             NodeLargeIcon(
                 modifier = Modifier.padding(top = spacing.space2),
                 countryCode = presentation.countryCode.takeIf { showCountryFlag },
@@ -278,7 +292,8 @@ internal fun NodeCard(
                 ) {
                     FlowRow(
                         modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(AppTheme.sizes.listItemVerticalMinimal),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(AppTheme.sizes.listItemVerticalMinimal),
                         verticalArrangement = Arrangement.spacedBy(spacing.space4),
                     ) {
                         NodeTagChip(label = typeLabel)
@@ -296,14 +311,16 @@ internal fun NodeCard(
                                 color = delayColor,
                                 maxLines = 1,
                                 textAlign = TextAlign.End,
-                                modifier = Modifier
-                                    .padding(start = sizes.nodeCardTrailingGap)
-                                    .let { modifier ->
-                                        if (onNodeTestClick != null && singleNodeTestEnabled) modifier.clickable(
-                                            interactionSource = delayInteractionSource,
-                                            indication = null,
-                                            onClick = onNodeTestClick,
-                                        ) else modifier
+                                modifier =
+                                    Modifier.padding(start = sizes.nodeCardTrailingGap).let {
+                                        modifier ->
+                                        if (onNodeTestClick != null && singleNodeTestEnabled)
+                                            modifier.clickable(
+                                                interactionSource = delayInteractionSource,
+                                                indication = null,
+                                                onClick = onNodeTestClick,
+                                            )
+                                        else modifier
                                     },
                             )
                         }
@@ -312,9 +329,9 @@ internal fun NodeCard(
                             if (isThisProxyTesting) {
                                 RotatingCircleGauge(
                                     isRotating = true,
-                                    modifier = Modifier
-                                        .padding(start = sizes.nodeCardTrailingGap)
-                                        .size(sizes.nodeCardTrailingGap * 2),
+                                    modifier =
+                                        Modifier.padding(start = sizes.nodeCardTrailingGap)
+                                            .size(sizes.nodeCardTrailingGap * 2),
                                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                                 )
                             } else {
@@ -322,14 +339,14 @@ internal fun NodeCard(
                                     imageVector = Yume.Cloud,
                                     contentDescription = MLang.Proxy.Action.Test,
                                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                                    modifier = Modifier
-                                        .padding(start = sizes.nodeCardTrailingGap)
-                                        .size(sizes.nodeCardTrailingGap * 2)
-                                        .clickable(
-                                            interactionSource = iconInteractionSource,
-                                            indication = null,
-                                            onClick = onNodeTestClick,
-                                        ),
+                                    modifier =
+                                        Modifier.padding(start = sizes.nodeCardTrailingGap)
+                                            .size(sizes.nodeCardTrailingGap * 2)
+                                            .clickable(
+                                                interactionSource = iconInteractionSource,
+                                                indication = null,
+                                                onClick = onNodeTestClick,
+                                            ),
                                 )
                             }
                         }
@@ -341,19 +358,16 @@ internal fun NodeCard(
 }
 
 @Composable
-internal fun NodeLargeIcon(
-    modifier: Modifier = Modifier,
-    countryCode: String?,
-    typeName: String,
-) {
+internal fun NodeLargeIcon(modifier: Modifier = Modifier, countryCode: String?, typeName: String) {
     val opacity = AppTheme.opacity
     val sizes = AppTheme.sizes
     val neutral = MiuixTheme.colorScheme.onSurface
     Box(
-        modifier = modifier
-            .size(sizes.nodeLargeIconSize)
-            .clip(RoundedCornerShape(sizes.nodeLargeIconCornerRadius))
-            .background(neutral.copy(alpha = opacity.ambientLight + opacity.ambientShadow)),
+        modifier =
+            modifier
+                .size(sizes.nodeLargeIconSize)
+                .clip(RoundedCornerShape(sizes.nodeLargeIconCornerRadius))
+                .background(neutral.copy(alpha = opacity.ambientLight + opacity.ambientShadow)),
         contentAlignment = Alignment.Center,
     ) {
         if (countryCode != null) {
@@ -378,10 +392,10 @@ private fun NodeTagChip(label: String) {
         text = label,
         style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
         color = primary,
-        modifier = Modifier
-            .clip(RoundedCornerShape(radii.full))
-            .background(primary.copy(alpha = opacity.subtle))
-            .padding(horizontal = spacing.space4, vertical = spacing.space2),
+        modifier =
+            Modifier.clip(RoundedCornerShape(radii.full))
+                .background(primary.copy(alpha = opacity.subtle))
+                .padding(horizontal = spacing.space4, vertical = spacing.space2),
     )
 }
 
@@ -394,15 +408,18 @@ private fun NodeMultiplierChip(multiplier: Float) {
     val sizes = AppTheme.sizes
     val isHigh = multiplier >= 2.0f
     val primary = MiuixTheme.colorScheme.primary
-    val chipBg = if (isHigh) appColors.status.destructiveContainer else primary.copy(alpha = opacity.subtle)
+    val chipBg =
+        if (isHigh) appColors.status.destructiveContainer else primary.copy(alpha = opacity.subtle)
     val chipColor = if (isHigh) appColors.status.destructive else primary
-    val label = if (multiplier == multiplier.toLong().toFloat()) "x${multiplier.toLong()}" else "x$multiplier"
+    val label =
+        if (multiplier == multiplier.toLong().toFloat()) "x${multiplier.toLong()}"
+        else "x$multiplier"
 
     Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(radii.full))
-            .background(chipBg)
-            .padding(horizontal = spacing.space4, vertical = spacing.space2),
+        modifier =
+            Modifier.clip(RoundedCornerShape(radii.full))
+                .background(chipBg)
+                .padding(horizontal = spacing.space4, vertical = spacing.space2),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing.space2),
     ) {

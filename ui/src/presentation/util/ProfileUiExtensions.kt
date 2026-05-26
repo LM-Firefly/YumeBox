@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.util
 
 import com.github.yumelira.yumebox.common.util.ByteFormatter
@@ -45,59 +43,71 @@ val Profile.expireAt: Long?
 val Profile.lastUpdatedAt: Long?
     get() = if (updatedAt > 0) updatedAt else null
 
-fun Profile.getDisplayProvider(): String = when (type) {
-    Profile.Type.Url -> provider ?: MLang.Component.ProfileCard.RemoteSubscription
-    Profile.Type.File -> MLang.Component.ProfileCard.LocalFile
-    Profile.Type.External -> MLang.Component.ProfileCard.LocalConfig
-}
-
-fun Profile.getInfoText(): String = when (type) {
-    Profile.Type.Url -> {
-        buildString {
-            val totalBytesValue = totalBytes
-            if (totalBytesValue != null && totalBytesValue > 0) {
-                val usedPercent = usedBytes * 100 / totalBytesValue
-                append(
-                    MLang.Component.ProfileCard.Traffic.format(
-                        ByteFormatter.format(usedBytes),
-                        ByteFormatter.format(totalBytesValue),
-                        usedPercent.toInt()
-                    )
-                )
-            } else if (usedBytes > 0) {
-                append(MLang.Component.ProfileCard.UsedTraffic.format(ByteFormatter.format(usedBytes)))
-            } else {
-                append(MLang.Component.ProfileCard.ClickToUpdate)
-            }
-
-            expireAt?.let { expireTime ->
-                val expireDate = java.time.Instant.ofEpochMilli(expireTime)
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalDate()
-                val now = java.time.LocalDate.now()
-                val daysLeft = java.time.temporal.ChronoUnit.DAYS.between(now, expireDate)
-
-                if (isNotEmpty()) append("\n")
-
-                if (daysLeft > 0) {
-                    append(MLang.Component.ProfileCard.ExpireAt.format(expireDate, daysLeft.toInt()))
-                } else if (daysLeft == 0L) {
-                    append(MLang.Component.ProfileCard.ExpireToday)
-                } else {
-                    append(MLang.Component.ProfileCard.Expired.format(expireDate))
-                }
-            }
-
-            lastUpdatedAt?.let { updated ->
-                if (isNotEmpty()) append(" | ")
-                append(getRelativeTimeString(updated))
-            }
-        }
+fun Profile.getDisplayProvider(): String =
+    when (type) {
+        Profile.Type.Url -> provider ?: MLang.Component.ProfileCard.RemoteSubscription
+        Profile.Type.File -> MLang.Component.ProfileCard.LocalFile
+        Profile.Type.External -> MLang.Component.ProfileCard.LocalConfig
     }
 
-    Profile.Type.File -> MLang.Component.ProfileCard.LocalConfig
-    Profile.Type.External -> MLang.Component.ProfileCard.LocalConfig
-}
+fun Profile.getInfoText(): String =
+    when (type) {
+        Profile.Type.Url -> {
+            buildString {
+                val totalBytesValue = totalBytes
+                if (totalBytesValue != null && totalBytesValue > 0) {
+                    val usedPercent = usedBytes * 100 / totalBytesValue
+                    append(
+                        MLang.Component.ProfileCard.Traffic.format(
+                            ByteFormatter.format(usedBytes),
+                            ByteFormatter.format(totalBytesValue),
+                            usedPercent.toInt(),
+                        )
+                    )
+                } else if (usedBytes > 0) {
+                    append(
+                        MLang.Component.ProfileCard.UsedTraffic.format(
+                            ByteFormatter.format(usedBytes)
+                        )
+                    )
+                } else {
+                    append(MLang.Component.ProfileCard.ClickToUpdate)
+                }
+
+                expireAt?.let { expireTime ->
+                    val expireDate =
+                        java.time.Instant.ofEpochMilli(expireTime)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                    val now = java.time.LocalDate.now()
+                    val daysLeft = java.time.temporal.ChronoUnit.DAYS.between(now, expireDate)
+
+                    if (isNotEmpty()) append("\n")
+
+                    if (daysLeft > 0) {
+                        append(
+                            MLang.Component.ProfileCard.ExpireAt.format(
+                                expireDate,
+                                daysLeft.toInt(),
+                            )
+                        )
+                    } else if (daysLeft == 0L) {
+                        append(MLang.Component.ProfileCard.ExpireToday)
+                    } else {
+                        append(MLang.Component.ProfileCard.Expired.format(expireDate))
+                    }
+                }
+
+                lastUpdatedAt?.let { updated ->
+                    if (isNotEmpty()) append(" | ")
+                    append(getRelativeTimeString(updated))
+                }
+            }
+        }
+
+        Profile.Type.File -> MLang.Component.ProfileCard.LocalConfig
+        Profile.Type.External -> MLang.Component.ProfileCard.LocalConfig
+    }
 
 fun Profile.shouldShowUpdateButton(): Boolean = type == Profile.Type.Url
 

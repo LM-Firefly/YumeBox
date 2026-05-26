@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.common.compat
 
 import android.app.PendingIntent

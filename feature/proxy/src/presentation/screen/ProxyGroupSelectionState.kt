@@ -43,17 +43,21 @@ fun rememberProxyGroupSelectionState(
 ): ProxyGroupSelectionState {
     val selectedGroupNameState = rememberSaveable { mutableStateOf<String?>(null) }
     val selectedGroupSnapshotState = remember { mutableStateOf<ProxyGroupInfo?>(null) }
-    val selectGroup = remember { { group: ProxyGroupInfo -> selectedGroupNameState.value = group.name } }
+    val selectGroup = remember {
+        { group: ProxyGroupInfo -> selectedGroupNameState.value = group.name }
+    }
     val clearSelection = remember { { selectedGroupNameState.value = null } }
     val selectedGroupName = selectedGroupNameState.value
-    val selectedGroup = remember(selectedGroupName, proxyGroups) {
-        selectedGroupName?.let { groupName ->
-            proxyGroups.firstOrNull { group -> group.name == groupName }
+    val selectedGroup =
+        remember(selectedGroupName, proxyGroups) {
+            selectedGroupName?.let { groupName ->
+                proxyGroups.firstOrNull { group -> group.name == groupName }
+            }
         }
-    }
-    val displayGroup = remember(selectedGroup, selectedGroupSnapshotState.value, retainLastKnownGroup) {
-        selectedGroup ?: selectedGroupSnapshotState.value.takeIf { retainLastKnownGroup }
-    }
+    val displayGroup =
+        remember(selectedGroup, selectedGroupSnapshotState.value, retainLastKnownGroup) {
+            selectedGroup ?: selectedGroupSnapshotState.value.takeIf { retainLastKnownGroup }
+        }
 
     LaunchedEffect(selectedGroup, retainLastKnownGroup) {
         if (retainLastKnownGroup) {
@@ -67,17 +71,9 @@ fun rememberProxyGroupSelectionState(
         }
     }
 
-    LaunchedEffect(selectedGroupName) {
-        selectedGroupName?.let(onRefreshGroup)
-    }
+    LaunchedEffect(selectedGroupName) { selectedGroupName?.let(onRefreshGroup) }
 
-    return remember(
-        selectedGroupName,
-        selectedGroup,
-        displayGroup,
-        selectGroup,
-        clearSelection,
-    ) {
+    return remember(selectedGroupName, selectedGroup, displayGroup, selectGroup, clearSelection) {
         ProxyGroupSelectionState(
             selectedGroupName = selectedGroupName,
             selectedGroup = selectedGroup,

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.settings
 
 import android.annotation.SuppressLint
@@ -36,7 +34,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.WebViewActivity
@@ -77,40 +74,44 @@ private fun CircularIcon(
     val componentSizes = AppTheme.sizes
 
     Box(
-        modifier = modifier
-            .padding(start = spacing.space4, end = spacing.space16)
-            .requiredSize(componentSizes.settingsIconSlotSize),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .padding(start = spacing.space4, end = spacing.space16)
+                .requiredSize(componentSizes.settingsIconSlotSize),
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .layout { measurable, _ ->
-                    val containerSize = componentSizes.settingsIconContainerSize.roundToPx()
-                    val parentSize = componentSizes.settingsIconSlotSize.roundToPx()
-                    val offset = (containerSize - parentSize) / 2
+            modifier =
+                Modifier.layout { measurable, _ ->
+                        val containerSize = componentSizes.settingsIconContainerSize.roundToPx()
+                        val parentSize = componentSizes.settingsIconSlotSize.roundToPx()
+                        val offset = (containerSize - parentSize) / 2
 
-                    val placeable = measurable.measure(
-                        androidx.compose.ui.unit.Constraints.fixed(containerSize, containerSize)
-                    )
-                    layout(parentSize, parentSize) {
-                        placeable.place(-offset, -offset)
+                        val placeable =
+                            measurable.measure(
+                                androidx.compose.ui.unit.Constraints.fixed(
+                                    containerSize,
+                                    containerSize,
+                                )
+                            )
+                        layout(parentSize, parentSize) { placeable.place(-offset, -offset) }
                     }
-                }
-                .size(componentSizes.settingsIconContainerSize)
-                .clip(RoundedCornerShape(radii.radius16))
-                .background(MiuixTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center) {
+                    .size(componentSizes.settingsIconContainerSize)
+                    .clip(RoundedCornerShape(radii.radius16))
+                    .background(MiuixTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 imageVector = imageVector,
                 contentDescription = contentDescription,
                 tint = MiuixTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .size(componentSizes.settingsIconGlyphSize)
-                    .graphicsLayer(
-                        scaleX = iconSize,
-                        scaleY = iconSize,
-                        transformOrigin = TransformOrigin.Center,
-                    )
+                modifier =
+                    Modifier.size(componentSizes.settingsIconGlyphSize)
+                        .graphicsLayer(
+                            scaleX = iconSize,
+                            scaleY = iconSize,
+                            transformOrigin = TransformOrigin.Center,
+                        ),
             )
         }
     }
@@ -130,57 +131,58 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
         viewModel.events.collect { event ->
             when (event) {
                 is SettingEvent.OpenWebView -> {
-                    runCatching {
-                        WebViewActivity.start(context, event.url)
-                    }.getOrElse { throwable ->
-                        context.toast(MLang.Settings.Error.WebviewFailed.format(throwable.message))
-                    }
+                    runCatching { WebViewActivity.start(context, event.url) }
+                        .getOrElse { throwable ->
+                            context.toast(
+                                MLang.Settings.Error.WebviewFailed.format(throwable.message)
+                            )
+                        }
                 }
             }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopBar(title = MLang.Settings.Title, scrollBehavior = scrollBehavior)
-        },
-    ) { innerPadding ->
+    Scaffold(topBar = { TopBar(title = MLang.Settings.Title, scrollBehavior = scrollBehavior) }) {
+        innerPadding ->
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
             innerPadding = combinePaddingValues(innerPadding, mainInnerPadding),
         ) {
-
             item {
                 Title(MLang.Settings.Section.UiSettings)
                 Card {
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.App,
                         summary = MLang.Settings.UiSettings.AppSummary,
-                        onClick = { navigator.navigate(AppSettingsScreenDestination) { launchSingleTop = true } },
+                        onClick = {
+                            navigator.navigate(AppSettingsScreenDestination) {
+                                launchSingleTop = true
+                            }
+                        },
                         startAction = {
-                            CircularIcon(
-                                imageVector = Yume.`Settings-2`, contentDescription = null
-                            )
+                            CircularIcon(imageVector = Yume.`Settings-2`, contentDescription = null)
                         },
                     )
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.Network,
                         summary = MLang.Settings.UiSettings.NetworkSummary,
-                        onClick = { navigator.navigate(NetworkSettingsScreenDestination) { launchSingleTop = true } },
+                        onClick = {
+                            navigator.navigate(NetworkSettingsScreenDestination) {
+                                launchSingleTop = true
+                            }
+                        },
                         startAction = {
-                            CircularIcon(
-                                imageVector = Yume.`Wifi-cog`, contentDescription = null
-                            )
+                            CircularIcon(imageVector = Yume.`Wifi-cog`, contentDescription = null)
                         },
                     )
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.Override,
                         summary = MLang.Settings.UiSettings.OverrideSummary,
-                        onClick = { navigator.navigate(OverrideScreenDestination) { launchSingleTop = true } },
+                        onClick = {
+                            navigator.navigate(OverrideScreenDestination) { launchSingleTop = true }
+                        },
                         startAction = {
-                            CircularIcon(
-                                imageVector = Yume.`Git-merge`, contentDescription = null
-                            )
+                            CircularIcon(imageVector = Yume.`Git-merge`, contentDescription = null)
                         },
                     )
                     ArrowPreference(
@@ -192,9 +194,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             }
                         },
                         startAction = {
-                            CircularIcon(
-                                imageVector = Yume.Meta, contentDescription = null
-                            )
+                            CircularIcon(imageVector = Yume.Meta, contentDescription = null)
                         },
                     )
                 }
@@ -210,33 +210,32 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                             navigator.navigate(FeatureScreenDestination) { launchSingleTop = true }
                         },
                         startAction = {
-                            CircularIcon(
-                                imageVector = Yume.FlaskConical, contentDescription = null
-                            )
+                            CircularIcon(imageVector = Yume.FlaskConical, contentDescription = null)
                         },
                     )
                     ArrowPreference(
                         title = MLang.Settings.More.Logs,
                         summary = MLang.Settings.More.LogsSummary,
-                        onClick = { navigator.navigate(LogScreenDestination) { launchSingleTop = true } },
+                        onClick = {
+                            navigator.navigate(LogScreenDestination) { launchSingleTop = true }
+                        },
                         startAction = {
                             CircularIcon(
-                                imageVector = Yume.`Chart-column`, contentDescription = null
+                                imageVector = Yume.`Chart-column`,
+                                contentDescription = null,
                             )
                         },
                     )
                     ArrowPreference(
                         title = MLang.Settings.More.About,
                         summary = MLang.Settings.More.AboutSummary,
-                        onClick = { navigator.navigate(AboutScreenDestination) { launchSingleTop = true } },
+                        onClick = {
+                            navigator.navigate(AboutScreenDestination) { launchSingleTop = true }
+                        },
                         startAction = {
-                            CircularIcon(
-                                imageVector = Yume.Github, contentDescription = null
-                            )
+                            CircularIcon(imageVector = Yume.Github, contentDescription = null)
                         },
-                        endActions = {
-                            VersionBadge(versionInfo)
-                        },
+                        endActions = { VersionBadge(versionInfo) },
                     )
                 }
             }
@@ -245,9 +244,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
 }
 
 @Composable
-private fun VersionBadge(
-    versionInfo: String?
-) {
+private fun VersionBadge(versionInfo: String?) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
@@ -255,19 +252,21 @@ private fun VersionBadge(
     Surface(
         color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle),
         shape = RoundedCornerShape(50),
-        modifier = Modifier
-            .height(componentSizes.versionBadgeHeight)
-            .padding(end = spacing.space12)
+        modifier = Modifier.height(componentSizes.versionBadgeHeight).padding(end = spacing.space12),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = spacing.space12),
-            horizontalArrangement = Arrangement.spacedBy(spacing.space8)
+            horizontalArrangement = Arrangement.spacedBy(spacing.space8),
         ) {
             Text(
-                text = versionInfo ?: "Unknown", style = MiuixTheme.textStyles.footnote1.copy(
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold
-                ), color = MiuixTheme.colorScheme.primary
+                text = versionInfo ?: "Unknown",
+                style =
+                    MiuixTheme.textStyles.footnote1.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                color = MiuixTheme.colorScheme.primary,
             )
         }
     }

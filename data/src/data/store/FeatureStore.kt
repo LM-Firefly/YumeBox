@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.store
 
 import com.tencent.mmkv.MMKV
@@ -57,8 +55,8 @@ class FeatureStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalM
     }
 
     /**
-     * Read-and-clear post-update cold-start marker.
-     * Returns true only for the first consumer after an app update.
+     * Read-and-clear post-update cold-start marker. Returns true only for the first consumer after
+     * an app update.
      */
     fun consumePostUpdateColdStartPending(): Boolean {
         val pending = mmkv.decodeBool(KEY_POST_UPDATE_COLD_START_PENDING, false)

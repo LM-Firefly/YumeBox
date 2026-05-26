@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -29,29 +28,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-typealias OpenStringListModifiersEditor = (
-    title: String,
-    placeholder: String,
-    replaceValue: List<String>?,
-    startValue: List<String>?,
-    endValue: List<String>?,
-    onReplaceChange: (List<String>?) -> Unit,
-    onStartChange: (List<String>?) -> Unit,
-    onEndChange: (List<String>?) -> Unit,
-) -> Unit
+typealias OpenStringListModifiersEditor =
+    (
+        title: String,
+        placeholder: String,
+        replaceValue: List<String>?,
+        startValue: List<String>?,
+        endValue: List<String>?,
+        onReplaceChange: (List<String>?) -> Unit,
+        onStartChange: (List<String>?) -> Unit,
+        onEndChange: (List<String>?) -> Unit,
+    ) -> Unit
 
 @Composable
-fun PortInputContent(
-    title: String,
-    value: Int?,
-    onValueChange: (Int?) -> Unit,
-) {
+fun PortInputContent(title: String, value: Int?, onValueChange: (Int?) -> Unit) {
     val showDialog = remember { mutableStateOf(false) }
     val textFieldValueState = remember { mutableStateOf(TextFieldValue()) }
 
@@ -60,10 +56,8 @@ fun PortInputContent(
         summary = if (value != null) "$value" else MLang.Component.Selector.NotModify,
         onClick = {
             val currentText = value?.toString().orEmpty()
-            textFieldValueState.value = TextFieldValue(
-                text = currentText,
-                selection = TextRange(currentText.length),
-            )
+            textFieldValueState.value =
+                TextFieldValue(text = currentText, selection = TextRange(currentText.length))
             showDialog.value = true
         },
     )
@@ -98,10 +92,8 @@ fun StringInputContent(
         summary = value?.takeIf { it.isNotEmpty() } ?: MLang.Component.Selector.NotModify,
         onClick = {
             val currentText = value.orEmpty()
-            textFieldValueState.value = TextFieldValue(
-                text = currentText,
-                selection = TextRange(currentText.length),
-            )
+            textFieldValueState.value =
+                TextFieldValue(text = currentText, selection = TextRange(currentText.length))
             showDialog.value = true
         },
     )
@@ -112,50 +104,34 @@ fun StringInputContent(
         textFieldValue = textFieldValueState,
         label = placeholder,
         onClear = { onValueChange(null) },
-        onConfirm = {
-            onValueChange(textFieldValueState.value.text.takeIf { it.isNotEmpty() })
-        },
+        onConfirm = { onValueChange(textFieldValueState.value.text.takeIf { it.isNotEmpty() }) },
     )
 }
 
 @Composable
-fun StringListInputContent(
-    title: String,
-    value: List<String>?,
-    onClick: () -> Unit,
-) {
+fun StringListInputContent(title: String, value: List<String>?, onClick: () -> Unit) {
     val itemCount = value?.size ?: 0
-    val displayValue = if (itemCount > 0) {
-        MLang.Component.ConfigInput.CountItems.format(itemCount)
-    } else {
-        MLang.Component.Selector.NotModify
-    }
+    val displayValue =
+        if (itemCount > 0) {
+            MLang.Component.ConfigInput.CountItems.format(itemCount)
+        } else {
+            MLang.Component.Selector.NotModify
+        }
 
-    ArrowPreference(
-        title = title,
-        summary = displayValue,
-        onClick = onClick,
-    )
+    ArrowPreference(title = title, summary = displayValue, onClick = onClick)
 }
 
 @Composable
-fun StringMapInputContent(
-    title: String,
-    value: Map<String, String>?,
-    onClick: () -> Unit,
-) {
+fun StringMapInputContent(title: String, value: Map<String, String>?, onClick: () -> Unit) {
     val itemCount = value?.size ?: 0
-    val displayValue = if (itemCount > 0) {
-        MLang.Component.ConfigInput.CountItems.format(itemCount)
-    } else {
-        MLang.Component.Selector.NotModify
-    }
+    val displayValue =
+        if (itemCount > 0) {
+            MLang.Component.ConfigInput.CountItems.format(itemCount)
+        } else {
+            MLang.Component.Selector.NotModify
+        }
 
-    ArrowPreference(
-        title = title,
-        summary = displayValue,
-        onClick = onClick,
-    )
+    ArrowPreference(title = title, summary = displayValue, onClick = onClick)
 }
 
 @Composable
@@ -178,9 +154,7 @@ private fun ConfigTextInputDialog(
         },
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = UiDp.dp8),
+            modifier = Modifier.fillMaxWidth().padding(vertical = UiDp.dp8),
             verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             TextField(
@@ -217,13 +191,16 @@ fun StringListWithModifiersInput(
     onEndChange: (List<String>?) -> Unit,
     onEditListGroup: OpenStringListModifiersEditor,
 ) {
-    val summary = remember(replaceValue, startValue, endValue) {
-        buildList {
-            replaceValue?.takeIf { it.isNotEmpty() }?.let { add("Replace ${it.size}") }
-            startValue?.takeIf { it.isNotEmpty() }?.let { add("Prepend ${it.size}") }
-            endValue?.takeIf { it.isNotEmpty() }?.let { add("Append ${it.size}") }
-        }.joinToString(" · ").ifEmpty { MLang.Component.Selector.NotModify }
-    }
+    val summary =
+        remember(replaceValue, startValue, endValue) {
+            buildList {
+                    replaceValue?.takeIf { it.isNotEmpty() }?.let { add("Replace ${it.size}") }
+                    startValue?.takeIf { it.isNotEmpty() }?.let { add("Prepend ${it.size}") }
+                    endValue?.takeIf { it.isNotEmpty() }?.let { add("Append ${it.size}") }
+                }
+                .joinToString(" · ")
+                .ifEmpty { MLang.Component.Selector.NotModify }
+        }
 
     ArrowPreference(
         title = title,
@@ -252,16 +229,27 @@ fun StringMapWithModifiersInput(
     valuePlaceholder: String = "",
     onReplaceChange: (Map<String, String>?) -> Unit,
     onMergeChange: (Map<String, String>?) -> Unit,
-    onEditMap: (mode: MapMergeStrategy, title: String, keyPlaceholder: String, valuePlaceholder: String, value: Map<String, String>?, onValueChange: (Map<String, String>?) -> Unit) -> Unit,
+    onEditMap:
+        (
+            mode: MapMergeStrategy,
+            title: String,
+            keyPlaceholder: String,
+            valuePlaceholder: String,
+            value: Map<String, String>?,
+            onValueChange: (Map<String, String>?) -> Unit,
+        ) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val summary = remember(replaceValue, mergeValue) {
-        buildList {
-            replaceValue?.takeIf { it.isNotEmpty() }?.let { add("Replace ${it.size}") }
-            mergeValue?.takeIf { it.isNotEmpty() }?.let { add("Merge ${it.size}") }
-        }.joinToString(" · ").ifEmpty { MLang.Component.Selector.NotModify }
-    }
+    val summary =
+        remember(replaceValue, mergeValue) {
+            buildList {
+                    replaceValue?.takeIf { it.isNotEmpty() }?.let { add("Replace ${it.size}") }
+                    mergeValue?.takeIf { it.isNotEmpty() }?.let { add("Merge ${it.size}") }
+                }
+                .joinToString(" · ")
+                .ifEmpty { MLang.Component.Selector.NotModify }
+        }
 
     Column {
         ArrowPreference(
@@ -273,14 +261,16 @@ fun StringMapWithModifiersInput(
 
         AnimatedVisibility(
             visible = expanded,
-            enter = expandVertically(
-                animationSpec = tween(durationMillis = 260),
-                expandFrom = Alignment.Top,
-            ) + fadeIn(animationSpec = tween(durationMillis = 180)),
-            exit = shrinkVertically(
-                animationSpec = tween(durationMillis = 220),
-                shrinkTowards = Alignment.Top,
-            ) + fadeOut(animationSpec = tween(durationMillis = 160)),
+            enter =
+                expandVertically(
+                    animationSpec = tween(durationMillis = 260),
+                    expandFrom = Alignment.Top,
+                ) + fadeIn(animationSpec = tween(durationMillis = 180)),
+            exit =
+                shrinkVertically(
+                    animationSpec = tween(durationMillis = 220),
+                    shrinkTowards = Alignment.Top,
+                ) + fadeOut(animationSpec = tween(durationMillis = 160)),
             label = "map_modifiers_$title",
         ) {
             Column {
@@ -305,11 +295,12 @@ fun StringMapWithModifiersInput(
                                 onReplaceChange,
                             )
                         },
-                        onClear = if (!replaceValue.isNullOrEmpty()) {
-                            { onReplaceChange(null) }
-                        } else {
-                            null
-                        },
+                        onClear =
+                            if (!replaceValue.isNullOrEmpty()) {
+                                { onReplaceChange(null) }
+                            } else {
+                                null
+                            },
                     )
                     ModifierModeCard(
                         modifier = Modifier.weight(1f),
@@ -326,16 +317,18 @@ fun StringMapWithModifiersInput(
                                 onMergeChange,
                             )
                         },
-                        onClear = if (!mergeValue.isNullOrEmpty()) {
-                            { onMergeChange(null) }
-                        } else {
-                            null
-                        },
+                        onClear =
+                            if (!mergeValue.isNullOrEmpty()) {
+                                { onMergeChange(null) }
+                            } else {
+                                null
+                            },
                     )
                 }
                 Spacer(modifier = Modifier.height(UiDp.dp10))
                 Text(
-                    text = "Merge mode only modifies specified keys; unmodified keys remain unchanged.",
+                    text =
+                        "Merge mode only modifies specified keys; unmodified keys remain unchanged.",
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
@@ -353,14 +346,8 @@ private fun ModifierModeCard(
     onClear: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier,
-        insideMargin = PaddingValues(UiDp.dp12),
-    ) {
-        Text(
-            text = title,
-            color = MiuixTheme.colorScheme.onSurface,
-        )
+    Card(modifier = modifier, insideMargin = PaddingValues(UiDp.dp12)) {
+        Text(text = title, color = MiuixTheme.colorScheme.onSurface)
         Text(
             text = summary,
             modifier = Modifier.padding(top = UiDp.dp6),
@@ -373,22 +360,10 @@ private fun ModifierModeCard(
             color = MiuixTheme.colorScheme.outline,
         )
         Spacer(modifier = Modifier.height(UiDp.dp10))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
-        ) {
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = onEdit,
-            ) {
-                Text("Edit")
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp8)) {
+            Button(modifier = Modifier.weight(1f), onClick = onEdit) { Text("Edit") }
             if (onClear != null) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = onClear,
-                ) {
-                    Text("Clear")
-                }
+                Button(modifier = Modifier.weight(1f), onClick = onClear) { Text("Clear") }
             }
         }
     }

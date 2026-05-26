@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.clash.module
 
 import android.app.Service
@@ -49,11 +47,12 @@ class SuspendModule(service: Service) : Module<Unit>(service) {
 
         applySuspend(!interactive)
 
-        val screenToggle = receiveBroadcast(Channel.CONFLATED) {
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_USER_PRESENT)
-        }
+        val screenToggle =
+            receiveBroadcast(Channel.CONFLATED) {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_USER_PRESENT)
+            }
         val safetyTicker = ticker(5_000L)
 
         try {

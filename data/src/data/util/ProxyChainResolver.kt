@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.util
 
 import com.github.yumelira.yumebox.core.model.Proxy
@@ -31,17 +29,14 @@ class ProxyChainResolver {
         private const val TAG = "ProxyChainResolver"
     }
 
-    fun resolveEndNode(
-        startNodeName: String,
-        groups: List<ProxyGroupInfo>
-    ): Proxy? {
+    fun resolveEndNode(startNodeName: String, groups: List<ProxyGroupInfo>): Proxy? {
         return resolveProxyChain(startNodeName, groups, mutableSetOf())
     }
 
     private fun resolveProxyChain(
         proxyName: String,
         groups: List<ProxyGroupInfo>,
-        visitedNames: MutableSet<String>
+        visitedNames: MutableSet<String>,
     ): Proxy? {
         if (proxyName in visitedNames) {
             Timber.tag(TAG).w("Proxy cycle detected: $proxyName")
@@ -71,10 +66,7 @@ class ProxyChainResolver {
         return null
     }
 
-    fun buildChainPath(
-        startNodeName: String,
-        groups: List<ProxyGroupInfo>
-    ): List<String> {
+    fun buildChainPath(startNodeName: String, groups: List<ProxyGroupInfo>): List<String> {
         val path = mutableListOf<String>()
         buildChainPathRecursive(startNodeName, groups, mutableSetOf(), path)
         return path
@@ -84,7 +76,7 @@ class ProxyChainResolver {
         proxyName: String,
         groups: List<ProxyGroupInfo>,
         visited: MutableSet<String>,
-        path: MutableList<String>
+        path: MutableList<String>,
     ) {
         if (proxyName in visited) return
         visited.add(proxyName)

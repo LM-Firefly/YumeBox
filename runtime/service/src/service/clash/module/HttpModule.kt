@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.clash.module
 
 import android.app.Service
@@ -36,9 +34,7 @@ class HttpModule(service: Service) : Module<Unit>(service) {
         return Clash.startHttp(listenAt)
     }
 
-    override suspend fun run() {
-
-    }
+    override suspend fun run() {}
 
     fun stop() {
         Clash.stopHttp()

@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.home
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,11 +42,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.LocaleUtil
 import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -57,10 +56,7 @@ private val INFO_VALUE_MAX_WIDTH = UiDp.dp220
 internal val INFO_TEXT_HEIGHT = UiDp.dp24
 
 @Composable
-fun IpInfoDisplay(
-    state: IpMonitoringState,
-    modifier: Modifier = Modifier
-) {
+fun IpInfoDisplay(state: IpMonitoringState, modifier: Modifier = Modifier) {
     val externalIp = (state as? IpMonitoringState.Success)?.externalIp
     var isIpVisible by rememberSaveable(externalIp?.ip) { mutableStateOf(false) }
 
@@ -68,15 +64,12 @@ fun IpInfoDisplay(
         externalIp != null -> {
             IpInfoRow(
                 label = MLang.Home.IpInfo.ExitIp,
-                value = buildDisplayIpValue(
-                    ipAddress = externalIp.ip,
-                    isIpVisible = isIpVisible
-                ),
+                value = buildDisplayIpValue(ipAddress = externalIp.ip, isIpVisible = isIpVisible),
                 valueColor = MiuixTheme.colorScheme.onSurface,
                 countryCode = externalIp.countryCode,
                 isRevealable = true,
                 onToggleVisibility = { isIpVisible = !isIpVisible },
-                modifier = modifier
+                modifier = modifier,
             )
         }
 
@@ -88,7 +81,7 @@ fun IpInfoDisplay(
                 countryCode = null,
                 isRevealable = false,
                 onToggleVisibility = {},
-                modifier = modifier
+                modifier = modifier,
             )
         }
     }
@@ -102,23 +95,21 @@ private fun IpInfoRow(
     countryCode: String?,
     isRevealable: Boolean,
     onToggleVisibility: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
             horizontalAlignment = Alignment.Start,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = UiDp.dp16)
+            modifier = Modifier.weight(1f).padding(end = UiDp.dp16),
         ) {
             Text(
                 text = label,
                 style = MiuixTheme.textStyles.footnote1.copy(fontSize = 12.sp),
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
             Spacer(modifier = Modifier.height(UiDp.dp4))
             Text(
@@ -128,15 +119,15 @@ private fun IpInfoRow(
                 color = valueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = if (isRevealable) {
-                    Modifier
-                        .widthIn(max = INFO_VALUE_MAX_WIDTH)
-                        .height(INFO_TEXT_HEIGHT)
-                        .clip(INFO_VALUE_CORNER_RADIUS)
-                        .clickable(onClick = onToggleVisibility)
-                } else {
-                    Modifier.height(INFO_TEXT_HEIGHT)
-                }
+                modifier =
+                    if (isRevealable) {
+                        Modifier.widthIn(max = INFO_VALUE_MAX_WIDTH)
+                            .height(INFO_TEXT_HEIGHT)
+                            .clip(INFO_VALUE_CORNER_RADIUS)
+                            .clickable(onClick = onToggleVisibility)
+                    } else {
+                        Modifier.height(INFO_TEXT_HEIGHT)
+                    },
             )
         }
 
@@ -151,12 +142,9 @@ private fun CountryBadge(countryCode: String?) {
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            CountryFlagCircle(
-                countryCode = countryCode,
-                size = UiDp.dp20
-            )
+            CountryFlagCircle(countryCode = countryCode, size = UiDp.dp20)
             Text(
                 text = displayCountryCode,
                 style = MiuixTheme.textStyles.body1,
@@ -164,16 +152,13 @@ private fun CountryBadge(countryCode: String?) {
                 color = MiuixTheme.colorScheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = UiDp.dp40)
+                modifier = Modifier.widthIn(max = UiDp.dp40),
             )
         }
     }
 }
 
-private fun buildDisplayIpValue(
-    ipAddress: String,
-    isIpVisible: Boolean
-): String {
+private fun buildDisplayIpValue(ipAddress: String, isIpVisible: Boolean): String {
     return if (ipAddress.contains(":")) {
         formatIpv6Address(ipAddress = ipAddress, isIpVisible = isIpVisible)
     } else {
@@ -197,10 +182,7 @@ private fun maskIpv4Address(ipAddress: String): String {
     }
 }
 
-private fun formatIpv6Address(
-    ipAddress: String,
-    isIpVisible: Boolean
-): String {
+private fun formatIpv6Address(ipAddress: String, isIpVisible: Boolean): String {
     val visibleSegments = ipAddress.split(":").filter { it.isNotBlank() }
     if (visibleSegments.isEmpty()) {
         return "****"
@@ -208,7 +190,8 @@ private fun formatIpv6Address(
     if (!isIpVisible) {
         return when {
             visibleSegments.size == 1 -> "${visibleSegments.first()}:****"
-            visibleSegments.size == 2 -> "${visibleSegments[0]}:${"*".repeat(visibleSegments[1].length.coerceAtLeast(4))}"
+            visibleSegments.size == 2 ->
+                "${visibleSegments[0]}:${"*".repeat(visibleSegments[1].length.coerceAtLeast(4))}"
             else -> "${visibleSegments[0]}:${visibleSegments[1]}:****"
         }
     }

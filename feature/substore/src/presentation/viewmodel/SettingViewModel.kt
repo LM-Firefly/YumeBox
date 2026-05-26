@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -31,9 +29,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
-class SettingViewModel(
-    private val store: FeatureStore,
-) : ViewModel() {
+class SettingViewModel(private val store: FeatureStore) : ViewModel() {
 
     val backendPort = store.backendPort
     val frontendPort = store.frontendPort
@@ -58,9 +54,7 @@ class SettingViewModel(
     private fun buildUrl(host: String, port: Int): String = "http://$host:$port"
 
     private fun emitEvent(event: SettingEvent) {
-        viewModelScope.launch {
-            _events.emit(event)
-        }
+        viewModelScope.launch { _events.emit(event) }
     }
 }
 

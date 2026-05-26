@@ -23,14 +23,6 @@ package com.github.yumelira.yumebox.substore.util
 import android.app.Application
 import com.github.yumelira.yumebox.common.util.ByteFormatter.formatSpeed
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.Headers
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okio.buffer
-import okio.sink
-import timber.log.Timber
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
@@ -39,6 +31,14 @@ import java.util.Base64
 import java.util.Calendar
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.Headers
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okio.buffer
+import okio.sink
+import timber.log.Timber
 
 data class DownloadProgress(
     val progress: Int,
@@ -78,121 +78,125 @@ class SubStoreDownloadClient(
         url: String,
         targetFile: File,
         onProgress: ((DownloadProgress) -> Unit)? = null,
-    ): Boolean = withContext(Dispatchers.IO) {
-        val (success, _) = downloadWithSubscriptionInfo(url, targetFile, onProgress)
-        success
-    }
+    ): Boolean =
+        withContext(Dispatchers.IO) {
+            val (success, _) = downloadWithSubscriptionInfo(url, targetFile, onProgress)
+            success
+        }
 
     suspend fun downloadWithSubscriptionInfo(
         url: String,
         targetFile: File,
         onProgress: ((DownloadProgress) -> Unit)? = null,
-    ): Pair<Boolean, SubscriptionInfo?> = withContext(Dispatchers.IO) {
-        try {
-            targetFile.parentFile?.mkdirs()
-            if (targetFile.exists()) targetFile.delete()
+    ): Pair<Boolean, SubscriptionInfo?> =
+        withContext(Dispatchers.IO) {
+            try {
+                targetFile.parentFile?.mkdirs()
+                if (targetFile.exists()) targetFile.delete()
 
-            val request = Request.Builder()
-                .url(url)
-                .header("User-Agent", resolveUserAgent())
-                .build()
+                val request =
+                    Request.Builder().url(url).header("User-Agent", resolveUserAgent()).build()
 
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext Pair(false, null)
-                }
-
-                val subscriptionInfo = parseSubscriptionInfo(response.headers)
-                val body = response.body
-                val contentLength = body.contentLength()
-                val inputStream = body.byteStream()
-
-                var lastUpdateTime = 0L
-                var lastBytesRead = 0L
-                var totalBytesRead = 0L
-
-                targetFile.sink().buffer().use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-
-                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        totalBytesRead += bytesRead
-
-                        val currentTime = System.currentTimeMillis()
-                        if (currentTime - lastUpdateTime >= UPDATE_INTERVAL_MS) {
-                            val timeDiff = (currentTime - lastUpdateTime) / 1000.0
-                            val bytesDiff = totalBytesRead - lastBytesRead
-                            val speed = if (timeDiff > 0) (bytesDiff / timeDiff).toLong() else 0L
-                            val progress = if (contentLength > 0) {
-                                ((totalBytesRead * 100) / contentLength).toInt()
-                            } else {
-                                0
-                            }
-
-                            onProgress?.invoke(
-                                DownloadProgress(
-                                    progress = progress,
-                                    currentSize = totalBytesRead,
-                                    totalSize = contentLength,
-                                    speed = formatSpeed(speed),
-                                ),
-                            )
-
-                            lastUpdateTime = currentTime
-                            lastBytesRead = totalBytesRead
-                        }
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        return@withContext Pair(false, null)
                     }
-                    output.flush()
-                }
 
-                Pair(true, subscriptionInfo)
+                    val subscriptionInfo = parseSubscriptionInfo(response.headers)
+                    val body = response.body
+                    val contentLength = body.contentLength()
+                    val inputStream = body.byteStream()
+
+                    var lastUpdateTime = 0L
+                    var lastBytesRead = 0L
+                    var totalBytesRead = 0L
+
+                    targetFile.sink().buffer().use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+
+                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
+                            totalBytesRead += bytesRead
+
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastUpdateTime >= UPDATE_INTERVAL_MS) {
+                                val timeDiff = (currentTime - lastUpdateTime) / 1000.0
+                                val bytesDiff = totalBytesRead - lastBytesRead
+                                val speed =
+                                    if (timeDiff > 0) (bytesDiff / timeDiff).toLong() else 0L
+                                val progress =
+                                    if (contentLength > 0) {
+                                        ((totalBytesRead * 100) / contentLength).toInt()
+                                    } else {
+                                        0
+                                    }
+
+                                onProgress?.invoke(
+                                    DownloadProgress(
+                                        progress = progress,
+                                        currentSize = totalBytesRead,
+                                        totalSize = contentLength,
+                                        speed = formatSpeed(speed),
+                                    )
+                                )
+
+                                lastUpdateTime = currentTime
+                                lastBytesRead = totalBytesRead
+                            }
+                        }
+                        output.flush()
+                    }
+
+                    Pair(true, subscriptionInfo)
+                }
+            } catch (error: Exception) {
+                Timber.e(error, "Download failed: %s", url)
+                if (targetFile.exists()) targetFile.delete()
+                Pair(false, null)
             }
-        } catch (error: Exception) {
-            Timber.e(error, "Download failed: %s", url)
-            if (targetFile.exists()) targetFile.delete()
-            Pair(false, null)
         }
-    }
 
     suspend fun downloadAndExtract(
         url: String,
         targetDir: File,
         onProgress: ((DownloadProgress) -> Unit)? = null,
         flattenRootDir: Boolean = true,
-    ): Boolean = withContext(Dispatchers.IO) {
-        val fileExtension = when {
-            url.endsWith(".zip", ignoreCase = true) -> ".zip"
-            url.endsWith(".tar.gz", ignoreCase = true) -> ".tar.gz"
-            url.endsWith(".tgz", ignoreCase = true) -> ".tgz"
-            url.endsWith(".tar", ignoreCase = true) -> ".tar"
-            else -> ".zip"
+    ): Boolean =
+        withContext(Dispatchers.IO) {
+            val fileExtension =
+                when {
+                    url.endsWith(".zip", ignoreCase = true) -> ".zip"
+                    url.endsWith(".tar.gz", ignoreCase = true) -> ".tar.gz"
+                    url.endsWith(".tgz", ignoreCase = true) -> ".tgz"
+                    url.endsWith(".tar", ignoreCase = true) -> ".tar"
+                    else -> ".zip"
+                }
+
+            val tempFile =
+                File(application.cacheDir, "temp_${System.currentTimeMillis()}$fileExtension")
+            val downloadSuccess = download(url, tempFile, onProgress)
+            if (!downloadSuccess) {
+                return@withContext false
+            }
+
+            val extractSuccess =
+                when (fileExtension.lowercase()) {
+                    ".zip" -> ArchiveUtil.unzipZip(tempFile, targetDir)
+                    ".tar.gz",
+                    ".tgz" -> ArchiveUtil.untarGz(tempFile, targetDir)
+                    ".tar" -> ArchiveUtil.untar(tempFile, targetDir)
+                    else -> ArchiveUtil.unzipZip(tempFile, targetDir)
+                }
+
+            tempFile.delete()
+
+            if (extractSuccess && flattenRootDir) {
+                flattenRootDirectory(targetDir)
+            }
+
+            extractSuccess
         }
-
-        val tempFile = File(
-            application.cacheDir,
-            "temp_${System.currentTimeMillis()}$fileExtension",
-        )
-        val downloadSuccess = download(url, tempFile, onProgress)
-        if (!downloadSuccess) {
-            return@withContext false
-        }
-
-        val extractSuccess = when (fileExtension.lowercase()) {
-            ".zip" -> ArchiveUtil.unzipZip(tempFile, targetDir)
-            ".tar.gz", ".tgz" -> ArchiveUtil.untarGz(tempFile, targetDir)
-            ".tar" -> ArchiveUtil.untar(tempFile, targetDir)
-            else -> ArchiveUtil.unzipZip(tempFile, targetDir)
-        }
-
-        tempFile.delete()
-
-        if (extractSuccess && flattenRootDir) {
-            flattenRootDirectory(targetDir)
-        }
-
-        extractSuccess
-    }
 
     private fun resolveUserAgent(): String {
         val customUA = appSettings.customUserAgent.value
@@ -209,33 +213,36 @@ class SubStoreDownloadClient(
 
         fun findHeaderBySuffix(suffix: String): String? {
             val target = suffix.lowercase(Locale.getDefault())
-            val key = headers.names().firstOrNull {
-                it.lowercase(Locale.getDefault()).endsWith(target)
-            } ?: return null
+            val key =
+                headers.names().firstOrNull { it.lowercase(Locale.getDefault()).endsWith(target) }
+                    ?: return null
             return headers[key]
         }
 
-        fun parseExpireDate(value: String): Long? = runCatching {
-            when {
-                value.matches(Regex("\\d+")) -> value.toLong() * 1000L
-                value.contains("-") -> {
-                    val parts = value.split("-")
-                    if (parts.size < 3) return@runCatching null
+        fun parseExpireDate(value: String): Long? =
+            runCatching {
+                    when {
+                        value.matches(Regex("\\d+")) -> value.toLong() * 1000L
+                        value.contains("-") -> {
+                            val parts = value.split("-")
+                            if (parts.size < 3) return@runCatching null
 
-                    val year = parts[0].toIntOrNull() ?: return@runCatching null
-                    val month = parts[1].toIntOrNull() ?: return@runCatching null
-                    val day = parts[2].toIntOrNull() ?: return@runCatching null
+                            val year = parts[0].toIntOrNull() ?: return@runCatching null
+                            val month = parts[1].toIntOrNull() ?: return@runCatching null
+                            val day = parts[2].toIntOrNull() ?: return@runCatching null
 
-                    val calendar = Calendar.getInstance()
-                    calendar.set(year, month - 1, day, 0, 0, 0)
-                    calendar.set(Calendar.MILLISECOND, 0)
-                    calendar.timeInMillis
+                            val calendar = Calendar.getInstance()
+                            calendar.set(year, month - 1, day, 0, 0, 0)
+                            calendar.set(Calendar.MILLISECOND, 0)
+                            calendar.timeInMillis
+                        }
+                        else -> null
+                    }
                 }
-                else -> null
-            }
-        }.getOrNull()
+                .getOrNull()
 
-        val userInfo = headers["Subscription-Userinfo"] ?: findHeaderBySuffix("subscription-userinfo")
+        val userInfo =
+            headers["Subscription-Userinfo"] ?: findHeaderBySuffix("subscription-userinfo")
         var upload = 0L
         var download = 0L
         var total = 0L
@@ -258,25 +265,25 @@ class SubStoreDownloadClient(
         }
 
         if (expire == 0L) {
-            expire = (
-                headers["Expires"]
-                    ?: findHeaderBySuffix("expires")
-                )?.let(::parseExpireDate) ?: 0L
+            expire =
+                (headers["Expires"] ?: findHeaderBySuffix("expires"))?.let(::parseExpireDate) ?: 0L
         }
 
-        val title = decodeSubscriptionTitle(
-            headers["Profile-Title"]
-                ?: headers["Subscription-Title"]
-                ?: findHeaderBySuffix("profile-title")
-                ?: findHeaderBySuffix("subscription-title"),
-        )
+        val title =
+            decodeSubscriptionTitle(
+                headers["Profile-Title"]
+                    ?: headers["Subscription-Title"]
+                    ?: findHeaderBySuffix("profile-title")
+                    ?: findHeaderBySuffix("subscription-title")
+            )
 
         val filename = parseFilenameFromHeaders(headers, findHeaderBySuffix("content-disposition"))
-        val interval = headers["Profile-Update-Interval"]?.toIntOrNull()
-            ?: headers["Subscription-Update-Interval"]?.toIntOrNull()
-            ?: findHeaderBySuffix("profile-update-interval")?.toIntOrNull()
-            ?: findHeaderBySuffix("subscription-update-interval")?.toIntOrNull()
-            ?: 24
+        val interval =
+            headers["Profile-Update-Interval"]?.toIntOrNull()
+                ?: headers["Subscription-Update-Interval"]?.toIntOrNull()
+                ?: findHeaderBySuffix("profile-update-interval")?.toIntOrNull()
+                ?: findHeaderBySuffix("subscription-update-interval")?.toIntOrNull()
+                ?: 24
 
         return SubscriptionInfo(
             upload = upload,
@@ -297,8 +304,9 @@ class SubStoreDownloadClient(
             if (candidate.isBlank()) return null
             if (!candidate.matches(Regex("^[A-Za-z0-9+/=]+$"))) return null
             return runCatching {
-                String(Base64.getDecoder().decode(candidate), StandardCharsets.UTF_8).trim()
-            }.getOrNull()
+                    String(Base64.getDecoder().decode(candidate), StandardCharsets.UTF_8).trim()
+                }
+                .getOrNull()
         }
 
         fun decodeRfc5987(candidate: String): String? {
@@ -306,48 +314,62 @@ class SubStoreDownloadClient(
             val charset = match.groupValues[1].ifBlank { "UTF-8" }
             val encoded = match.groupValues[2]
 
-            return runCatching {
-                URLDecoder.decode(encoded, charset).trim()
-            }.getOrNull()
+            return runCatching { URLDecoder.decode(encoded, charset).trim() }.getOrNull()
         }
 
         return runCatching {
-            val normalized = value.trim().trim('"', '\'')
-            when {
-                normalized.startsWith("base64:", ignoreCase = true) -> {
-                    decodeBase64(normalized.substringAfter(':')) ?: value
-                }
-                else -> {
-                    decodeRfc5987(normalized)
-                        ?: runCatching {
-                            URLDecoder.decode(normalized, StandardCharsets.UTF_8.name()).trim()
-                        }.getOrNull()
-                        ?: decodeBase64(normalized)
-                        ?: value
+                val normalized = value.trim().trim('"', '\'')
+                when {
+                    normalized.startsWith("base64:", ignoreCase = true) -> {
+                        decodeBase64(normalized.substringAfter(':')) ?: value
+                    }
+                    else -> {
+                        decodeRfc5987(normalized)
+                            ?: runCatching {
+                                    URLDecoder.decode(normalized, StandardCharsets.UTF_8.name())
+                                        .trim()
+                                }
+                                .getOrNull()
+                            ?: decodeBase64(normalized)
+                            ?: value
+                    }
                 }
             }
-        }.getOrElse { value }.takeIf { it.isNotBlank() }
+            .getOrElse { value }
+            .takeIf { it.isNotBlank() }
     }
 
     private fun parseFilenameFromHeaders(
         headers: Headers,
         fallbackContentDisposition: String?,
     ): String? {
-        val contentDisposition = headers["Content-Disposition"] ?: fallbackContentDisposition ?: return null
+        val contentDisposition =
+            headers["Content-Disposition"] ?: fallbackContentDisposition ?: return null
         return runCatching {
-            if (contentDisposition.contains("filename*=", ignoreCase = true)) {
-                val regex = """filename\*=([^']*)'([^']*)'([^;]+)""".toRegex(RegexOption.IGNORE_CASE)
-                regex.find(contentDisposition)?.let { match ->
-                    val charset = match.groupValues[1].ifBlank { "UTF-8" }
-                    val encodedFilename = match.groupValues[3].trim().trim('"', '\'')
-                    val safeCharset = runCatching { Charset.forName(charset).name() }.getOrDefault("UTF-8")
-                    URLDecoder.decode(encodedFilename, safeCharset).trim()
-                }
-            } else {
-                val regex = """filename=([^;]+)""".toRegex(RegexOption.IGNORE_CASE)
-                regex.find(contentDisposition)?.groupValues?.getOrNull(1)?.trim()?.trim('"', '\'')
-            }?.takeIf { it.isNotBlank() }
-        }.getOrNull()
+                if (contentDisposition.contains("filename*=", ignoreCase = true)) {
+                        val regex =
+                            """filename\*=([^']*)'([^']*)'([^;]+)"""
+                                .toRegex(RegexOption.IGNORE_CASE)
+                        regex.find(contentDisposition)?.let { match ->
+                            val charset = match.groupValues[1].ifBlank { "UTF-8" }
+                            val encodedFilename = match.groupValues[3].trim().trim('"', '\'')
+                            val safeCharset =
+                                runCatching { Charset.forName(charset).name() }
+                                    .getOrDefault("UTF-8")
+                            URLDecoder.decode(encodedFilename, safeCharset).trim()
+                        }
+                    } else {
+                        val regex = """filename=([^;]+)""".toRegex(RegexOption.IGNORE_CASE)
+                        regex
+                            .find(contentDisposition)
+                            ?.groupValues
+                            ?.getOrNull(1)
+                            ?.trim()
+                            ?.trim('"', '\'')
+                    }
+                    ?.takeIf { it.isNotBlank() }
+            }
+            .getOrNull()
     }
 
     private fun flattenRootDirectory(targetDir: File) {

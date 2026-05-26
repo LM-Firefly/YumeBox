@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.screen
 
 import androidx.compose.runtime.Composable
@@ -41,10 +39,7 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 
 @Composable
-fun FeatureContent(
-    onOpenExternalUrl: (String) -> Unit,
-    onOpenInAppUrl: (String) -> Unit,
-) {
+fun FeatureContent(onOpenExternalUrl: (String) -> Unit, onOpenInAppUrl: (String) -> Unit) {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<FeatureViewModel>()
     val isServiceRunning by viewModel.serviceRunningState.collectAsState()
@@ -68,15 +63,10 @@ fun FeatureContent(
 
     val panelDisplayNames = listOf("Zashboard", "MetaCubeXD", "Yacd")
 
-    LaunchedEffect(Unit) {
-        viewModel.initializeSubStoreStatus()
-    }
+    LaunchedEffect(Unit) { viewModel.initializeSubStoreStatus() }
 
-    Scaffold(
-        topBar = {
-            TopBar(title = MLang.Feature.Title, scrollBehavior = scrollBehavior)
-        },
-    ) { innerPadding ->
+    Scaffold(topBar = { TopBar(title = MLang.Feature.Title, scrollBehavior = scrollBehavior) }) {
+        innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
@@ -103,7 +93,11 @@ fun FeatureContent(
                         values = autoCloseValues,
                         onValueChange = { mode ->
                             viewModel.setAutoCloseMode(mode)
-                            if (mode != AutoCloseMode.DISABLED && !isServiceRunning && canStartService) {
+                            if (
+                                mode != AutoCloseMode.DISABLED &&
+                                    !isServiceRunning &&
+                                    canStartService
+                            ) {
                                 viewModel.startService()
                             } else if (mode == AutoCloseMode.DISABLED && isServiceRunning) {
                                 viewModel.stopService()
@@ -126,31 +120,36 @@ fun FeatureContent(
                                 LinkOpenMode.IN_APP -> onOpenInAppUrl(subStoreUrl)
                                 LinkOpenMode.EXTERNAL_BROWSER -> onOpenExternalUrl(subStoreUrl)
                             }
-                        }
+                        },
                     )
                 }
             }
 
             item {
-                val currentPanelName = panelDisplayNames.getOrElse(selectedPanelType) {
-                    MLang.Feature.Panel.Unknown
-                }
+                val currentPanelName =
+                    panelDisplayNames.getOrElse(selectedPanelType) { MLang.Feature.Panel.Unknown }
                 val panelUrl = panelUrlFor(selectedPanelType)
-                val panelOpenModeItems = listOf(
-                    MLang.ProfilesPage.LinkSettings.OpenModeInApp,
-                    MLang.ProfilesPage.LinkSettings.OpenModeExternal,
-                )
-                val panelOpenModeIndex = when (panelOpenMode) {
-                    LinkOpenMode.IN_APP -> 0
-                    LinkOpenMode.EXTERNAL_BROWSER -> 1
-                }
+                val panelOpenModeItems =
+                    listOf(
+                        MLang.ProfilesPage.LinkSettings.OpenModeInApp,
+                        MLang.ProfilesPage.LinkSettings.OpenModeExternal,
+                    )
+                val panelOpenModeIndex =
+                    when (panelOpenMode) {
+                        LinkOpenMode.IN_APP -> 0
+                        LinkOpenMode.EXTERNAL_BROWSER -> 1
+                    }
 
                 Title(MLang.Feature.Panel.Section)
                 Card {
-                    val safeSelectedPanelType = selectedPanelType.coerceIn(0, panelDisplayNames.lastIndex)
+                    val safeSelectedPanelType =
+                        selectedPanelType.coerceIn(0, panelDisplayNames.lastIndex)
                     WindowDropdownPreference(
                         title = MLang.Feature.Panel.SelectPanel,
-                        summary = panelDisplayNames.getOrElse(safeSelectedPanelType) { panelDisplayNames.first() },
+                        summary =
+                            panelDisplayNames.getOrElse(safeSelectedPanelType) {
+                                panelDisplayNames.first()
+                            },
                         items = panelDisplayNames,
                         selectedIndex = safeSelectedPanelType,
                         onSelectedIndexChange = { viewModel.setSelectedPanelType(it) },
@@ -170,7 +169,10 @@ fun FeatureContent(
 
                     WindowDropdownPreference(
                         title = MLang.ProfilesPage.LinkSettings.OpenMode,
-                        summary = panelOpenModeItems.getOrElse(panelOpenModeIndex) { panelOpenModeItems.first() },
+                        summary =
+                            panelOpenModeItems.getOrElse(panelOpenModeIndex) {
+                                panelOpenModeItems.first()
+                            },
                         items = panelOpenModeItems,
                         selectedIndex = panelOpenModeIndex,
                         onSelectedIndexChange = { index ->
@@ -179,7 +181,7 @@ fun FeatureContent(
                                     0 -> LinkOpenMode.IN_APP
                                     1 -> LinkOpenMode.EXTERNAL_BROWSER
                                     else -> LinkOpenMode.IN_APP
-                                },
+                                }
                             )
                         },
                     )
@@ -189,21 +191,25 @@ fun FeatureContent(
             item {
                 Title(MLang.Feature.SubStore.SectionHint)
                 Card {
-
                     ArrowPreference(
-                        title = if (isExtensionInstalled) {
-                            MLang.Feature.SubStore.ExtensionInstalled
-                        } else {
-                            MLang.Feature.SubStore.ExtensionInstall
-                        },
-                        summary = when {
-                            isExtensionInstalled && isJavetLoaded -> MLang.Feature.SubStore.JavetAvailable
-                            isExtensionInstalled -> MLang.Feature.SubStore.JavetPending
-                            else -> MLang.Feature.SubStore.DownloadHint
-                        },
+                        title =
+                            if (isExtensionInstalled) {
+                                MLang.Feature.SubStore.ExtensionInstalled
+                            } else {
+                                MLang.Feature.SubStore.ExtensionInstall
+                            },
+                        summary =
+                            when {
+                                isExtensionInstalled && isJavetLoaded ->
+                                    MLang.Feature.SubStore.JavetAvailable
+                                isExtensionInstalled -> MLang.Feature.SubStore.JavetPending
+                                else -> MLang.Feature.SubStore.DownloadHint
+                            },
                         onClick = {
                             if (!isExtensionInstalled) {
-                                onOpenExternalUrl("https://github.com/YumeLira/YumeBox/releases/tag/Expand")
+                                onOpenExternalUrl(
+                                    "https://github.com/YumeLira/YumeBox/releases/tag/Expand"
+                                )
                             } else {
                                 viewModel.refreshExtensionStatus()
                             }

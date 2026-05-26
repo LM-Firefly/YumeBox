@@ -18,17 +18,15 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
 
-import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
@@ -44,10 +42,7 @@ val LocalTopBarHazeState = compositionLocalOf<HazeState?> { null }
 val LocalTopBarHazeStyle = compositionLocalOf<HazeStyle?> { null }
 
 @OptIn(ExperimentalHazeApi::class)
-private fun Modifier.topBarHazeEffect(
-    state: HazeState?,
-    style: HazeStyle?,
-): Modifier {
+private fun Modifier.topBarHazeEffect(state: HazeState?, style: HazeStyle?): Modifier {
     if (state == null || style == null) return this
 
     return hazeEffect(state) {

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.core.model.TunnelState

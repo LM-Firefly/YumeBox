@@ -1,4 +1,3 @@
-
 /*
  * This file is part of YumeBox.
  *
@@ -22,12 +21,12 @@
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -37,11 +36,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.Dp
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.chevron
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -78,12 +76,7 @@ fun OverrideCardSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    OverrideSection(
-        title = title,
-        modifier = modifier,
-    ) {
-        OverrideSelectorCard(content = content)
-    }
+    OverrideSection(title = title, modifier = modifier) { OverrideSelectorCard(content = content) }
 }
 
 @Composable
@@ -92,12 +85,7 @@ fun OverrideFormSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    OverrideSection(
-        title = title,
-        modifier = modifier,
-    ) {
-        OverrideSelectorCard(content = content)
-    }
+    OverrideSection(title = title, modifier = modifier) { OverrideSelectorCard(content = content) }
 }
 
 @Composable
@@ -106,25 +94,17 @@ fun OverridePlainFormSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    OverrideSection(
-        title = title,
-        modifier = modifier,
-    ) {
+    OverrideSection(title = title, modifier = modifier) {
         OverrideFormFieldColumn(content = content)
     }
 }
 
 @Composable
-fun OverrideFormFieldColumn(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
+fun OverrideFormFieldColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     val spacing = AppTheme.spacing
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = spacing.space12),
+        modifier = modifier.fillMaxWidth().padding(horizontal = spacing.space12),
         verticalArrangement = Arrangement.spacedBy(spacing.space12),
     ) {
         content()
@@ -156,42 +136,29 @@ fun OverrideFormField(
             )
         }
         errorText?.takeIf(String::isNotBlank)?.let { message ->
-            OverrideFieldAssistText(
-                text = message,
-                color = MiuixTheme.colorScheme.error,
-            )
+            OverrideFieldAssistText(text = message, color = MiuixTheme.colorScheme.error)
         }
     }
 }
 
 @Composable
-fun OverrideFieldAssistText(
-    text: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
+fun OverrideFieldAssistText(text: String, color: Color, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MiuixTheme.textStyles.body2,
         color = color,
-        modifier = modifier.padding(
-            start = AppTheme.spacing.space14,
-            top = AppTheme.spacing.space8,
-            bottom = AppTheme.spacing.space8,
-        ),
+        modifier =
+            modifier.padding(
+                start = AppTheme.spacing.space14,
+                top = AppTheme.spacing.space8,
+                bottom = AppTheme.spacing.space8,
+            ),
     )
 }
 
 @Composable
-fun OverrideSelectorCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Card(
-        modifier = modifier,
-        insideMargin = PaddingValues(),
-        content = content,
-    )
+fun OverrideSelectorCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Card(modifier = modifier, insideMargin = PaddingValues(), content = content)
 }
 
 @Composable
@@ -204,18 +171,17 @@ fun OverrideSectionCardHeader(
 ) {
     val sizes = AppTheme.sizes
 
-    val indicatorRotation = animateFloatAsState(
-        targetValue = if (expanded) 90f else 0f,
-        animationSpec = tween(durationMillis = 180),
-        label = "override_section_indicator_rotation",
-    )
+    val indicatorRotation =
+        animateFloatAsState(
+            targetValue = if (expanded) 90f else 0f,
+            animationSpec = tween(durationMillis = 180),
+            label = "override_section_indicator_rotation",
+        )
 
     BasicComponent(
         title = title,
         summary = summary.orEmpty(),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = sizes.sectionHeaderMinHeight),
+        modifier = Modifier.fillMaxWidth().heightIn(min = sizes.sectionHeaderMinHeight),
         endActions = {
             if (showIndicator) {
                 Icon(
@@ -231,20 +197,19 @@ fun OverrideSectionCardHeader(
 }
 
 @Composable
-fun OverrideSectionVisibility(
-    visible: Boolean,
-    content: @Composable () -> Unit,
-) {
+fun OverrideSectionVisibility(visible: Boolean, content: @Composable () -> Unit) {
     AnimatedVisibility(
         visible = visible,
-        enter = expandVertically(
-            animationSpec = tween(durationMillis = 260),
-            expandFrom = Alignment.Top,
-        ) + fadeIn(animationSpec = tween(durationMillis = 180)),
-        exit = shrinkVertically(
-            animationSpec = tween(durationMillis = 220),
-            shrinkTowards = Alignment.Top,
-        ) + fadeOut(animationSpec = tween(durationMillis = 120)),
+        enter =
+            expandVertically(
+                animationSpec = tween(durationMillis = 260),
+                expandFrom = Alignment.Top,
+            ) + fadeIn(animationSpec = tween(durationMillis = 180)),
+        exit =
+            shrinkVertically(
+                animationSpec = tween(durationMillis = 220),
+                shrinkTowards = Alignment.Top,
+            ) + fadeOut(animationSpec = tween(durationMillis = 120)),
         label = "override_section_visibility",
     ) {
         content()
@@ -271,13 +236,13 @@ fun OverrideAdvancedCard(
         )
         OverrideSectionVisibility(visible = expanded) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = spacing.space16,
-                        end = spacing.space16,
-                        bottom = spacing.space12,
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(
+                            start = spacing.space16,
+                            end = spacing.space16,
+                            bottom = spacing.space12,
+                        ),
                 verticalArrangement = Arrangement.spacedBy(spacing.space12),
             ) {
                 content()
@@ -297,22 +262,23 @@ fun OverrideCardActionIconButton(
 ) {
     val colorScheme = MiuixTheme.colorScheme
     val sizes = AppTheme.sizes
-    val (backgroundColor, iconTint) = when (tone) {
-        OverrideActionTone.Neutral -> {
-            colorScheme.secondaryContainer.copy(alpha = 0.78f) to
-                colorScheme.onSurface.copy(alpha = if (enabled) 0.85f else 0.45f)
-        }
+    val (backgroundColor, iconTint) =
+        when (tone) {
+            OverrideActionTone.Neutral -> {
+                colorScheme.secondaryContainer.copy(alpha = 0.78f) to
+                    colorScheme.onSurface.copy(alpha = if (enabled) 0.85f else 0.45f)
+            }
 
-        OverrideActionTone.Primary -> {
-            colorScheme.primary.copy(alpha = 0.1f) to
-                colorScheme.primary.copy(alpha = if (enabled) 1f else 0.45f)
-        }
+            OverrideActionTone.Primary -> {
+                colorScheme.primary.copy(alpha = 0.1f) to
+                    colorScheme.primary.copy(alpha = if (enabled) 1f else 0.45f)
+            }
 
-        OverrideActionTone.Danger -> {
-            colorScheme.error.copy(alpha = 0.1f) to
-                colorScheme.error.copy(alpha = if (enabled) 1f else 0.45f)
+            OverrideActionTone.Danger -> {
+                colorScheme.error.copy(alpha = 0.1f) to
+                    colorScheme.error.copy(alpha = if (enabled) 1f else 0.45f)
+            }
         }
-    }
 
     IconButton(
         modifier = modifier,
@@ -343,12 +309,10 @@ fun OverrideStatusBadge(
     val sizes = AppTheme.sizes
 
     Box(
-        modifier = modifier
-            .size(sizes.statusCapsuleHeight + spacing.space4)
-            .background(
-                color = backgroundColor,
-                shape = CircleShape,
-            ),
+        modifier =
+            modifier
+                .size(sizes.statusCapsuleHeight + spacing.space4)
+                .background(color = backgroundColor, shape = CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

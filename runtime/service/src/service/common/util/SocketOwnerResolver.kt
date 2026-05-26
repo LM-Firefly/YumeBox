@@ -26,18 +26,12 @@ import android.os.Build
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
-class SocketOwnerResolver(
-    context: Context,
-) {
+class SocketOwnerResolver(context: Context) {
     private val connectivity = context.getSystemService(ConnectivityManager::class.java)
     private val packageManager = context.packageManager
     private val packageCache = ConcurrentHashMap<Int, String>()
 
-    fun queryOwner(
-        protocol: Int,
-        source: InetSocketAddress,
-        target: InetSocketAddress,
-    ): String {
+    fun queryOwner(protocol: Int, source: InetSocketAddress, target: InetSocketAddress): String {
         if (Build.VERSION.SDK_INT < 29) {
             return encode(-1, "")
         }
@@ -59,21 +53,18 @@ class SocketOwnerResolver(
         source: InetSocketAddress,
         target: InetSocketAddress,
     ): Int {
-        return runCatching {
-            connectivity?.getConnectionOwnerUid(protocol, source, target) ?: -1
-        }.getOrDefault(-1)
+        return runCatching { connectivity?.getConnectionOwnerUid(protocol, source, target) ?: -1 }
+            .getOrDefault(-1)
     }
 
     private fun resolvePackageName(uid: Int): String {
-        packageCache[uid]?.let { return it }
-
-        val packageName = runCatching {
-            packageManager.getPackagesForUid(uid)
-                ?.firstOrNull()
-                .orEmpty()
-        }.getOrElse {
-            ""
+        packageCache[uid]?.let {
+            return it
         }
+
+        val packageName =
+            runCatching { packageManager.getPackagesForUid(uid)?.firstOrNull().orEmpty() }
+                .getOrElse { "" }
 
         if (packageName.isNotEmpty()) {
             packageCache[uid] = packageName

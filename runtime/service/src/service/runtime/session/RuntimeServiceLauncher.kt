@@ -18,16 +18,14 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.session
 
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.ClashService
+import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.TunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 
@@ -41,18 +39,15 @@ object RuntimeServiceLauncher {
     const val SOURCE_AUTO_RESTART_REPLACED = "auto_restart_replaced"
     const val SOURCE_UNKNOWN = "unknown"
 
-    fun start(
-        context: Context,
-        mode: ProxyMode,
-        source: String = SOURCE_UNKNOWN,
-    ) {
+    fun start(context: Context, mode: ProxyMode, source: String = SOURCE_UNKNOWN) {
         require(mode != ProxyMode.RootTun) { "RuntimeServiceLauncher does not start RootTun" }
 
         val appContext = context.appContextOrSelf
         val store = RuntimeStartupLogStore(appContext, RuntimeStartupLogStore.scopeForMode(mode))
         store.clear()
-        store.append("${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: request start source=$source mode=${mode.name}")
-
+        store.append(
+            "${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: request start source=$source mode=${mode.name}"
+        )
 
         if (mode == ProxyMode.Tun && StatusProvider.isTunStarting()) {
             store.append("LOCAL_TUN launcher: skipped, already starting")
@@ -64,28 +59,33 @@ object RuntimeServiceLauncher {
         }
         StatusProvider.markRuntimeStarting(mode)
 
-        val intent = Intent(
-            appContext,
-            when (mode) {
-                ProxyMode.Tun -> TunService::class.java
-                ProxyMode.Http -> ClashService::class.java
-                ProxyMode.RootTun -> error("unsupported mode")
-            },
-        ).putExtra(EXTRA_REQUEST_SOURCE, source)
+        val intent =
+            Intent(
+                    appContext,
+                    when (mode) {
+                        ProxyMode.Tun -> TunService::class.java
+                        ProxyMode.Http -> ClashService::class.java
+                        ProxyMode.RootTun -> error("unsupported mode")
+                    },
+                )
+                .putExtra(EXTRA_REQUEST_SOURCE, source)
 
         runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                appContext.startForegroundService(intent)
-            } else {
-                appContext.startService(intent)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    appContext.startForegroundService(intent)
+                } else {
+                    appContext.startService(intent)
+                }
             }
-        }.onFailure { error ->
-            if (mode == ProxyMode.Tun) {
-                StatusProvider.clearTunStarting()
+            .onFailure { error ->
+                if (mode == ProxyMode.Tun) {
+                    StatusProvider.clearTunStarting()
+                }
+                StatusProvider.markRuntimeIdle(mode)
+                store.append(
+                    "${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: failed=${error.message}"
+                )
+                throw error
             }
-            StatusProvider.markRuntimeIdle(mode)
-            store.append("${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: failed=${error.message}")
-            throw error
-        }
     }
 }

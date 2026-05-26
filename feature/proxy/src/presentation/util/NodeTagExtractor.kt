@@ -18,23 +18,32 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.util
 
-private val NODE_KEYWORDS = listOf(
-    "IEPL", "BGP", "APL", "IPLC", "CMI", "CN2", "GIA", "MPLS",
-    "专线", "中转", "游戏", "企业", "NF", "Netflix", "Disney", "GPT",
-)
+private val NODE_KEYWORDS =
+    listOf(
+        "IEPL",
+        "BGP",
+        "APL",
+        "IPLC",
+        "CMI",
+        "CN2",
+        "GIA",
+        "MPLS",
+        "专线",
+        "中转",
+        "游戏",
+        "企业",
+        "NF",
+        "Netflix",
+        "Disney",
+        "GPT",
+    )
 
-private val MULTIPLIER_REGEX = Regex(
-    """(?<![.\d])[xX×✕](\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)[xX×✕](?![.\d])"""
-)
+private val MULTIPLIER_REGEX =
+    Regex("""(?<![.\d])[xX×✕](\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)[xX×✕](?![.\d])""")
 
-data class NodeTags(
-    val keywords: List<String>,
-    val multiplier: Float?,
-)
+data class NodeTags(val keywords: List<String>, val multiplier: Float?)
 
 fun extractNodeTags(name: String): NodeTags {
     val upperName = name.uppercase()

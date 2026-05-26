@@ -77,10 +77,7 @@ internal class RootTunRuntimeHost(
     override fun onLogReady(ready: Boolean) {
         val current = stateStore.snapshot()
         stateStore.updateStatus(
-            current.copy(
-                controllerReady = true,
-                runtimeReady = ready || current.runtimeReady,
-            ),
+            current.copy(controllerReady = true, runtimeReady = ready || current.runtimeReady)
         )
     }
 
@@ -89,24 +86,27 @@ internal class RootTunRuntimeHost(
     override fun reportFailure(error: String) {
         StatusProvider.markRuntimeFailed(ProxyMode.RootTun)
         stateStore.updateStatus(
-            stateStore.snapshot().copy(
-                state = RootTunState.Failed,
-                running = false,
-                lastError = error,
-                runtimeReady = false,
-            ),
+            stateStore
+                .snapshot()
+                .copy(
+                    state = RootTunState.Failed,
+                    running = false,
+                    lastError = error,
+                    runtimeReady = false,
+                )
         )
         service.sendClashStopped(error)
     }
 
     private fun RuntimeSnapshot.toRootTunStatus(spec: RuntimeSpec?): RootTunStatus {
-        val state = when (phase) {
-            RuntimePhase.Idle -> RootTunState.Idle
-            RuntimePhase.Starting -> RootTunState.Starting
-            RuntimePhase.Running -> RootTunState.Running
-            RuntimePhase.Stopping -> RootTunState.Stopping
-            RuntimePhase.Failed -> RootTunState.Failed
-        }
+        val state =
+            when (phase) {
+                RuntimePhase.Idle -> RootTunState.Idle
+                RuntimePhase.Starting -> RootTunState.Starting
+                RuntimePhase.Running -> RootTunState.Running
+                RuntimePhase.Stopping -> RootTunState.Stopping
+                RuntimePhase.Failed -> RootTunState.Failed
+            }
         return RootTunStatus(
             state = state,
             running = state.isActive,

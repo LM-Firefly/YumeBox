@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.language
 
 import android.content.Context
@@ -69,9 +67,8 @@ object TextMateInitializer {
 
     private fun registerFileProvider(context: Context) {
         Timber.tag(TAG).d("Registering file provider...")
-        FileProviderRegistry.getInstance().addFileProvider(
-            AssetsFileResolver(context.applicationContext.assets)
-        )
+        FileProviderRegistry.getInstance()
+            .addFileProvider(AssetsFileResolver(context.applicationContext.assets))
     }
 
     private fun loadThemes() {
@@ -89,15 +86,13 @@ object TextMateInitializer {
         themeRegistry: ThemeRegistry,
         name: String,
         path: String,
-        isDark: Boolean
+        isDark: Boolean,
     ) {
         try {
             val inputStream = FileProviderRegistry.getInstance().tryGetInputStream(path)
             if (inputStream != null) {
                 val themeSource = IThemeSource.fromInputStream(inputStream, path, null)
-                val themeModel = ThemeModel(themeSource, name).apply {
-                    this.isDark = isDark
-                }
+                val themeModel = ThemeModel(themeSource, name).apply { this.isDark = isDark }
                 themeRegistry.loadTheme(themeModel)
                 Timber.tag(TAG).d("Theme '$name' loaded successfully")
             } else {
@@ -125,10 +120,7 @@ object TextMateInitializer {
         }
 
         try {
-            val textMateLanguage = TextMateLanguage.create(
-                language.scopeName,
-                true
-            )
+            val textMateLanguage = TextMateLanguage.create(language.scopeName, true)
             editor.setEditorLanguage(textMateLanguage)
             Timber.tag(TAG).d("Language set to: ${language.displayName}")
         } catch (error: Exception) {

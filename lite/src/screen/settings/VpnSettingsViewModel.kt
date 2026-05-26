@@ -52,13 +52,14 @@ class VpnSettingsViewModel(
     val enableIPv6: Preference<Boolean> = networkSettingsStore.enableIPv6
     val systemProxy: Preference<Boolean> = networkSettingsStore.systemProxy
     val tunStack: Preference<TunStack> = networkSettingsStore.tunStack
-    val isRunning: StateFlow<Boolean> = proxyFacade.runtimeSnapshot
-        .map(RuntimeStateMapper::isActuallyRunning)
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            RuntimeStateMapper.isActuallyRunning(proxyFacade.runtimeSnapshot.value),
-        )
+    val isRunning: StateFlow<Boolean> =
+        proxyFacade.runtimeSnapshot
+            .map(RuntimeStateMapper::isActuallyRunning)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                RuntimeStateMapper.isActuallyRunning(proxyFacade.runtimeSnapshot.value),
+            )
 
     fun onDnsHijackChange(enabled: Boolean) {
         networkSettingsController.setAndRestartIfNeeded(dnsHijack, enabled)

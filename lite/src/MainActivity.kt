@@ -82,9 +82,10 @@ class MainActivity : FragmentActivity() {
         intentController = IntentController(lifecycleScope)
         handleIntent(intent)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
-            android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissions(
                 arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
@@ -95,7 +96,8 @@ class MainActivity : FragmentActivity() {
         setContent {
             val themeMode by appSettingsStorage.themeMode.state.collectAsState()
             val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsState()
-            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
+            val invertOnPrimaryColors by
+                appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
             val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsState()
             val pendingImportValue by pendingImportUrl.collectAsState()
             val navController = rememberNavController()

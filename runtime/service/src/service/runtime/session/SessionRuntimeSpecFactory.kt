@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.session
 
 import android.content.Context
@@ -60,14 +58,16 @@ class SessionRuntimeSpecFactory(
             profileDir = profileDir.absolutePath,
             runtimeConfigPath = profileDir.resolve("runtime.yaml").absolutePath,
             overrideSpecs = overrideSpecs,
-            effectiveFingerprint = buildEffectiveFingerprint(profile.uuid.toString(), overrideSpecs),
+            effectiveFingerprint =
+                buildEffectiveFingerprint(profile.uuid.toString(), overrideSpecs),
             profileFingerprint = buildProfileFingerprint(profile.uuid.toString()),
         )
     }
 
     fun createRootTunSpec(): RuntimeSpec {
         val rootResult = RootTunConfigFactory(context).create()
-        val overrideSpecs = compiledConfigPipeline.resolveOverrideSpecs(rootResult.profileUuid.toString())
+        val overrideSpecs =
+            compiledConfigPipeline.resolveOverrideSpecs(rootResult.profileUuid.toString())
         return RuntimeSpec(
             owner = RuntimeOwner.RootTun,
             profileUuid = rootResult.profileUuid.toString(),
@@ -78,17 +78,17 @@ class SessionRuntimeSpecFactory(
             rootTunConfig = rootResult.config,
             staticPlanFingerprint = rootResult.staticPlan.fingerprint,
             transportFingerprint = rootResult.dynamicOverrides.transportFingerprint,
-            effectiveFingerprint = buildEffectiveFingerprint(
-                rootResult.profileUuid.toString(),
-                overrideSpecs,
-            ),
+            effectiveFingerprint =
+                buildEffectiveFingerprint(rootResult.profileUuid.toString(), overrideSpecs),
             profileFingerprint = rootResult.dynamicOverrides.profileFingerprint,
         )
     }
 
-    private fun requireActiveProfile(): com.github.yumelira.yumebox.service.runtime.entity.Imported {
+    private fun requireActiveProfile():
+        com.github.yumelira.yumebox.service.runtime.entity.Imported {
         val profileId = store.activeProfile ?: error("No active profile selected")
-        return ImportedDao.queryByUUID(profileId) ?: error("Active profile metadata not found: $profileId")
+        return ImportedDao.queryByUUID(profileId)
+            ?: error("Active profile metadata not found: $profileId")
     }
 
     private fun buildProfileFingerprint(profileUuid: String): String {

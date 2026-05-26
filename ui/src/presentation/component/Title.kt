@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.runtime.Composable
@@ -28,13 +26,10 @@ import com.github.yumelira.yumebox.presentation.theme.topPadding
 import top.yukonga.miuix.kmp.basic.SmallTitle
 
 /**
- * App-level wrapper around Miuix `Title`.
- * Keeps YumeBox default spacing while avoiding direct Miuix usage at call sites.
+ * App-level wrapper around Miuix `Title`. Keeps YumeBox default spacing while avoiding direct Miuix
+ * usage at call sites.
  */
 @Composable
 fun Title(text: String) {
-    SmallTitle(
-        modifier = Modifier.topPadding(),
-        text = text,
-    )
+    SmallTitle(modifier = Modifier.topPadding(), text = text)
 }

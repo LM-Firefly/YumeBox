@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import android.content.Context
@@ -37,16 +35,8 @@ fun LinkItem(
     context: Context = LocalContext.current,
 ) {
     if (showArrow) {
-        ArrowPreference(
-            title = title,
-            summary = url,
-            onClick = { openUrl(context, url) }
-        )
+        ArrowPreference(title = title, summary = url, onClick = { openUrl(context, url) })
     } else {
-        BasicComponent(
-            title = title,
-            summary = url,
-            onClick = { openUrl(context, url) }
-        )
+        BasicComponent(title = title, summary = url, onClick = { openUrl(context, url) })
     }
 }

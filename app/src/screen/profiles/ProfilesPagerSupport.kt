@@ -20,23 +20,21 @@
 
 package com.github.yumelira.yumebox.screen.profiles
 
-
-import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.presentation.component.AppDialog
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 internal fun openProfileConfigPreview(
     targetFile: File,
@@ -50,23 +48,27 @@ internal fun openProfileConfigPreview(
         return
     }
 
-    val configContent = runCatching { targetFile.readText() }.getOrElse {
-        onReadFailed(it.message ?: "Failed to read profile")
-        return
-    }
-
-    val saveCallback = if (editable) {
-        { updatedContent: String ->
-            runCatching {
-                targetFile.writeText(updatedContent)
+    val configContent =
+        runCatching { targetFile.readText() }
+            .getOrElse {
+                onReadFailed(it.message ?: "Failed to read profile")
+                return
             }
-                .getOrElse {
-                    throw IllegalStateException(it.message ?: MLang.ProfilesPage.SettingsDialog.SaveFailed, it)
-                }
+
+    val saveCallback =
+        if (editable) {
+            { updatedContent: String ->
+                runCatching { targetFile.writeText(updatedContent) }
+                    .getOrElse {
+                        throw IllegalStateException(
+                            it.message ?: MLang.ProfilesPage.SettingsDialog.SaveFailed,
+                            it,
+                        )
+                    }
+            }
+        } else {
+            null
         }
-    } else {
-        null
-    }
 
     onPreviewPrepared(configContent, saveCallback)
 }
@@ -85,13 +87,8 @@ internal fun ProfileEditOptionsDialog(
         onDismissRequest = onDismiss,
         onDismissFinished = onDismissFinished,
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
-        ) {
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onOpenConfig,
-            ) {
+        Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
+            Button(modifier = Modifier.fillMaxWidth(), onClick = onOpenConfig) {
                 Text(MLang.ProfilesPage.SettingsDialog.OpenConfig)
             }
 

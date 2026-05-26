@@ -18,8 +18,6 @@
  *
  */
 
-
-
 @file:UseSerializers(UUIDSerializer::class)
 
 package com.github.yumelira.yumebox.service.runtime.entity
@@ -29,9 +27,9 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.github.yumelira.yumebox.core.util.Parcelizer
 import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
+import java.util.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
-import java.util.*
 
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable
@@ -49,7 +47,9 @@ data class Profile(
     val updatedAt: Long,
 ) : Parcelable {
     enum class Type {
-        File, Url, External
+        File,
+        Url,
+        External,
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

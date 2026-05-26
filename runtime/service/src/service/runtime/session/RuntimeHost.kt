@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.session
 
 import android.content.Context
@@ -32,11 +30,18 @@ interface RuntimeHost {
     val mode: ProxyMode
 
     fun onStarting(spec: RuntimeSpec)
+
     fun onStarted(spec: RuntimeSpec)
+
     fun onStopped(reason: String?)
+
     fun onProfileLoaded(profileUuid: String)
+
     fun onSnapshotChanged(snapshot: RuntimeSnapshot)
+
     fun onLogReady(ready: Boolean)
+
     fun onLogItem(log: LogMessage) {}
+
     fun reportFailure(error: String)
 }

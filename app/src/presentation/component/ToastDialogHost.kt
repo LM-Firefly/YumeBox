@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import android.content.ClipData
@@ -83,22 +81,26 @@ fun ToastDialogHost() {
             defaultWindowInsetsPadding = true,
             content = {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtleStrong),
-                            shape = RoundedCornerShape(radii.radius16),
-                        )
-                        .clickable {
-                            val clipboardManager =
-                                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val textToCopy = snapshot.message.ifBlank { snapshot.title }
-                            clipboardManager.setPrimaryClip(
-                                ClipData.newPlainText(snapshot.title, textToCopy)
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .background(
+                                color =
+                                    MiuixTheme.colorScheme.primary.copy(
+                                        alpha = opacity.subtleStrong
+                                    ),
+                                shape = RoundedCornerShape(radii.radius16),
                             )
-                            showDialog.value = false
-                        }
-                        .padding(vertical = spacing.space14),
+                            .clickable {
+                                val clipboardManager =
+                                    context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                        as ClipboardManager
+                                val textToCopy = snapshot.message.ifBlank { snapshot.title }
+                                clipboardManager.setPrimaryClip(
+                                    ClipData.newPlainText(snapshot.title, textToCopy)
+                                )
+                                showDialog.value = false
+                            }
+                            .padding(vertical = spacing.space14),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -107,6 +109,7 @@ fun ToastDialogHost() {
                         style = MiuixTheme.textStyles.body1,
                     )
                 }
-            })
+            },
+        )
     }
 }

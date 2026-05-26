@@ -71,6 +71,9 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAct
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.util.UUID
+import kotlin.math.max
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.SpinnerEntry
@@ -78,9 +81,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
-import java.util.UUID
-import kotlin.math.max
 
 @Composable
 internal fun AddProfileSheet(
@@ -88,7 +88,14 @@ internal fun AddProfileSheet(
     profileToEdit: Profile? = null,
     importUrl: String? = null,
     initialType: Profile.Type? = null,
-    onAddProfile: (name: String, source: String, type: Profile.Type, interval: Long, fileUri: android.net.Uri?) -> Unit,
+    onAddProfile:
+        (
+            name: String,
+            source: String,
+            type: Profile.Type,
+            interval: Long,
+            fileUri: android.net.Uri?,
+        ) -> Unit,
     onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long) -> Unit,
     onDismissFinished: () -> Unit,
     onDownloadComplete: () -> Unit,
@@ -150,11 +157,12 @@ internal fun AddProfileSheet(
                     } else {
                         selectedTypeIndex = 1
                         filePath = profileToEdit.source
-                        fileName = if (profileToEdit.source.isNotEmpty()) {
-                            File(profileToEdit.source).name
-                        } else {
-                            ""
-                        }
+                        fileName =
+                            if (profileToEdit.source.isNotEmpty()) {
+                                File(profileToEdit.source).name
+                            } else {
+                                ""
+                            }
                     }
                 }
 
@@ -173,7 +181,7 @@ internal fun AddProfileSheet(
                 }
             }
         }
-        onDispose { }
+        onDispose {}
     }
 
     LaunchedEffect(uiState.error) {
@@ -194,36 +202,37 @@ internal fun AddProfileSheet(
         }
     }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            val actualFileName = context.contentResolver.query(
-                it,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null,
-            )?.use { cursor ->
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                cursor.moveToFirst()
-                cursor.getString(nameIndex)
-            } ?: MLang.ProfilesPage.Message.UnknownFile
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                val actualFileName =
+                    context.contentResolver
+                        .query(it, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                        ?.use { cursor ->
+                            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            cursor.moveToFirst()
+                            cursor.getString(nameIndex)
+                        } ?: MLang.ProfilesPage.Message.UnknownFile
 
-            val extension = actualFileName.substringAfterLast(".", "")
-            if (!extension.equals("yaml", ignoreCase = true) && !extension.equals("yml", ignoreCase = true)) {
-                error = MLang.ProfilesPage.Validation.YamlOnly
-                return@let
-            }
+                val extension = actualFileName.substringAfterLast(".", "")
+                if (
+                    !extension.equals("yaml", ignoreCase = true) &&
+                        !extension.equals("yml", ignoreCase = true)
+                ) {
+                    error = MLang.ProfilesPage.Validation.YamlOnly
+                    return@let
+                }
 
-            filePath = it.toString()
-            fileName = actualFileName
-            error = ""
+                filePath = it.toString()
+                fileName = actualFileName
+                error = ""
 
-            val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
-            if (name.isBlank() || name == actualFileName) {
-                name = fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile }
+                val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
+                if (name.isBlank() || name == actualFileName) {
+                    name = fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile }
+                }
             }
         }
-    }
 
     LaunchedEffect(show.value, selectedTypeIndex) {
         if (show.value && selectedTypeIndex == 1 && profileToEdit == null && filePath.isBlank()) {
@@ -301,7 +310,9 @@ internal fun AddProfileSheet(
 
     AppActionBottomSheet(
         show = show.value,
-        title = if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle else MLang.ProfilesPage.Sheet.AddTitle,
+        title =
+            if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle
+            else MLang.ProfilesPage.Sheet.AddTitle,
         startAction = {
             if (!isDownloading) {
                 AppBottomSheetCloseAction(
@@ -321,49 +332,64 @@ internal fun AddProfileSheet(
         onDismissRequest = dismissSheet,
         onDismissFinished = onDismissFinished,
     ) {
-        val stableSheetHeight = remember(stableSheetHeightPx, density) {
-            if (stableSheetHeightPx <= 0) 0.dp else with(density) { stableSheetHeightPx.toDp() }
-        }
+        val stableSheetHeight =
+            remember(stableSheetHeightPx, density) {
+                if (stableSheetHeightPx <= 0) 0.dp else with(density) { stableSheetHeightPx.toDp() }
+            }
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .animateContentSize(animationSpec = tween(300, easing = FastOutSlowInEasing))
-                .padding(bottom = 16.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .animateContentSize(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                    .padding(bottom = 16.dp)
         ) {
             AnimatedContent(
                 targetState = isDownloading,
                 transitionSpec = {
                     if (targetState) {
-                        (slideInHorizontally(animationSpec = tween(260), initialOffsetX = { it }) + fadeIn()) togetherWith
-                            (slideOutHorizontally(animationSpec = tween(220), targetOffsetX = { -it / 3 }) + fadeOut())
+                        (slideInHorizontally(animationSpec = tween(260), initialOffsetX = { it }) +
+                            fadeIn()) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(220),
+                                targetOffsetX = { -it / 3 },
+                            ) + fadeOut())
                     } else {
-                        (slideInHorizontally(animationSpec = tween(220), initialOffsetX = { -it / 3 }) + fadeIn()) togetherWith
-                            (slideOutHorizontally(animationSpec = tween(260), targetOffsetX = { it }) + fadeOut())
+                        (slideInHorizontally(
+                            animationSpec = tween(220),
+                            initialOffsetX = { -it / 3 },
+                        ) + fadeIn()) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(260),
+                                targetOffsetX = { it },
+                            ) + fadeOut())
                     }
                 },
                 label = "lite_profile_import_switch",
             ) { downloading ->
                 if (downloading) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(
-                                if (downloadProgress?.isCompleted == true) downloadCompleteSheetContentHeight
-                                else if (stableSheetHeightPx > 0) stableSheetHeight
-                                else downloadSheetContentHeight,
-                            ),
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(
+                                    if (downloadProgress?.isCompleted == true)
+                                        downloadCompleteSheetContentHeight
+                                    else if (stableSheetHeightPx > 0) stableSheetHeight
+                                    else downloadSheetContentHeight
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                            verticalArrangement =
+                                Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                         ) {
                             InfiniteProgressIndicator(modifier = Modifier.size(32.dp))
                             Text(
-                                text = downloadProgress?.message ?: MLang.ProfilesVM.Progress.Preparing,
+                                text =
+                                    downloadProgress?.message
+                                        ?: MLang.ProfilesVM.Progress.Preparing,
                                 style = MiuixTheme.textStyles.body1,
                                 color = MiuixTheme.colorScheme.onSurface,
                                 textAlign = TextAlign.Center,
@@ -375,18 +401,20 @@ internal fun AddProfileSheet(
                     }
                 } else {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onSizeChanged { stableSheetHeightPx = max(stableSheetHeightPx, it.height) },
+                        modifier =
+                            Modifier.fillMaxWidth().onSizeChanged {
+                                stableSheetHeightPx = max(stableSheetHeightPx, it.height)
+                            },
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         Card {
                             WindowSpinnerPreference(
                                 title = MLang.ProfilesPage.Type.Title,
-                                items = listOf(
-                                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
-                                    SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
-                                ),
+                                items =
+                                    listOf(
+                                        SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
+                                        SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
+                                    ),
                                 selectedIndex = selectedTypeIndex,
                                 onSelectedIndexChange = {
                                     if (profileToEdit == null) {
@@ -426,12 +454,11 @@ internal fun AddProfileSheet(
                         } else {
                             TextField(
                                 value = fileName,
-                                onValueChange = { },
+                                onValueChange = {},
                                 label = MLang.ProfilesPage.Input.SelectFile,
                                 readOnly = true,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(
+                                modifier =
+                                    Modifier.fillMaxWidth().clickable(
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {

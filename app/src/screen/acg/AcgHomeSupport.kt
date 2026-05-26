@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -44,10 +43,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.theme.Sizes
 import com.github.yumelira.yumebox.presentation.theme.Opacity
 import com.github.yumelira.yumebox.presentation.theme.Radii
+import com.github.yumelira.yumebox.presentation.theme.Sizes
 import com.github.yumelira.yumebox.presentation.theme.Spacing
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
@@ -152,16 +150,10 @@ internal fun AcgSidebarRail(
     icons: List<AcgSidebarIconItem>,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height(AcgUi.Sidebar.topInset))
 
-        AcgSidebarValueStack(
-            topValue = topValue,
-            bottomValue = bottomValue,
-        )
+        AcgSidebarValueStack(topValue = topValue, bottomValue = bottomValue)
 
         AcgSidebarModeText(
             mode = proxyMode.toAcgDisplayName(),
@@ -177,10 +169,7 @@ internal fun AcgSidebarRail(
 }
 
 @Composable
-private fun AcgSidebarValueStack(
-    topValue: String,
-    bottomValue: String,
-) {
+private fun AcgSidebarValueStack(topValue: String, bottomValue: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,67 +177,62 @@ private fun AcgSidebarValueStack(
     ) {
         AcgSidebarTimeValue(value = topValue)
         Box(
-            modifier = Modifier
-                .width(AcgUi.Sidebar.dividerWidth)
-                .height(AcgUi.Sidebar.dividerHeight)
-                .background(Color.White.copy(alpha = AcgUi.Sidebar.dividerAlpha)),
+            modifier =
+                Modifier.width(AcgUi.Sidebar.dividerWidth)
+                    .height(AcgUi.Sidebar.dividerHeight)
+                    .background(Color.White.copy(alpha = AcgUi.Sidebar.dividerAlpha))
         )
         AcgSidebarTimeValue(value = bottomValue)
     }
 }
 
 @Composable
-private fun AcgSidebarIconRail(
-    icons: List<AcgSidebarIconItem>,
-) {
+private fun AcgSidebarIconRail(icons: List<AcgSidebarIconItem>) {
     Column(
-        modifier = Modifier
-            .clip(AcgUi.Shape.launchButton)
-            .background(Color.White.copy(alpha = AcgUi.Sidebar.iconPillAlpha))
-            .padding(
-                horizontal = AcgUi.Sidebar.iconPillHorizontalPadding,
-                vertical = AcgUi.Sidebar.iconPillVerticalPadding,
-            ),
+        modifier =
+            Modifier.clip(AcgUi.Shape.launchButton)
+                .background(Color.White.copy(alpha = AcgUi.Sidebar.iconPillAlpha))
+                .padding(
+                    horizontal = AcgUi.Sidebar.iconPillHorizontalPadding,
+                    vertical = AcgUi.Sidebar.iconPillVerticalPadding,
+                ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(AcgUi.Sidebar.iconSpacing),
     ) {
-        icons.forEach { item ->
-            AcgSidebarIconItemView(item = item)
-        }
+        icons.forEach { item -> AcgSidebarIconItemView(item = item) }
     }
 }
 
 @Composable
-private fun AcgSidebarIconItemView(
-    item: AcgSidebarIconItem,
-) {
+private fun AcgSidebarIconItemView(item: AcgSidebarIconItem) {
     Icon(
         imageVector = item.icon,
         contentDescription = null,
         tint = Color.White.copy(alpha = AcgUi.Sidebar.iconAlpha),
-        modifier = Modifier
-            .size(AcgUi.Sidebar.iconSize)
-            .clickable(
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = item.onClick,
-            ),
+        modifier =
+            Modifier.size(AcgUi.Sidebar.iconSize)
+                .clickable(
+                    interactionSource =
+                        remember {
+                            androidx.compose.foundation.interaction.MutableInteractionSource()
+                        },
+                    indication = null,
+                    onClick = item.onClick,
+                ),
     )
 }
 
 @Composable
-private fun AcgSidebarModeText(
-    mode: String,
-    modifier: Modifier = Modifier,
-) {
+private fun AcgSidebarModeText(mode: String, modifier: Modifier = Modifier) {
     Text(
         text = mode.uppercase(),
         modifier = modifier,
-        style = MiuixTheme.textStyles.footnote1.copy(
-            fontSize = AcgUi.Sidebar.modeFontSize,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            letterSpacing = AcgUi.Sidebar.modeLetterSpacing,
-        ),
+        style =
+            MiuixTheme.textStyles.footnote1.copy(
+                fontSize = AcgUi.Sidebar.modeFontSize,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                letterSpacing = AcgUi.Sidebar.modeLetterSpacing,
+            ),
         color = Color.White.copy(alpha = 0.96f),
     )
 }
@@ -256,9 +240,7 @@ private fun AcgSidebarModeText(
 @Composable
 private fun AcgSidebarTimeValue(value: String) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(AcgUi.Sidebar.timeValueHeight),
+        modifier = Modifier.fillMaxWidth().height(AcgUi.Sidebar.timeValueHeight),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -278,46 +260,28 @@ internal enum class AcgWallpaperQualityMode {
     BackgroundBlur,
 }
 
-internal fun lerpFloat(
-    start: Float,
-    stop: Float,
-    progress: Float,
-): Float = start + (stop - start) * progress
+internal fun lerpFloat(start: Float, stop: Float, progress: Float): Float =
+    start + (stop - start) * progress
 
-internal fun lerpDp(
-    start: Dp,
-    stop: Dp,
-    progress: Float,
-): Dp = start + (stop - start) * progress
+internal fun lerpDp(start: Dp, stop: Dp, progress: Float): Dp = start + (stop - start) * progress
 
-internal fun calculateHomeVisibility(
-    currentPage: Int,
-    currentPageOffsetFraction: Float,
-): Float {
+internal fun calculateHomeVisibility(currentPage: Int, currentPageOffsetFraction: Float): Float {
     val offset = abs(currentPage.toFloat() + currentPageOffsetFraction)
     return 1f - offset.coerceIn(0f, 1f)
 }
 
-internal data class AcgSidebarIconItem(
-    val icon: ImageVector,
-    val onClick: () -> Unit,
-)
+internal data class AcgSidebarIconItem(val icon: ImageVector, val onClick: () -> Unit)
 
-internal data class AcgQuote(
-    val text: String,
-    val author: String,
-)
+internal data class AcgQuote(val text: String, val author: String)
 
-internal fun ProxyMode.toAcgDisplayName(): String = when (this) {
-    ProxyMode.Tun -> MLang.Home.ProxyMode.Vpn
-    ProxyMode.RootTun -> MLang.Home.ProxyMode.Tun
-    ProxyMode.Http -> MLang.Home.ProxyMode.Http
-}
+internal fun ProxyMode.toAcgDisplayName(): String =
+    when (this) {
+        ProxyMode.Tun -> MLang.Home.ProxyMode.Vpn
+        ProxyMode.RootTun -> MLang.Home.ProxyMode.Tun
+        ProxyMode.Http -> MLang.Home.ProxyMode.Http
+    }
 
-internal data class AcgDurationPair(
-    val top: String = "00",
-    val bottom: String = "00",
-)
+internal data class AcgDurationPair(val top: String = "00", val bottom: String = "00")
 
 internal fun formatAcgDuration(elapsedMillis: Long): AcgDurationPair {
     val totalSeconds = (elapsedMillis / 1000L).coerceAtLeast(0L)

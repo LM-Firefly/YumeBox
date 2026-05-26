@@ -18,13 +18,14 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.session
 
 interface RuntimeTransport {
     fun prepare(spec: RuntimeSpec) {}
+
     fun start(spec: RuntimeSpec)
+
     fun stop()
+
     fun onNetworkChanged() {}
 }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.webview
 
 import android.annotation.SuppressLint
@@ -45,6 +43,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 
 private object NoOpWebViewClient : WebViewClient()
+
 private object NoOpWebChromeClient : WebChromeClient()
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -62,8 +61,7 @@ fun LocalWebView(
     LaunchedEffect(enableDebug) {
         try {
             WebView.setWebContentsDebuggingEnabled(enableDebug)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -103,7 +101,7 @@ fun LocalWebView(
     if (initialUrl.isEmpty()) {
         Box(
             modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(MLang.Component.WebView.InvalidUrl)
         }
@@ -130,10 +128,11 @@ private fun createWebView(
     val activity = context as? WebViewActivity
 
     return WebView(context).apply {
-        layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        )
+        layoutParams =
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
 
         settings.apply {
             javaScriptEnabled = true
@@ -155,87 +154,97 @@ private fun createWebView(
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
         }
 
-        webViewClient = object : WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val scheme = request?.url?.scheme
+        webViewClient =
+            object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                ): Boolean {
+                    val scheme = request?.url?.scheme
 
-                if (scheme != null && scheme != "http" && scheme != "https" && scheme != "file") {
-                    try {
-                        val intent = Intent(Intent.ACTION_VIEW, request.url)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        context.startActivity(intent)
-                        return true
-                    } catch (_: Exception) {
-                        return true
+                    if (
+                        scheme != null && scheme != "http" && scheme != "https" && scheme != "file"
+                    ) {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, request.url)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            context.startActivity(intent)
+                            return true
+                        } catch (_: Exception) {
+                            return true
+                        }
+                    }
+
+                    return false
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    onPageFinished(url ?: "")
+                }
+
+                @Suppress("DEPRECATION")
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?,
+                ) {
+                    @Suppress("DEPRECATION") super.onReceivedError(view, request, error)
+                    if (request?.isForMainFrame == true) {
+                        val errorUrl = request.url?.toString() ?: "unknown"
+                        val errorCode = error?.errorCode ?: -1
+                        val errorMessage = error?.description?.toString() ?: "unknown error"
+                        onPageError(errorUrl, "Error $errorCode: $errorMessage")
                     }
                 }
 
-                return false
-            }
-
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                onPageFinished(url ?: "")
-            }
-
-            @Suppress("DEPRECATION")
-            override fun onReceivedError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                error: WebResourceError?,
-            ) {
-                @Suppress("DEPRECATION") super.onReceivedError(view, request, error)
-                if (request?.isForMainFrame == true) {
-                    val errorUrl = request.url?.toString() ?: "unknown"
-                    val errorCode = error?.errorCode ?: -1
-                    val errorMessage = error?.description?.toString() ?: "unknown error"
-                    onPageError(errorUrl, "Error $errorCode: $errorMessage")
-                }
-            }
-
-            override fun onReceivedHttpError(
-                view: WebView?,
-                request: WebResourceRequest?,
-                errorResponse: WebResourceResponse?,
-            ) {
-                super.onReceivedHttpError(view, request, errorResponse)
-                if (request?.isForMainFrame == true) {
-                    val errorUrl = request.url?.toString() ?: "unknown"
-                    val statusCode = errorResponse?.statusCode ?: -1
-                    if (statusCode == 404) {
-                        onPageError(errorUrl, "404 Not Found")
+                override fun onReceivedHttpError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    errorResponse: WebResourceResponse?,
+                ) {
+                    super.onReceivedHttpError(view, request, errorResponse)
+                    if (request?.isForMainFrame == true) {
+                        val errorUrl = request.url?.toString() ?: "unknown"
+                        val statusCode = errorResponse?.statusCode ?: -1
+                        if (statusCode == 404) {
+                            onPageError(errorUrl, "404 Not Found")
+                        }
                     }
                 }
+
+                @Deprecated("Deprecated in Java")
+                override fun onReceivedError(
+                    view: WebView?,
+                    errorCode: Int,
+                    description: String?,
+                    failingUrl: String?,
+                ) {
+                    @Suppress("DEPRECATION")
+                    super.onReceivedError(view, errorCode, description, failingUrl)
+                }
             }
 
-            @Deprecated("Deprecated in Java")
-            override fun onReceivedError(
-                view: WebView?,
-                errorCode: Int,
-                description: String?,
-                failingUrl: String?,
-            ) {
-                @Suppress("DEPRECATION") super.onReceivedError(view, errorCode, description, failingUrl)
-            }
-        }
-
-        webChromeClient = object : WebChromeClient() {
-            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
-                return true
-            }
-
-            override fun onShowFileChooser(
-                webView: WebView?, filePathCallback: ValueCallback<Array<Uri>>?, fileChooserParams: FileChooserParams?
-            ): Boolean {
-                if (activity == null) {
-                    filePathCallback?.onReceiveValue(null)
+        webChromeClient =
+            object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     return true
                 }
-                val mimeTypes = fileChooserParams?.acceptTypes ?: arrayOf("*/*")
-                activity.launchFilePicker(filePathCallback, mimeTypes)
-                return true
+
+                override fun onShowFileChooser(
+                    webView: WebView?,
+                    filePathCallback: ValueCallback<Array<Uri>>?,
+                    fileChooserParams: FileChooserParams?,
+                ): Boolean {
+                    if (activity == null) {
+                        filePathCallback?.onReceiveValue(null)
+                        return true
+                    }
+                    val mimeTypes = fileChooserParams?.acceptTypes ?: arrayOf("*/*")
+                    activity.launchFilePicker(filePathCallback, mimeTypes)
+                    return true
+                }
             }
-        }
 
         loadUrl(initialUrl)
     }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.records
 
 import com.github.yumelira.yumebox.core.Clash
@@ -29,8 +27,8 @@ import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.runtime.entity.Selection
-import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlinx.coroutines.runBlocking
 
 internal object SelectionRestoreExecutor {
     private const val queryRetryCount = 3
@@ -44,17 +42,19 @@ internal object SelectionRestoreExecutor {
     ) {
         val selectorGroups = runtimeGroups.associateBy { it.name }
         selections.forEach { selection ->
-            val group = selectorGroups[selection.proxy] ?: run {
-                removeSelection(profileUuid, selection, tag, "group missing")
-                return@forEach
-            }
+            val group =
+                selectorGroups[selection.proxy]
+                    ?: run {
+                        removeSelection(profileUuid, selection, tag, "group missing")
+                        return@forEach
+                    }
             if (group.type != Proxy.Type.Selector) {
                 removeSelection(profileUuid, selection, tag, "group not selector")
                 return@forEach
             }
 
-            val currentNodes = group.proxies
-                .mapNotNull { proxy -> proxy.name.trim().takeIf { it.isNotEmpty() } }
+            val currentNodes =
+                group.proxies.mapNotNull { proxy -> proxy.name.trim().takeIf { it.isNotEmpty() } }
             val targetNode = selection.selected.trim()
             if (targetNode.isEmpty() || targetNode !in currentNodes) {
                 removeSelection(profileUuid, selection, tag, "node missing")
@@ -62,7 +62,9 @@ internal object SelectionRestoreExecutor {
             }
 
             if (!patchSelectorWithRetry(selection.proxy, targetNode)) {
-                Log.w("$tag restore selector patch failed: profile=$profileUuid group=${selection.proxy} node=$targetNode")
+                Log.w(
+                    "$tag restore selector patch failed: profile=$profileUuid group=${selection.proxy} node=$targetNode"
+                )
             }
         }
     }
@@ -79,7 +81,7 @@ internal object SelectionRestoreExecutor {
                             name = "selection_restore_patch_retry",
                             intervalMillis = queryRetryDelayMs,
                             initialDelayMillis = queryRetryDelayMs,
-                        ),
+                        )
                     )
                 }
             }
@@ -87,10 +89,15 @@ internal object SelectionRestoreExecutor {
         return false
     }
 
-    private fun removeSelection(profileUuid: UUID, selection: Selection, tag: String, reason: String) {
+    private fun removeSelection(
+        profileUuid: UUID,
+        selection: Selection,
+        tag: String,
+        reason: String,
+    ) {
         Log.w(
             "$tag remove invalid selector memory: profile=$profileUuid group=${selection.proxy} " +
-                "node=${selection.selected} reason=$reason",
+                "node=${selection.selected} reason=$reason"
         )
         SelectionDao.remove(profileUuid, selection.proxy)
     }

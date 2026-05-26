@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.about
 
 import androidx.activity.compose.BackHandler
@@ -35,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.Card
@@ -66,20 +63,13 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
     var showLicenseSheet by remember { mutableStateOf(false) }
     var selectedLibrary by remember { mutableStateOf<Library?>(null) }
 
-    BackHandler {
-        navigator.popBackStack()
-    }
+    BackHandler { navigator.popBackStack() }
 
     val libraries by produceLibraries(R.raw.aboutlibraries)
     val libraryItems = remember(libraries) { libraries?.libraries.orEmpty() }
 
     Scaffold(
-        topBar = {
-            TopBar(
-                title = MLang.OpenSourceLicenses.Title,
-                scrollBehavior = scrollBehavior,
-            )
-        },
+        topBar = { TopBar(title = MLang.OpenSourceLicenses.Title, scrollBehavior = scrollBehavior) }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             val mainLikePadding = rememberStandalonePageMainPadding()
@@ -90,7 +80,9 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
                 if (libraryItems.isNotEmpty()) {
                     items(
                         items = libraryItems,
-                        key = { library -> "${library.uniqueId}:${library.artifactId}:${library.name}" },
+                        key = { library ->
+                            "${library.uniqueId}:${library.artifactId}:${library.name}"
+                        },
                     ) { library ->
                         LibraryItem(
                             library = library,
@@ -101,9 +93,7 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
                         )
                     }
 
-                    item {
-                        Spacer(modifier = Modifier.height(spacing.space24))
-                    }
+                    item { Spacer(modifier = Modifier.height(spacing.space24)) }
                 }
             }
 
@@ -120,10 +110,7 @@ fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun LibraryItem(
-    library: Library,
-    onClick: () -> Unit,
-) {
+private fun LibraryItem(library: Library, onClick: () -> Unit) {
     val spacing = AppTheme.spacing
 
     Card(
@@ -131,10 +118,8 @@ private fun LibraryItem(
         insideMargin = PaddingValues(spacing.space0),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(spacing.space16),
+            modifier =
+                Modifier.fillMaxWidth().clickable(onClick = onClick).padding(spacing.space16),
             verticalArrangement = Arrangement.spacedBy(spacing.space10),
         ) {
             Row(
@@ -173,9 +158,7 @@ private fun LibraryItem(
                     horizontalArrangement = Arrangement.spacedBy(spacing.space6),
                     verticalArrangement = Arrangement.spacedBy(spacing.space6),
                 ) {
-                    library.licenses.forEach { license ->
-                        LicenseChip(licenseName = license.name)
-                    }
+                    library.licenses.forEach { license -> LicenseChip(licenseName = license.name) }
                 }
             }
         }
@@ -189,10 +172,10 @@ private fun LicenseChip(licenseName: String) {
     val opacity = AppTheme.opacity
 
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(radii.radius12))
-            .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle))
-            .padding(horizontal = spacing.space10, vertical = spacing.space4),
+        modifier =
+            Modifier.clip(RoundedCornerShape(radii.radius12))
+                .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle))
+                .padding(horizontal = spacing.space10, vertical = spacing.space4)
     ) {
         Text(
             text = licenseName,
@@ -203,25 +186,23 @@ private fun LicenseChip(licenseName: String) {
 }
 
 @Composable
-private fun LicenseBottomSheet(
-    show: Boolean,
-    library: Library,
-    onDismiss: () -> Unit,
-) {
+private fun LicenseBottomSheet(show: Boolean, library: Library, onDismiss: () -> Unit) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
 
     val scrollState = rememberScrollState()
-    val licenseContent = remember(library) { library.strippedLicenseContent.takeIf { it.isNotEmpty() } }
+    val licenseContent =
+        remember(library) { library.strippedLicenseContent.takeIf { it.isNotEmpty() } }
 
     AppActionBottomSheet(
         show = show,
         title = library.name,
         onDismissRequest = onDismiss,
         content = {
-            Column(modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = componentSizes.dialogSheetMaxHeight)) {
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth().heightIn(max = componentSizes.dialogSheetMaxHeight)
+            ) {
                 if (licenseContent != null) {
                     Text(
                         modifier = Modifier.verticalScroll(scrollState),
@@ -242,6 +223,6 @@ private fun LicenseBottomSheet(
                     }
                 }
             }
-        }
+        },
     )
 }

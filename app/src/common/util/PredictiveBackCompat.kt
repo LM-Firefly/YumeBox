@@ -29,27 +29,27 @@ object PredictiveBackCompat {
     val isSupported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 
-    @Volatile
-    private var hiddenApiExemptionApplied = false
+    @Volatile private var hiddenApiExemptionApplied = false
 
-    fun apply(
-        applicationInfo: ApplicationInfo,
-        enabled: Boolean,
-    ) {
+    fun apply(applicationInfo: ApplicationInfo, enabled: Boolean) {
         if (!isSupported) {
             return
         }
         runCatching {
-            ensureHiddenApiExemption()
-            val setEnableOnBackInvokedCallbackMethod = ApplicationInfo::class.java.getDeclaredMethod(
-                "setEnableOnBackInvokedCallback",
-                Boolean::class.javaPrimitiveType,
-            )
-            setEnableOnBackInvokedCallbackMethod.isAccessible = true
-            setEnableOnBackInvokedCallbackMethod.invoke(applicationInfo, enabled)
-        }.onFailure { throwable ->
-            Timber.w(throwable, "Failed to apply predictive back callback state")
-        }
+                ensureHiddenApiExemption()
+                val setEnableOnBackInvokedCallbackMethod =
+                    ApplicationInfo::class
+                        .java
+                        .getDeclaredMethod(
+                            "setEnableOnBackInvokedCallback",
+                            Boolean::class.javaPrimitiveType,
+                        )
+                setEnableOnBackInvokedCallbackMethod.isAccessible = true
+                setEnableOnBackInvokedCallbackMethod.invoke(applicationInfo, enabled)
+            }
+            .onFailure { throwable ->
+                Timber.w(throwable, "Failed to apply predictive back callback state")
+            }
     }
 
     private fun ensureHiddenApiExemption() {
@@ -61,7 +61,7 @@ object PredictiveBackCompat {
                 return
             }
             HiddenApiBypass.addHiddenApiExemptions(
-                "Landroid/content/pm/ApplicationInfo;->setEnableOnBackInvokedCallback",
+                "Landroid/content/pm/ApplicationInfo;->setEnableOnBackInvokedCallback"
             )
             hiddenApiExemptionApplied = true
         }

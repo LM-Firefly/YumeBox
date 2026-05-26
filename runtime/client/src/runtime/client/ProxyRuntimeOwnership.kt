@@ -69,23 +69,25 @@ internal object ProxyRuntimeOwnership {
     ): RuntimeSnapshot {
         return RuntimeSnapshot(
             owner = owner,
-            phase = when (owner) {
-                RuntimeOwner.RootTun -> rootPhase(rootStatus)
-                RuntimeOwner.LocalTun, RuntimeOwner.LocalHttp -> localPhase.toRuntimePhase()
-                RuntimeOwner.None -> RuntimePhase.Idle
-            },
+            phase =
+                when (owner) {
+                    RuntimeOwner.RootTun -> rootPhase(rootStatus)
+                    RuntimeOwner.LocalTun,
+                    RuntimeOwner.LocalHttp -> localPhase.toRuntimePhase()
+                    RuntimeOwner.None -> RuntimePhase.Idle
+                },
             targetMode = modeForOwner(owner, configuredMode),
             profileReady = owner == RuntimeOwner.RootTun && !rootStatus.profileUuid.isNullOrBlank(),
             profileUuid = rootStatus.profileUuid.takeIf { owner == RuntimeOwner.RootTun },
             profileName = rootStatus.profileName.takeIf { owner == RuntimeOwner.RootTun },
             lastError = if (owner == RuntimeOwner.RootTun) rootStatus.lastError else null,
-            startedAt = when (owner) {
-                RuntimeOwner.RootTun -> rootStatus.startedAt
-                RuntimeOwner.LocalTun,
-                RuntimeOwner.LocalHttp,
-                    -> localStartedAt
-                RuntimeOwner.None -> null
-            },
+            startedAt =
+                when (owner) {
+                    RuntimeOwner.RootTun -> rootStatus.startedAt
+                    RuntimeOwner.LocalTun,
+                    RuntimeOwner.LocalHttp -> localStartedAt
+                    RuntimeOwner.None -> null
+                },
         )
     }
 

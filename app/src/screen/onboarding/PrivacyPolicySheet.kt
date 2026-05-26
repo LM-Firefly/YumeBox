@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.onboarding
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,9 +31,9 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -47,10 +46,11 @@ internal fun PrivacyPolicySheet(show: MutableState<Boolean>) {
 
     val policyText = remember {
         runCatching {
-            context.resources.openRawResource(R.raw.privacy_policy)
-                .bufferedReader()
-                .use { it.readText() }
-        }.getOrElse { MLang.Onboarding.Sheet.LoadFailed }
+                context.resources.openRawResource(R.raw.privacy_policy).bufferedReader().use {
+                    it.readText()
+                }
+            }
+            .getOrElse { MLang.Onboarding.Sheet.LoadFailed }
     }
 
     AppActionBottomSheet(
@@ -59,10 +59,8 @@ internal fun PrivacyPolicySheet(show: MutableState<Boolean>) {
         onDismissRequest = { show.value = false },
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = UiDp.dp450)
-                .verticalScroll(scrollState),
+            modifier =
+                Modifier.fillMaxWidth().heightIn(max = UiDp.dp450).verticalScroll(scrollState)
         ) {
             Text(
                 text = policyText,

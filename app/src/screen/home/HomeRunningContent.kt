@@ -18,19 +18,18 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.home
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
 import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 
 @Composable
 fun HomeRunningContent(
@@ -43,28 +42,20 @@ fun HomeRunningContent(
     ipMonitoringState: IpMonitoringState,
     speedHistory: List<Long>,
     onChartClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = UiDp.dp24),
-        verticalArrangement = Arrangement.spacedBy(UiDp.dp32)
+        modifier = modifier.fillMaxWidth().padding(vertical = UiDp.dp24),
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp32),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp16)) {
-            NodeInfoDisplay(
-                serverName = serverName, serverPing = serverPing
-            )
+            NodeInfoDisplay(serverName = serverName, serverPing = serverPing)
 
             IpInfoDisplay(state = ipMonitoringState)
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
-            SpeedChart(
-                speedHistory = speedHistory,
-                isRunning = isRunning,
-                onClick = onChartClick
-            )
+            SpeedChart(speedHistory = speedHistory, isRunning = isRunning, onClick = onChartClick)
         }
     }
 }

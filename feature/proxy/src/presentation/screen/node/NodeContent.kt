@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.screen.node
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.annotation.SuppressLint
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -48,6 +47,7 @@ import com.github.yumelira.yumebox.data.model.normalizeProxySheetHeightFraction
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -59,12 +59,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollHorizontal
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 
-val NodeSheetContentPadding = PaddingValues(
-    start = UiDp.dp0,
-    end = UiDp.dp0,
-    top = UiDp.dp8,
-    bottom = UiDp.dp16,
-)
+val NodeSheetContentPadding =
+    PaddingValues(start = UiDp.dp0, end = UiDp.dp0, top = UiDp.dp8, bottom = UiDp.dp16)
 
 private fun LazyListState.isScrolledFromTop(): Boolean {
     return firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 0
@@ -76,20 +72,17 @@ private fun Modifier.nodeTabHaze(state: HazeState?, style: HazeStyle?): Modifier
         this.style = style
         blurRadius = UiDp.dp30
         noiseFactor = 0f
-        progressive = HazeProgressive.verticalGradient(
-            startIntensity = 1f,
-            endIntensity = 0f,
-            preferPerformance = true,
-        )
+        progressive =
+            HazeProgressive.verticalGradient(
+                startIntensity = 1f,
+                endIntensity = 0f,
+                preferPerformance = true,
+            )
     }
 }
 
 @Composable
-internal fun NodeTabs(
-    groups: List<ProxyGroupInfo>,
-    selectedIndex: Int,
-    onSelect: (Int) -> Unit,
-) {
+internal fun NodeTabs(groups: List<ProxyGroupInfo>, selectedIndex: Int, onSelect: (Int) -> Unit) {
     val hazeState = LocalTopBarHazeState.current
     val hazeStyle = LocalTopBarHazeStyle.current
     val listState = rememberLazyListState()
@@ -104,44 +97,43 @@ internal fun NodeTabs(
 
     LazyRow(
         state = listState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .nodeTabHaze(hazeState, hazeStyle)
-            .background(MiuixTheme.colorScheme.surface)
-            .overScrollHorizontal(),
-        contentPadding = PaddingValues(start = UiDp.dp14, end = UiDp.dp14, top = UiDp.dp10, bottom = UiDp.dp10),
+        modifier =
+            Modifier.fillMaxWidth()
+                .nodeTabHaze(hazeState, hazeStyle)
+                .background(MiuixTheme.colorScheme.surface)
+                .overScrollHorizontal(),
+        contentPadding =
+            PaddingValues(start = UiDp.dp14, end = UiDp.dp14, top = UiDp.dp10, bottom = UiDp.dp10),
         horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
         overscrollEffect = null,
     ) {
         itemsIndexed(groups, key = { _, group -> group.name }) { index, group ->
             val selected = index == selectedIndex
-            val background = if (selected) {
-                MiuixTheme.colorScheme.primary
-            } else {
-                MiuixTheme.colorScheme.surface
-            }
-            val textColor = if (selected) {
-                MiuixTheme.colorScheme.onPrimary
-            } else {
-                MiuixTheme.colorScheme.onSurface
-            }
+            val background =
+                if (selected) {
+                    MiuixTheme.colorScheme.primary
+                } else {
+                    MiuixTheme.colorScheme.surface
+                }
+            val textColor =
+                if (selected) {
+                    MiuixTheme.colorScheme.onPrimary
+                } else {
+                    MiuixTheme.colorScheme.onSurface
+                }
 
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(UiDp.dp999))
-                    .background(background)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { onSelect(index) },
-                    )
-                    .padding(horizontal = UiDp.dp11, vertical = UiDp.dp6),
+                modifier =
+                    Modifier.clip(RoundedCornerShape(UiDp.dp999))
+                        .background(background)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { onSelect(index) },
+                        )
+                        .padding(horizontal = UiDp.dp11, vertical = UiDp.dp6)
             ) {
-                Text(
-                    text = group.name,
-                    color = textColor,
-                    style = MiuixTheme.textStyles.footnote1,
-                )
+                Text(text = group.name, color = textColor, style = MiuixTheme.textStyles.footnote1)
             }
         }
     }
@@ -172,10 +164,7 @@ internal fun NodeGroupSheetContent(
     }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(sheetHeight)
-            .overScrollVertical(),
+        modifier = Modifier.fillMaxWidth().height(sheetHeight).overScrollVertical(),
         state = listState,
         verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         contentPadding = NodeSheetContentPadding,
@@ -211,10 +200,7 @@ fun NodeSheetContent(
     }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(sheetHeight)
-            .overScrollVertical(),
+        modifier = Modifier.fillMaxWidth().height(sheetHeight).overScrollVertical(),
         state = listState,
         verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
         contentPadding = NodeSheetContentPadding,
@@ -223,25 +209,23 @@ fun NodeSheetContent(
         item(key = "__refresh_indicator__") {
             AnimatedVisibility(
                 visible = isDelayTesting,
-                enter = expandVertically(
-                    animationSpec = tween(durationMillis = 200),
-                    expandFrom = Alignment.Top,
-                ) + fadeIn(animationSpec = tween(durationMillis = 150)),
-                exit = shrinkVertically(
-                    animationSpec = tween(durationMillis = 200),
-                    shrinkTowards = Alignment.Top,
-                ) + fadeOut(animationSpec = tween(durationMillis = 150)),
+                enter =
+                    expandVertically(
+                        animationSpec = tween(durationMillis = 200),
+                        expandFrom = Alignment.Top,
+                    ) + fadeIn(animationSpec = tween(durationMillis = 150)),
+                exit =
+                    shrinkVertically(
+                        animationSpec = tween(durationMillis = 200),
+                        shrinkTowards = Alignment.Top,
+                    ) + fadeOut(animationSpec = tween(durationMillis = 150)),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = UiDp.dp12),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = UiDp.dp12),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(UiDp.dp6),
                 ) {
-                    InfiniteProgressIndicator(
-                        modifier = Modifier.size(UiDp.dp24),
-                    )
+                    InfiniteProgressIndicator(modifier = Modifier.size(UiDp.dp24))
                     Text(
                         text = MLang.Proxy.Testing.InProgress,
                         style = MiuixTheme.textStyles.footnote1,

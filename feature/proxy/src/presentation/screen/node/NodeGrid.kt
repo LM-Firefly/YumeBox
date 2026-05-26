@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.screen.node
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,8 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -59,8 +58,8 @@ internal fun LazyListScope.nodeGridItems(
             onSingleNodeTestClick = onSingleNodeTestClick,
             showCountryFlag = true,
             singleNodeTestEnabled = singleNodeTestEnabled,
-            modifier = Modifier
-                .padding(
+            modifier =
+                Modifier.padding(
                     horizontal = outerHorizontalPadding,
                     vertical = itemVerticalPadding,
                 ),
@@ -81,13 +80,9 @@ internal fun NodeGrid(
     contentPadding: PaddingValues = PaddingValues(UiDp.dp0),
     singleNodeTestEnabled: Boolean = true,
 ) {
-    val listState = rememberSaveable(listStateKey, saver = LazyListState.Saver) {
-        LazyListState()
-    }
+    val listState = rememberSaveable(listStateKey, saver = LazyListState.Saver) { LazyListState() }
     LazyColumn(
-        modifier = modifier
-            .scrollEndHaptic()
-            .overScrollVertical(),
+        modifier = modifier.scrollEndHaptic().overScrollVertical(),
         state = listState,
         contentPadding = contentPadding,
         verticalArrangement = Arrangement.spacedBy(UiDp.dp12),

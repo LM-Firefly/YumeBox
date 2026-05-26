@@ -25,9 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Session-scoped gate for auto start behavior.
  *
- * Manual pause blocks auto start only within current app process lifetime.
- * Foreground auto actions also run at most once per process lifetime.
- * After process restart, state resets naturally.
+ * Manual pause blocks auto start only within current app process lifetime. Foreground auto actions
+ * also run at most once per process lifetime. After process restart, state resets naturally.
  */
 object AutoStartSessionGate {
     private val manualPaused = AtomicBoolean(false)
@@ -58,4 +57,3 @@ object AutoStartSessionGate {
         }
     }
 }
-

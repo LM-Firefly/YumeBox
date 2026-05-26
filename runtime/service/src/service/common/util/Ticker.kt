@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.common.util
 
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
@@ -34,13 +32,12 @@ import kotlinx.coroutines.flow.collect
 suspend fun ticker(delayMillis: Long): ReceiveChannel<Unit> = coroutineScope {
     produce {
         PollingTimers.ticks(
-            PollingTimerSpecs.dynamic(
-                name = "service_ticker_$delayMillis",
-                intervalMillis = delayMillis,
-                initialDelayMillis = delayMillis,
-            ),
-        ).collect {
-            send(Unit)
-        }
+                PollingTimerSpecs.dynamic(
+                    name = "service_ticker_$delayMillis",
+                    intervalMillis = delayMillis,
+                    initialDelayMillis = delayMillis,
+                )
+            )
+            .collect { send(Unit) }
     }
 }

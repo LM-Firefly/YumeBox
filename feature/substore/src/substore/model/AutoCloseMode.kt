@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.substore.model
 
 import dev.oom_wg.purejoy.mlang.MLang

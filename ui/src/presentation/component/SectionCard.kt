@@ -24,13 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun SectionCard(
-    title: String,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
+fun SectionCard(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Title(title)
-    Card(modifier = modifier) {
-        content()
-    }
+    Card(modifier = modifier) { content() }
 }

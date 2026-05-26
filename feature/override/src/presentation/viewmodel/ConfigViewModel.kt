@@ -66,9 +66,7 @@ class OverrideConfigViewModel(
     init {
         refresh()
         viewModelScope.launch {
-            bindingProvider.getAllBindingsFlow().collectLatest {
-                loadUsageCounts()
-            }
+            bindingProvider.getAllBindingsFlow().collectLatest { loadUsageCounts() }
         }
     }
 
@@ -107,113 +105,107 @@ class OverrideConfigViewModel(
         return true
     }
 
-    fun createConfig(
-        name: String,
-        description: String? = null,
-        contentType: OverrideContentType,
-    ) {
+    fun createConfig(name: String, description: String? = null, contentType: OverrideContentType) {
         viewModelScope.launch {
             runCatching {
-                val now = System.currentTimeMillis()
-                val config = OverrideConfig(
-                    id = OverrideMetadata.generateId(),
-                    name = name,
-                    description = description,
-                    contentType = contentType,
-                    content = "",
-                    createdAt = now,
-                    updatedAt = now,
-                )
-                configRepo.save(config)
-                _pendingRevealConfigId.value = config.id
-                refresh()
-            }.onFailure { error ->
-                Timber.tag(TAG).e(error, "Failed to create override")
-            }
+                    val now = System.currentTimeMillis()
+                    val config =
+                        OverrideConfig(
+                            id = OverrideMetadata.generateId(),
+                            name = name,
+                            description = description,
+                            contentType = contentType,
+                            content = "",
+                            createdAt = now,
+                            updatedAt = now,
+                        )
+                    configRepo.save(config)
+                    _pendingRevealConfigId.value = config.id
+                    refresh()
+                }
+                .onFailure { error -> Timber.tag(TAG).e(error, "Failed to create override") }
         }
     }
 
     fun deleteConfig(id: String) {
         viewModelScope.launch {
             runCatching {
-                val shouldResyncRuntime = activeProfileOverrideReloader.isActiveProfileUsingOverride(id)
-                val deleted = configRepo.delete(id)
-                if (deleted && shouldResyncRuntime) {
-                    activeProfileOverrideReloader.reapplyActiveProfileOverride()
+                    val shouldResyncRuntime =
+                        activeProfileOverrideReloader.isActiveProfileUsingOverride(id)
+                    val deleted = configRepo.delete(id)
+                    if (deleted && shouldResyncRuntime) {
+                        activeProfileOverrideReloader.reapplyActiveProfileOverride()
+                    }
+                    refresh()
                 }
-                refresh()
-            }.onFailure { error ->
-                Timber.tag(TAG).e(error, "Failed to delete override")
-            }
+                .onFailure { error -> Timber.tag(TAG).e(error, "Failed to delete override") }
         }
     }
 
     fun duplicateConfig(id: String) {
         viewModelScope.launch {
             runCatching {
-                val duplicated = configRepo.duplicate(id)
-                if (duplicated != null) {
-                    _pendingRevealConfigId.value = duplicated.id
+                    val duplicated = configRepo.duplicate(id)
+                    if (duplicated != null) {
+                        _pendingRevealConfigId.value = duplicated.id
+                    }
+                    refresh()
                 }
-                refresh()
-            }.onFailure { error ->
-                Timber.tag(TAG).e(error, "Failed to duplicate override")
-            }
+                .onFailure { error -> Timber.tag(TAG).e(error, "Failed to duplicate override") }
         }
     }
 
-    fun reorderUserConfigs(
-        fromIndex: Int,
-        toIndex: Int,
-    ) {
+    fun reorderUserConfigs(fromIndex: Int, toIndex: Int) {
         viewModelScope.launch {
             val currentConfigs = _userConfigs.value
             if (fromIndex !in currentConfigs.indices || fromIndex == toIndex) return@launch
 
-            val reorderedConfigs = currentConfigs.toMutableList().also { configs ->
-                val moving = configs.removeAt(fromIndex)
-                configs.add(toIndex.coerceIn(0, configs.size), moving)
-            }
+            val reorderedConfigs =
+                currentConfigs.toMutableList().also { configs ->
+                    val moving = configs.removeAt(fromIndex)
+                    configs.add(toIndex.coerceIn(0, configs.size), moving)
+                }
             _userConfigs.value = reorderedConfigs
             _configs.value = reorderedConfigs
 
-            runCatching {
-                configRepo.reorderUserConfigs(reorderedConfigs.map(OverrideConfig::id))
-            }.onFailure { error ->
-                Timber.tag(TAG).e(error, "Failed to reorder overrides")
-            }
+            runCatching { configRepo.reorderUserConfigs(reorderedConfigs.map(OverrideConfig::id)) }
+                .onFailure { error -> Timber.tag(TAG).e(error, "Failed to reorder overrides") }
             refresh()
         }
     }
 
-    fun importConfig(
-        content: String,
-        sourceName: String?,
-    ): Result<OverrideConfig> {
-        val contentType = OverrideContentType.fromFileName(sourceName)
-            ?: return Result.failure(IllegalArgumentException(MLang.Override.Import.Failed.format("仅支持 YAML 或 JS")))
+    fun importConfig(content: String, sourceName: String?): Result<OverrideConfig> {
+        val contentType =
+            OverrideContentType.fromFileName(sourceName)
+                ?: return Result.failure(
+                    IllegalArgumentException(MLang.Override.Import.Failed.format("仅支持 YAML 或 JS"))
+                )
         if (contentType == OverrideContentType.JavaScript && content.isBlank()) {
-            return Result.failure(IllegalArgumentException(MLang.Override.Import.Failed.format("JS 文件为空")))
+            return Result.failure(
+                IllegalArgumentException(MLang.Override.Import.Failed.format("JS 文件为空"))
+            )
         }
 
-        val config = OverrideConfig(
-            id = OverrideMetadata.generateId(),
-            name = normalizeImportedConfigSourceName(sourceName) ?: MLang.Override.Save.ImportDefaultName,
-            description = null,
-            contentType = contentType,
-            content = content,
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis(),
-        )
+        val config =
+            OverrideConfig(
+                id = OverrideMetadata.generateId(),
+                name =
+                    normalizeImportedConfigSourceName(sourceName)
+                        ?: MLang.Override.Save.ImportDefaultName,
+                description = null,
+                contentType = contentType,
+                content = content,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+            )
 
         viewModelScope.launch {
             runCatching {
-                configRepo.save(config)
-                _pendingRevealConfigId.value = config.id
-                refresh()
-            }.onFailure { error ->
-                Timber.tag(TAG).e(error, "Failed to import override")
-            }
+                    configRepo.save(config)
+                    _pendingRevealConfigId.value = config.id
+                    refresh()
+                }
+                .onFailure { error -> Timber.tag(TAG).e(error, "Failed to import override") }
         }
         return Result.success(config)
     }
@@ -238,18 +230,20 @@ class OverrideConfigViewModel(
 }
 
 internal fun normalizeImportedConfigSourceName(sourceName: String?): String? {
-    var normalizedName = sourceName
-        ?.substringAfterLast('/')
-        ?.substringAfterLast('\\')
-        ?.trim()
-        ?.takeIf(String::isNotBlank)
-        ?: return null
+    var normalizedName =
+        sourceName
+            ?.substringAfterLast('/')
+            ?.substringAfterLast('\\')
+            ?.trim()
+            ?.takeIf(String::isNotBlank) ?: return null
 
     val removableSuffixes = listOf(".yaml", ".yml", ".js")
     while (true) {
-        val matchedSuffix = removableSuffixes.firstOrNull { suffix ->
-            normalizedName.length > suffix.length && normalizedName.endsWith(suffix, ignoreCase = true)
-        } ?: break
+        val matchedSuffix =
+            removableSuffixes.firstOrNull { suffix ->
+                normalizedName.length > suffix.length &&
+                    normalizedName.endsWith(suffix, ignoreCase = true)
+            } ?: break
         normalizedName = normalizedName.dropLast(matchedSuffix.length).trimEnd()
     }
 

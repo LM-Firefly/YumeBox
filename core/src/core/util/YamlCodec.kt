@@ -42,31 +42,26 @@ object YamlCodec {
         prettyPrint = true
     }
 
-    private val yaml = Yaml(
-        DumperOptions().apply {
-            defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-            defaultScalarStyle = DumperOptions.ScalarStyle.PLAIN
-            isPrettyFlow = true
-            indent = 2
-            indicatorIndent = 0
-            width = 160
-            splitLines = false
-        },
-    )
+    private val yaml =
+        Yaml(
+            DumperOptions().apply {
+                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
+                defaultScalarStyle = DumperOptions.ScalarStyle.PLAIN
+                isPrettyFlow = true
+                indent = 2
+                indicatorIndent = 0
+                width = 160
+                splitLines = false
+            }
+        )
 
-    fun <T> encode(
-        serializer: KSerializer<T>,
-        value: T,
-    ): String {
+    fun <T> encode(serializer: KSerializer<T>, value: T): String {
         val element = json.encodeToJsonElement(serializer, value)
         val tree = toYamlNode(element)
         return dumpValue(tree)
     }
 
-    fun <T> decode(
-        serializer: KSerializer<T>,
-        content: String,
-    ): T {
+    fun <T> decode(serializer: KSerializer<T>, content: String): T {
         val loaded = loadValue(content)
         val element = toJsonElement(loaded)
         return json.decodeFromJsonElement(serializer, element)
@@ -98,32 +93,33 @@ object YamlCodec {
     private fun toYamlNode(element: JsonElement): Any? {
         return when (element) {
             JsonNull -> null
-            is JsonObject -> LinkedHashMap<String, Any?>().apply {
-                element.forEach { (key, value) -> put(key, toYamlNode(value)) }
-            }
+            is JsonObject ->
+                LinkedHashMap<String, Any?>().apply {
+                    element.forEach { (key, value) -> put(key, toYamlNode(value)) }
+                }
 
             is JsonArray -> element.map(::toYamlNode)
-            is JsonPrimitive -> when {
-                element.isString -> element.content
-                element.booleanOrNull != null -> element.booleanOrNull
-                element.intOrNull != null -> element.intOrNull
-                element.longOrNull != null -> element.longOrNull
-                element.doubleOrNull != null -> element.doubleOrNull
-                else -> element.content
-            }
+            is JsonPrimitive ->
+                when {
+                    element.isString -> element.content
+                    element.booleanOrNull != null -> element.booleanOrNull
+                    element.intOrNull != null -> element.intOrNull
+                    element.longOrNull != null -> element.longOrNull
+                    element.doubleOrNull != null -> element.doubleOrNull
+                    else -> element.content
+                }
         }
     }
 
     private fun toJsonElement(value: Any?): JsonElement {
         return when (value) {
             null -> JsonNull
-            is Map<*, *> -> JsonObject(
-                LinkedHashMap<String, JsonElement>().apply {
-                    value.forEach { (key, child) ->
-                        put(key.toString(), toJsonElement(child))
+            is Map<*, *> ->
+                JsonObject(
+                    LinkedHashMap<String, JsonElement>().apply {
+                        value.forEach { (key, child) -> put(key.toString(), toJsonElement(child)) }
                     }
-                },
-            )
+                )
 
             is List<*> -> JsonArray(value.map(::toJsonElement))
             is Boolean -> JsonPrimitive(value)
@@ -139,11 +135,12 @@ object YamlCodec {
     private fun normalizeYamlValue(value: Any?): Any? {
         return when (value) {
             null -> null
-            is Map<*, *> -> LinkedHashMap<String, Any?>().apply {
-                value.forEach { (key, childValue) ->
-                    put(key.toString(), normalizeYamlValue(childValue))
+            is Map<*, *> ->
+                LinkedHashMap<String, Any?>().apply {
+                    value.forEach { (key, childValue) ->
+                        put(key.toString(), normalizeYamlValue(childValue))
+                    }
                 }
-            }
 
             is Iterable<*> -> value.map(::normalizeYamlValue)
             is Array<*> -> value.map(::normalizeYamlValue)

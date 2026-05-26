@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.store
 
 import com.github.yumelira.yumebox.data.model.AppColorTheme
@@ -61,5 +59,4 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val biometricUnlockEnabled by boolFlow(false)
 
     val customUserAgent by strFlow("")
-
 }

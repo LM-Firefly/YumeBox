@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 import kotlinx.serialization.Serializable
@@ -30,7 +28,8 @@ data class DailyTrafficSummary(
     val totalUpload: Long,
     val totalDownload: Long,
 ) {
-    val total: Long get() = totalUpload + totalDownload
+    val total: Long
+        get() = totalUpload + totalDownload
 
     companion object {
         val EMPTY = DailyTrafficSummary(0L, 0L, 0L)
@@ -46,7 +45,8 @@ data class AppTrafficUsage(
     val totalDownload: Long = 0L,
     val lastActiveAt: Long = 0L,
 ) {
-    val totalBytes: Long get() = totalUpload + totalDownload
+    val totalBytes: Long
+        get() = totalUpload + totalDownload
 }
 
 data class AppTrafficDeltaRecord(
@@ -65,18 +65,16 @@ object TrafficStatisticsBuckets {
     const val UNATTRIBUTED_ROUTE_KEY = "route:unattributed"
     const val UNATTRIBUTED_ROUTE_NAME = "未归属线路"
 
-    fun buildUnattributedRecord(
-        uploadDelta: Long,
-        downloadDelta: Long,
-    ) = AppTrafficDeltaRecord(
-        appKey = UNATTRIBUTED_APP_KEY,
-        packageName = null,
-        appName = UNATTRIBUTED_APP_NAME,
-        uploadDelta = uploadDelta,
-        downloadDelta = downloadDelta,
-        routeKey = UNATTRIBUTED_ROUTE_KEY,
-        routeLabel = UNATTRIBUTED_ROUTE_NAME,
-    )
+    fun buildUnattributedRecord(uploadDelta: Long, downloadDelta: Long) =
+        AppTrafficDeltaRecord(
+            appKey = UNATTRIBUTED_APP_KEY,
+            packageName = null,
+            appName = UNATTRIBUTED_APP_NAME,
+            uploadDelta = uploadDelta,
+            downloadDelta = downloadDelta,
+            routeKey = UNATTRIBUTED_ROUTE_KEY,
+            routeLabel = UNATTRIBUTED_ROUTE_NAME,
+        )
 }
 
 @Serializable
@@ -88,7 +86,8 @@ data class AppRouteTrafficUsage(
     val totalDownload: Long = 0L,
     val lastActiveAt: Long = 0L,
 ) {
-    val totalBytes: Long get() = totalUpload + totalDownload
+    val totalBytes: Long
+        get() = totalUpload + totalDownload
 }
 
 @Serializable
@@ -96,9 +95,14 @@ data class DailyAppTrafficSummary(
     val dateMillis: Long,
     val appUsages: Map<String, AppTrafficUsage> = emptyMap(),
 ) {
-    val totalUpload: Long get() = appUsages.values.sumOf(AppTrafficUsage::totalUpload)
-    val totalDownload: Long get() = appUsages.values.sumOf(AppTrafficUsage::totalDownload)
-    val total: Long get() = totalUpload + totalDownload
+    val totalUpload: Long
+        get() = appUsages.values.sumOf(AppTrafficUsage::totalUpload)
+
+    val totalDownload: Long
+        get() = appUsages.values.sumOf(AppTrafficUsage::totalDownload)
+
+    val total: Long
+        get() = totalUpload + totalDownload
 }
 
 @Serializable
@@ -122,8 +126,9 @@ enum class StatisticsTimeRange(val days: Int) {
     WEEK(7);
 
     val label: String
-        get() = when (this) {
-            TODAY -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Today
-            WEEK -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Week
-        }
+        get() =
+            when (this) {
+                TODAY -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Today
+                WEEK -> dev.oom_wg.purejoy.mlang.MLang.TrafficStatistics.TimeRange.Week
+            }
 }

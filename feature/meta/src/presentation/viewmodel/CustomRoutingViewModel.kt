@@ -40,9 +40,9 @@ class CustomRoutingViewModel(
     private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
 ) : ViewModel() {
 
-    private val presetSelectionState =
-        MutableStateFlow(defaultOverridePresetTemplateSelection())
-    val presetSelection: StateFlow<OverridePresetTemplateSelection> = presetSelectionState.asStateFlow()
+    private val presetSelectionState = MutableStateFlow(defaultOverridePresetTemplateSelection())
+    val presetSelection: StateFlow<OverridePresetTemplateSelection> =
+        presetSelectionState.asStateFlow()
 
     private val customRoutingContentState = MutableStateFlow("")
     val customRoutingContent: StateFlow<String> = customRoutingContentState.asStateFlow()
@@ -51,20 +51,18 @@ class CustomRoutingViewModel(
     val templateRoundTripSafe: StateFlow<Boolean> = templateRoundTripSafeState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            reloadStateFromStoredContent()
-        }
+        viewModelScope.launch { reloadStateFromStoredContent() }
     }
 
     suspend fun savePresetSelection(
-        updatedPresetSelection: OverridePresetTemplateSelection,
+        updatedPresetSelection: OverridePresetTemplateSelection
     ): Result<Unit> {
         return runCatching {
             val generatedYaml = buildPresetTemplateYaml(updatedPresetSelection)
             overrideConfigRepository.saveCustomRoutingContent(generatedYaml)
             applyContentState(generatedYaml)
             activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
-                OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID,
+                OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
             )
         }
     }
@@ -77,7 +75,7 @@ class CustomRoutingViewModel(
             overrideConfigRepository.saveCustomRoutingContent(content)
             applyContentState(content.takeIf(String::isNotBlank))
             activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
-                OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID,
+                OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
             )
         }
     }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.profiles
 
 import android.app.Application
@@ -36,26 +34,26 @@ import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.util.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
-import java.util.*
 
 class ProfilesViewModel(
     application: Application,
     private val profilesRepository: ProfilesRepository,
-    profileLinksStorage: ProfileLinksStore
-) : AndroidContractStateViewModel<ProfilesUiState, ProfilesViewModel.ProfilesUiEffect>(
-    application,
-    ProfilesUiState(),
-) {
+    profileLinksStorage: ProfileLinksStore,
+) :
+    AndroidContractStateViewModel<ProfilesUiState, ProfilesViewModel.ProfilesUiEffect>(
+        application,
+        ProfilesUiState(),
+    ) {
 
     val linkOpenMode: Preference<LinkOpenMode> = profileLinksStorage.linkOpenMode
     val links: Preference<List<ProfileLink>> = profileLinksStorage.links
@@ -100,7 +98,7 @@ class ProfilesViewModel(
         name: String,
         source: String = "",
         interval: Long = 0L,
-        fileUri: Uri? = null
+        fileUri: Uri? = null,
     ) {
         viewModelScope.launch {
             var createdUuid: UUID? = null
@@ -109,10 +107,8 @@ class ProfilesViewModel(
                 val uuid = profilesRepository.createProfile(type, name, source)
                 createdUuid = uuid
 
-                _downloadProgress.value = DownloadProgress(
-                    percent = 0,
-                    message = MLang.ProfilesVM.Progress.Preparing,
-                )
+                _downloadProgress.value =
+                    DownloadProgress(percent = 0, message = MLang.ProfilesVM.Progress.Preparing)
 
                 val observer = IFetchObserver { status ->
                     _downloadProgress.value = status.toDownloadProgress()
@@ -123,11 +119,12 @@ class ProfilesViewModel(
                 }
 
                 profilesRepository.updateProfile(uuid, observer)
-                _downloadProgress.value = DownloadProgress(
-                    percent = 100,
-                    message = MLang.ProfilesVM.Progress.ImportComplete,
-                    isCompleted = true,
-                )
+                _downloadProgress.value =
+                    DownloadProgress(
+                        percent = 100,
+                        message = MLang.ProfilesVM.Progress.ImportComplete,
+                        isCompleted = true,
+                    )
 
                 showMessage(MLang.ProfilesVM.Message.ProfileAdded.format(name))
                 refreshProfiles()
@@ -158,11 +155,8 @@ class ProfilesViewModel(
 
             val outputFile = File(importedDir, "config.yaml")
             context.contentResolver.openInputStream(uri)?.use { input ->
-                outputFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-                ?: throw IllegalArgumentException("Failed to open file: $uri")
+                outputFile.outputStream().use { output -> input.copyTo(output) }
+            } ?: throw IllegalArgumentException("Failed to open file: $uri")
             Timber.d("File copied: ${outputFile.absolutePath}")
         }
     }
@@ -225,10 +219,8 @@ class ProfilesViewModel(
         viewModelScope.launch {
             try {
                 applyLoading(true)
-                _downloadProgress.value = DownloadProgress(
-                    percent = 0,
-                    message = MLang.ProfilesVM.Progress.Preparing,
-                )
+                _downloadProgress.value =
+                    DownloadProgress(percent = 0, message = MLang.ProfilesVM.Progress.Preparing)
 
                 val observer = IFetchObserver { status ->
                     _downloadProgress.value = status.toDownloadProgress()
@@ -236,11 +228,12 @@ class ProfilesViewModel(
 
                 profilesRepository.updateProfile(uuid, observer)
 
-                _downloadProgress.value = DownloadProgress(
-                    percent = 100,
-                    message = MLang.ProfilesVM.Progress.ImportComplete,
-                    isCompleted = true,
-                )
+                _downloadProgress.value =
+                    DownloadProgress(
+                        percent = 100,
+                        message = MLang.ProfilesVM.Progress.ImportComplete,
+                        isCompleted = true,
+                    )
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(uuid.toString()))
                 refreshProfiles()
                 Timber.i("Profile updated: $uuid")
@@ -274,11 +267,7 @@ class ProfilesViewModel(
     }
 
     fun importProfileFromFile(uri: Uri, name: String) {
-        createProfile(
-            type = Profile.Type.File,
-            name = name,
-            fileUri = uri
-        )
+        createProfile(type = Profile.Type.File, name = name, fileUri = uri)
     }
 
     fun reorderProfiles(from: Int, to: Int) {
@@ -305,8 +294,8 @@ class ProfilesViewModel(
     fun toggleProfileEnabled(uuid: UUID) {
         viewModelScope.launch {
             try {
-                val profile = profilesRepository.queryProfileByUUID(uuid)
-                    ?: error("Profile not found: $uuid")
+                val profile =
+                    profilesRepository.queryProfileByUUID(uuid) ?: error("Profile not found: $uuid")
 
                 if (profile.active) {
                     profilesRepository.clearActiveProfile(profile)
@@ -351,6 +340,7 @@ class ProfilesViewModel(
 
     sealed interface ProfilesUiEffect {
         data class ShowMessage(val message: String) : ProfilesUiEffect
+
         data class ShowError(val message: String) : ProfilesUiEffect
     }
 }
@@ -358,10 +348,12 @@ class ProfilesViewModel(
 data class ProfilesUiState(
     override val isLoading: Boolean = false,
     override val error: String? = null,
-    override val message: String? = null
+    override val message: String? = null,
 ) : LoadableState<ProfilesUiState> {
     override fun withLoading(loading: Boolean): ProfilesUiState = copy(isLoading = loading)
+
     override fun withError(error: String?): ProfilesUiState = copy(error = error)
+
     override fun withMessage(message: String?): ProfilesUiState = copy(message = message)
 }
 
@@ -375,26 +367,24 @@ private fun FetchStatus.toDownloadProgress(): DownloadProgress {
     val percent = if (max > 0) ((progress * 100) / max).coerceIn(0, 100) else null
     val detail = args.firstOrNull().orEmpty().trim()
 
-    val message = when (action) {
-        FetchStatus.Action.FetchConfiguration -> {
-            if (percent == null || percent <= 5) {
-                MLang.ProfilesVM.Progress.Preparing
-            } else {
-                detail.ifBlank { MLang.ProfilesPage.Progress.Downloading }
+    val message =
+        when (action) {
+            FetchStatus.Action.FetchConfiguration -> {
+                if (percent == null || percent <= 5) {
+                    MLang.ProfilesVM.Progress.Preparing
+                } else {
+                    detail.ifBlank { MLang.ProfilesPage.Progress.Downloading }
+                }
+            }
+
+            FetchStatus.Action.FetchProviders -> {
+                if (detail.isNotBlank()) detail else ""
+            }
+
+            FetchStatus.Action.Verifying -> {
+                detail.ifBlank { MLang.ProfilesVM.Progress.Verifying }
             }
         }
 
-        FetchStatus.Action.FetchProviders -> {
-            if (detail.isNotBlank()) detail else ""
-        }
-
-        FetchStatus.Action.Verifying -> {
-            detail.ifBlank { MLang.ProfilesVM.Progress.Verifying }
-        }
-    }
-
-    return DownloadProgress(
-        percent = percent,
-        message = message,
-    )
+    return DownloadProgress(percent = percent, message = message)
 }

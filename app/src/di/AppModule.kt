@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
@@ -35,9 +33,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val appIntegrationModule = module {
-    single<LogRecordGateway> { LogRecordServiceGateway() }
-}
+val appIntegrationModule = module { single<LogRecordGateway> { LogRecordServiceGateway() } }
 
 val appViewModelModule = module {
     viewModel { AppSettingsViewModel(get(), get(), get()) }
@@ -48,7 +44,10 @@ val appViewModelModule = module {
     viewModel { LogViewModel(get()) }
 }
 
-val appModule: List<Module> = coreDiModules + listOf(
-    appIntegrationModule,
-    appViewModelModule,
-) + featureSubStoreModules + featureProxyModules + featureOverrideModules + featureMetaModules
+val appModule: List<Module> =
+    coreDiModules +
+        listOf(appIntegrationModule, appViewModelModule) +
+        featureSubStoreModules +
+        featureProxyModules +
+        featureOverrideModules +
+        featureMetaModules

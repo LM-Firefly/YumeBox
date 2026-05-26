@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.model
 
 import kotlinx.serialization.SerialName
@@ -50,9 +48,6 @@ data class RootTunConfig(
 
 @Serializable
 enum class RootTunDnsMode {
-    @SerialName("redir-host")
-    RedirHost,
-
-    @SerialName("fake-ip")
-    FakeIp,
+    @SerialName("redir-host") RedirHost,
+    @SerialName("fake-ip") FakeIp,
 }

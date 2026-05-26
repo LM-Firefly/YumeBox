@@ -51,11 +51,12 @@ internal class ProxyRuntimeControl(
             }
 
             RuntimeOwner.LocalTun,
-            RuntimeOwner.LocalHttp -> RuntimeServiceLauncher.start(
-                context = appContext,
-                mode = mode,
-                source = RuntimeServiceLauncher.SOURCE_UI,
-            )
+            RuntimeOwner.LocalHttp ->
+                RuntimeServiceLauncher.start(
+                    context = appContext,
+                    mode = mode,
+                    source = RuntimeServiceLauncher.SOURCE_UI,
+                )
 
             RuntimeOwner.None -> Unit
         }
@@ -80,13 +81,14 @@ internal class ProxyRuntimeControl(
     private suspend fun stopLocalRuntime() {
         withContext(Dispatchers.IO) {
             runCatching {
-                ServiceClient.connect(appContext)
-                ServiceClient.clash().requestStop()
-            }.onFailure {
-                appContext.sendBroadcast(
-                    Intent(clashRequestStopAction()).setPackage(appContext.packageName),
-                )
-            }
+                    ServiceClient.connect(appContext)
+                    ServiceClient.clash().requestStop()
+                }
+                .onFailure {
+                    appContext.sendBroadcast(
+                        Intent(clashRequestStopAction()).setPackage(appContext.packageName)
+                    )
+                }
             appContext.stopService(Intent(appContext, TunService::class.java))
             appContext.stopService(Intent(appContext, ClashService::class.java))
         }

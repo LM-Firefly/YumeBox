@@ -18,17 +18,16 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.github.yumelira.yumebox.common.util.BiometricHelper
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -48,7 +47,8 @@ fun rememberStartupBiometricGateState(
     activity: FragmentActivity,
     biometricUnlockEnabled: Boolean,
 ): StartupBiometricGateState {
-    var isAuthenticated by remember(biometricUnlockEnabled) { mutableStateOf(!biometricUnlockEnabled) }
+    var isAuthenticated by
+        remember(biometricUnlockEnabled) { mutableStateOf(!biometricUnlockEnabled) }
     var isAuthenticating by remember { mutableStateOf(false) }
     var biometricErrorMessage by remember { mutableStateOf<String?>(null) }
     var retryNonce by remember { mutableStateOf(0) }
@@ -65,12 +65,7 @@ fun rememberStartupBiometricGateState(
         }
     }
 
-    LaunchedEffect(
-        biometricUnlockEnabled,
-        retryNonce,
-        isAuthenticated,
-        isAuthenticating,
-    ) {
+    LaunchedEffect(biometricUnlockEnabled, retryNonce, isAuthenticated, isAuthenticating) {
         if (!biometricUnlockEnabled || isAuthenticated || isAuthenticating) {
             return@LaunchedEffect
         }
@@ -104,11 +99,7 @@ fun rememberStartupBiometricGateState(
         )
     }
 
-    return remember(
-        isAuthenticated,
-        isAuthenticating,
-        biometricErrorMessage,
-    ) {
+    return remember(isAuthenticated, isAuthenticating, biometricErrorMessage) {
         StartupBiometricGateState(
             isAuthenticated = isAuthenticated,
             isAuthenticating = isAuthenticating,
@@ -128,10 +119,7 @@ fun StartupBiometricContent(
     onRetry: () -> Unit,
     onExit: () -> Unit,
 ) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier.padding(horizontal = UiDp.dp24),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -154,10 +142,7 @@ fun StartupBiometricContent(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
                 ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = onRetry,
-                    ) {
+                    Button(modifier = Modifier.weight(1f), onClick = onRetry) {
                         Text(MLang.AppSettings.Privacy.BiometricRetryButton)
                     }
                     Button(

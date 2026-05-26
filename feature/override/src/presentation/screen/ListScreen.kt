@@ -115,9 +115,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 private val overrideConfigItemGap = Spacing().space12
 
 @Composable
-fun OverrideListScreen(
-    onOpenCodeEditor: (OverrideConfig) -> Unit,
-) {
+fun OverrideListScreen(onOpenCodeEditor: (OverrideConfig) -> Unit) {
     val viewModel: OverrideConfigViewModel = koinViewModel()
     val userConfigs by viewModel.userConfigs.collectAsState()
     val usageCountMap by viewModel.usageCountMap.collectAsState()
@@ -135,40 +133,45 @@ fun OverrideListScreen(
 
     val listState = rememberLazyListState()
     val createFabController = rememberOverrideFabController()
-    val configItems = remember(userConfigs, usageCountMap) {
-        userConfigs.map { config ->
-            OverrideConfigListItem(
-                config = config,
-                isInUse = (usageCountMap[config.id] ?: 0) > 0,
-            )
+    val configItems =
+        remember(userConfigs, usageCountMap) {
+            userConfigs.map { config ->
+                OverrideConfigListItem(
+                    config = config,
+                    isInUse = (usageCountMap[config.id] ?: 0) > 0,
+                )
+            }
         }
-    }
-    val reorderState = rememberReorderableLazyListState(listState) { from, to ->
-        viewModel.reorderUserConfigs(from.index, to.index)
-    }
+    val reorderState =
+        rememberReorderableLazyListState(listState) { from, to ->
+            viewModel.reorderUserConfigs(from.index, to.index)
+        }
 
-    val exportConfigLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/plain"),
-    ) { uri ->
-        val targetConfig = exportTargetConfig.value
-        if (uri == null || targetConfig == null) {
+    val exportConfigLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("text/plain")
+        ) { uri ->
+            val targetConfig = exportTargetConfig.value
+            if (uri == null || targetConfig == null) {
+                exportTargetConfig.value = null
+                return@rememberLauncherForActivityResult
+            }
+
+            runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write(targetConfig.content.toByteArray())
+                        output.flush()
+                    } ?: error(MLang.Override.Export.Failed.format(targetConfig.name))
+                }
+                .onSuccess {
+                    context.toast(MLang.Override.Export.Success.format(targetConfig.name))
+                }
+                .onFailure { error ->
+                    context.toast(MLang.Override.Export.Failed.format(error.message))
+                }
+
             exportTargetConfig.value = null
-            return@rememberLauncherForActivityResult
         }
-
-        runCatching {
-            context.contentResolver.openOutputStream(uri)?.use { output ->
-                output.write(targetConfig.content.toByteArray())
-                output.flush()
-            } ?: error(MLang.Override.Export.Failed.format(targetConfig.name))
-        }.onSuccess {
-            context.toast(MLang.Override.Export.Success.format(targetConfig.name))
-        }.onFailure { error ->
-            context.toast(MLang.Override.Export.Failed.format(error.message))
-        }
-
-        exportTargetConfig.value = null
-    }
 
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -177,9 +180,7 @@ fun OverrideListScreen(
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(configItems, pendingRevealConfigId) {
@@ -203,12 +204,7 @@ fun OverrideListScreen(
                 },
             )
         },
-        topBar = {
-            TopBar(
-                title = MLang.Override.Title,
-                scrollBehavior = scrollBehavior,
-            )
-        },
+        topBar = { TopBar(title = MLang.Override.Title, scrollBehavior = scrollBehavior) },
     ) { paddingValues ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -221,10 +217,10 @@ fun OverrideListScreen(
                 userConfigs.isEmpty() -> {
                     item(key = "override-empty", contentType = "override-empty") {
                         Column(
-                            modifier = Modifier
-                                .fillParentMaxSize()
-                                .padding(horizontal = UiDp.dp24, vertical = UiDp.dp80)
-                                .wrapContentSize(Alignment.Center),
+                            modifier =
+                                Modifier.fillParentMaxSize()
+                                    .padding(horizontal = UiDp.dp24, vertical = UiDp.dp80)
+                                    .wrapContentSize(Alignment.Center),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
                         ) {
@@ -237,7 +233,7 @@ fun OverrideListScreen(
                                     onClick = {
                                         createDialogMode = OverrideConfigInputMode.CreateNew
                                         showCreateDialog.value = true
-                                    },
+                                    }
                                 ) {
                                     Text(MLang.Override.Action.New)
                                 }
@@ -265,10 +261,7 @@ fun OverrideListScreen(
                         contentType = { "override-config-card" },
                     ) { item ->
                         val config = item.config
-                        ReorderableItem(
-                            state = reorderState,
-                            key = config.id,
-                        ) { isDragging ->
+                        ReorderableItem(state = reorderState, key = config.id) { isDragging ->
                             OverrideConfigCard(
                                 config = config,
                                 isDragging = isDragging,
@@ -276,7 +269,9 @@ fun OverrideListScreen(
                                 onCopy = { viewModel.duplicateConfig(config.id) },
                                 onExport = {
                                     exportTargetConfig.value = config
-                                    exportConfigLauncher.launch("${config.name}.${config.contentType.extension}")
+                                    exportConfigLauncher.launch(
+                                        "${config.name}.${config.contentType.extension}"
+                                    )
                                 },
                                 onEdit = { onOpenCodeEditor(config) },
                                 onDelete = {
@@ -294,18 +289,16 @@ fun OverrideListScreen(
             show = showCreateDialog,
             initialMode = createDialogMode,
             onConfirmCreate = { name, contentType ->
-                viewModel.createConfig(
-                    name = name,
-                    contentType = contentType,
-                )
+                viewModel.createConfig(name = name, contentType = contentType)
                 showCreateDialog.value = false
             },
             onConfirmImport = { content, sourceName ->
-                viewModel.importConfig(content, sourceName).onSuccess {
-                    showCreateDialog.value = false
-                }.onFailure { error ->
-                    context.toast(error.message ?: MLang.Override.Import.ReadError)
-                }
+                viewModel
+                    .importConfig(content, sourceName)
+                    .onSuccess { showCreateDialog.value = false }
+                    .onFailure { error ->
+                        context.toast(error.message ?: MLang.Override.Import.ReadError)
+                    }
             },
             onDismiss = { showCreateDialog.value = false },
         )
@@ -340,11 +333,11 @@ private fun ReorderableCollectionItemScope.OverrideConfigCard(
     val accentTintColor = colorScheme.primary
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = overrideConfigItemGap / 2)
-            .longPressDraggableHandle()
-            .alpha(if (isDragging) 0.92f else 1f),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(vertical = overrideConfigItemGap / 2)
+                .longPressDraggableHandle()
+                .alpha(if (isDragging) 0.92f else 1f),
         insideMargin = PaddingValues(UiDp.dp16),
     ) {
         Column {
@@ -463,13 +456,15 @@ private fun OverrideConfigStateIndicator(inUse: Boolean) {
     val tint = if (inUse) colorScheme.primary else colorScheme.onSurfaceVariantSummary
     OverrideStatusBadge(
         imageVector = if (inUse) Yume.ShieldCheck else Yume.ShieldMinus,
-        contentDescription = if (inUse) MLang.Override.Status.InUse else MLang.Override.Status.NotInUse,
+        contentDescription =
+            if (inUse) MLang.Override.Status.InUse else MLang.Override.Status.NotInUse,
         tint = tint,
-        backgroundColor = if (inUse) {
-            colorScheme.primary.copy(alpha = 0.1f)
-        } else {
-            colorScheme.secondaryContainer.copy(alpha = 0.78f)
-        },
+        backgroundColor =
+            if (inUse) {
+                colorScheme.primary.copy(alpha = 0.1f)
+            } else {
+                colorScheme.secondaryContainer.copy(alpha = 0.78f)
+            },
     )
 }
 
@@ -490,35 +485,47 @@ private fun CreateConfigDialog(
     var selectedImportUri by remember(show.value) { mutableStateOf<Uri?>(null) }
     var selectedImportFileName by remember(show.value) { mutableStateOf("") }
     var stableContentHeightPx by remember(show.value) { mutableStateOf(0) }
-    val canConfirm = when (inputMode) {
-        OverrideConfigInputMode.CreateNew -> nameTextFieldValueState.value.text.isNotBlank()
-        OverrideConfigInputMode.LocalFile -> selectedImportUri != null && selectedImportFileName.isNotBlank()
-    }
-    val stableContentHeight = remember(stableContentHeightPx, density) {
-        if (stableContentHeightPx <= 0) UiDp.dp0 else with(density) { stableContentHeightPx.toDp() }
-    }
-    val importConfigLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-    ) { uri ->
-        selectedImportUri = uri
-        selectedImportFileName = uri?.let { selectedUri ->
-            context.contentResolver.query(
-                selectedUri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null,
-            )?.use { cursor ->
-                val columnIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (cursor.moveToFirst() && columnIndex >= 0) cursor.getString(columnIndex) else ""
-            }.orEmpty().ifBlank {
-                selectedUri.lastPathSegment
-                    ?.substringAfterLast('/')
-                    ?.substringAfterLast('\\')
+    val canConfirm =
+        when (inputMode) {
+            OverrideConfigInputMode.CreateNew -> nameTextFieldValueState.value.text.isNotBlank()
+            OverrideConfigInputMode.LocalFile ->
+                selectedImportUri != null && selectedImportFileName.isNotBlank()
+        }
+    val stableContentHeight =
+        remember(stableContentHeightPx, density) {
+            if (stableContentHeightPx <= 0) UiDp.dp0
+            else with(density) { stableContentHeightPx.toDp() }
+        }
+    val importConfigLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
+            selectedImportUri = uri
+            selectedImportFileName =
+                uri?.let { selectedUri ->
+                        context.contentResolver
+                            .query(
+                                selectedUri,
+                                arrayOf(OpenableColumns.DISPLAY_NAME),
+                                null,
+                                null,
+                                null,
+                            )
+                            ?.use { cursor ->
+                                val columnIndex =
+                                    cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                                if (cursor.moveToFirst() && columnIndex >= 0)
+                                    cursor.getString(columnIndex)
+                                else ""
+                            }
+                            .orEmpty()
+                            .ifBlank {
+                                selectedUri.lastPathSegment
+                                    ?.substringAfterLast('/')
+                                    ?.substringAfterLast('\\')
+                                    .orEmpty()
+                            }
+                    }
                     .orEmpty()
-            }
-        }.orEmpty()
-    }
+        }
 
     AppActionBottomSheet(
         show = show.value,
@@ -539,15 +546,20 @@ private fun CreateConfigDialog(
                         OverrideConfigInputMode.LocalFile -> {
                             val importUri = selectedImportUri ?: return@AppBottomSheetConfirmAction
                             runCatching {
-                                context.contentResolver.openInputStream(importUri)
-                                    ?.bufferedReader()
-                                    ?.use { reader -> reader.readText() }
-                                    ?: error(MLang.Override.Import.ReadError)
-                            }.onSuccess { content ->
-                                onConfirmImport(content, selectedImportFileName)
-                            }.onFailure { error ->
-                                context.toast(MLang.Override.Import.FileError.format(error.message))
-                            }
+                                    context.contentResolver
+                                        .openInputStream(importUri)
+                                        ?.bufferedReader()
+                                        ?.use { reader -> reader.readText() }
+                                        ?: error(MLang.Override.Import.ReadError)
+                                }
+                                .onSuccess { content ->
+                                    onConfirmImport(content, selectedImportFileName)
+                                }
+                                .onFailure { error ->
+                                    context.toast(
+                                        MLang.Override.Import.FileError.format(error.message)
+                                    )
+                                }
                         }
                     }
                 },
@@ -556,10 +568,7 @@ private fun CreateConfigDialog(
         onDismissRequest = onDismiss,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(bottom = UiDp.dp16),
+            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(bottom = UiDp.dp16),
             verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
             OverrideInputModeSelector(
@@ -572,11 +581,7 @@ private fun CreateConfigDialog(
                     onSelectedTypeChange = { contentType = it },
                 )
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = stableContentHeight),
-            ) {
+            Box(modifier = Modifier.fillMaxWidth().heightIn(min = stableContentHeight)) {
                 Crossfade(
                     targetState = inputMode,
                     animationSpec = tween(200),
@@ -585,9 +590,11 @@ private fun CreateConfigDialog(
                     when (currentInputMode) {
                         OverrideConfigInputMode.CreateNew -> {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .onSizeChanged { stableContentHeightPx = maxOf(stableContentHeightPx, it.height) },
+                                modifier =
+                                    Modifier.fillMaxWidth().onSizeChanged {
+                                        stableContentHeightPx =
+                                            maxOf(stableContentHeightPx, it.height)
+                                    },
                                 verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
                             ) {
                                 TextField(
@@ -603,9 +610,11 @@ private fun CreateConfigDialog(
 
                         OverrideConfigInputMode.LocalFile -> {
                             ImportOverrideFileContent(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .onSizeChanged { stableContentHeightPx = maxOf(stableContentHeightPx, it.height) },
+                                modifier =
+                                    Modifier.fillMaxWidth().onSizeChanged {
+                                        stableContentHeightPx =
+                                            maxOf(stableContentHeightPx, it.height)
+                                    },
                                 fileName = selectedImportFileName,
                                 onPickFile = { importConfigLauncher.launch("*/*") },
                             )
@@ -622,17 +631,13 @@ private fun OverrideInputModeSelector(
     selectedMode: OverrideConfigInputMode,
     onSelectedModeChange: (OverrideConfigInputMode) -> Unit,
 ) {
-    val inputModeOptions = remember {
-        OverrideConfigInputMode.entries.toList()
-    }
+    val inputModeOptions = remember { OverrideConfigInputMode.entries.toList() }
     val selectedModeIndex = inputModeOptions.indexOf(selectedMode).coerceAtLeast(0)
 
-   top.yukonga.miuix.kmp.basic.Card {
+    top.yukonga.miuix.kmp.basic.Card {
         WindowSpinnerPreference(
             title = MLang.ProfilesPage.Type.Title,
-            items = inputModeOptions.map { inputMode ->
-                SpinnerEntry(title = inputMode.label)
-            },
+            items = inputModeOptions.map { inputMode -> SpinnerEntry(title = inputMode.label) },
             selectedIndex = selectedModeIndex,
             onSelectedIndexChange = { index ->
                 inputModeOptions.getOrNull(index)?.let(onSelectedModeChange)
@@ -646,9 +651,7 @@ private fun OverrideTypeSelector(
     selectedType: OverrideContentType,
     onSelectedTypeChange: (OverrideContentType) -> Unit,
 ) {
-    val contentTypeOptions = remember {
-        OverrideContentType.entries.toList()
-    }
+    val contentTypeOptions = remember { OverrideContentType.entries.toList() }
     val selectedTypeIndex = contentTypeOptions.indexOf(selectedType).coerceAtLeast(0)
 
     top.yukonga.miuix.kmp.basic.Card {
@@ -670,11 +673,12 @@ private fun ImportOverrideFileContent(
     onPickFile: () -> Unit,
 ) {
     Box(
-        modifier = modifier.clickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() },
-            onClick = onPickFile,
-        ),
+        modifier =
+            modifier.clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = onPickFile,
+            )
     ) {
         TextField(
             value = fileName,
@@ -702,11 +706,12 @@ private fun DeleteConfirmDialog(
         isInUse = if (show.value && config != null) viewModel.isConfigInUse(config.id) else false
     }
 
-    val summary = when {
-        config == null -> ""
-        isInUse -> MLang.Override.Dialog.Delete.InUseMessage.format(config.name)
-        else -> MLang.Override.Dialog.Delete.Message.format(config.name)
-    }
+    val summary =
+        when {
+            config == null -> ""
+            isInUse -> MLang.Override.Dialog.Delete.InUseMessage.format(config.name)
+            else -> MLang.Override.Dialog.Delete.Message.format(config.name)
+        }
 
     AppDialog(
         show = show.value,
@@ -723,19 +728,13 @@ private fun DeleteConfirmDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
-                Text(
-                    text = MLang.Override.Dialog.Button.Delete,
-                    color = colorScheme.onPrimary,
-                )
+                Text(text = MLang.Override.Dialog.Button.Delete, color = colorScheme.onPrimary)
             }
         }
     }
 }
 
-private data class OverrideConfigListItem(
-    val config: OverrideConfig,
-    val isInUse: Boolean,
-)
+private data class OverrideConfigListItem(val config: OverrideConfig, val isInUse: Boolean)
 
 private enum class OverrideConfigInputMode {
     CreateNew,
@@ -743,13 +742,15 @@ private enum class OverrideConfigInputMode {
 }
 
 private val OverrideContentType.label: String
-    get() = when (this) {
-        OverrideContentType.Yaml -> "YAML"
-        OverrideContentType.JavaScript -> "JavaScript"
-    }
+    get() =
+        when (this) {
+            OverrideContentType.Yaml -> "YAML"
+            OverrideContentType.JavaScript -> "JavaScript"
+        }
 
 private val OverrideConfigInputMode.label: String
-    get() = when (this) {
-        OverrideConfigInputMode.CreateNew -> MLang.Override.Action.New
-        OverrideConfigInputMode.LocalFile -> MLang.ProfilesPage.Type.LocalFile
-    }
+    get() =
+        when (this) {
+            OverrideConfigInputMode.CreateNew -> MLang.Override.Action.New
+            OverrideConfigInputMode.LocalFile -> MLang.ProfilesPage.Type.LocalFile
+        }

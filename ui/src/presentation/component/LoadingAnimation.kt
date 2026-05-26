@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -34,10 +33,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -45,40 +44,46 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun PulseRippleLoadingAnimation(
     modifier: Modifier = Modifier,
-    color: Color = MiuixTheme.colorScheme.primary
+    color: Color = MiuixTheme.colorScheme.primary,
 ) {
     val opacity = AppTheme.opacity
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
 
-    val ripple1 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ripple1"
-    )
+    val ripple1 by
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(2000, easing = LinearOutSlowInEasing),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "ripple1",
+        )
 
-    val ripple2 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearOutSlowInEasing, delayMillis = 1000),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ripple2"
-    )
+    val ripple2 by
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(2000, easing = LinearOutSlowInEasing, delayMillis = 1000),
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "ripple2",
+        )
 
-    val breathe by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "breathe"
-    )
+    val breathe by
+        infiniteTransition.animateFloat(
+            initialValue = 0.5f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(1400, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "breathe",
+        )
 
     Canvas(modifier = modifier.size(UiDp.dp180)) {
         val centerX = size.width / 2
@@ -92,58 +97,56 @@ fun PulseRippleLoadingAnimation(
                 color = color.copy(alpha = alpha),
                 radius = radius,
                 center = Offset(centerX, centerY),
-                style = Stroke(width = UiDp.dp2_5.toPx(), cap = StrokeCap.Round)
+                style = Stroke(width = UiDp.dp2_5.toPx(), cap = StrokeCap.Round),
             )
         }
 
-        val gradient = Brush.radialGradient(
-            colors = listOf(
-                color.copy(alpha = breathe * opacity.secondaryText),
-                color.copy(alpha = breathe * opacity.mediumOverlay),
-                color.copy(alpha = opacity.none)
-            ),
-            center = Offset(centerX, centerY),
-            radius = UiDp.dp35.toPx()
-        )
-        drawCircle(
-            brush = gradient,
-            radius = UiDp.dp35.toPx(),
-            center = Offset(centerX, centerY)
-        )
+        val gradient =
+            Brush.radialGradient(
+                colors =
+                    listOf(
+                        color.copy(alpha = breathe * opacity.secondaryText),
+                        color.copy(alpha = breathe * opacity.mediumOverlay),
+                        color.copy(alpha = opacity.none),
+                    ),
+                center = Offset(centerX, centerY),
+                radius = UiDp.dp35.toPx(),
+            )
+        drawCircle(brush = gradient, radius = UiDp.dp35.toPx(), center = Offset(centerX, centerY))
 
         drawCircle(
             color = color.copy(alpha = opacity.prominentText),
             radius = UiDp.dp10.toPx(),
-            center = Offset(centerX, centerY)
+            center = Offset(centerX, centerY),
         )
     }
 }
 
 @Composable
-fun StartupLoadingOverlay(
-    isVisible: Boolean,
-    loadingText: String?,
-    modifier: Modifier = Modifier
-) {
+fun StartupLoadingOverlay(isVisible: Boolean, loadingText: String?, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible = isVisible,
-        enter = fadeIn(
-            animationSpec = tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EnterEasing)
-        ) + scaleIn(
-            initialScale = 0.9f,
-            animationSpec = tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.StandardEasing)
-        ),
-        exit = fadeOut(
-            animationSpec = tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.ExitEasing)
-        ),
-        modifier = modifier
+        enter =
+            fadeIn(
+                animationSpec =
+                    tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.EnterEasing)
+            ) +
+                scaleIn(
+                    initialScale = 0.9f,
+                    animationSpec =
+                        tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.StandardEasing),
+                ),
+        exit =
+            fadeOut(
+                animationSpec =
+                    tween(AnimationSpecs.DURATION_FAST, easing = AnimationSpecs.ExitEasing)
+            ),
+        modifier = modifier,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = UiDp.dp60),
+            modifier = Modifier.fillMaxWidth().padding(vertical = UiDp.dp60),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             PulseRippleLoadingAnimation()
 
@@ -153,21 +156,27 @@ fun StartupLoadingOverlay(
                 targetState = loadingText ?: MLang.Component.Loading.Starting,
                 transitionSpec = {
                     fadeIn(
-                        animationSpec = tween(AnimationSpecs.DURATION_INSTANT, easing = AnimationSpecs.EnterEasing)
-                    ) togetherWith
-                            fadeOut(
-                                animationSpec = tween(AnimationSpecs.DURATION_INSTANT, easing = AnimationSpecs.ExitEasing)
+                        animationSpec =
+                            tween(
+                                AnimationSpecs.DURATION_INSTANT,
+                                easing = AnimationSpecs.EnterEasing,
                             )
+                    ) togetherWith
+                        fadeOut(
+                            animationSpec =
+                                tween(
+                                    AnimationSpecs.DURATION_INSTANT,
+                                    easing = AnimationSpecs.ExitEasing,
+                                )
+                        )
                 },
-                label = "loadingText"
+                label = "loadingText",
             ) { text ->
                 Text(
                     text = text,
-                    style = MiuixTheme.textStyles.body1.copy(
-                        fontSize = 16.sp,
-                        letterSpacing = 2.sp
-                    ),
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    style =
+                        MiuixTheme.textStyles.body1.copy(fontSize = 16.sp, letterSpacing = 2.sp),
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
         }

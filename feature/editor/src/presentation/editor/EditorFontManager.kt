@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.editor
 
 import android.content.Context
@@ -32,15 +30,16 @@ object EditorFontManager {
     private var cachedFont: Typeface? = null
 
     fun getEditorTypeface(context: Context): Typeface {
-        return cachedFont ?: try {
-            Typeface.createFromAsset(context.assets, FONT_PATH).also {
-                cachedFont = it
-                Timber.d("JetBrainsMono font loaded successfully")
+        return cachedFont
+            ?: try {
+                Typeface.createFromAsset(context.assets, FONT_PATH).also {
+                    cachedFont = it
+                    Timber.d("JetBrainsMono font loaded successfully")
+                }
+            } catch (error: Exception) {
+                Timber.w(error, "Failed to load JetBrainsMono font, falling back to MONOSPACE")
+                Typeface.MONOSPACE
             }
-        } catch (error: Exception) {
-            Timber.w(error, "Failed to load JetBrainsMono font, falling back to MONOSPACE")
-            Typeface.MONOSPACE
-        }
     }
 
     fun clearCache() {

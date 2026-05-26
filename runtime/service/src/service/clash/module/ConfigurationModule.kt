@@ -18,16 +18,14 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.clash.module
 
 import android.app.Service
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
@@ -37,10 +35,10 @@ import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFac
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.mergeProxyGroupNames
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.selects.select
 import java.io.File
 import java.util.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.selects.select
 
 class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadException>(service) {
     data class LoadException(val message: String)
@@ -65,32 +63,33 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
                 broadcasts.onReceive {
                     if (it.action == Intents.ACTION_PROFILE_CHANGED)
                         UUID.fromString(it.getStringExtra(Intents.EXTRA_UUID))
-                    else
-                        null
+                    else null
                 }
-                reload.onReceive {
-                    null
-                }
+                reload.onReceive { null }
             }
 
             try {
-                val current = store.activeProfile
-                    ?: throw NullPointerException("No profile selected")
+                val current =
+                    store.activeProfile ?: throw NullPointerException("No profile selected")
 
-                if (current == loaded && changed != null && changed != loaded)
-                    continue
+                if (current == loaded && changed != null && changed != loaded) continue
 
                 loaded = current
 
-                val active = ImportedDao.queryByUUID(current)
-                    ?: throw NullPointerException("No profile selected")
+                val active =
+                    ImportedDao.queryByUUID(current)
+                        ?: throw NullPointerException("No profile selected")
 
                 val spec = runtimeSpecFactory.createHttpSpec()
                 compiledConfigPipeline.applyOverrideToRuntimeFile(spec)
-                Clash.loadCompiledConfig(service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")).await()
+                Clash.loadCompiledConfig(
+                        service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")
+                    )
+                    .await()
 
                 val restoreSelections = SelectionDao.queryRestorableSelections(active.uuid)
-                val runtimeFile = service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")
+                val runtimeFile =
+                    service.importedDir.resolve(active.uuid.toString()).resolve("runtime.yaml")
                 val runtimeGroups = resolveRuntimeProxyGroups(runtimeFile, spec.profileDir)
                 SelectionRestoreExecutor.restore(
                     profileUuid = active.uuid,
@@ -110,17 +109,20 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
 
     private fun resolveRuntimeProxyGroups(runtimeFile: File, profileDir: String): List<ProxyGroup> {
         val runtimeNames = Clash.queryGroupNames(false)
-        val expectedNames = runCatching {
-            if (!runtimeFile.isFile) {
-                emptyList()
-            } else {
-                Clash.inspectCompiledGroups(
-                    runtimeFile.readText(),
-                    File(profileDir),
-                    excludeNotSelectable = false,
-                ).map(ProxyGroup::name)
-            }
-        }.getOrDefault(emptyList())
+        val expectedNames =
+            runCatching {
+                    if (!runtimeFile.isFile) {
+                        emptyList()
+                    } else {
+                        Clash.inspectCompiledGroups(
+                                runtimeFile.readText(),
+                                File(profileDir),
+                                excludeNotSelectable = false,
+                            )
+                            .map(ProxyGroup::name)
+                    }
+                }
+                .getOrDefault(emptyList())
 
         val mergedNames = mergeProxyGroupNames(expectedNames, runtimeNames)
 
@@ -128,10 +130,10 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
             val group = Clash.queryGroup(groupName, ProxySort.Default)
             if (
                 group.name.isBlank() ||
-                (group.type == com.github.yumelira.yumebox.core.model.Proxy.Type.Unknown &&
-                    group.proxies.isEmpty() &&
-                    group.now.isBlank() &&
-                    group.icon.isNullOrBlank())
+                    (group.type == com.github.yumelira.yumebox.core.model.Proxy.Type.Unknown &&
+                        group.proxies.isEmpty() &&
+                        group.now.isBlank() &&
+                        group.icon.isNullOrBlank())
             ) {
                 null
             } else {

@@ -18,28 +18,21 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.root
 
 import com.topjohnwu.superuser.Shell
 
 object RootPackageShell {
-    private data class CacheEntry<T>(
-        val value: T,
-        val cachedAt: Long,
-    ) {
+    private data class CacheEntry<T>(val value: T, val cachedAt: Long) {
         fun isFresh(now: Long): Boolean = now - cachedAt <= CACHE_TTL_MS
     }
 
     private val packageUidRegex = Regex("""^package:([^\s]+).*(?:uid|userId):(\d+)\b""")
     private val packageNameRegex = Regex("""^package:([^\s]+)""")
 
-    @Volatile
-    private var packageUidCache: CacheEntry<Map<String, Int>>? = null
+    @Volatile private var packageUidCache: CacheEntry<Map<String, Int>>? = null
 
-    @Volatile
-    private var packageNameCache: CacheEntry<Set<String>>? = null
+    @Volatile private var packageNameCache: CacheEntry<Set<String>>? = null
 
     fun hasRootAccess(): Boolean {
         return runCatching { Shell.getShell().isRoot }.getOrDefault(false)
@@ -49,45 +42,51 @@ object RootPackageShell {
         if (!hasRootAccess()) return null
 
         val now = System.currentTimeMillis()
-        val normalizedPackages = packages
-            ?.asSequence()
-            ?.map(String::trim)
-            ?.filter(String::isNotEmpty)
-            ?.toSortedSet()
-            ?.takeIf { it.isNotEmpty() }
+        val normalizedPackages =
+            packages
+                ?.asSequence()
+                ?.map(String::trim)
+                ?.filter(String::isNotEmpty)
+                ?.toSortedSet()
+                ?.takeIf { it.isNotEmpty() }
 
         if (normalizedPackages == null) {
             packageUidCache
                 ?.takeIf { it.isFresh(now) }
                 ?.value
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { return it }
+                ?.let {
+                    return it
+                }
         } else {
             packageUidCache
                 ?.takeIf { it.isFresh(now) }
                 ?.value
                 ?.takeIf { cached -> normalizedPackages.all(cached::containsKey) }
-                ?.let { cached -> return normalizedPackages.associateWith { cached.getValue(it) } }
+                ?.let { cached ->
+                    return normalizedPackages.associateWith { cached.getValue(it) }
+                }
         }
 
         val stdout = mutableListOf<String>()
-        val result = Shell.cmd(
-            buildUidQueryCommand(normalizedPackages),
-        ).to(stdout).exec()
+        val result = Shell.cmd(buildUidQueryCommand(normalizedPackages)).to(stdout).exec()
 
         if (!result.isSuccess) return null
 
-        val resolved = stdout
-            .asSequence()
-            .mapNotNull { line ->
-                val match = packageUidRegex.find(line.trim()) ?: return@mapNotNull null
-                val packageName = match.groupValues[1]
-                val uid = match.groupValues[2].toIntOrNull() ?: return@mapNotNull null
-                packageName to uid
-            }
-            .filter { (packageName, _) -> normalizedPackages == null || packageName in normalizedPackages }
-            .toMap()
-            .ifEmpty { null }
+        val resolved =
+            stdout
+                .asSequence()
+                .mapNotNull { line ->
+                    val match = packageUidRegex.find(line.trim()) ?: return@mapNotNull null
+                    val packageName = match.groupValues[1]
+                    val uid = match.groupValues[2].toIntOrNull() ?: return@mapNotNull null
+                    packageName to uid
+                }
+                .filter { (packageName, _) ->
+                    normalizedPackages == null || packageName in normalizedPackages
+                }
+                .toMap()
+                .ifEmpty { null }
 
         resolved?.let { value ->
             val cacheEntry = CacheEntry(value = value, cachedAt = now)
@@ -112,18 +111,20 @@ object RootPackageShell {
             ?.value
             ?.keys
             ?.takeIf { it.isNotEmpty() }
-            ?.let { return it }
+            ?.let {
+                return it
+            }
 
         packageNameCache
             ?.takeIf { it.isFresh(now) }
             ?.value
             ?.takeIf { it.isNotEmpty() }
-            ?.let { return it }
+            ?.let {
+                return it
+            }
 
         val stdout = mutableListOf<String>()
-        val result = Shell.cmd(
-            "cmd package list packages || pm list packages",
-        ).to(stdout).exec()
+        val result = Shell.cmd("cmd package list packages || pm list packages").to(stdout).exec()
 
         if (!result.isSuccess) return null
 

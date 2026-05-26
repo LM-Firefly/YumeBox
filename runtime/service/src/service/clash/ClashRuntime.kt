@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.clash
 
 import com.github.yumelira.yumebox.core.Clash
@@ -36,6 +34,7 @@ interface ClashRuntimeScope {
 
 interface ClashRuntime {
     fun launch()
+
     fun requestGc(force: Boolean = false)
 }
 
@@ -49,17 +48,18 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
 
                         Clash.reset()
 
-                        val scope = object : ClashRuntimeScope {
-                            override fun <E, T : Module<E>> install(module: T): T {
-                                launch {
-                                    modules.add(module)
+                        val scope =
+                            object : ClashRuntimeScope {
+                                override fun <E, T : Module<E>> install(module: T): T {
+                                    launch {
+                                        modules.add(module)
 
-                                    module.execute()
+                                        module.execute()
+                                    }
+
+                                    return module
                                 }
-
-                                return module
                             }
-                        }
 
                         scope.block()
 
@@ -75,9 +75,7 @@ fun CoroutineScope.clashRuntime(block: suspend ClashRuntimeScope.() -> Unit): Cl
         }
 
         override fun requestGc(force: Boolean) {
-            launch(Dispatchers.Default) {
-                Clash.forceGc()
-            }
+            launch(Dispatchers.Default) { Clash.forceGc() }
         }
     }
 }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import android.annotation.SuppressLint
@@ -32,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
@@ -43,9 +40,9 @@ import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.util.*
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 @Composable
 fun ProfileCard(
@@ -58,7 +55,7 @@ fun ProfileCard(
     onEdit: (Profile) -> Unit,
     onToggleEnabled: (Profile) -> Unit,
     onOverrideSettings: ((Profile) -> Unit)? = null,
-    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
 ) {
     val spacing = AppTheme.spacing
     val opacity = AppTheme.opacity
@@ -70,40 +67,33 @@ fun ProfileCard(
     val secondaryContainer = colorScheme.secondaryContainer.copy(alpha = opacity.strong)
     val actionIconTint =
         remember(isDark, opacity) {
-            colorScheme.onSurface.copy(alpha = if (isDark) opacity.subtleText else opacity.prominentText)
+            colorScheme.onSurface.copy(
+                alpha = if (isDark) opacity.subtleText else opacity.prominentText
+            )
         }
 
-    val isConfigSaved = remember(profile.uuid, profile.updatedAt) {
-        profile.isConfigSaved(workDir)
-    }
+    val isConfigSaved = remember(profile.uuid, profile.updatedAt) { profile.isConfigSaved(workDir) }
 
-    val updateBg = remember(colorScheme, opacity) { colorScheme.primary.copy(alpha = opacity.subtle) }
+    val updateBg =
+        remember(colorScheme, opacity) { colorScheme.primary.copy(alpha = opacity.subtle) }
     val updateTint = remember(colorScheme) { colorScheme.primary }
 
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = spacing.space12),
-        insideMargin = PaddingValues(spacing.space16)
+        modifier = modifier.fillMaxWidth().padding(bottom = spacing.space12),
+        insideMargin = PaddingValues(spacing.space16),
     ) {
-
         Row(
             horizontalArrangement = Arrangement.spacedBy(spacing.space8),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = spacing.space4)
-            ) {
-
+            Column(modifier = Modifier.weight(1f).padding(end = spacing.space4)) {
                 Text(
                     text = profile.name,
                     fontSize = 17.sp,
                     fontWeight = FontWeight(550),
                     color = colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
 
                 Text(
@@ -113,27 +103,24 @@ fun ProfileCard(
                     fontWeight = FontWeight(550),
                     color = colorScheme.onSurfaceVariantSummary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
             Switch(
                 checked = profile.enabled,
                 enabled = !isDownloading,
-                onCheckedChange = { onToggleEnabled(profile) })
+                onCheckedChange = { onToggleEnabled(profile) },
+            )
         }
 
-        val infoText = remember(profile) {
-            profile.getInfoText()
-        }
+        val infoText = remember(profile) { profile.getInfoText() }
 
         Column(modifier = Modifier.padding(top = spacing.space8)) {
-
             val lines = infoText.split('\n')
 
             lines.forEachIndexed { _, line ->
                 when {
-
                     line.contains('|') -> {
                         val parts = line.split('|')
                         val expireText = parts.getOrNull(0) ?: ""
@@ -142,7 +129,7 @@ fun ProfileCard(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = expireText,
@@ -151,17 +138,23 @@ fun ProfileCard(
                                 lineHeight = 20.sp,
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
 
                             if (timeText.isNotEmpty()) {
                                 Text(
                                     text = timeText,
                                     fontSize = 12.sp,
-                                    color = colorScheme.onTertiaryContainer.copy(alpha = opacity.strong),
+                                    color =
+                                        colorScheme.onTertiaryContainer.copy(
+                                            alpha = opacity.strong
+                                        ),
                                     fontWeight = FontWeight.Medium,
                                     maxLines = 1,
-                                    modifier = Modifier.padding(end = componentSizes.profileMetaTrailingInset)
+                                    modifier =
+                                        Modifier.padding(
+                                            end = componentSizes.profileMetaTrailingInset
+                                        ),
                                 )
                             }
                         }
@@ -174,7 +167,7 @@ fun ProfileCard(
                             color = colorScheme.onSurfaceVariantSummary,
                             lineHeight = 20.sp,
                             overflow = TextOverflow.Ellipsis,
-                            maxLines = 1
+                            maxLines = 1,
                         )
                     }
                 }
@@ -184,24 +177,27 @@ fun ProfileCard(
         HorizontalDivider(
             modifier = Modifier.padding(vertical = spacing.space12),
             thickness = componentSizes.thinDividerThickness,
-            color = colorScheme.outline.copy(alpha = opacity.medium)
+            color = colorScheme.outline.copy(alpha = opacity.medium),
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-
             IconButton(
                 backgroundColor = secondaryContainer,
                 minHeight = componentSizes.compactActionButtonSize,
                 minWidth = componentSizes.compactActionButtonSize,
                 enabled = isConfigSaved && !isDownloading,
-                onClick = { if (isConfigSaved && !isDownloading) onExport(profile) }) {
+                onClick = { if (isConfigSaved && !isDownloading) onExport(profile) },
+            ) {
                 Icon(
-                    modifier = Modifier
-                        .size(spacing.space20)
-                        .alpha(if (isConfigSaved) 1f else opacity.disabledSecondary),
+                    modifier =
+                        Modifier.size(spacing.space20)
+                            .alpha(if (isConfigSaved) 1f else opacity.disabledSecondary),
                     imageVector = Yume.Share,
-                    tint = actionIconTint.copy(alpha = if (isConfigSaved) 1f else opacity.disabledSecondary),
-                    contentDescription = "Export"
+                    tint =
+                        actionIconTint.copy(
+                            alpha = if (isConfigSaved) 1f else opacity.disabledSecondary
+                        ),
+                    contentDescription = "Export",
                 )
             }
 
@@ -212,12 +208,13 @@ fun ProfileCard(
                 minHeight = componentSizes.compactActionButtonSize,
                 minWidth = componentSizes.compactActionButtonSize,
                 enabled = !isDownloading,
-                onClick = { if (!isDownloading) onEdit(profile) }) {
+                onClick = { if (!isDownloading) onEdit(profile) },
+            ) {
                 Icon(
                     modifier = Modifier.size(spacing.space20),
                     imageVector = Yume.Edit,
                     tint = actionIconTint,
-                    contentDescription = "Edit"
+                    contentDescription = "Edit",
                 )
             }
 
@@ -244,11 +241,12 @@ fun ProfileCard(
                             contentDescription = "Update",
                         )
                         Text(
-                            modifier = Modifier.padding(end = componentSizes.textLineCompactSpacing),
+                            modifier =
+                                Modifier.padding(end = componentSizes.textLineCompactSpacing),
                             text = MLang.Component.ProfileCard.Update,
                             color = updateTint,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 15.sp
+                            fontSize = 15.sp,
                         )
                     }
                 }
@@ -269,14 +267,18 @@ fun ProfileCard(
                         modifier = Modifier.size(spacing.space20),
                         imageVector = Yume.Delete,
                         tint = actionIconTint,
-                        contentDescription = "Delete"
+                        contentDescription = "Delete",
                     )
                     Text(
-                        modifier = Modifier.padding(start = spacing.space4, end = componentSizes.textLineCompactSpacing),
+                        modifier =
+                            Modifier.padding(
+                                start = spacing.space4,
+                                end = componentSizes.textLineCompactSpacing,
+                            ),
                         text = MLang.Component.ProfileCard.Delete,
                         color = actionIconTint,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp
+                        fontSize = 15.sp,
                     )
                 }
             }

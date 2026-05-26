@@ -20,40 +20,40 @@
 
 package com.github.yumelira.yumebox.di
 
+import com.github.yumelira.yumebox.common.util.AppLanguageManager
+import com.github.yumelira.yumebox.config.TunProfileSync
 import com.github.yumelira.yumebox.data.controller.AccessControlController
-import com.github.yumelira.yumebox.data.controller.AppSettingsController
-import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
-import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
 import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
+import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
+import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
+import com.github.yumelira.yumebox.data.controller.ProvidersController
+import com.github.yumelira.yumebox.data.controller.RuntimeOverrideController
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
-import com.github.yumelira.yumebox.data.store.LogStore
 import com.github.yumelira.yumebox.data.gateway.NetworkInfoService
+import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.data.store.FeatureStore
+import com.github.yumelira.yumebox.data.store.LogStore
+import com.github.yumelira.yumebox.data.store.MMKVProvider
+import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.store.OverrideConfigProvider
 import com.github.yumelira.yumebox.data.store.OverrideConfigStore
 import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.data.store.ProfileBindingStore
-import com.github.yumelira.yumebox.data.controller.ProvidersController
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import com.github.yumelira.yumebox.data.store.FeatureStore
-import com.github.yumelira.yumebox.data.store.MMKVProvider
-import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.data.store.ProfileLinksStore
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
-import com.github.yumelira.yumebox.config.TunProfileSync
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
+import com.github.yumelira.yumebox.runtime.client.ProxyFacade
+import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.importconfig.ImportConfigViewModel
 import com.github.yumelira.yumebox.screen.log.LogViewModel
 import com.github.yumelira.yumebox.screen.settings.AccessControlViewModel
 import com.github.yumelira.yumebox.screen.settings.VpnSettingsViewModel
-import com.github.yumelira.yumebox.domain.model.TrafficData
-import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
-import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
 import com.github.yumelira.yumebox.service.LogRecordServiceGateway
-import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -112,7 +112,9 @@ private val appDataRuntimeModule = module {
         AccessControlController(
             store = get(),
             isRunning = { proxyFacade.isRunning.value },
-            resolveActiveMode = { RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner) },
+            resolveActiveMode = {
+                RuntimeStateMapper.modeForOwner(proxyFacade.runtimeSnapshot.value.owner)
+            },
             restartProxy = { mode -> proxyFacade.startProxy(mode) },
             beforeRestart = { targetMode ->
                 if (targetMode == ProxyMode.Tun) {
@@ -159,7 +161,9 @@ private val appDataRuntimeModule = module {
             appIdentityResolver = get(),
             queryTrafficTotal = {
                 com.github.yumelira.yumebox.remote.ServiceClient.connect(appContext)
-                TrafficData.from(com.github.yumelira.yumebox.remote.ServiceClient.clash().queryTrafficTotal())
+                TrafficData.from(
+                    com.github.yumelira.yumebox.remote.ServiceClient.clash().queryTrafficTotal()
+                )
             },
             queryConnections = {
                 com.github.yumelira.yumebox.remote.ServiceClient.connect(appContext)
@@ -167,7 +171,10 @@ private val appDataRuntimeModule = module {
             },
             queryActiveProfileId = {
                 com.github.yumelira.yumebox.remote.ServiceClient.connect(appContext)
-                com.github.yumelira.yumebox.remote.ServiceClient.profile().queryActive()?.uuid?.toString()
+                com.github.yumelira.yumebox.remote.ServiceClient.profile()
+                    .queryActive()
+                    ?.uuid
+                    ?.toString()
             },
         )
     }
@@ -181,8 +188,4 @@ private val appViewModelModule = module {
     viewModel { LogViewModel(get()) }
 }
 
-val appModule: List<Module> = listOf(
-    appFoundationModule,
-    appDataRuntimeModule,
-    appViewModelModule,
-)
+val appModule: List<Module> = listOf(appFoundationModule, appDataRuntimeModule, appViewModelModule)

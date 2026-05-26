@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,34 +34,60 @@ val Yume.Activity: ImageVector
         if (_Activity != null) {
             return _Activity!!
         }
-        _Activity = ImageVector.Builder(
-            name = "Activity",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(22f, 12f)
-                horizontalLineToRelative(-2.48f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1.93f, 1.46f)
-                lineToRelative(-2.35f, 8.36f)
-                arcToRelative(0.25f, 0.25f, 0f, isMoreThanHalf = false, isPositiveArc = true, -0.48f, 0f)
-                lineTo(9.24f, 2.18f)
-                arcToRelative(0.25f, 0.25f, 0f, isMoreThanHalf = false, isPositiveArc = false, -0.48f, 0f)
-                lineToRelative(-2.35f, 8.36f)
-                arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 4.49f, 12f)
-                horizontalLineTo(2f)
-            }
-        }.build()
+        _Activity =
+            ImageVector.Builder(
+                    name = "Activity",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(22f, 12f)
+                        horizontalLineToRelative(-2.48f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = false,
+                            -1.93f,
+                            1.46f,
+                        )
+                        lineToRelative(-2.35f, 8.36f)
+                        arcToRelative(
+                            0.25f,
+                            0.25f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = true,
+                            -0.48f,
+                            0f,
+                        )
+                        lineTo(9.24f, 2.18f)
+                        arcToRelative(
+                            0.25f,
+                            0.25f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = false,
+                            -0.48f,
+                            0f,
+                        )
+                        lineToRelative(-2.35f, 8.36f)
+                        arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 4.49f, 12f)
+                        horizontalLineTo(2f)
+                    }
+                }
+                .build()
 
         return _Activity!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _Activity: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _Activity: ImageVector? = null

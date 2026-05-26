@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -38,37 +36,54 @@ val Yume.House: ImageVector
         if (_house != null) {
             return _house!!
         }
-        _house = Builder(name = "House", defaultWidth = 24.0.dp, defaultHeight = 24.0.dp,
-                viewportWidth = 24.0f, viewportHeight = 24.0f).apply {
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(15.0f, 21.0f)
-                verticalLineToRelative(-8.0f)
-                arcToRelative(1.0f, 1.0f, 0.0f, false, false, -1.0f, -1.0f)
-                horizontalLineToRelative(-4.0f)
-                arcToRelative(1.0f, 1.0f, 0.0f, false, false, -1.0f, 1.0f)
-                verticalLineToRelative(8.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(3.0f, 10.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, 0.709f, -1.528f)
-                lineToRelative(7.0f, -6.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, 2.582f, 0.0f)
-                lineToRelative(7.0f, 6.0f)
-                arcTo(2.0f, 2.0f, 0.0f, false, true, 21.0f, 10.0f)
-                verticalLineToRelative(9.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, 2.0f)
-                horizontalLineTo(5.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, -2.0f)
-                close()
-            }
-        }
-        .build()
+        _house =
+            Builder(
+                    name = "House",
+                    defaultWidth = 24.0.dp,
+                    defaultHeight = 24.0.dp,
+                    viewportWidth = 24.0f,
+                    viewportHeight = 24.0f,
+                )
+                .apply {
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(15.0f, 21.0f)
+                        verticalLineToRelative(-8.0f)
+                        arcToRelative(1.0f, 1.0f, 0.0f, false, false, -1.0f, -1.0f)
+                        horizontalLineToRelative(-4.0f)
+                        arcToRelative(1.0f, 1.0f, 0.0f, false, false, -1.0f, 1.0f)
+                        verticalLineToRelative(8.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(3.0f, 10.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, 0.709f, -1.528f)
+                        lineToRelative(7.0f, -6.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, 2.582f, 0.0f)
+                        lineToRelative(7.0f, 6.0f)
+                        arcTo(2.0f, 2.0f, 0.0f, false, true, 21.0f, 10.0f)
+                        verticalLineToRelative(9.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, 2.0f)
+                        horizontalLineTo(5.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, -2.0f)
+                        close()
+                    }
+                }
+                .build()
         return _house!!
     }
 

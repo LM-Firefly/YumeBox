@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.theme
 
 import androidx.compose.animation.*
@@ -37,50 +35,63 @@ object NavigationTransitions {
     private val enterEasing = CubicBezierEasing(0.25f, 0.10f, 0.25f, 1.0f)
     private val exitEasing = CubicBezierEasing(0.25f, 0.10f, 0.25f, 1.0f)
 
-    val defaultStyle = object : NavHostAnimatedDestinationStyle() {
+    val defaultStyle =
+        object : NavHostAnimatedDestinationStyle() {
 
-        override val enterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-            {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(durationMillis = DURATION, easing = enterEasing)
-                ) + fadeIn(
-                    animationSpec = tween(durationMillis = FADE_DURATION, easing = LinearEasing),
-                    initialAlpha = 0f
-                )
-            }
+            override val enterTransition:
+                AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+                {
+                    slideInHorizontally(
+                        initialOffsetX = { it },
+                        animationSpec = tween(durationMillis = DURATION, easing = enterEasing),
+                    ) +
+                        fadeIn(
+                            animationSpec =
+                                tween(durationMillis = FADE_DURATION, easing = LinearEasing),
+                            initialAlpha = 0f,
+                        )
+                }
 
-        override val exitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
-            {
-                slideOutHorizontally(
-                    targetOffsetX = { -it },
-                    animationSpec = tween(durationMillis = DURATION, easing = exitEasing)
-                ) + fadeOut(
-                    animationSpec = tween(durationMillis = FADE_DURATION, easing = LinearEasing),
-                    targetAlpha = 0f
-                )
-            }
+            override val exitTransition:
+                AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+                {
+                    slideOutHorizontally(
+                        targetOffsetX = { -it },
+                        animationSpec = tween(durationMillis = DURATION, easing = exitEasing),
+                    ) +
+                        fadeOut(
+                            animationSpec =
+                                tween(durationMillis = FADE_DURATION, easing = LinearEasing),
+                            targetAlpha = 0f,
+                        )
+                }
 
-        override val popEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-            {
-                slideInHorizontally(
-                    initialOffsetX = { -it },
-                    animationSpec = tween(durationMillis = DURATION, easing = enterEasing)
-                ) + fadeIn(
-                    animationSpec = tween(durationMillis = FADE_DURATION, easing = LinearEasing),
-                    initialAlpha = 0f
-                )
-            }
+            override val popEnterTransition:
+                AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+                {
+                    slideInHorizontally(
+                        initialOffsetX = { -it },
+                        animationSpec = tween(durationMillis = DURATION, easing = enterEasing),
+                    ) +
+                        fadeIn(
+                            animationSpec =
+                                tween(durationMillis = FADE_DURATION, easing = LinearEasing),
+                            initialAlpha = 0f,
+                        )
+                }
 
-        override val popExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
-            {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(durationMillis = DURATION, easing = exitEasing)
-                ) + fadeOut(
-                    animationSpec = tween(durationMillis = FADE_DURATION, easing = LinearEasing),
-                    targetAlpha = 0f
-                )
-            }
-    }
+            override val popExitTransition:
+                AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+                {
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
+                        animationSpec = tween(durationMillis = DURATION, easing = exitEasing),
+                    ) +
+                        fadeOut(
+                            animationSpec =
+                                tween(durationMillis = FADE_DURATION, easing = LinearEasing),
+                            targetAlpha = 0f,
+                        )
+                }
+        }
 }

@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -56,13 +55,10 @@ fun AppFormDialog(
         summary = summary,
         onDismissRequest = onDismissRequest,
     ) {
-        val contentModifier = Modifier
-            .fillMaxWidth()
-            .let {
+        val contentModifier =
+            Modifier.fillMaxWidth().let {
                 if (scrollable) {
-                    it
-                        .heightIn(max = UiDp.dp420)
-                        .verticalScroll(rememberScrollState())
+                    it.heightIn(max = UiDp.dp420).verticalScroll(rememberScrollState())
                 } else {
                     it
                 }
@@ -75,13 +71,15 @@ fun AppFormDialog(
             ) {
                 content()
             }
-            error?.takeIf { it.isNotBlank() }?.let { message ->
-                Text(
-                    text = message,
-                    style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.error,
-                )
-            }
+            error
+                ?.takeIf { it.isNotBlank() }
+                ?.let { message ->
+                    Text(
+                        text = message,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.error,
+                    )
+                }
             DialogButtonRow(
                 onCancel = onDismissRequest,
                 onConfirm = onConfirm,

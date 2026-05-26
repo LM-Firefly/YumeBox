@@ -18,8 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.settings
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -30,9 +30,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import com.github.yumelira.yumebox.common.util.VpnUtils
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
@@ -46,9 +46,9 @@ import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem
 import com.github.yumelira.yumebox.presentation.component.PreferenceSwitchItem
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
+import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
-import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.service.root.RootAccessSupport
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -62,9 +62,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
 @Destination<RootGraph>
-fun NetworkSettingsScreen(
-    navigator: DestinationsNavigator,
-) {
+fun NetworkSettingsScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<NetworkSettingsViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -73,26 +71,21 @@ fun NetworkSettingsScreen(
     val accessControlMode by viewModel.accessControlMode.state.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        viewModel.errors.collect { message ->
-            context.toast(message)
-        }
-    }
+    LaunchedEffect(Unit) { viewModel.errors.collect { message -> context.toast(message) } }
 
-    val vpnPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            viewModel.onProxyModeChange(ProxyMode.Tun)
-        } else {
-            context.toast(MLang.NetworkSettings.Error.VpnDenied)
+    val vpnPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == android.app.Activity.RESULT_OK) {
+                viewModel.onProxyModeChange(ProxyMode.Tun)
+            } else {
+                context.toast(MLang.NetworkSettings.Error.VpnDenied)
+            }
         }
-    }
 
     Scaffold(
-        topBar = {
-            TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior)
-        },
+        topBar = { TopBar(title = MLang.NetworkSettings.Title, scrollBehavior = scrollBehavior) }
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -141,21 +134,19 @@ private fun NetworkVpnServiceSection(
             title = MLang.NetworkSettings.VpnService.RouteTrafficTitle,
             summary = MLang.NetworkSettings.VpnService.RouteTrafficSummary,
             currentValue = configuredMode,
-            items = listOf(
-                MLang.NetworkSettings.VpnService.SystemProxy,
-                MLang.NetworkSettings.VpnService.VpnMode,
-                MLang.NetworkSettings.VpnService.RootTunMode,
-            ),
-            values = listOf(
-                ProxyMode.Http,
-                ProxyMode.Tun,
-                ProxyMode.RootTun,
-            ),
+            items =
+                listOf(
+                    MLang.NetworkSettings.VpnService.SystemProxy,
+                    MLang.NetworkSettings.VpnService.VpnMode,
+                    MLang.NetworkSettings.VpnService.RootTunMode,
+                ),
+            values = listOf(ProxyMode.Http, ProxyMode.Tun, ProxyMode.RootTun),
             onValueChange = { mode ->
                 when (mode) {
                     ProxyMode.Tun -> {
                         if (!VpnUtils.checkVpnPermission(context)) {
-                            VpnUtils.getVpnPermissionIntent(context)?.let(vpnPermissionLauncher::launch)
+                            VpnUtils.getVpnPermissionIntent(context)
+                                ?.let(vpnPermissionLauncher::launch)
                                 ?: viewModel.onProxyModeChange(mode)
                         } else {
                             viewModel.onProxyModeChange(mode)
@@ -191,14 +182,15 @@ private fun NetworkServiceOptionsSection(
 ) {
     if (!uiState.showServiceOptions) return
 
-    val commonActions = remember(viewModel) {
-        CommonTunOptionActions(
-            onBypassPrivateNetworkChange = viewModel::onBypassPrivateNetworkChange,
-            onDnsHijackChange = viewModel::onDnsHijackChange,
-            onEnableIPv6Change = viewModel::onEnableIPv6Change,
-            onTunStackChange = viewModel::onTunStackChange,
-        )
-    }
+    val commonActions =
+        remember(viewModel) {
+            CommonTunOptionActions(
+                onBypassPrivateNetworkChange = viewModel::onBypassPrivateNetworkChange,
+                onDnsHijackChange = viewModel::onDnsHijackChange,
+                onEnableIPv6Change = viewModel::onEnableIPv6Change,
+                onTunStackChange = viewModel::onTunStackChange,
+            )
+        }
 
     Title(MLang.NetworkSettings.Section.VpnOptions)
     Card {
@@ -206,11 +198,12 @@ private fun NetworkServiceOptionsSection(
             ProxyMode.Tun -> {
                 TunServiceOptions(
                     state = tunServiceOptionsUiState,
-                    actions = TunServiceOptionActions(
-                        common = commonActions,
-                        onAllowBypassChange = viewModel::onAllowBypassChange,
-                        onSystemProxyChange = viewModel::onSystemProxyChange,
-                    ),
+                    actions =
+                        TunServiceOptionActions(
+                            common = commonActions,
+                            onAllowBypassChange = viewModel::onAllowBypassChange,
+                            onSystemProxyChange = viewModel::onSystemProxyChange,
+                        ),
                 )
             }
 
@@ -218,23 +211,27 @@ private fun NetworkServiceOptionsSection(
                 RootTunServiceOptions(
                     state = rootTunServiceOptionsUiState,
                     showFakeIpRange = uiState.showFakeIpRange,
-                    actions = remember(viewModel, commonActions) {
-                        RootTunServiceOptionActions(
-                            common = commonActions,
-                            onRootTunAutoRouteChange = viewModel::onRootTunAutoRouteChange,
-                            onRootTunStrictRouteChange = viewModel::onRootTunStrictRouteChange,
-                            onRootTunAutoRedirectChange = viewModel::onRootTunAutoRedirectChange,
-                            onRootTunDnsModeChange = viewModel::onRootTunDnsModeChange,
-                            onRootTunIfNameDraftChange = viewModel::onRootTunIfNameDraftChange,
-                            onRootTunMtuDraftChange = viewModel::onRootTunMtuDraftChange,
-                            onRootTunFakeIpRangeDraftChange = viewModel::onRootTunFakeIpRangeDraftChange,
-                            onRootTunFakeIpRange6DraftChange = viewModel::onRootTunFakeIpRange6DraftChange,
-                            commitRootTunIfName = viewModel::commitRootTunIfName,
-                            commitRootTunMtu = viewModel::commitRootTunMtu,
-                            commitRootTunFakeIpRange = viewModel::commitRootTunFakeIpRange,
-                            commitRootTunFakeIpRange6 = viewModel::commitRootTunFakeIpRange6,
-                        )
-                    },
+                    actions =
+                        remember(viewModel, commonActions) {
+                            RootTunServiceOptionActions(
+                                common = commonActions,
+                                onRootTunAutoRouteChange = viewModel::onRootTunAutoRouteChange,
+                                onRootTunStrictRouteChange = viewModel::onRootTunStrictRouteChange,
+                                onRootTunAutoRedirectChange =
+                                    viewModel::onRootTunAutoRedirectChange,
+                                onRootTunDnsModeChange = viewModel::onRootTunDnsModeChange,
+                                onRootTunIfNameDraftChange = viewModel::onRootTunIfNameDraftChange,
+                                onRootTunMtuDraftChange = viewModel::onRootTunMtuDraftChange,
+                                onRootTunFakeIpRangeDraftChange =
+                                    viewModel::onRootTunFakeIpRangeDraftChange,
+                                onRootTunFakeIpRange6DraftChange =
+                                    viewModel::onRootTunFakeIpRange6DraftChange,
+                                commitRootTunIfName = viewModel::commitRootTunIfName,
+                                commitRootTunMtu = viewModel::commitRootTunMtu,
+                                commitRootTunFakeIpRange = viewModel::commitRootTunFakeIpRange,
+                                commitRootTunFakeIpRange6 = viewModel::commitRootTunFakeIpRange6,
+                            )
+                        },
                 )
             }
 
@@ -256,11 +253,12 @@ private fun NetworkProxyOptionsSection(
             PreferenceEnumItem(
                 title = MLang.NetworkSettings.ProxyOptions.AccessControlModeTitle,
                 currentValue = accessControlMode,
-                items = listOf(
-                    MLang.NetworkSettings.ProxyOptions.AllowAll,
-                    MLang.NetworkSettings.ProxyOptions.AllowSelected,
-                    MLang.NetworkSettings.ProxyOptions.RejectSelected,
-                ),
+                items =
+                    listOf(
+                        MLang.NetworkSettings.ProxyOptions.AllowAll,
+                        MLang.NetworkSettings.ProxyOptions.AllowSelected,
+                        MLang.NetworkSettings.ProxyOptions.RejectSelected,
+                    ),
                 values = AccessControlMode.entries,
                 onValueChange = onAccessControlModeChange,
             )
@@ -268,18 +266,13 @@ private fun NetworkProxyOptionsSection(
         PreferenceArrowItem(
             title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,
             summary = MLang.NetworkSettings.ProxyOptions.ManageAccessControlSummary,
-            onClick = {
-                navigator.navigate(AccessControlScreenDestination)
-            },
+            onClick = { navigator.navigate(AccessControlScreenDestination) },
         )
     }
 }
 
 @Composable
-private fun TunServiceOptions(
-    state: TunServiceOptionsUiState,
-    actions: TunServiceOptionActions,
-) {
+private fun TunServiceOptions(state: TunServiceOptionsUiState, actions: TunServiceOptionActions) {
     CommonTunServiceOptions(
         state = state.common,
         actions = actions.common,
@@ -411,10 +404,11 @@ private fun RootTunRoutingOptions(
         title = MLang.NetworkSettings.RootTun.DnsModeTitle,
         summary = MLang.NetworkSettings.RootTun.DnsModeSummary,
         currentValue = rootTunDnsMode,
-        items = listOf(
-            MLang.NetworkSettings.RootTun.DnsModeRedirHost,
-            MLang.NetworkSettings.RootTun.DnsModeFakeIp,
-        ),
+        items =
+            listOf(
+                MLang.NetworkSettings.RootTun.DnsModeRedirHost,
+                MLang.NetworkSettings.RootTun.DnsModeFakeIp,
+            ),
         values = RootTunDnsMode.entries,
         onValueChange = onRootTunDnsModeChange,
     )
@@ -436,12 +430,18 @@ private fun RootTunFakeIpOptions(
         Column {
             PreferenceArrowItem(
                 title = MLang.NetworkSettings.RootTun.FakeIpRangeTitle,
-                summary = rootTunFakeIpRangeDraft.ifBlank { MLang.NetworkSettings.RootTun.FakeIpRangeSummary },
+                summary =
+                    rootTunFakeIpRangeDraft.ifBlank {
+                        MLang.NetworkSettings.RootTun.FakeIpRangeSummary
+                    },
                 onClick = onEditFakeIpRange,
             )
             PreferenceArrowItem(
                 title = MLang.NetworkSettings.RootTun.FakeIpRange6Title,
-                summary = rootTunFakeIpRange6Draft.ifBlank { MLang.NetworkSettings.RootTun.FakeIpRange6Summary },
+                summary =
+                    rootTunFakeIpRange6Draft.ifBlank {
+                        MLang.NetworkSettings.RootTun.FakeIpRange6Summary
+                    },
                 onClick = onEditFakeIpRange6,
             )
         }
@@ -456,41 +456,43 @@ private fun RootTunEditDialogs(
     onDismiss: () -> Unit,
 ) {
     when (editDialog) {
-        RootTunEditDialogState.IfName -> RootTunTextEditDialog(
-            title = MLang.NetworkSettings.RootTun.IfNameTitle,
-            value = state.rootTunIfNameDraft,
-            onValueChange = actions.onRootTunIfNameDraftChange,
-            onDismiss = onDismiss,
-            onCommit = actions.commitRootTunIfName,
-        )
+        RootTunEditDialogState.IfName ->
+            RootTunTextEditDialog(
+                title = MLang.NetworkSettings.RootTun.IfNameTitle,
+                value = state.rootTunIfNameDraft,
+                onValueChange = actions.onRootTunIfNameDraftChange,
+                onDismiss = onDismiss,
+                onCommit = actions.commitRootTunIfName,
+            )
 
-        RootTunEditDialogState.Mtu -> RootTunTextEditDialog(
-            title = MLang.NetworkSettings.RootTun.MtuTitle,
-            value = state.rootTunMtuDraft,
-            onValueChange = actions.onRootTunMtuDraftChange,
-            onDismiss = onDismiss,
-            onCommit = actions.commitRootTunMtu,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done,
-            ),
-        )
+        RootTunEditDialogState.Mtu ->
+            RootTunTextEditDialog(
+                title = MLang.NetworkSettings.RootTun.MtuTitle,
+                value = state.rootTunMtuDraft,
+                onValueChange = actions.onRootTunMtuDraftChange,
+                onDismiss = onDismiss,
+                onCommit = actions.commitRootTunMtu,
+                keyboardOptions =
+                    KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            )
 
-        RootTunEditDialogState.FakeIpRange -> RootTunTextEditDialog(
-            title = MLang.NetworkSettings.RootTun.FakeIpRangeTitle,
-            value = state.rootTunFakeIpRangeDraft,
-            onValueChange = actions.onRootTunFakeIpRangeDraftChange,
-            onDismiss = onDismiss,
-            onCommit = actions.commitRootTunFakeIpRange,
-        )
+        RootTunEditDialogState.FakeIpRange ->
+            RootTunTextEditDialog(
+                title = MLang.NetworkSettings.RootTun.FakeIpRangeTitle,
+                value = state.rootTunFakeIpRangeDraft,
+                onValueChange = actions.onRootTunFakeIpRangeDraftChange,
+                onDismiss = onDismiss,
+                onCommit = actions.commitRootTunFakeIpRange,
+            )
 
-        RootTunEditDialogState.FakeIpRange6 -> RootTunTextEditDialog(
-            title = MLang.NetworkSettings.RootTun.FakeIpRange6Title,
-            value = state.rootTunFakeIpRange6Draft,
-            onValueChange = actions.onRootTunFakeIpRange6DraftChange,
-            onDismiss = onDismiss,
-            onCommit = actions.commitRootTunFakeIpRange6,
-        )
+        RootTunEditDialogState.FakeIpRange6 ->
+            RootTunTextEditDialog(
+                title = MLang.NetworkSettings.RootTun.FakeIpRange6Title,
+                value = state.rootTunFakeIpRange6Draft,
+                onValueChange = actions.onRootTunFakeIpRange6DraftChange,
+                onDismiss = onDismiss,
+                onCommit = actions.commitRootTunFakeIpRange6,
+            )
 
         null -> Unit
     }
@@ -539,19 +541,13 @@ private fun RootTunTextEditDialog(
     onValueChange: (String) -> Unit,
     onDismiss: () -> Unit,
     onCommit: () -> Unit,
-    keyboardOptions: KeyboardOptions = KeyboardOptions(
-        imeAction = ImeAction.Done,
-    ),
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
 ) {
     val focusManager = LocalFocusManager.current
-    var localTextFieldValue by remember(title) {
-        mutableStateOf(
-            TextFieldValue(
-                text = value,
-                selection = TextRange(value.length),
-            ),
-        )
-    }
+    var localTextFieldValue by
+        remember(title) {
+            mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
+        }
 
     AppTextFieldDialog(
         show = true,
@@ -569,13 +565,14 @@ private fun RootTunTextEditDialog(
         },
         singleLine = true,
         keyboardOptions = keyboardOptions,
-        keyboardActions = KeyboardActions(
-            onDone = {
-                onCommit()
-                onDismiss()
-                focusManager.clearFocus()
-            },
-        ),
+        keyboardActions =
+            KeyboardActions(
+                onDone = {
+                    onCommit()
+                    onDismiss()
+                    focusManager.clearFocus()
+                }
+            ),
     )
 }
 

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 import dev.oom_wg.purejoy.mlang.MLang
@@ -38,12 +36,13 @@ enum class ProxyDisplayMode {
     DOUBLE_SIMPLE;
 
     val displayName: String
-        get() = when (this) {
-            SINGLE_DETAILED -> MLang.Proxy.DisplayMode.SingleDetailed
-            SINGLE_SIMPLE -> MLang.Proxy.DisplayMode.SingleSimple
-            DOUBLE_DETAILED -> MLang.Proxy.DisplayMode.DoubleDetailed
-            DOUBLE_SIMPLE -> MLang.Proxy.DisplayMode.DoubleSimple
-        }
+        get() =
+            when (this) {
+                SINGLE_DETAILED -> MLang.Proxy.DisplayMode.SingleDetailed
+                SINGLE_SIMPLE -> MLang.Proxy.DisplayMode.SingleSimple
+                DOUBLE_DETAILED -> MLang.Proxy.DisplayMode.DoubleDetailed
+                DOUBLE_SIMPLE -> MLang.Proxy.DisplayMode.DoubleSimple
+            }
 
     val isSingleColumn: Boolean
         get() = this == SINGLE_DETAILED || this == SINGLE_SIMPLE
@@ -58,9 +57,10 @@ enum class ProxySortMode {
     BY_LATENCY;
 
     val displayName: String
-        get() = when (this) {
-            DEFAULT -> MLang.Proxy.SortMode.Default
-            BY_NAME -> MLang.Proxy.SortMode.ByName
-            BY_LATENCY -> MLang.Proxy.SortMode.ByLatency
-        }
+        get() =
+            when (this) {
+                DEFAULT -> MLang.Proxy.SortMode.Default
+                BY_NAME -> MLang.Proxy.SortMode.ByName
+                BY_LATENCY -> MLang.Proxy.SortMode.ByLatency
+            }
 }

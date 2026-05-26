@@ -43,10 +43,10 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.AccessControlScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import dev.oom_wg.purejoy.mlang.MLang
 
 private const val TUN_STACK_TITLE = "协议栈"
 private val TUN_STACK_ITEMS = listOf("System", "GVisor", "Mixed")
@@ -70,14 +70,15 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
     val accessControlMode by accessViewModel.accessControlMode.state.collectAsState()
 
     val scrollBehavior = MiuixScrollBehavior()
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            if (granted) {
-                accessViewModel.onPermissionResult()
-            }
-        },
-    )
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                if (granted) {
+                    accessViewModel.onPermissionResult()
+                }
+            },
+        )
 
     LaunchedEffect(accessUiState.needsMiuiPermission) {
         if (accessUiState.needsMiuiPermission) {
@@ -86,9 +87,7 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
     }
 
     Scaffold(
-        topBar = {
-            TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior)
-        },
+        topBar = { TopBar(title = MLang.AppSettings.Title, scrollBehavior = scrollBehavior) }
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -101,11 +100,12 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
                     PreferenceEnumItem(
                         title = MLang.AppSettings.Interface.LanguageTitle,
                         currentValue = appLanguage,
-                        items = listOf(
-                            MLang.AppSettings.Interface.LanguageSystem,
-                            MLang.AppSettings.Interface.LanguageChinese,
-                            MLang.AppSettings.Interface.LanguageEnglish,
-                        ),
+                        items =
+                            listOf(
+                                MLang.AppSettings.Interface.LanguageSystem,
+                                MLang.AppSettings.Interface.LanguageChinese,
+                                MLang.AppSettings.Interface.LanguageEnglish,
+                            ),
                         values = AppLanguage.entries,
                         onValueChange = vpnViewModel::onAppLanguageChange,
                     )
@@ -115,11 +115,12 @@ fun VpnSettingsScreen(navigator: DestinationsNavigator) {
                     PreferenceEnumItem(
                         title = MLang.AppSettings.Interface.ThemeModeTitle,
                         currentValue = themeMode,
-                        items = listOf(
-                            MLang.AppSettings.Interface.ThemeModeSystem,
-                            MLang.AppSettings.Interface.ThemeModeLight,
-                            MLang.AppSettings.Interface.ThemeModeDark,
-                        ),
+                        items =
+                            listOf(
+                                MLang.AppSettings.Interface.ThemeModeSystem,
+                                MLang.AppSettings.Interface.ThemeModeLight,
+                                MLang.AppSettings.Interface.ThemeModeDark,
+                            ),
                         values = ThemeMode.entries,
                         onValueChange = vpnViewModel::onThemeModeChange,
                     )

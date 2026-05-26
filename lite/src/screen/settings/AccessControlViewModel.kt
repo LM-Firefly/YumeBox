@@ -62,12 +62,13 @@ class AccessControlViewModel(
         UpdateTime;
 
         val displayName: String
-            get() = when (this) {
-                Label -> "名称"
-                PackageName -> "包名"
-                InstallTime -> "安装时间"
-                UpdateTime -> "更新时间"
-            }
+            get() =
+                when (this) {
+                    Label -> "名称"
+                    PackageName -> "包名"
+                    InstallTime -> "安装时间"
+                    UpdateTime -> "更新时间"
+                }
     }
 
     data class UiState(
@@ -85,16 +86,19 @@ class AccessControlViewModel(
     val uiState: StateFlow<UiState> = uiStateFlow.asStateFlow()
     val accessControlMode = settings.accessControlMode
 
-    val filteredApps: StateFlow<List<AppInfo>> = uiStateFlow.map { state ->
-        filterApps(
-            apps = state.apps,
-            selectedPackages = state.selectedPackages,
-            query = state.searchQuery,
-            showSystemApps = state.showSystemApps,
-            sortMode = state.sortMode,
-            selectedFirst = state.selectedFirst,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val filteredApps: StateFlow<List<AppInfo>> =
+        uiStateFlow
+            .map { state ->
+                filterApps(
+                    apps = state.apps,
+                    selectedPackages = state.selectedPackages,
+                    query = state.searchQuery,
+                    showSystemApps = state.showSystemApps,
+                    sortMode = state.sortMode,
+                    selectedFirst = state.selectedFirst,
+                )
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         checkAndLoad()
@@ -127,7 +131,9 @@ class AccessControlViewModel(
 
     fun onAppSelectionChange(packageName: String, selected: Boolean) {
         uiStateFlow.update { state ->
-            state.copy(selectedPackages = state.selectedPackages.updatePackage(packageName, selected))
+            state.copy(
+                selectedPackages = state.selectedPackages.updatePackage(packageName, selected)
+            )
         }
         persistSelectionAndApply()
     }
@@ -175,12 +181,10 @@ class AccessControlViewModel(
     }
 
     fun importPackages(text: String): Int {
-        val packages = text.lines()
-            .map(String::trim)
-            .filter(String::isNotEmpty)
-            .toSet()
+        val packages = text.lines().map(String::trim).filter(String::isNotEmpty).toSet()
 
-        val validPackages = packages.intersect(uiStateFlow.value.apps.mapTo(linkedSetOf()) { it.packageName })
+        val validPackages =
+            packages.intersect(uiStateFlow.value.apps.mapTo(linkedSetOf()) { it.packageName })
         uiStateFlow.update { state ->
             state.copy(selectedPackages = state.selectedPackages + validPackages)
         }
@@ -197,15 +201,20 @@ class AccessControlViewModel(
             return
         }
 
-        val hasPermission = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        val hasPermission =
+            ContextCompat.checkSelfPermission(context, permission) ==
+                PackageManager.PERMISSION_GRANTED
         if (hasPermission) {
             loadApps()
             return
         }
 
-        val isMiuiPermission = runCatching {
-            context.packageManager.getPermissionInfo(permission, 0).packageName == "com.lbe.security.miui"
-        }.getOrDefault(false)
+        val isMiuiPermission =
+            runCatching {
+                    context.packageManager.getPermissionInfo(permission, 0).packageName ==
+                        "com.lbe.security.miui"
+                }
+                .getOrDefault(false)
 
         if (isMiuiPermission) {
             uiStateFlow.update { it.copy(isLoading = false, needsMiuiPermission = true) }
@@ -218,14 +227,15 @@ class AccessControlViewModel(
         viewModelScope.launch {
             uiStateFlow.update { it.copy(isLoading = true) }
             val selectedPackages = settings.accessControlPackages.value
-            val apps = try {
-                withContext(Dispatchers.IO) {
-                    loadInstalledApps()
+            val apps =
+                try {
+                    withContext(Dispatchers.IO) { loadInstalledApps() }
+                } catch (_: Exception) {
+                    uiStateFlow.update { state ->
+                        state.copy(isLoading = false, needsMiuiPermission = true)
+                    }
+                    return@launch
                 }
-            } catch (_: Exception) {
-                uiStateFlow.update { state -> state.copy(isLoading = false, needsMiuiPermission = true) }
-                return@launch
-            }
 
             uiStateFlow.update {
                 it.copy(
@@ -243,20 +253,21 @@ class AccessControlViewModel(
         val pm = application.packageManager
         val selfPackageName = application.packageName
 
-        val appInfos = runCatching {
-            pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        }.getOrElse { error ->
-            if (error is SecurityException) {
-                loadInstalledAppsFromRoot(pm, selfPackageName)
-            } else {
-                throw error
-            }
-        }
+        val appInfos =
+            runCatching { pm.getInstalledApplications(PackageManager.GET_META_DATA) }
+                .getOrElse { error ->
+                    if (error is SecurityException) {
+                        loadInstalledAppsFromRoot(pm, selfPackageName)
+                    } else {
+                        throw error
+                    }
+                }
 
         return appInfos
             .filterNot { it.packageName == selfPackageName }
             .map { appInfo ->
-                val packageInfo = runCatching { pm.getPackageInfo(appInfo.packageName, 0) }.getOrNull()
+                val packageInfo =
+                    runCatching { pm.getPackageInfo(appInfo.packageName, 0) }.getOrNull()
                 AppInfo(
                     packageName = appInfo.packageName,
                     label = appInfo.loadLabel(pm).toString(),
@@ -272,14 +283,16 @@ class AccessControlViewModel(
         pm: PackageManager,
         selfPackageName: String,
     ): List<ApplicationInfo> {
-        val packageNames = RootPackageShell.queryInstalledPackageNames()
-            ?: throw SecurityException("Unable to query installed packages from root shell")
+        val packageNames =
+            RootPackageShell.queryInstalledPackageNames()
+                ?: throw SecurityException("Unable to query installed packages from root shell")
 
         return packageNames
             .asSequence()
             .filterNot { it == selfPackageName }
             .mapNotNull { packageName ->
-                runCatching { pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA) }.getOrNull()
+                runCatching { pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA) }
+                    .getOrNull()
             }
             .toList()
     }
@@ -293,19 +306,21 @@ class AccessControlViewModel(
         selectedFirst: Boolean,
     ): List<AppInfo> {
         val filtered = apps.filter { app ->
-            val matchesQuery = query.isBlank() ||
-                app.label.contains(query, ignoreCase = true) ||
-                app.packageName.contains(query, ignoreCase = true)
+            val matchesQuery =
+                query.isBlank() ||
+                    app.label.contains(query, ignoreCase = true) ||
+                    app.packageName.contains(query, ignoreCase = true)
             val matchesSystem = showSystemApps || !app.isSystemApp
             matchesQuery && matchesSystem
         }
 
-        val comparator = when (sortMode) {
-            SortMode.Label -> compareBy<AppInfo> { it.label.lowercase() }
-            SortMode.PackageName -> compareBy { it.packageName.lowercase() }
-            SortMode.InstallTime -> compareByDescending { it.installTime }
-            SortMode.UpdateTime -> compareByDescending { it.updateTime }
-        }
+        val comparator =
+            when (sortMode) {
+                SortMode.Label -> compareBy<AppInfo> { it.label.lowercase() }
+                SortMode.PackageName -> compareBy { it.packageName.lowercase() }
+                SortMode.InstallTime -> compareByDescending { it.installTime }
+                SortMode.UpdateTime -> compareByDescending { it.updateTime }
+            }
 
         val sorted = filtered.sortedWith(comparator)
         return if (selectedFirst) {
@@ -318,15 +333,15 @@ class AccessControlViewModel(
     private fun applyRegionalSelectionInCurrentList(selectChina: Boolean): Int {
         val currentFiltered = filteredApps.value
         val currentPackages = currentFiltered.mapTo(linkedSetOf()) { it.packageName }
-        val targetPackages = currentFiltered
-            .filter { it.isChinaApp == selectChina }
-            .mapTo(linkedSetOf()) { it.packageName }
+        val targetPackages =
+            currentFiltered
+                .filter { it.isChinaApp == selectChina }
+                .mapTo(linkedSetOf()) { it.packageName }
 
         uiStateFlow.update { state ->
             state.copy(
-                selectedPackages = state.selectedPackages
-                    .minus(currentPackages)
-                    .plus(targetPackages),
+                selectedPackages =
+                    state.selectedPackages.minus(currentPackages).plus(targetPackages)
             )
         }
         persistSelectionAndApply()
@@ -344,7 +359,11 @@ class AccessControlViewModel(
                 return false
             }
         }
-        if (normalized.startsWith("cn.") || normalized.contains(".cn.") || normalized.endsWith(".cn")) {
+        if (
+            normalized.startsWith("cn.") ||
+                normalized.contains(".cn.") ||
+                normalized.endsWith(".cn")
+        ) {
             return true
         }
         return normalized.matches(chinaAppRegex)
@@ -355,54 +374,55 @@ class AccessControlViewModel(
             return if (selected) this + packageName else this - packageName
         }
 
-        private val skipPrefixList = listOf(
-            "com.google",
-            "com.android.chrome",
-            "com.android.vending",
-            "com.microsoft",
-            "com.apple",
-            "com.zhiliaoapp.musically",
-            "com.android.providers.downloads",
-        )
+        private val skipPrefixList =
+            listOf(
+                "com.google",
+                "com.android.chrome",
+                "com.android.vending",
+                "com.microsoft",
+                "com.apple",
+                "com.zhiliaoapp.musically",
+                "com.android.providers.downloads",
+            )
 
-        private val chinaAppPrefixList = listOf(
-            "com.tencent",
-            "com.alibaba",
-            "com.alipay",
-            "com.amap",
-            "com.sina",
-            "com.weibo",
-            "com.sankuai",
-            "com.dianping",
-            "com.jingdong",
-            "com.xunmeng",
-            "com.xingin",
-            "com.zhihu",
-            "com.bilibili",
-            "com.coolapk",
-            "tv.danmaku",
-            "com.kuaishou",
-            "com.smile.gifmaker",
-            "com.ss.android",
-            "com.qiyi",
-            "com.youku",
-            "com.sohu",
-            "com.netease",
-            "com.baidu",
-            "com.mi",
-            "com.xiaomi",
-            "com.huawei",
-            "com.vivo",
-            "com.oppo",
-            "com.oneplus",
-            "me.ele",
-            "ctrip",
-            "com.taobao",
-            "com.tmall",
-        )
+        private val chinaAppPrefixList =
+            listOf(
+                "com.tencent",
+                "com.alibaba",
+                "com.alipay",
+                "com.amap",
+                "com.sina",
+                "com.weibo",
+                "com.sankuai",
+                "com.dianping",
+                "com.jingdong",
+                "com.xunmeng",
+                "com.xingin",
+                "com.zhihu",
+                "com.bilibili",
+                "com.coolapk",
+                "tv.danmaku",
+                "com.kuaishou",
+                "com.smile.gifmaker",
+                "com.ss.android",
+                "com.qiyi",
+                "com.youku",
+                "com.sohu",
+                "com.netease",
+                "com.baidu",
+                "com.mi",
+                "com.xiaomi",
+                "com.huawei",
+                "com.vivo",
+                "com.oppo",
+                "com.oneplus",
+                "me.ele",
+                "ctrip",
+                "com.taobao",
+                "com.tmall",
+            )
 
-        private val chinaAppRegex = Regex(
-            "^(" + chinaAppPrefixList.joinToString("|") { Regex.escape(it) } + ")(\\..*)?$",
-        )
+        private val chinaAppRegex =
+            Regex("^(" + chinaAppPrefixList.joinToString("|") { Regex.escape(it) } + ")(\\..*)?$")
     }
 }

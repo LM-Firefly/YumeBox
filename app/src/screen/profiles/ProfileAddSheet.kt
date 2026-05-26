@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.profiles
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
@@ -60,25 +59,33 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAct
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
+import java.util.*
+import kotlin.math.max
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
-import java.util.*
-import kotlin.math.max
 
 @Composable
 internal fun AddProfileSheet(
     show: MutableState<Boolean>,
     profileToEdit: Profile? = null,
     importUrl: String? = null,
-    onAddProfile: (name: String, source: String, type: Profile.Type, interval: Long, fileUri: android.net.Uri?) -> Unit,
+    onAddProfile:
+        (
+            name: String,
+            source: String,
+            type: Profile.Type,
+            interval: Long,
+            fileUri: android.net.Uri?,
+        ) -> Unit,
     onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long) -> Unit,
     onDownloadComplete: () -> Unit,
-    profilesViewModel: ProfilesViewModel
+    profilesViewModel: ProfilesViewModel,
 ) {
     val configuration = LocalConfiguration.current
     val downloadSheetContentHeight = configuration.screenHeightDp.dp * 0.3f
@@ -111,9 +118,7 @@ internal fun AddProfileSheet(
     }
 
     val urlPattern = remember {
-        Regex(
-            pattern = "^https?://\\S+$", options = setOf(RegexOption.IGNORE_CASE)
-        )
+        Regex(pattern = "^https?://\\S+$", options = setOf(RegexOption.IGNORE_CASE))
     }
 
     val applyNameText: (String) -> Unit = { updatedText ->
@@ -161,7 +166,6 @@ internal fun AddProfileSheet(
         hasShownCompleteAnimation = false
     }
 
-
     val clearCurrentTypeState = {
         when (selectedTypeIndex) {
             0 -> applyUrlText("")
@@ -170,29 +174,27 @@ internal fun AddProfileSheet(
                 applyFileNameText("")
             }
 
-            2 -> {
-            }
+            2 -> {}
         }
         error = ""
     }
 
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(
-                context, Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
         )
     }
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasCameraPermission = isGranted
-        if (!isGranted) {
-            context.toast(MLang.ProfilesPage.QrScanner.NeedCamera, Toast.LENGTH_LONG)
-            selectedTypeIndex = 0
+    val cameraPermissionLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) {
+            isGranted ->
+            hasCameraPermission = isGranted
+            if (!isGranted) {
+                context.toast(MLang.ProfilesPage.QrScanner.NeedCamera, Toast.LENGTH_LONG)
+                selectedTypeIndex = 0
+            }
         }
-    }
 
     LaunchedEffect(selectedTypeIndex) {
         if (selectedTypeIndex == 2 && !hasCameraPermission) {
@@ -200,12 +202,12 @@ internal fun AddProfileSheet(
         }
     }
 
-    val showCameraPreview by remember(show.value, selectedTypeIndex, isDownloading, hasCameraPermission) {
-        derivedStateOf {
-            show.value && selectedTypeIndex == 2 && !isDownloading && hasCameraPermission
+    val showCameraPreview by
+        remember(show.value, selectedTypeIndex, isDownloading, hasCameraPermission) {
+            derivedStateOf {
+                show.value && selectedTypeIndex == 2 && !isDownloading && hasCameraPermission
+            }
         }
-    }
-
 
     DisposableEffect(show.value, profileToEdit, importUrl) {
         if (show.value) {
@@ -219,7 +221,8 @@ internal fun AddProfileSheet(
                     selectedTypeIndex = 1
                     filePath = profileToEdit.source
                     applyFileNameText(
-                        if (profileToEdit.source.isNotEmpty()) File(profileToEdit.source).name else ""
+                        if (profileToEdit.source.isNotEmpty()) File(profileToEdit.source).name
+                        else ""
                     )
                 }
             } else if (!importUrl.isNullOrBlank()) {
@@ -232,11 +235,10 @@ internal fun AddProfileSheet(
                     if (clipboardUrl != null) {
                         applyUrlText(clipboardUrl)
                     }
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) {}
             }
         }
-        onDispose { }
+        onDispose {}
     }
     LaunchedEffect(uiState.error) {
         val errorMessage = uiState.error
@@ -267,35 +269,39 @@ internal fun AddProfileSheet(
         }
     }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            val actualFileName = context.contentResolver.query(
-                it, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null
-            )?.use { cursor ->
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                cursor.moveToFirst()
-                cursor.getString(nameIndex)
-            } ?: MLang.ProfilesPage.Message.UnknownFile
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                val actualFileName =
+                    context.contentResolver
+                        .query(it, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                        ?.use { cursor ->
+                            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            cursor.moveToFirst()
+                            cursor.getString(nameIndex)
+                        } ?: MLang.ProfilesPage.Message.UnknownFile
 
-            val extension = actualFileName.substringAfterLast(".", "")
-            if (!extension.equals("yaml", ignoreCase = true) && !extension.equals(
-                    "yml", ignoreCase = true
-                )
-            ) {
-                error = MLang.ProfilesPage.Validation.YamlOnly
-                return@let
-            }
+                val extension = actualFileName.substringAfterLast(".", "")
+                if (
+                    !extension.equals("yaml", ignoreCase = true) &&
+                        !extension.equals("yml", ignoreCase = true)
+                ) {
+                    error = MLang.ProfilesPage.Validation.YamlOnly
+                    return@let
+                }
 
-            filePath = it.toString()
-            error = ""
-            applyFileNameText(actualFileName)
+                filePath = it.toString()
+                error = ""
+                applyFileNameText(actualFileName)
 
-            val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
-            if (name.isBlank() || name == actualFileName) {
-                applyNameText(fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile })
+                val fileNameWithoutExt = actualFileName.substringBeforeLast(".")
+                if (name.isBlank() || name == actualFileName) {
+                    applyNameText(
+                        fileNameWithoutExt.ifBlank { MLang.ProfilesPage.Input.NewProfile }
+                    )
+                }
             }
         }
-    }
 
     val qrImageLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -311,7 +317,9 @@ internal fun AddProfileSheet(
                             context.toast(MLang.ProfilesPage.QrScanner.RecognizeFailed)
                         }
                     } catch (error: Exception) {
-                        context.toast(MLang.ProfilesPage.QrScanner.RecognizeError.format(error.message ?: ""))
+                        context.toast(
+                            MLang.ProfilesPage.QrScanner.RecognizeError.format(error.message ?: "")
+                        )
                     }
                 }
             }
@@ -348,7 +356,7 @@ internal fun AddProfileSheet(
                     profileToEdit.uuid,
                     nameTextFieldValue.text,
                     urlTextFieldValue.text,
-                    profileToEdit.interval
+                    profileToEdit.interval,
                 )
             } else {
                 onAddProfile(
@@ -356,7 +364,7 @@ internal fun AddProfileSheet(
                     urlTextFieldValue.text,
                     Profile.Type.Url,
                     0L,
-                    null
+                    null,
                 )
             }
         } else {
@@ -365,7 +373,7 @@ internal fun AddProfileSheet(
                     profileToEdit.uuid,
                     name,
                     profileToEdit.source,
-                    profileToEdit.interval
+                    profileToEdit.interval,
                 )
             } else {
                 onAddProfile(
@@ -373,7 +381,7 @@ internal fun AddProfileSheet(
                     filePath,
                     Profile.Type.File,
                     0L,
-                    filePath.toUri()
+                    filePath.toUri(),
                 )
             }
         }
@@ -381,13 +389,12 @@ internal fun AddProfileSheet(
 
     AppActionBottomSheet(
         show = show.value,
-        title = if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle else MLang.ProfilesPage.Sheet.AddTitle,
+        title =
+            if (profileToEdit != null) MLang.ProfilesPage.Sheet.EditTitle
+            else MLang.ProfilesPage.Sheet.AddTitle,
         startAction = {
             if (!isDownloading) {
-                AppBottomSheetCloseAction(
-                    contentDescription = "Cancel",
-                    onClick = dismissSheet,
-                )
+                AppBottomSheetCloseAction(contentDescription = "Cancel", onClick = dismissSheet)
             }
         },
         endAction = {
@@ -400,31 +407,37 @@ internal fun AddProfileSheet(
         },
         onDismissRequest = dismissSheet,
     ) {
-        val stableSheetHeight = remember(stableSheetHeightPx, density) {
-            if (stableSheetHeightPx <= 0) UiDp.dp0 else with(density) { stableSheetHeightPx.toDp() }
-        }
+        val stableSheetHeight =
+            remember(stableSheetHeightPx, density) {
+                if (stableSheetHeightPx <= 0) UiDp.dp0
+                else with(density) { stableSheetHeightPx.toDp() }
+            }
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .animateContentSize(animationSpec = tween(300, easing = FastOutSlowInEasing))
-                .padding(bottom = UiDp.dp16),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentHeight()
+                    .animateContentSize(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                    .padding(bottom = UiDp.dp16)
         ) {
             AnimatedContent(
                 targetState = isDownloading,
                 transitionSpec = {
                     if (targetState) {
-                        (slideInHorizontally(
-                            animationSpec = tween(260),
-                            initialOffsetX = { it }) + fadeIn()) togetherWith
-                                (slideOutHorizontally(
-                                    animationSpec = tween(220),
-                                    targetOffsetX = { -it / 3 }) + fadeOut())
+                        (slideInHorizontally(animationSpec = tween(260), initialOffsetX = { it }) +
+                            fadeIn()) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(220),
+                                targetOffsetX = { -it / 3 },
+                            ) + fadeOut())
                     } else {
                         (slideInHorizontally(
                             animationSpec = tween(220),
-                            initialOffsetX = { -it / 3 }) + fadeIn()) togetherWith
-                                (slideOutHorizontally(animationSpec = tween(260), targetOffsetX = { it }) + fadeOut())
+                            initialOffsetX = { -it / 3 },
+                        ) + fadeIn()) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(260),
+                                targetOffsetX = { it },
+                            ) + fadeOut())
                     }
                 },
                 label = "ProfileImportContentSwitch",
@@ -447,7 +460,9 @@ internal fun AddProfileSheet(
                         error = error,
                         hasCameraPermission = hasCameraPermission,
                         showCameraPreview = showCameraPreview,
-                        onContainerMeasured = { stableSheetHeightPx = max(stableSheetHeightPx, it.height) },
+                        onContainerMeasured = {
+                            stableSheetHeightPx = max(stableSheetHeightPx, it.height)
+                        },
                         onTypeSelected = {
                             selectedTypeIndex = it
                             clearCurrentTypeState()
@@ -485,17 +500,17 @@ private fun DownloadProgressContent(
 ) {
     val isCompleted = downloadProgress?.isCompleted == true
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(
-                if (isCompleted) {
-                    downloadCompleteSheetContentHeight
-                } else if (stableSheetHeightPx > 0) {
-                    stableSheetHeight
-                } else {
-                    downloadSheetContentHeight
-                }
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .height(
+                    if (isCompleted) {
+                        downloadCompleteSheetContentHeight
+                    } else if (stableSheetHeightPx > 0) {
+                        stableSheetHeight
+                    } else {
+                        downloadSheetContentHeight
+                    }
+                ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(UiDp.dp16, Alignment.CenterVertically),
     ) {
@@ -513,16 +528,14 @@ private fun DownloadProgressContent(
                     imageVector = Yume.`Package-check`,
                     contentDescription = "Complete",
                     tint = MiuixTheme.colorScheme.onPrimary,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(UiDp.dp16))
-                        .background(MiuixTheme.colorScheme.primary)
-                        .padding(UiDp.dp10),
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .clip(RoundedCornerShape(UiDp.dp16))
+                            .background(MiuixTheme.colorScheme.primary)
+                            .padding(UiDp.dp10),
                 )
             } else {
-                InfiniteProgressIndicator(
-                    modifier = Modifier.size(UiDp.dp32),
-                )
+                InfiniteProgressIndicator(modifier = Modifier.size(UiDp.dp32))
             }
         }
 
@@ -559,9 +572,7 @@ private fun ProfileFormContent(
     onQrScanned: (String) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onSizeChanged(onContainerMeasured),
+        modifier = Modifier.fillMaxWidth().onSizeChanged(onContainerMeasured),
         verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
     ) {
         ProfileTypeSelectorCard(
@@ -576,24 +587,26 @@ private fun ProfileFormContent(
             label = "ProfileTypeContent",
         ) { typeIndex ->
             when (typeIndex) {
-                2 -> QrScannerContent(
-                    hasCameraPermission = hasCameraPermission,
-                    showCameraPreview = showCameraPreview,
-                    onSelectQrImage = onSelectQrImage,
-                    onQrScanned = onQrScanned,
-                )
+                2 ->
+                    QrScannerContent(
+                        hasCameraPermission = hasCameraPermission,
+                        showCameraPreview = showCameraPreview,
+                        onSelectQrImage = onSelectQrImage,
+                        onQrScanned = onQrScanned,
+                    )
 
-                else -> ManualProfileContent(
-                    typeIndex = typeIndex,
-                    profileLocked = profileLocked,
-                    nameTextFieldValue = nameTextFieldValue,
-                    urlTextFieldValue = urlTextFieldValue,
-                    fileNameTextFieldValue = fileNameTextFieldValue,
-                    error = error,
-                    onNameChange = onNameChange,
-                    onUrlChange = onUrlChange,
-                    onPickFile = onPickFile,
-                )
+                else ->
+                    ManualProfileContent(
+                        typeIndex = typeIndex,
+                        profileLocked = profileLocked,
+                        nameTextFieldValue = nameTextFieldValue,
+                        urlTextFieldValue = urlTextFieldValue,
+                        fileNameTextFieldValue = fileNameTextFieldValue,
+                        error = error,
+                        onNameChange = onNameChange,
+                        onUrlChange = onUrlChange,
+                        onPickFile = onPickFile,
+                    )
             }
         }
     }
@@ -607,22 +620,23 @@ private fun ProfileTypeSelectorCard(
 ) {
     top.yukonga.miuix.kmp.basic.Card {
         Box(
-            modifier = Modifier
-                .alpha(if (profileLocked) 0.5f else 1f)
-                .clickable(
-                    enabled = profileLocked,
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = {},
-                ),
+            modifier =
+                Modifier.alpha(if (profileLocked) 0.5f else 1f)
+                    .clickable(
+                        enabled = profileLocked,
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = {},
+                    )
         ) {
             WindowSpinnerPreference(
                 title = MLang.ProfilesPage.Type.Title,
-                items = listOf(
-                    SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
-                    SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
-                    SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan),
-                ),
+                items =
+                    listOf(
+                        SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
+                        SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
+                        SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan),
+                    ),
                 selectedIndex = selectedTypeIndex,
                 onSelectedIndexChange = onTypeSelected,
             )
@@ -642,18 +656,16 @@ private fun QrScannerContent(
         verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(UiDp.dp200)
-                .clip(RoundedCornerShape(UiDp.dp12))
-                .background(MiuixTheme.colorScheme.surfaceVariant),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(UiDp.dp200)
+                    .clip(RoundedCornerShape(UiDp.dp12))
+                    .background(MiuixTheme.colorScheme.surfaceVariant),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             if (showCameraPreview) {
-                key("qr_scanner_stable") {
-                    StableQrScanner(onScanned = onQrScanned)
-                }
+                key("qr_scanner_stable") { StableQrScanner(onScanned = onQrScanned) }
             } else if (!hasCameraPermission) {
                 Text(MLang.ProfilesPage.QrScanner.NeedPermission)
             } else {
@@ -712,13 +724,13 @@ private fun ManualProfileContent(
                 useLabelAsPlaceholder = true,
                 readOnly = true,
                 enabled = false,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = onPickFile,
-                    ),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                            onClick = onPickFile,
+                        ),
             )
         }
 

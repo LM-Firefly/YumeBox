@@ -25,9 +25,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-data class RootAccessStatus(
-    val rootAccessGranted: Boolean,
-) {
+data class RootAccessStatus(val rootAccessGranted: Boolean) {
     val canStartRootTun: Boolean
         get() = rootAccessGranted
 
@@ -39,14 +37,11 @@ data class RootAccessStatus(
 object RootAccessSupport {
     fun evaluate(@Suppress("UNUSED_PARAMETER") context: Context): RootAccessStatus {
         val rootAccessGranted = RootPackageShell.hasRootAccess()
-        return RootAccessStatus(
-            rootAccessGranted = rootAccessGranted,
-        )
+        return RootAccessStatus(rootAccessGranted = rootAccessGranted)
     }
 
-    suspend fun evaluateAsync(context: Context): RootAccessStatus = withContext(Dispatchers.IO) {
-        evaluate(context)
-    }
+    suspend fun evaluateAsync(context: Context): RootAccessStatus =
+        withContext(Dispatchers.IO) { evaluate(context) }
 
     suspend fun requireRootTunAccess(context: Context): RootAccessStatus {
         return evaluateAsync(context).also { status ->

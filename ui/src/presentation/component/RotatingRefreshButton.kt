@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.animation.core.*
@@ -40,24 +38,20 @@ fun RotatingRefreshButton(
     contentDescription: String = "Refresh",
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "refresh_rotation")
-    val rotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = LinearEasing)
-        ),
-        label = "rotation"
-    )
+    val rotation by
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec =
+                infiniteRepeatable(animation = tween(durationMillis = 1000, easing = LinearEasing)),
+            label = "rotation",
+        )
 
-    IconButton(
-        modifier = modifier,
-        onClick = onClick,
-        enabled = !isRotating
-    ) {
+    IconButton(modifier = modifier, onClick = onClick, enabled = !isRotating) {
         Icon(
             imageVector = MiuixIcons.Refresh,
             contentDescription = contentDescription,
-            modifier = if (isRotating) Modifier.rotate(rotation) else Modifier
+            modifier = if (isRotating) Modifier.rotate(rotation) else Modifier,
         )
     }
 }

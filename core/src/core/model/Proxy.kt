@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.model
 
 import android.os.Parcel
@@ -42,7 +40,6 @@ data class Proxy(
         RejectDrop(false),
         Compatible(false),
         Pass(false),
-
         Shadowsocks(false),
         ShadowsocksR(false),
         Snell(false),
@@ -62,15 +59,13 @@ data class Proxy(
         Sudoku(false),
         Masque(false),
         TrustTunnel(false),
-
         Relay(true),
         Selector(true),
         Fallback(true),
         URLTest(true),
         LoadBalance(true),
         Smart(true),
-
-        Unknown(false);
+        Unknown(false),
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

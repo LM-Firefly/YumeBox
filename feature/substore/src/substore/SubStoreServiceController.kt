@@ -36,7 +36,8 @@ data class SubStoreServiceSnapshot(
     val isRunning: Boolean = false,
     val isStarting: Boolean = false,
 ) {
-    val isActive: Boolean get() = isRunning || isStarting
+    val isActive: Boolean
+        get() = isRunning || isStarting
 }
 
 object SubStoreServiceController {
@@ -50,22 +51,19 @@ object SubStoreServiceController {
     private val _snapshot = MutableStateFlow(SubStoreServiceSnapshot())
     val snapshot: StateFlow<SubStoreServiceSnapshot> = _snapshot.asStateFlow()
 
-    fun startService(
-        context: Context,
-        request: SubStoreServiceRequest,
-    ) {
+    fun startService(context: Context, request: SubStoreServiceRequest) {
         _snapshot.value = SubStoreServiceSnapshot(isRunning = false, isStarting = true)
-        val intent = Intent(context, SubStoreService::class.java).apply {
-            putExtra(EXTRA_FRONTEND_PORT, request.frontendPort)
-            putExtra(EXTRA_BACKEND_PORT, request.backendPort)
-            putExtra(EXTRA_ALLOW_LAN, request.allowLan)
-        }
-        runCatching {
-            context.startService(intent)
-        }.onFailure {
-            _snapshot.value = SubStoreServiceSnapshot()
-            throw it
-        }
+        val intent =
+            Intent(context, SubStoreService::class.java).apply {
+                putExtra(EXTRA_FRONTEND_PORT, request.frontendPort)
+                putExtra(EXTRA_BACKEND_PORT, request.backendPort)
+                putExtra(EXTRA_ALLOW_LAN, request.allowLan)
+            }
+        runCatching { context.startService(intent) }
+            .onFailure {
+                _snapshot.value = SubStoreServiceSnapshot()
+                throw it
+            }
     }
 
     fun stopService(context: Context) {
@@ -75,8 +73,12 @@ object SubStoreServiceController {
 
     fun requestFrom(intent: Intent?): SubStoreServiceRequest {
         return SubStoreServiceRequest(
-            frontendPort = intent?.getIntExtra(EXTRA_FRONTEND_PORT, DEFAULT_FRONTEND_PORT) ?: DEFAULT_FRONTEND_PORT,
-            backendPort = intent?.getIntExtra(EXTRA_BACKEND_PORT, DEFAULT_BACKEND_PORT) ?: DEFAULT_BACKEND_PORT,
+            frontendPort =
+                intent?.getIntExtra(EXTRA_FRONTEND_PORT, DEFAULT_FRONTEND_PORT)
+                    ?: DEFAULT_FRONTEND_PORT,
+            backendPort =
+                intent?.getIntExtra(EXTRA_BACKEND_PORT, DEFAULT_BACKEND_PORT)
+                    ?: DEFAULT_BACKEND_PORT,
             allowLan = intent?.getBooleanExtra(EXTRA_ALLOW_LAN, false) ?: false,
         )
     }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.app.Notification
@@ -62,21 +60,22 @@ class RootTunService : BaseService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
-                launch {
-                    runCatching { RootTunServiceBridge.stop(appContextOrSelf) }
-                }
+                launch { runCatching { RootTunServiceBridge.stop(appContextOrSelf) } }
                 return START_NOT_STICKY
             }
 
-            ACTION_START, null -> {
+            ACTION_START,
+            null -> {
                 val cachedStatus = stateStore.snapshot()
                 startForeground(
                     NOTIFICATION_ID,
                     buildNotification(
                         NotificationPresentationFactory.createStatus(
-                            profileName = cachedStatus.profileName ?: MLang.Service.Notification.UnknownProfile,
+                            profileName =
+                                cachedStatus.profileName
+                                    ?: MLang.Service.Notification.UnknownProfile,
                             status = describeStatus(cachedStatus),
-                        ),
+                        )
                     ),
                 )
                 if (!cachedStatus.state.isActive && !cachedStatus.state.isRecovering) {
@@ -85,83 +84,112 @@ class RootTunService : BaseService() {
                 }
 
                 if (notificationJob?.isActive != true) {
-                    notificationJob = launch(Dispatchers.Default) {
-                        var startedBroadcastSent = false
-                        var unreachableCount = 0
-                        var lastStatus = cachedStatus
+                    notificationJob =
+                        launch(Dispatchers.Default) {
+                            var startedBroadcastSent = false
+                            var unreachableCount = 0
+                            var lastStatus = cachedStatus
 
-                        PollingTimers.ticks(PollingTimerSpecs.RootTunStatusNotification).collect {
-                            val snapshotResult = runCatching {
-                                RootTunServiceBridge.queryStatus(appContextOrSelf)
-                            }
-                            val snapshot = snapshotResult.getOrNull()
-                            if (snapshot == null) {
-                                unreachableCount++
-                                val error = snapshotResult.exceptionOrNull()
-                                val fallbackStatus = stateStore.snapshot().takeIf {
-                                    it.state != RootTunState.Idle || !it.profileName.isNullOrBlank() || !it.lastError.isNullOrBlank()
-                                } ?: lastStatus
-                                val title = fallbackStatus.profileName ?: MLang.Service.Notification.UnknownProfile
-                                val content = if (unreachableCount >= 3) {
-                                    describeStatus(
-                                        fallbackStatus.copy(
-                                            lastError = fallbackStatus.lastError ?: error?.message ?: "State unavailable",
-                                        ),
+                            PollingTimers.ticks(PollingTimerSpecs.RootTunStatusNotification)
+                                .collect {
+                                    val snapshotResult = runCatching {
+                                        RootTunServiceBridge.queryStatus(appContextOrSelf)
+                                    }
+                                    val snapshot = snapshotResult.getOrNull()
+                                    if (snapshot == null) {
+                                        unreachableCount++
+                                        val error = snapshotResult.exceptionOrNull()
+                                        val fallbackStatus =
+                                            stateStore.snapshot().takeIf {
+                                                it.state != RootTunState.Idle ||
+                                                    !it.profileName.isNullOrBlank() ||
+                                                    !it.lastError.isNullOrBlank()
+                                            } ?: lastStatus
+                                        val title =
+                                            fallbackStatus.profileName
+                                                ?: MLang.Service.Notification.UnknownProfile
+                                        val content =
+                                            if (unreachableCount >= 3) {
+                                                describeStatus(
+                                                    fallbackStatus.copy(
+                                                        lastError =
+                                                            fallbackStatus.lastError
+                                                                ?: error?.message
+                                                                ?: "State unavailable"
+                                                    )
+                                                )
+                                            } else {
+                                                error?.message ?: "Waiting for reconnect"
+                                            }
+                                        notificationManager.notify(
+                                            NOTIFICATION_ID,
+                                            buildNotification(
+                                                NotificationPresentationFactory.createStatus(
+                                                    profileName = title,
+                                                    status = content,
+                                                )
+                                            ),
+                                        )
+                                        if (
+                                            !fallbackStatus.state.isActive &&
+                                                !fallbackStatus.state.isRecovering
+                                        ) {
+                                            stopSelf()
+                                            return@collect
+                                        }
+                                        return@collect
+                                    }
+
+                                    unreachableCount = 0
+                                    lastStatus = snapshot
+                                    syncStatus(snapshot)
+
+                                    if (
+                                        snapshot.state == RootTunState.Running &&
+                                            !startedBroadcastSent
+                                    ) {
+                                        sendClashStarted()
+                                        startedBroadcastSent = true
+                                    }
+
+                                    if (
+                                        snapshot.state == RootTunState.Idle ||
+                                            snapshot.state == RootTunState.Failed
+                                    ) {
+                                        notificationManager.notify(
+                                            NOTIFICATION_ID,
+                                            buildNotification(
+                                                NotificationPresentationFactory.createStatus(
+                                                    profileName =
+                                                        snapshot.profileName
+                                                            ?: MLang.Service.Notification
+                                                                .UnknownProfile,
+                                                    status = describeStatus(snapshot),
+                                                )
+                                            ),
+                                        )
+                                        stopSelf()
+                                        return@collect
+                                    }
+
+                                    val profileName =
+                                        snapshot.profileName
+                                            ?: MLang.Service.Notification.UnknownProfile
+                                    val presentation =
+                                        if (snapshot.state == RootTunState.Running) {
+                                            buildTrafficPresentation(profileName)
+                                        } else {
+                                            NotificationPresentationFactory.createStatus(
+                                                profileName = profileName,
+                                                status = describeStatus(snapshot),
+                                            )
+                                        }
+                                    notificationManager.notify(
+                                        NOTIFICATION_ID,
+                                        buildNotification(presentation),
                                     )
-                                } else {
-                                    error?.message ?: "Waiting for reconnect"
                                 }
-                                notificationManager.notify(
-                                    NOTIFICATION_ID,
-                                    buildNotification(
-                                        NotificationPresentationFactory.createStatus(
-                                            profileName = title,
-                                            status = content,
-                                        ),
-                                    ),
-                                )
-                                if (!fallbackStatus.state.isActive && !fallbackStatus.state.isRecovering) {
-                                    stopSelf()
-                                    return@collect
-                                }
-                                return@collect
-                            }
-
-                            unreachableCount = 0
-                            lastStatus = snapshot
-                            syncStatus(snapshot)
-
-                            if (snapshot.state == RootTunState.Running && !startedBroadcastSent) {
-                                sendClashStarted()
-                                startedBroadcastSent = true
-                            }
-
-                            if (snapshot.state == RootTunState.Idle || snapshot.state == RootTunState.Failed) {
-                                notificationManager.notify(
-                                    NOTIFICATION_ID,
-                                    buildNotification(
-                                        NotificationPresentationFactory.createStatus(
-                                            profileName = snapshot.profileName ?: MLang.Service.Notification.UnknownProfile,
-                                            status = describeStatus(snapshot),
-                                        ),
-                                    ),
-                                )
-                                stopSelf()
-                                return@collect
-                            }
-
-                            val profileName = snapshot.profileName ?: MLang.Service.Notification.UnknownProfile
-                            val presentation = if (snapshot.state == RootTunState.Running) {
-                                buildTrafficPresentation(profileName)
-                            } else {
-                                NotificationPresentationFactory.createStatus(
-                                    profileName = profileName,
-                                    status = describeStatus(snapshot),
-                                )
-                            }
-                            notificationManager.notify(NOTIFICATION_ID, buildNotification(presentation))
                         }
-                    }
                 }
 
                 return START_STICKY
@@ -187,8 +215,11 @@ class RootTunService : BaseService() {
     }
 
     private suspend fun buildTrafficPresentation(profileName: String): NotificationPresentation {
-        val now = runCatching { RootTunServiceBridge.queryTrafficNow(appContextOrSelf) }.getOrDefault(0L)
-        val total = runCatching { RootTunServiceBridge.queryTrafficTotal(appContextOrSelf) }.getOrDefault(0L)
+        val now =
+            runCatching { RootTunServiceBridge.queryTrafficNow(appContextOrSelf) }.getOrDefault(0L)
+        val total =
+            runCatching { RootTunServiceBridge.queryTrafficTotal(appContextOrSelf) }
+                .getOrDefault(0L)
         return NotificationPresentationFactory.createRunning(
             profileName = profileName,
             trafficNow = now,
@@ -197,26 +228,28 @@ class RootTunService : BaseService() {
     }
 
     private fun buildNotification(presentation: NotificationPresentation): Notification {
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent().apply {
-                component = Components.PROXY_SHEET_ACTIVITY
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_NO_ANIMATION
-                )
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val contentIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                Intent().apply {
+                    component = Components.PROXY_SHEET_ACTIVITY
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                            Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    )
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
-        val stopIntent = PendingIntent.getService(
-            this,
-            1,
-            Intent(this, RootTunService::class.java).setAction(ACTION_STOP),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val stopIntent =
+            PendingIntent.getService(
+                this,
+                1,
+                Intent(this, RootTunService::class.java).setAction(ACTION_STOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(presentation.title)
@@ -243,7 +276,7 @@ class RootTunService : BaseService() {
         notificationManager.createNotificationChannel(
             NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
                 .setName(CHANNEL_NAME)
-                .build(),
+                .build()
         )
     }
 

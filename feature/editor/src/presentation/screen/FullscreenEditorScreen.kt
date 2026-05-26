@@ -18,28 +18,27 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.feature.editor.screen
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
 import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.Atom
+import com.github.yumelira.yumebox.presentation.icon.yume.Save
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.Atom
-import com.github.yumelira.yumebox.presentation.icon.yume.Save
 
 @Composable
 fun FullscreenEditorScreen(
@@ -52,11 +51,12 @@ fun FullscreenEditorScreen(
     val context = LocalContext.current
     val showDiscardDialog = remember { mutableStateOf(false) }
 
-    val editorState = rememberConfiguredCodeEditorState(
-        initialContent = initialContent,
-        language = language,
-        readOnly = false,
-    )
+    val editorState =
+        rememberConfiguredCodeEditorState(
+            initialContent = initialContent,
+            language = language,
+            readOnly = false,
+        )
     val scrollBehavior = MiuixScrollBehavior()
 
     fun handleBack() {
@@ -67,9 +67,7 @@ fun FullscreenEditorScreen(
         }
     }
 
-    BackHandler {
-        handleBack()
-    }
+    BackHandler { handleBack() }
 
     Scaffold(
         topBar = {
@@ -77,7 +75,6 @@ fun FullscreenEditorScreen(
                 title = title,
                 scrollBehavior = scrollBehavior,
                 actions = {
-
                     IconButton(
                         modifier = Modifier.padding(end = UiDp.dp12),
                         onClick = {
@@ -88,10 +85,7 @@ fun FullscreenEditorScreen(
                             }
                         },
                     ) {
-                        Icon(
-                            imageVector = Yume.Atom,
-                            contentDescription = "Format"
-                        )
+                        Icon(imageVector = Yume.Atom, contentDescription = "Format")
                     }
 
                     IconButton(
@@ -103,14 +97,11 @@ fun FullscreenEditorScreen(
                             } else {
                                 context.toast("语法错误，请检查内容")
                             }
-                        },
+                        }
                     ) {
-                        Icon(
-                            imageVector = Yume.Save,
-                            contentDescription = "Save"
-                        )
+                        Icon(imageVector = Yume.Save, contentDescription = "Save")
                     }
-                }
+                },
             )
         }
     ) { paddingValues ->
@@ -118,9 +109,7 @@ fun FullscreenEditorScreen(
             CodeEditor(
                 state = editorState,
                 modifier = Modifier.fillMaxSize(),
-                onTextChange = { newContent ->
-                    editorState.syncContentFromEditor()
-                }
+                onTextChange = { newContent -> editorState.syncContentFromEditor() },
             )
         }
     }
@@ -129,7 +118,7 @@ fun FullscreenEditorScreen(
         show = showDiscardDialog.value,
         title = "未保存的修改",
         summary = "当前有未保存的修改，确定要放弃吗？",
-        onDismissRequest = { showDiscardDialog.value = false }
+        onDismissRequest = { showDiscardDialog.value = false },
     ) {
         DialogButtonRow(
             onCancel = { showDiscardDialog.value = false },
@@ -138,7 +127,7 @@ fun FullscreenEditorScreen(
                 navigator.navigateUp()
             },
             cancelText = "取消",
-            confirmText = "放弃"
+            confirmText = "放弃",
         )
     }
 }

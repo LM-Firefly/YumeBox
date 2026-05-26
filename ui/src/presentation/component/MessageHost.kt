@@ -18,18 +18,17 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 
@@ -37,7 +36,7 @@ enum class MessageType {
     SUCCESS,
     ERROR,
     WARNING,
-    INFO
+    INFO,
 }
 
 data class Message(
@@ -49,10 +48,7 @@ data class Message(
 )
 
 @Composable
-fun MessageHost(
-    message: Message?,
-    onDismiss: () -> Unit,
-) {
+fun MessageHost(message: Message?, onDismiss: () -> Unit) {
     val showDialog = remember { mutableStateOf(false) }
     val onDismissLatest = rememberUpdatedState(onDismiss)
     val dismissDialog: () -> Unit = {
@@ -60,9 +56,7 @@ fun MessageHost(
         onDismissLatest.value()
     }
 
-    LaunchedEffect(message) {
-        showDialog.value = message != null
-    }
+    LaunchedEffect(message) { showDialog.value = message != null }
 
     if (message != null) {
         AppDialog(
@@ -72,15 +66,10 @@ fun MessageHost(
             onDismissRequest = dismissDialog,
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(UiDp.dp16),
+                modifier = Modifier.fillMaxWidth().padding(UiDp.dp16),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                ArrowPreference(
-                    title = MLang.Component.Message.Confirm,
-                    onClick = dismissDialog,
-                )
+                ArrowPreference(title = MLang.Component.Message.Confirm, onClick = dismissDialog)
             }
         }
 
@@ -91,7 +80,7 @@ fun MessageHost(
                         name = "message_host_autoclose_${message.autoCloseDelay}",
                         intervalMillis = message.autoCloseDelay,
                         initialDelayMillis = message.autoCloseDelay,
-                    ),
+                    )
                 )
                 dismissDialog()
             }
@@ -100,46 +89,36 @@ fun MessageHost(
 }
 
 private fun getTitle(type: MessageType, title: String): String {
-    val prefix = when (type) {
-        MessageType.SUCCESS -> "✓ "
-        MessageType.ERROR -> "✗ "
-        MessageType.WARNING -> "⚠ "
-        MessageType.INFO -> ""
-    }
+    val prefix =
+        when (type) {
+            MessageType.SUCCESS -> "✓ "
+            MessageType.ERROR -> "✗ "
+            MessageType.WARNING -> "⚠ "
+            MessageType.INFO -> ""
+        }
     return prefix + title
 }
 
 @Composable
-fun SimpleMessage(
-    message: String?,
-    onDismiss: () -> Unit,
-) {
+fun SimpleMessage(message: String?, onDismiss: () -> Unit) {
     if (message != null) {
-        MessageHost(
-            message = Message(MLang.Component.Message.Hint, message),
-            onDismiss = onDismiss,
-        )
+        MessageHost(message = Message(MLang.Component.Message.Hint, message), onDismiss = onDismiss)
     }
 }
 
 @Composable
-fun ErrorMessage(
-    error: String?,
-    onDismiss: () -> Unit,
-) {
+fun ErrorMessage(error: String?, onDismiss: () -> Unit) {
     if (error != null) {
         MessageHost(
-            message = Message(MLang.Component.Message.Error, error, MessageType.ERROR, autoClose = false),
+            message =
+                Message(MLang.Component.Message.Error, error, MessageType.ERROR, autoClose = false),
             onDismiss = onDismiss,
         )
     }
 }
 
 @Composable
-fun SuccessMessage(
-    message: String?,
-    onDismiss: () -> Unit,
-) {
+fun SuccessMessage(message: String?, onDismiss: () -> Unit) {
     if (message != null) {
         MessageHost(
             message = Message(MLang.Component.Message.Success, message, MessageType.SUCCESS),

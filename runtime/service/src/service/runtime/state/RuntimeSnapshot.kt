@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.state
 
 import com.github.yumelira.yumebox.data.model.ProxyMode

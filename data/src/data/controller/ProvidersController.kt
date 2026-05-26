@@ -18,17 +18,15 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.controller
 
 import android.content.Context
 import android.net.Uri
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.Provider
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 
 class ProvidersController(
     private val context: Context,
@@ -64,23 +62,24 @@ class ProvidersController(
         context: Context,
         provider: Provider,
         uri: Uri,
-        maxBytes: Long = MAX_UPLOAD_SIZE_BYTES
+        maxBytes: Long = MAX_UPLOAD_SIZE_BYTES,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
                 val targetFile = buildTargetFile(provider)
-                val inputStream = context.contentResolver.openInputStream(uri)
-                    ?: return@withContext Result.failure(IllegalStateException("无法读取文件: $uri"))
+                val inputStream =
+                    context.contentResolver.openInputStream(uri)
+                        ?: return@withContext Result.failure(IllegalStateException("无法读取文件: $uri"))
 
                 inputStream.use { input ->
                     val size = input.available().toLong()
                     if (size > maxBytes) {
-                        return@withContext Result.failure(IllegalStateException("文件超过 ${maxBytes / (1024 * 1024)}MB 限制"))
+                        return@withContext Result.failure(
+                            IllegalStateException("文件超过 ${maxBytes / (1024 * 1024)}MB 限制")
+                        )
                     }
 
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
+                    targetFile.outputStream().use { output -> input.copyTo(output) }
                 }
 
                 Result.success(Unit)
@@ -105,19 +104,22 @@ class ProvidersController(
         }
         val targetFile = File(provider.path).canonicalFile
         val importedRoot = context.filesDir.resolve("imported").canonicalFile
-        val inImportedProviders = targetFile.toPath().startsWith(importedRoot.toPath()) &&
-            targetFile.toRelativeString(importedRoot).replace('\\', '/')
-                .matches(Regex("""^[^/]+/providers/(rules|proxies)/.+"""))
+        val inImportedProviders =
+            targetFile.toPath().startsWith(importedRoot.toPath()) &&
+                targetFile
+                    .toRelativeString(importedRoot)
+                    .replace('\\', '/')
+                    .matches(Regex("""^[^/]+/providers/(rules|proxies)/.+"""))
         if (!inImportedProviders) {
-            throw IllegalStateException("Provider path must live under profile provider directories: ${provider.path}")
+            throw IllegalStateException(
+                "Provider path must live under profile provider directories: ${provider.path}"
+            )
         }
         targetFile.parentFile?.mkdirs()
         return targetFile
     }
 
-    data class UpdateProvidersResult(
-        val failedProviders: List<String>
-    )
+    data class UpdateProvidersResult(val failedProviders: List<String>)
 
     companion object {
         private const val MAX_UPLOAD_SIZE_BYTES = 50L * 1024 * 1024

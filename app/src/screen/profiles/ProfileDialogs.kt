@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.profiles
 
 import androidx.compose.foundation.layout.*
@@ -30,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.data.model.ProfileBinding
@@ -56,11 +53,12 @@ internal fun EditProfileNameDialog(
     show: Boolean,
     currentName: String,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String) -> Unit,
 ) {
-    var editName by remember(show, currentName) {
-        mutableStateOf(TextFieldValue(currentName, TextRange(currentName.length)))
-    }
+    var editName by
+        remember(show, currentName) {
+            mutableStateOf(TextFieldValue(currentName, TextRange(currentName.length)))
+        }
 
     AppTextFieldDialog(
         show = show,
@@ -102,9 +100,10 @@ internal fun DeleteConfirmDialog(
                 onCancel = onDismiss,
                 onConfirm = onConfirm,
                 cancelText = MLang.ProfilesPage.Button.Cancel,
-                confirmText = MLang.ProfilesPage.DeleteDialog.Confirm
+                confirmText = MLang.ProfilesPage.DeleteDialog.Confirm,
             )
-        })
+        },
+    )
 }
 
 @Composable
@@ -114,7 +113,7 @@ internal fun ShareOptionsDialog(
     onDismiss: () -> Unit,
     onDismissFinished: (() -> Unit)? = null,
     onShareFile: (Profile) -> Unit,
-    onShareLink: (Profile) -> Unit
+    onShareLink: (Profile) -> Unit,
 ) {
     val spacing = AppTheme.spacing
 
@@ -133,37 +132,36 @@ internal fun ShareOptionsDialog(
         insideMargin = DialogDefaults.insideMargin,
         defaultWindowInsetsPadding = true,
         content = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(spacing.space12)
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.space12)) {
                 if (profile.type == Profile.Type.Url) {
                     Button(
                         onClick = { onShareLink(profile) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColorsPrimary()
+                        colors = ButtonDefaults.buttonColorsPrimary(),
                     ) {
                         Text(
                             MLang.ProfilesPage.ShareDialog.ShareLink,
-                            color = MiuixTheme.colorScheme.onPrimary
+                            color = MiuixTheme.colorScheme.onPrimary,
                         )
                     }
                 }
                 Button(
                     onClick = { onShareFile(profile) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors()
+                    colors = ButtonDefaults.buttonColors(),
                 ) {
                     Text(MLang.ProfilesPage.ShareDialog.ShareFile)
                 }
                 Button(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors()
+                    colors = ButtonDefaults.buttonColors(),
                 ) {
                     Text(MLang.ProfilesPage.Button.Cancel)
                 }
             }
-        })
+        },
+    )
 }
 
 @Composable
@@ -181,13 +179,13 @@ internal fun ProfileSettingsDialog(
     val opacity = AppTheme.opacity
     val componentSizes = AppTheme.sizes
 
-    val initialCustomRoutingEnabled = binding?.overrideIds
-        ?.contains(OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID) == true
+    val initialCustomRoutingEnabled =
+        binding?.overrideIds?.contains(OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID) == true
 
-    val initialOverrideIds = binding
-        ?.overrideIds
-        .orEmpty()
-        .filter { it != OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID }
+    val initialOverrideIds =
+        binding?.overrideIds.orEmpty().filter {
+            it != OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+        }
     var editName by remember {
         mutableStateOf(TextFieldValue(profile.name, TextRange(profile.name.length)))
     }
@@ -211,23 +209,27 @@ internal fun ProfileSettingsDialog(
     val saveSettings = {
         val trimmedName = editName.text.trim()
         val trimmedSource = editSource.text.trim()
-        val targetSource = if (profile.type == Profile.Type.Url && trimmedSource.isNotEmpty()) {
-            trimmedSource
-        } else {
-            profile.source
-        }
-        if (trimmedName.isNotEmpty() && targetSource.isNotEmpty() &&
-            (trimmedName != profile.name || targetSource != profile.source)
+        val targetSource =
+            if (profile.type == Profile.Type.Url && trimmedSource.isNotEmpty()) {
+                trimmedSource
+            } else {
+                profile.source
+            }
+        if (
+            trimmedName.isNotEmpty() &&
+                targetSource.isNotEmpty() &&
+                (trimmedName != profile.name || targetSource != profile.source)
         ) {
             onSaveProfileMeta(trimmedName, targetSource)
         }
 
         val basicFinalIds = buildFinalOverrideIds(pendingSelectedUserOverrideIds)
-        val finalSelectedOverrideIds = if (customRoutingSelected) {
-            basicFinalIds + OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
-        } else {
-            basicFinalIds - OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
-        }
+        val finalSelectedOverrideIds =
+            if (customRoutingSelected) {
+                basicFinalIds + OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+            } else {
+                basicFinalIds - OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+            }
         onSaveOverrideSettings(finalSelectedOverrideIds)
         onDismiss()
     }
@@ -252,17 +254,15 @@ internal fun ProfileSettingsDialog(
         onDismissFinished = onDismissFinished,
         enableNestedScroll = true,
     ) {
-        BoxWithConstraints(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val minimumSheetHeight = maxHeight * PROFILE_SETTINGS_MIN_HEIGHT_FRACTION
             val maximumSheetHeight = maxHeight * PROFILE_SETTINGS_MAX_HEIGHT_FRACTION
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = minimumSheetHeight, max = maximumSheetHeight)
-                    .padding(bottom = spacing.space16),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .heightIn(min = minimumSheetHeight, max = maximumSheetHeight)
+                        .padding(bottom = spacing.space16),
                 verticalArrangement = Arrangement.spacedBy(spacing.space16),
             ) {
                 TextField(
@@ -298,15 +298,19 @@ internal fun ProfileSettingsDialog(
                 if (userConfigs.isNotEmpty()) {
                     Card {
                         LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = componentSizes.profileSettingsListMaxHeight),
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .heightIn(max = componentSizes.profileSettingsListMaxHeight)
                         ) {
-                            itemsIndexed(userConfigs, key = { _, config -> config.id }) { index, config ->
+                            itemsIndexed(userConfigs, key = { _, config -> config.id }) {
+                                index,
+                                config ->
                                 val isSelected = config.id in pendingSelectedUserOverrideIds
                                 BasicComponent(
                                     title = config.name,
-                                    summary = config.description?.takeIf { it.isNotBlank() } ?: MLang.ProfilesPage.SettingsDialog.NoDescription,
+                                    summary =
+                                        config.description?.takeIf { it.isNotBlank() }
+                                            ?: MLang.ProfilesPage.SettingsDialog.NoDescription,
                                     endActions = {
                                         Checkbox(
                                             state = ToggleableState(isSelected),
@@ -315,15 +319,16 @@ internal fun ProfileSettingsDialog(
                                             },
                                         )
                                     },
-                                    onClick = {
-                                        toggleUserOverrideSelection(config.id, isSelected)
-                                    },
+                                    onClick = { toggleUserOverrideSelection(config.id, isSelected) },
                                 )
                                 if (index < userConfigs.lastIndex) {
                                     HorizontalDivider(
                                         modifier = Modifier.padding(horizontal = spacing.space16),
                                         thickness = componentSizes.thinDividerThickness,
-                                        color = MiuixTheme.colorScheme.outline.copy(alpha = opacity.outline),
+                                        color =
+                                            MiuixTheme.colorScheme.outline.copy(
+                                                alpha = opacity.outline
+                                            ),
                                     )
                                 }
                             }
@@ -347,8 +352,6 @@ private fun toggleOverrideIdSelection(
     }
 }
 
-private fun buildFinalOverrideIds(
-    selectedUserOverrideIds: List<String>,
-): List<String> {
+private fun buildFinalOverrideIds(selectedUserOverrideIds: List<String>): List<String> {
     return selectedUserOverrideIds.distinct()
 }

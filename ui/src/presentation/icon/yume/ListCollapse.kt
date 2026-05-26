@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,64 +34,66 @@ val Yume.ListCollapse: ImageVector
         if (_ListCollapse != null) {
             return _ListCollapse!!
         }
-        _ListCollapse = ImageVector.Builder(
-            name = "ListCollapse",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(10f, 5f)
-                horizontalLineToRelative(11f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(10f, 12f)
-                horizontalLineToRelative(11f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(10f, 19f)
-                horizontalLineToRelative(11f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveToRelative(3f, 10f)
-                lineToRelative(3f, -3f)
-                lineToRelative(-3f, -3f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveToRelative(3f, 20f)
-                lineToRelative(3f, -3f)
-                lineToRelative(-3f, -3f)
-            }
-        }.build()
+        _ListCollapse =
+            ImageVector.Builder(
+                    name = "ListCollapse",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(10f, 5f)
+                        horizontalLineToRelative(11f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(10f, 12f)
+                        horizontalLineToRelative(11f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(10f, 19f)
+                        horizontalLineToRelative(11f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveToRelative(3f, 10f)
+                        lineToRelative(3f, -3f)
+                        lineToRelative(-3f, -3f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveToRelative(3f, 20f)
+                        lineToRelative(3f, -3f)
+                        lineToRelative(-3f, -3f)
+                    }
+                }
+                .build()
 
         return _ListCollapse!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _ListCollapse: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _ListCollapse: ImageVector? = null

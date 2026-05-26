@@ -18,17 +18,15 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.settings.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
-import androidx.compose.foundation.layout.Column
+
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
@@ -36,11 +34,11 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmA
 import com.github.yumelira.yumebox.presentation.component.EnumSelector
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Palette
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.theme.colorFromArgb
 import com.github.yumelira.yumebox.presentation.theme.colorToArgbLong
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 internal fun ThemeModeAndColorItems(
@@ -49,10 +47,7 @@ internal fun ThemeModeAndColorItems(
     themeSeedColorArgb: Long,
     onThemeSeedColorChange: (Long) -> Unit,
 ) {
-    ThemeModeSelectorItem(
-        themeMode = themeMode,
-        onThemeModeChange = onThemeModeChange,
-    )
+    ThemeModeSelectorItem(themeMode = themeMode, onThemeModeChange = onThemeModeChange)
     ThemeColorPickerItem(
         themeSeedColorArgb = themeSeedColorArgb,
         onThemeSeedColorChange = onThemeSeedColorChange,
@@ -60,19 +55,17 @@ internal fun ThemeModeAndColorItems(
 }
 
 @Composable
-internal fun ThemeModeSelectorItem(
-    themeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit,
-) {
+internal fun ThemeModeSelectorItem(themeMode: ThemeMode, onThemeModeChange: (ThemeMode) -> Unit) {
     EnumSelector(
         title = MLang.AppSettings.Interface.ThemeModeTitle,
         summary = MLang.AppSettings.Interface.ThemeModeSummary,
         currentValue = themeMode,
-        items = listOf(
-            MLang.AppSettings.Interface.ThemeModeSystem,
-            MLang.AppSettings.Interface.ThemeModeLight,
-            MLang.AppSettings.Interface.ThemeModeDark,
-        ),
+        items =
+            listOf(
+                MLang.AppSettings.Interface.ThemeModeSystem,
+                MLang.AppSettings.Interface.ThemeModeLight,
+                MLang.AppSettings.Interface.ThemeModeDark,
+            ),
         values = ThemeMode.entries,
         onValueChange = onThemeModeChange,
     )
@@ -98,21 +91,24 @@ internal fun ThemeColorPickerItem(
     onOpenPickerRequest: (() -> Unit)? = null,
 ) {
     val showThemeColorPicker = remember { mutableStateOf(false) }
-    val editingThemeSeedColor = remember(themeSeedColorArgb) {
-        mutableStateOf(runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White))
-    }
-    val editingThemeSeedHex = remember(themeSeedColorArgb) {
-        mutableStateOf(formatThemeSeedHex(themeSeedColorArgb))
-    }
+    val editingThemeSeedColor =
+        remember(themeSeedColorArgb) {
+            mutableStateOf(
+                runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
+            )
+        }
+    val editingThemeSeedHex =
+        remember(themeSeedColorArgb) { mutableStateOf(formatThemeSeedHex(themeSeedColorArgb)) }
 
     BasicComponent(
         title = MLang.AppSettings.Interface.ColorThemeTitle,
-        summary = MLang.AppSettings.Interface.ColorThemeCustomSummary.format(
-            formatThemeSeedHex(themeSeedColorArgb)
-        ),
+        summary =
+            MLang.AppSettings.Interface.ColorThemeCustomSummary.format(
+                formatThemeSeedHex(themeSeedColorArgb)
+            ),
         onClick = {
-            editingThemeSeedColor.value = runCatching { colorFromArgb(themeSeedColorArgb) }
-                .getOrDefault(Color.White)
+            editingThemeSeedColor.value =
+                runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
             editingThemeSeedHex.value = formatThemeSeedHex(themeSeedColorArgb)
             if (showBottomSheetInPlace) {
                 showThemeColorPicker.value = true
@@ -121,9 +117,10 @@ internal fun ThemeColorPickerItem(
             }
         },
         endActions = {
-            val previewColor = remember(themeSeedColorArgb) {
-                runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
-            }
+            val previewColor =
+                remember(themeSeedColorArgb) {
+                    runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
+                }
             Icon(
                 Yume.Palette,
                 tint = previewColor,
@@ -147,9 +144,7 @@ internal fun ThemeColorPickerItem(
                 // 不立即 normalize，让用户自由输入
                 editingThemeSeedHex.value = raw.uppercase()
                 // 尝试解析颜色，成功则更新预览
-                parseThemeHexColorOrNull(raw)?.let {
-                    editingThemeSeedColor.value = it
-                }
+                parseThemeHexColorOrNull(raw)?.let { editingThemeSeedColor.value = it }
             },
             onConfirm = {
                 val argb = colorToArgbLong(editingThemeSeedColor.value)
@@ -179,23 +174,10 @@ internal fun ThemeColorPickerSheet(
         enableNestedScroll = true,
         renderInRootScaffold = renderInRootScaffold,
         defaultWindowInsetsPadding = false,
-        startAction = {
-            AppBottomSheetCloseAction(
-                onClick = onDismissRequest,
-            )
-        },
-        endAction = {
-            AppBottomSheetConfirmAction(
-                onClick = onConfirm,
-            )
-        },
+        startAction = { AppBottomSheetCloseAction(onClick = onDismissRequest) },
+        endAction = { AppBottomSheetConfirmAction(onClick = onConfirm) },
         content = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding(),
-            ) {
+            Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()) {
                 ColorPicker(
                     color = editingThemeSeedColor,
                     onColorChanged = onEditingThemeSeedColorChange,
@@ -205,12 +187,11 @@ internal fun ThemeColorPickerSheet(
                     value = editingThemeSeedHex,
                     onValueChange = onEditingThemeSeedHexChange,
                     label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = UiDp.dp8),
+                    modifier = Modifier.fillMaxWidth().padding(top = UiDp.dp8),
                 )
             }
-        })
+        },
+    )
 }
 
 private fun formatThemeSeedHex(argb: Long): String {

@@ -18,15 +18,14 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.key
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,14 +34,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.state.IntColorDrawableStateImage
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 
 @Composable
 fun <T> RoutingSwitchCard(
@@ -60,14 +59,13 @@ fun <T> RoutingSwitchCard(
 ) {
     val spacing = AppTheme.spacing
 
-    val rowsPerCard = when {
-        items.size > 32 -> 12
-        items.size > 20 -> 16
-        else -> items.size.coerceAtLeast(1)
-    }
-    val itemChunks = remember(items, rowsPerCard) {
-        items.chunked(rowsPerCard)
-    }
+    val rowsPerCard =
+        when {
+            items.size > 32 -> 12
+            items.size > 20 -> 16
+            else -> items.size.coerceAtLeast(1)
+        }
+    val itemChunks = remember(items, rowsPerCard) { items.chunked(rowsPerCard) }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -76,9 +74,7 @@ fun <T> RoutingSwitchCard(
         titleContent(title)
         itemChunks.forEach { chunk ->
             Card(applyHorizontalPadding = applyHorizontalPadding) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     chunk.forEach { item ->
                         key(item) {
                             RoutingSwitchRow(
@@ -110,22 +106,19 @@ private fun RoutingSwitchRow(
 
     val interactionSource = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(contentPadding)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = { onCheckedChange(!checked) },
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(contentPadding)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = { onCheckedChange(!checked) },
+                ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing.space16),
     ) {
         if (!iconUrl.isNullOrBlank()) {
-            RoutingIcon(
-                iconUrl = iconUrl,
-                size = iconSize,
-            )
+            RoutingIcon(iconUrl = iconUrl, size = iconSize)
         }
         Text(
             text = title,
@@ -133,32 +126,27 @@ private fun RoutingSwitchRow(
             color = MiuixTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
 @Composable
-private fun RoutingIcon(
-    iconUrl: String?,
-    size: Dp,
-) {
+private fun RoutingIcon(iconUrl: String?, size: Dp) {
     val opacity = AppTheme.opacity
     val spacing = AppTheme.spacing
 
     val context = LocalContext.current
     val placeholderColorInt = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.subtle).toArgb()
-    val request = remember(iconUrl, placeholderColorInt, context) {
-        iconUrl?.takeIf(String::isNotBlank)?.let { url ->
-            ImageRequest(context, url) {
-                placeholder(IntColorDrawableStateImage(placeholderColorInt))
-                error(IntColorDrawableStateImage(placeholderColorInt))
-                crossfade(true)
+    val request =
+        remember(iconUrl, placeholderColorInt, context) {
+            iconUrl?.takeIf(String::isNotBlank)?.let { url ->
+                ImageRequest(context, url) {
+                    placeholder(IntColorDrawableStateImage(placeholderColorInt))
+                    error(IntColorDrawableStateImage(placeholderColorInt))
+                    crossfade(true)
+                }
             }
         }
-    }
 
     if (request == null) return
 
@@ -166,8 +154,6 @@ private fun RoutingIcon(
         request = request,
         contentDescription = null,
         contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(size)
-            .clip(RoundedCornerShape(spacing.space14)),
+        modifier = Modifier.size(size).clip(RoundedCornerShape(spacing.space14)),
     )
 }

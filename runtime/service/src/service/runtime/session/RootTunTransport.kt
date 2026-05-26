@@ -18,17 +18,16 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.session
 
 import com.github.yumelira.yumebox.core.Clash
 
 class RootTunTransport : RuntimeTransport {
-    private val startupLogStore = RuntimeStartupLogStore(
-        com.github.yumelira.yumebox.core.Global.application,
-        RuntimeStartupLogStore.Scope.ROOT_TUN,
-    )
+    private val startupLogStore =
+        RuntimeStartupLogStore(
+            com.github.yumelira.yumebox.core.Global.application,
+            RuntimeStartupLogStore.Scope.ROOT_TUN,
+        )
 
     override fun start(spec: RuntimeSpec) {
         val config = spec.rootTunConfig ?: error("root tun config missing")

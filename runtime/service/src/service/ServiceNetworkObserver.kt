@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.content.Context
@@ -33,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 private data class NetworkInfo(
     @Volatile var losingMs: Long = 0,
-    @Volatile var dnsList: List<InetAddress> = emptyList()
+    @Volatile var dnsList: List<InetAddress> = emptyList(),
 ) {
     fun isAvailable(): Boolean = losingMs < System.currentTimeMillis()
 }
@@ -46,40 +44,44 @@ class ServiceNetworkObserver(
     private val connectivity = context.getSystemService(ConnectivityManager::class.java)
     private var lastDnsList = emptyList<String>()
 
-    private val request = NetworkRequest.Builder().apply {
-        addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-        addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
-        }
-        addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-    }.build()
+    private val request =
+        NetworkRequest.Builder()
+            .apply {
+                addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+                addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
+                }
+                addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+            }
+            .build()
 
-    private val callback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            networkInfos[network] = NetworkInfo()
-            updateDns()
-            onNetworkChanged(selectNetwork())
-        }
+    private val callback =
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                networkInfos[network] = NetworkInfo()
+                updateDns()
+                onNetworkChanged(selectNetwork())
+            }
 
-        override fun onLosing(network: Network, maxMsToLive: Int) {
-            networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
-            updateDns()
-            onNetworkChanged(selectNetwork())
-        }
+            override fun onLosing(network: Network, maxMsToLive: Int) {
+                networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
+                updateDns()
+                onNetworkChanged(selectNetwork())
+            }
 
-        override fun onLost(network: Network) {
-            networkInfos.remove(network)
-            updateDns()
-            onNetworkChanged(selectNetwork())
-        }
+            override fun onLost(network: Network) {
+                networkInfos.remove(network)
+                updateDns()
+                onNetworkChanged(selectNetwork())
+            }
 
-        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            networkInfos[network]?.dnsList = linkProperties.dnsServers
-            updateDns()
-            onNetworkChanged(selectNetwork())
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+                networkInfos[network]?.dnsList = linkProperties.dnsServers
+                updateDns()
+                onNetworkChanged(selectNetwork())
+            }
         }
-    }
 
     fun start() {
         updateDns()
@@ -128,11 +130,12 @@ class ServiceNetworkObserver(
     }
 }
 
-private fun InetAddress.asSocketAddressText(port: Int): String = when (this) {
-    is Inet6Address -> "[${numericToTextFormat(this)}]:$port"
-    is Inet4Address -> "${this.hostAddress}:$port"
-    else -> throw IllegalArgumentException("Unsupported Inet type ${this.javaClass}")
-}
+private fun InetAddress.asSocketAddressText(port: Int): String =
+    when (this) {
+        is Inet6Address -> "[${numericToTextFormat(this)}]:$port"
+        is Inet4Address -> "${this.hostAddress}:$port"
+        else -> throw IllegalArgumentException("Unsupported Inet type ${this.javaClass}")
+    }
 
 private fun numericToTextFormat(address: Inet6Address): String {
     val src = address.address

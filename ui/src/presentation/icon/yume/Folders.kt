@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,50 +34,124 @@ val Yume.Folders: ImageVector
         if (_Folders != null) {
             return _Folders!!
         }
-        _Folders = ImageVector.Builder(
-            name = "Folders",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(20f, 5f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 2f, 2f)
-                verticalLineToRelative(7f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -2f, 2f)
-                horizontalLineTo(9f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, -2f, -2f)
-                verticalLineTo(5f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = true, 2f, -2f)
-                horizontalLineToRelative(2.5f)
-                arcToRelative(1.5f, 1.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 1.2f, 0.6f)
-                lineToRelative(0.6f, 0.8f)
-                arcToRelative(1.5f, 1.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 1.2f, 0.6f)
-                close()
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(3f, 8.268f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1f, 1.738f)
-                verticalLineTo(19f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, 2f, 2f)
-                horizontalLineToRelative(11f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, 1.732f, -1f)
-            }
-        }.build()
+        _Folders =
+            ImageVector.Builder(
+                    name = "Folders",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(20f, 5f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = true,
+                            2f,
+                            2f,
+                        )
+                        verticalLineToRelative(7f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = true,
+                            -2f,
+                            2f,
+                        )
+                        horizontalLineTo(9f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = true,
+                            -2f,
+                            -2f,
+                        )
+                        verticalLineTo(5f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = true,
+                            2f,
+                            -2f,
+                        )
+                        horizontalLineToRelative(2.5f)
+                        arcToRelative(
+                            1.5f,
+                            1.5f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = true,
+                            1.2f,
+                            0.6f,
+                        )
+                        lineToRelative(0.6f, 0.8f)
+                        arcToRelative(
+                            1.5f,
+                            1.5f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = false,
+                            1.2f,
+                            0.6f,
+                        )
+                        close()
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(3f, 8.268f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = false,
+                            -1f,
+                            1.738f,
+                        )
+                        verticalLineTo(19f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = false,
+                            2f,
+                            2f,
+                        )
+                        horizontalLineToRelative(11f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = false,
+                            isPositiveArc = false,
+                            1.732f,
+                            -1f,
+                        )
+                    }
+                }
+                .build()
 
         return _Folders!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _Folders: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _Folders: ImageVector? = null

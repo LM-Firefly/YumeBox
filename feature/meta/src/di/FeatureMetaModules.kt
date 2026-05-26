@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
@@ -35,6 +33,4 @@ val featureMetaViewModelModule = module {
     viewModel { CustomRoutingViewModel(get(), get()) }
 }
 
-val featureMetaModules = listOf(
-    featureMetaViewModelModule,
-)
+val featureMetaModules = listOf(featureMetaViewModelModule)

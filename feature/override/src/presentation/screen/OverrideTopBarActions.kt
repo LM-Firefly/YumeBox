@@ -20,14 +20,12 @@
 
 package com.github.yumelira.yumebox.presentation.screen
 
-
-import com.github.yumelira.yumebox.presentation.theme.UiDp
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 
@@ -42,9 +40,6 @@ internal fun RowScope.OverrideTopBarAction(
         modifier = if (spacedFromNext) Modifier.padding(end = UiDp.dp12) else Modifier,
         onClick = onClick,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-        )
+        Icon(imageVector = icon, contentDescription = contentDescription)
     }
 }

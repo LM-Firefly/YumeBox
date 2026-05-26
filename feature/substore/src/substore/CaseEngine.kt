@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.substore
 
 import com.caoccao.javet.enums.V8AwaitMode
@@ -27,9 +25,9 @@ import com.caoccao.javet.interception.logging.JavetStandardConsoleInterceptor
 import com.caoccao.javet.interop.NodeRuntime
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.options.NodeRuntimeOptions
-import timber.log.Timber
 import java.io.Closeable
 import java.io.File
+import timber.log.Timber
 
 class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Closeable {
     val host = if (allowLan) "0.0.0.0" else "127.0.0.1"
@@ -37,13 +35,12 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
     private var nodeRuntime: NodeRuntime? = null
     private lateinit var thread: Thread
 
-    @Volatile
-    private var shouldAwait = true
+    @Volatile private var shouldAwait = true
 
-    @Volatile
-    private var isRunning = false
+    @Volatile private var isRunning = false
 
-    private val argv2EnvScript = """
+    private val argv2EnvScript =
+        """
         process.argv.slice(2).forEach(arg => {
           if (arg.startsWith('--SUB_STORE')) {
             const [key, value] = arg.slice(2).split('=');
@@ -52,7 +49,8 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
             }
           }
         });
-    """.trimIndent()
+        """
+            .trimIndent()
 
     init {
         try {
@@ -85,35 +83,38 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
     }
 
     fun startServer() {
-        val runtime = nodeRuntime ?: run {
-            Timber.w("Skip starting CaseEngine: runtime is not initialized")
-            return
-        }
+        val runtime =
+            nodeRuntime
+                ?: run {
+                    Timber.w("Skip starting CaseEngine: runtime is not initialized")
+                    return
+                }
         if (isRunning) return
         isRunning = true
         shouldAwait = true
 
         val codeFile: File = SubStorePaths.backendBundle
 
-        thread = Thread {
-            try {
-                val workingDir = SubStorePaths.workingDir.path
-                runtime.getExecutor("process.chdir('$workingDir')").executeVoid()
+        thread =
+            Thread {
+                    try {
+                        val workingDir = SubStorePaths.workingDir.path
+                        runtime.getExecutor("process.chdir('$workingDir')").executeVoid()
 
-                runtime.getExecutor(codeFile).executeVoid()
-                while (shouldAwait) {
-                    runtime.await(V8AwaitMode.RunNoWait)
+                        runtime.getExecutor(codeFile).executeVoid()
+                        while (shouldAwait) {
+                            runtime.await(V8AwaitMode.RunNoWait)
+                        }
+                    } catch (_: InterruptedException) {} catch (error: Exception) {
+                        Timber.e(error, "CaseEngine run failed")
+                    } finally {
+                        cleanup()
+                    }
                 }
-            } catch (_: InterruptedException) {
-            } catch (error: Exception) {
-                Timber.e(error, "CaseEngine run failed")
-            } finally {
-                cleanup()
-            }
-        }.apply {
-            name = "CaseEngine-Worker"
-            start()
-        }
+                .apply {
+                    name = "CaseEngine-Worker"
+                    start()
+                }
     }
 
     fun isInitialized(): Boolean = nodeRuntime != null
@@ -141,15 +142,14 @@ class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Close
     private fun cleanup() {
         isRunning = false
         runCatching {
-            nodeRuntime?.let {
-                if (!it.isClosed) {
-                    it.isStopping = true
-                    it.close()
+                nodeRuntime?.let {
+                    if (!it.isClosed) {
+                        it.isStopping = true
+                        it.close()
+                    }
                 }
+                nodeRuntime = null
             }
-            nodeRuntime = null
-        }.onFailure { error ->
-            Timber.e(error, "CaseEngine cleanup failed")
-        }
+            .onFailure { error -> Timber.e(error, "CaseEngine cleanup failed") }
     }
 }

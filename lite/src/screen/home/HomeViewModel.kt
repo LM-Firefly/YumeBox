@@ -67,52 +67,55 @@ class HomeViewModel(
 ) : AndroidViewModel(application) {
     private val fallbackProfile = MutableStateFlow<Profile?>(null)
     private val pendingTransition = MutableStateFlow(PendingTransition.None)
-    private val messagesFlow = MutableSharedFlow<String>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
-    private val vpnPrepareIntentFlow = MutableSharedFlow<Intent>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val messagesFlow =
+        MutableSharedFlow<String>(
+            extraBufferCapacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
+    private val vpnPrepareIntentFlow =
+        MutableSharedFlow<Intent>(
+            extraBufferCapacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
 
     val messages = messagesFlow.asSharedFlow()
     val vpnPrepareIntent = vpnPrepareIntentFlow.asSharedFlow()
 
     val runtimeSnapshot = proxyFacade.runtimeSnapshot
-    val isRunning: StateFlow<Boolean> = runtimeSnapshot
-        .map(RuntimeStateMapper::isActuallyRunning)
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            RuntimeStateMapper.isActuallyRunning(runtimeSnapshot.value),
-        )
+    val isRunning: StateFlow<Boolean> =
+        runtimeSnapshot
+            .map(RuntimeStateMapper::isActuallyRunning)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                RuntimeStateMapper.isActuallyRunning(runtimeSnapshot.value),
+            )
 
-    val currentProfile: StateFlow<Profile?> = combine(
-        proxyFacade.currentProfile,
-        fallbackProfile,
-    ) { runtimeProfile, previewProfile ->
-        runtimeProfile ?: previewProfile
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val currentProfile: StateFlow<Profile?> =
+        combine(proxyFacade.currentProfile, fallbackProfile) { runtimeProfile, previewProfile ->
+                runtimeProfile ?: previewProfile
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val trafficData: StateFlow<TrafficData> = proxyFacade.trafficNow
-        .map(TrafficData::from)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TrafficData.ZERO)
+    val trafficData: StateFlow<TrafficData> =
+        proxyFacade.trafficNow
+            .map(TrafficData::from)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TrafficData.ZERO)
 
-    val selectedServerName: StateFlow<String?> = proxyFacade.resolvedPrimaryNode
-        .map { it?.name }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val selectedServerName: StateFlow<String?> =
+        proxyFacade.resolvedPrimaryNode
+            .map { it?.name }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val controlState: StateFlow<HomeControlState> = combine(
-        runtimeSnapshot,
-        pendingTransition,
-    ) { snapshot, pending ->
-        resolveControlState(snapshot, pending)
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        resolveControlState(runtimeSnapshot.value, pendingTransition.value),
-    )
+    val controlState: StateFlow<HomeControlState> =
+        combine(runtimeSnapshot, pendingTransition) { snapshot, pending ->
+                resolveControlState(snapshot, pending)
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                resolveControlState(runtimeSnapshot.value, pendingTransition.value),
+            )
 
     init {
         refresh()
@@ -169,9 +172,7 @@ class HomeViewModel(
         pendingTransition.value = PendingTransition.Stopping
         viewModelScope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    proxyFacade.stopProxy(ProxyMode.Tun)
-                }
+                withContext(Dispatchers.IO) { proxyFacade.stopProxy(ProxyMode.Tun) }
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
                 pendingTransition.value = PendingTransition.None
@@ -186,7 +187,11 @@ class HomeViewModel(
                 .map { it.phase }
                 .distinctUntilChanged()
                 .collect { phase ->
-                    if (phase == RuntimePhase.Idle || phase == RuntimePhase.Failed || phase == RuntimePhase.Running) {
+                    if (
+                        phase == RuntimePhase.Idle ||
+                            phase == RuntimePhase.Failed ||
+                            phase == RuntimePhase.Running
+                    ) {
                         pendingTransition.value = PendingTransition.None
                     }
                 }
@@ -234,11 +239,10 @@ class HomeViewModel(
             RuntimePhase.Starting -> HomeControlState.Connecting
             RuntimePhase.Stopping -> HomeControlState.Disconnecting
             RuntimePhase.Idle,
-            RuntimePhase.Failed,
-                -> when (pending) {
+            RuntimePhase.Failed ->
+                when (pending) {
                     PendingTransition.AwaitingPermission,
-                    PendingTransition.Starting,
-                        -> HomeControlState.Connecting
+                    PendingTransition.Starting -> HomeControlState.Connecting
 
                     PendingTransition.Stopping -> HomeControlState.Disconnecting
                     PendingTransition.None -> HomeControlState.Idle

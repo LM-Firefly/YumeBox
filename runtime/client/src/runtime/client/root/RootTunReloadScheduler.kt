@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.runtime.client.root
 
 import android.content.Context
@@ -46,8 +44,7 @@ object RootTunReloadScheduler {
     private var reloadJob: Job? = null
     private val pendingReasons = linkedSetOf<Reason>()
     private var dirtyWhileRunning = false
-    @Volatile
-    private var suppressNestedSchedule = false
+    @Volatile private var suppressNestedSchedule = false
 
     fun isInternalOverrideSyncInProgress(): Boolean = suppressNestedSchedule
 
@@ -68,15 +65,16 @@ object RootTunReloadScheduler {
     }
 
     private suspend fun runReload(context: Context) {
-        val reasons = synchronized(lock) {
-            if (reloadJob?.isActive == true) {
-                dirtyWhileRunning = true
-                return
+        val reasons =
+            synchronized(lock) {
+                if (reloadJob?.isActive == true) {
+                    dirtyWhileRunning = true
+                    return
+                }
+                val copied = pendingReasons.toSet()
+                pendingReasons.clear()
+                copied
             }
-            val copied = pendingReasons.toSet()
-            pendingReasons.clear()
-            copied
-        }
         if (reasons.isEmpty()) {
             return
         }
@@ -93,11 +91,12 @@ object RootTunReloadScheduler {
                     notifyFailure(context, result.error ?: "root runtime reload failed")
                 }
 
-                val shouldRunAgain = synchronized(lock) {
-                    val rerun = dirtyWhileRunning || pendingReasons.isNotEmpty()
-                    dirtyWhileRunning = false
-                    rerun
-                }
+                val shouldRunAgain =
+                    synchronized(lock) {
+                        val rerun = dirtyWhileRunning || pendingReasons.isNotEmpty()
+                        dirtyWhileRunning = false
+                        rerun
+                    }
                 if (shouldRunAgain) {
                     PollingTimers.awaitTick(PollingTimerSpecs.RootTunReloadDebounce)
                     runReload(context)
@@ -114,9 +113,12 @@ object RootTunReloadScheduler {
         return retryReload(context)
     }
 
-    private suspend fun retryReload(context: Context): com.github.yumelira.yumebox.service.root.RootTunOperationResult {
+    private suspend fun retryReload(
+        context: Context
+    ): com.github.yumelira.yumebox.service.root.RootTunOperationResult {
         val delays = longArrayOf(0L, 250L, 500L, 1000L)
-        var lastResult = com.github.yumelira.yumebox.service.root.RootTunOperationResult(success = true)
+        var lastResult =
+            com.github.yumelira.yumebox.service.root.RootTunOperationResult(success = true)
         for (index in delays.indices) {
             if (delays[index] > 0L) {
                 PollingTimers.awaitTick(
@@ -124,7 +126,7 @@ object RootTunReloadScheduler {
                         name = "root_tun_reload_retry_$index",
                         intervalMillis = delays[index],
                         initialDelayMillis = delays[index],
-                    ),
+                    )
                 )
             }
             lastResult = RootTunController.reload(context)
@@ -141,9 +143,8 @@ object RootTunReloadScheduler {
             context.sendBroadcast(
                 Intent(Intents.actionRootRuntimeFailed(context.packageName))
                     .setPackage(context.packageName)
-                    .putExtra("error", error),
+                    .putExtra("error", error)
             )
         }
     }
-
 }

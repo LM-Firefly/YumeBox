@@ -30,25 +30,20 @@ import com.github.yumelira.yumebox.core.model.OverrideSpec
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.util.YamlCodec
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
+import java.io.File
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import java.io.File
-import java.security.MessageDigest
 
-class CompiledConfigPipeline(
-    private val context: Context,
-) {
+class CompiledConfigPipeline(private val context: Context) {
     private val overrideEnabled = !context.packageName.endsWith(".lite")
 
     fun resolveOverrideSpecs(profileUuid: String): List<OverrideSpec> {
         return resolveOverrideBundle(profileUuid, logger = null).overrides
     }
 
-    fun resolveOverrideSpecs(
-        profileUuid: String,
-        logger: ((String) -> Unit)?,
-    ): List<OverrideSpec> {
+    fun resolveOverrideSpecs(profileUuid: String, logger: ((String) -> Unit)?): List<OverrideSpec> {
         return resolveOverrideBundle(profileUuid, logger).overrides
     }
 
@@ -61,7 +56,9 @@ class CompiledConfigPipeline(
         logger: ((String) -> Unit)?,
     ): ResolvedOverrideBundle {
         if (!overrideEnabled) {
-            logger?.invoke("override resolve skipped for lite package=${context.packageName} profile=$profileUuid")
+            logger?.invoke(
+                "override resolve skipped for lite package=${context.packageName} profile=$profileUuid"
+            )
             return ResolvedOverrideBundle(
                 profileUuid = profileUuid,
                 userOverrides = emptyList(),
@@ -76,32 +73,32 @@ class CompiledConfigPipeline(
 
         val binding = metadata.profileChains[profileUuid]
         logger?.invoke(
-            "override resolve: profile=$profileUuid overrideIds=${binding?.overrideIds.orEmpty()}",
+            "override resolve: profile=$profileUuid overrideIds=${binding?.overrideIds.orEmpty()}"
         )
 
         val userOverrides = mutableListOf<OverrideSpec>()
         val overrides = mutableListOf<OverrideSpec>()
-        binding
-            ?.overrideIds
-            .orEmpty()
-            .filterNot(::isReservedOverrideId)
-            .distinct()
-            .forEach { overrideId ->
-                val file = resolveUserOverrideFile(overridesDir, overrideId, metadata)
+        binding?.overrideIds.orEmpty().filterNot(::isReservedOverrideId).distinct().forEach {
+            overrideId ->
+            val file =
+                resolveUserOverrideFile(overridesDir, overrideId, metadata)
                     ?: error("Override config not found for profile=$profileUuid id=$overrideId")
-                val spec = file.toOverrideSpec()
-                logger?.invoke(describeOverrideFile(file, overrideId))
-                if (isCustomRoutingId(overrideId)) {
-                    overrides += spec
-                    return@forEach
-                }
-                userOverrides += spec
+            val spec = file.toOverrideSpec()
+            logger?.invoke(describeOverrideFile(file, overrideId))
+            if (isCustomRoutingId(overrideId)) {
                 overrides += spec
+                return@forEach
             }
+            userOverrides += spec
+            overrides += spec
+        }
 
-        val runtimeInternalOverride = resolveRuntimeInternalOverrideFile(overridesDir, profileUuid)
-            ?.also { file -> logger?.invoke(describeOverrideFile(file, INTERNAL_RUNTIME_PREFIX)) }
-            ?.toOverrideSpec()
+        val runtimeInternalOverride =
+            resolveRuntimeInternalOverrideFile(overridesDir, profileUuid)
+                ?.also { file ->
+                    logger?.invoke(describeOverrideFile(file, INTERNAL_RUNTIME_PREFIX))
+                }
+                ?.toOverrideSpec()
 
         runtimeInternalOverride?.let(overrides::add)
 
@@ -109,7 +106,7 @@ class CompiledConfigPipeline(
             "override resolve: profile=$profileUuid resolved=${overrides.size} " +
                 overrides.joinToString(prefix = "[", postfix = "]") { spec ->
                     "${spec.ext}:${spec.path}"
-                },
+                }
         )
 
         return ResolvedOverrideBundle(
@@ -120,42 +117,43 @@ class CompiledConfigPipeline(
         )
     }
 
-    suspend fun applyOverrideToRuntimeFile(spec: RuntimeSpec): String = withContext(Dispatchers.Default) {
-        applyOverrideToRuntimeFile(spec, logger = null)
-    }
+    suspend fun applyOverrideToRuntimeFile(spec: RuntimeSpec): String =
+        withContext(Dispatchers.Default) { applyOverrideToRuntimeFile(spec, logger = null) }
 
-    suspend fun applyOverrideToRuntimeFile(
-        spec: RuntimeSpec,
-        logger: ((String) -> Unit)?,
-    ): String = withContext(Dispatchers.Default) {
-        val profileDir = File(spec.profileDir)
+    suspend fun applyOverrideToRuntimeFile(spec: RuntimeSpec, logger: ((String) -> Unit)?): String =
+        withContext(Dispatchers.Default) {
+            val profileDir = File(spec.profileDir)
 
-        logger?.invoke(
-            "runtime prepare: mode=compile-overrides count=${spec.overrideSpecs.size} " +
-                spec.overrideSpecs.joinToString(prefix = "[", postfix = "]") { overrideSpec ->
-                    "${overrideSpec.ext}:${overrideSpec.path}"
-                },
-        )
+            logger?.invoke(
+                "runtime prepare: mode=compile-overrides count=${spec.overrideSpecs.size} " +
+                    spec.overrideSpecs.joinToString(prefix = "[", postfix = "]") { overrideSpec ->
+                        "${overrideSpec.ext}:${overrideSpec.path}"
+                    }
+            )
 
-        val request = buildRequest(spec)
-        val result = Clash.compileToFile(request)
-        check(result.success) {
-            val failureMessage = result.error ?: "apply override to runtime config failed"
-            logger?.invoke("runtime prepare: compile failed reason=$failureMessage")
-            failureMessage
+            val request = buildRequest(spec)
+            val result = Clash.compileToFile(request)
+            check(result.success) {
+                val failureMessage = result.error ?: "apply override to runtime config failed"
+                logger?.invoke("runtime prepare: compile failed reason=$failureMessage")
+                failureMessage
+            }
+            validateCompiledProviderPaths(result.finalYaml, profileDir)
+            logger?.invoke(
+                "runtime prepare: compile done fingerprint=${result.fingerprint} runtimeSha=${result.finalYaml.sha256Short()}"
+            )
+            result.fingerprint
         }
-        validateCompiledProviderPaths(result.finalYaml, profileDir)
-        logger?.invoke(
-            "runtime prepare: compile done fingerprint=${result.fingerprint} runtimeSha=${result.finalYaml.sha256Short()}",
-        )
-        result.fingerprint
-    }
 
     suspend fun previewGroups(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<ProxyGroup> {
         val result = previewOverride(spec)
         if (!result.success || result.finalYaml.isBlank()) return emptyList()
         return withContext(Dispatchers.Default) {
-            Clash.inspectCompiledGroups(result.finalYaml, File(spec.profileDir), excludeNotSelectable)
+            Clash.inspectCompiledGroups(
+                result.finalYaml,
+                File(spec.profileDir),
+                excludeNotSelectable,
+            )
         }
     }
 
@@ -163,26 +161,29 @@ class CompiledConfigPipeline(
         profileUuid: String,
         profileDir: File,
         overrideSpecs: List<OverrideSpec> = resolveOverrideBundle(profileUuid).overrides,
-    ): CompileResult = withContext(Dispatchers.Default) {
-        val request = CompileRequest(
-            profileUuid = profileUuid,
-            profileDir = profileDir.absolutePath,
-            profilePath = profileDir.resolve("config.yaml").absolutePath,
-            overrides = overrideSpecs,
-            outputPath = profileDir.resolve("runtime.yaml").absolutePath,
-        )
-        val result = Clash.compilePreview(request)
-        check(result.success) { result.error ?: "override preview failed" }
-        validateCompiledProviderPaths(result.finalYaml, profileDir)
-        result
-    }
+    ): CompileResult =
+        withContext(Dispatchers.Default) {
+            val request =
+                CompileRequest(
+                    profileUuid = profileUuid,
+                    profileDir = profileDir.absolutePath,
+                    profilePath = profileDir.resolve("config.yaml").absolutePath,
+                    overrides = overrideSpecs,
+                    outputPath = profileDir.resolve("runtime.yaml").absolutePath,
+                )
+            val result = Clash.compilePreview(request)
+            check(result.success) { result.error ?: "override preview failed" }
+            validateCompiledProviderPaths(result.finalYaml, profileDir)
+            result
+        }
 
-    suspend fun previewOverride(spec: RuntimeSpec): CompileResult = withContext(Dispatchers.Default) {
-        val result = Clash.compilePreview(buildRequest(spec))
-        check(result.success) { result.error ?: "override preview failed" }
-        validateCompiledProviderPaths(result.finalYaml, File(spec.profileDir))
-        result
-    }
+    suspend fun previewOverride(spec: RuntimeSpec): CompileResult =
+        withContext(Dispatchers.Default) {
+            val result = Clash.compilePreview(buildRequest(spec))
+            check(result.success) { result.error ?: "override preview failed" }
+            validateCompiledProviderPaths(result.finalYaml, File(spec.profileDir))
+            result
+        }
 
     private fun buildRequest(spec: RuntimeSpec): CompileRequest {
         val profileDir = File(spec.profileDir)
@@ -191,7 +192,8 @@ class CompiledConfigPipeline(
             profileDir = profileDir.absolutePath,
             profilePath = profileDir.resolve("config.yaml").absolutePath,
             overrides = spec.overrideSpecs,
-            outputPath = spec.runtimeConfigPath.ifBlank { profileDir.resolve("runtime.yaml").absolutePath },
+            outputPath =
+                spec.runtimeConfigPath.ifBlank { profileDir.resolve("runtime.yaml").absolutePath },
         )
     }
 
@@ -202,15 +204,21 @@ class CompiledConfigPipeline(
         val expectedProxyBase = profileDir.resolve("providers/proxies").canonicalFile
         PATH_PATTERN.findAll(finalYaml).forEach { match ->
             val pathValue = match.groupValues[1].replace('\\', '/').trim()
-            if (!pathValue.endsWith(".yaml") && !pathValue.endsWith(".yml") && !pathValue.endsWith(".mrs")) {
+            if (
+                !pathValue.endsWith(".yaml") &&
+                    !pathValue.endsWith(".yml") &&
+                    !pathValue.endsWith(".mrs")
+            ) {
                 return@forEach
             }
-            val isLegacyPath = pathValue.startsWith("./ruleset/") ||
-                pathValue.startsWith("ruleset/") ||
-                pathValue.contains("/clash/")
+            val isLegacyPath =
+                pathValue.startsWith("./ruleset/") ||
+                    pathValue.startsWith("ruleset/") ||
+                    pathValue.contains("/clash/")
             val resolvedPath = runtimeHomeDir.resolve(pathValue).canonicalFile
-            val inProfileProviders = resolvedPath.toPath().startsWith(expectedRuleBase.toPath()) ||
-                resolvedPath.toPath().startsWith(expectedProxyBase.toPath())
+            val inProfileProviders =
+                resolvedPath.toPath().startsWith(expectedRuleBase.toPath()) ||
+                    resolvedPath.toPath().startsWith(expectedProxyBase.toPath())
             if (isLegacyPath || File(pathValue).isAbsolute || !inProfileProviders) {
                 invalidPaths += pathValue
             }
@@ -235,24 +243,26 @@ class CompiledConfigPipeline(
         logger: ((String) -> Unit)?,
     ): MetadataIndexPayload {
         val metadataRaw = metadataFile.takeIf(File::exists)?.readText().orEmpty()
-        val metadata = if (metadataFile.exists()) {
-            runCatching {
-                YamlCodec.decode(MetadataIndexPayload.serializer(), metadataRaw)
-            }.getOrElse {
-                logger?.invoke(
-                    "override resolve: metadata decode failed path=${metadataFile.absolutePath} " +
-                        "size=${metadataRaw.length} sha=${metadataRaw.sha256Short()}",
-                )
+        val metadata =
+            if (metadataFile.exists()) {
+                runCatching { YamlCodec.decode(MetadataIndexPayload.serializer(), metadataRaw) }
+                    .getOrElse {
+                        logger?.invoke(
+                            "override resolve: metadata decode failed path=${metadataFile.absolutePath} " +
+                                "size=${metadataRaw.length} sha=${metadataRaw.sha256Short()}"
+                        )
+                        MetadataIndexPayload()
+                    }
+            } else {
                 MetadataIndexPayload()
             }
-        } else {
-            MetadataIndexPayload()
-        }
         val sanitized = sanitizeMetadataIndex(metadata)
         if (sanitized != metadata) {
             overridesDir.mkdirs()
             metadataFile.writeText(YamlCodec.encode(MetadataIndexPayload.serializer(), sanitized))
-            logger?.invoke("override resolve: metadata normalized path=${metadataFile.absolutePath}")
+            logger?.invoke(
+                "override resolve: metadata normalized path=${metadataFile.absolutePath}"
+            )
         }
         return sanitized
     }
@@ -261,14 +271,17 @@ class CompiledConfigPipeline(
         val sanitizedConfigs = metadata.configs.filterKeys(::isUserOverrideId)
         return metadata.copy(
             configs = sanitizedConfigs,
-            profileChains = metadata.profileChains.mapValues { (_, binding) ->
-                binding.copy(
-                    overrideIds = binding.overrideIds.filter { overrideId ->
-                        !isLegacyPresetId(overrideId) &&
-                            (isReservedOverrideId(overrideId) || sanitizedConfigs.containsKey(overrideId))
-                    },
-                )
-            },
+            profileChains =
+                metadata.profileChains.mapValues { (_, binding) ->
+                    binding.copy(
+                        overrideIds =
+                            binding.overrideIds.filter { overrideId ->
+                                !isLegacyPresetId(overrideId) &&
+                                    (isReservedOverrideId(overrideId) ||
+                                        sanitizedConfigs.containsKey(overrideId))
+                            }
+                    )
+                },
         )
     }
 
@@ -277,8 +290,8 @@ class CompiledConfigPipeline(
         overrideId: String,
         metadataIndex: MetadataIndexPayload,
     ): File? {
-        val expectedExtension = metadataIndex.configs[overrideId]?.contentType
-            ?.toOverrideExtension()
+        val expectedExtension =
+            metadataIndex.configs[overrideId]?.contentType?.toOverrideExtension()
         if (expectedExtension != null) {
             val expectedFile = overridesDir.resolve("configs/$overrideId.$expectedExtension")
             if (expectedFile.exists()) {
@@ -292,11 +305,16 @@ class CompiledConfigPipeline(
     }
 
     private fun resolveRuntimeInternalOverrideFile(overridesDir: File, profileUuid: String): File? {
-        val file = overridesDir.resolve("configs/${INTERNAL_RUNTIME_PREFIX}-profile-$profileUuid.yaml")
+        val file =
+            overridesDir.resolve("configs/${INTERNAL_RUNTIME_PREFIX}-profile-$profileUuid.yaml")
         if (!file.exists()) return null
-        val content = runCatching { file.readText() }.getOrElse {
-            error("Runtime override file unreadable path=${file.absolutePath} reason=${it.message}")
-        }
+        val content =
+            runCatching { file.readText() }
+                .getOrElse {
+                    error(
+                        "Runtime override file unreadable path=${file.absolutePath} reason=${it.message}"
+                    )
+                }
         if (content.isBlank()) {
             runCatching { file.delete() }
             return null
@@ -337,7 +355,8 @@ class CompiledConfigPipeline(
             append(content.length)
             append(" sha=")
             append(content.sha256Short())
-            content.lineSequence()
+            content
+                .lineSequence()
                 .map(String::trim)
                 .firstOrNull { it.isNotEmpty() }
                 ?.let {
@@ -348,13 +367,11 @@ class CompiledConfigPipeline(
     }
 
     private fun File.toOverrideSpec(): OverrideSpec {
-        val extension = extension.lowercase().ifBlank {
-            error("Override file missing extension: $absolutePath")
-        }
-        return OverrideSpec(
-            path = absolutePath,
-            ext = extension,
-        )
+        val extension =
+            extension.lowercase().ifBlank {
+                error("Override file missing extension: $absolutePath")
+            }
+        return OverrideSpec(path = absolutePath, ext = extension)
     }
 
     private fun String.sha256Short(): String {
@@ -376,15 +393,10 @@ class CompiledConfigPipeline(
         val profileChains: Map<String, ProfileChainPayload> = emptyMap(),
     )
 
-    @Serializable
-    private data class ConfigMetadataPayload(
-        val contentType: String = "yaml",
-    )
+    @Serializable private data class ConfigMetadataPayload(val contentType: String = "yaml")
 
     @Serializable
-    private data class ProfileChainPayload(
-        val overrideIds: List<String> = emptyList(),
-    )
+    private data class ProfileChainPayload(val overrideIds: List<String> = emptyList())
 
     private companion object {
         private const val TAG = "CompiledConfigPipeline"
@@ -397,8 +409,10 @@ class CompiledConfigPipeline(
 
 private fun String.toOverrideExtension(): String? {
     return when (lowercase()) {
-        "yaml", "yml" -> "yaml"
-        "js", "javascript" -> "js"
+        "yaml",
+        "yml" -> "yaml"
+        "js",
+        "javascript" -> "js"
         else -> null
     }
 }

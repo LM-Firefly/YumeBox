@@ -33,11 +33,7 @@ fun AppConfirmDialog(
     confirmText: String = MLang.Component.Button.Confirm,
     cancelText: String = MLang.Component.Button.Cancel,
 ) {
-    AppDialog(
-        show = show,
-        title = title,
-        onDismissRequest = onDismissRequest,
-    ) {
+    AppDialog(show = show, title = title, onDismissRequest = onDismissRequest) {
         AppConfirmDialogContent(
             message = message,
             onCancel = onDismissRequest,

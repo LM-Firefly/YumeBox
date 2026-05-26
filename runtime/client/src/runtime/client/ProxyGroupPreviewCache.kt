@@ -33,10 +33,7 @@ internal class ProxyGroupPreviewCache {
         val overrideSignature: String,
     )
 
-    private data class CacheEntry(
-        val key: CacheKey,
-        val groups: List<ProxyGroupInfo>,
-    )
+    private data class CacheEntry(val key: CacheKey, val groups: List<ProxyGroupInfo>)
 
     private var entry: CacheEntry? = null
 
@@ -46,10 +43,8 @@ internal class ProxyGroupPreviewCache {
         overrideSignature: String,
         groups: List<ProxyGroupInfo>,
     ) {
-        entry = CacheEntry(
-            key = key(profile, excludeNotSelectable, overrideSignature),
-            groups = groups,
-        )
+        entry =
+            CacheEntry(key = key(profile, excludeNotSelectable, overrideSignature), groups = groups)
     }
 
     fun fallback(
@@ -61,9 +56,9 @@ internal class ProxyGroupPreviewCache {
         if (phase == RuntimePhase.Running) return null
         val cached = entry ?: return null
         if (profile == null) return cached.groups
-        return cached.takeIf {
-            it.key == key(profile, excludeNotSelectable, overrideSignature)
-        }?.groups
+        return cached
+            .takeIf { it.key == key(profile, excludeNotSelectable, overrideSignature) }
+            ?.groups
     }
 
     private fun key(

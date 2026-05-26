@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -34,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.TextField
 
 @Composable
@@ -56,22 +56,15 @@ fun AppTextFieldDialog(
     trailingIcon: @Composable (() -> Unit)? = null,
     supportingContent: @Composable (() -> Unit)? = null,
 ) {
-    var localTextFieldValue by remember(show) {
-        mutableStateOf(
-            TextFieldValue(
-                text = value,
-                selection = TextRange(value.length),
-            ),
-        )
-    }
+    var localTextFieldValue by
+        remember(show) {
+            mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
+        }
     var pendingExternalSyncText by remember(show) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(show) {
         if (show) {
-            localTextFieldValue = TextFieldValue(
-                text = value,
-                selection = TextRange(value.length),
-            )
+            localTextFieldValue = TextFieldValue(text = value, selection = TextRange(value.length))
             pendingExternalSyncText = null
         }
     }
@@ -84,10 +77,8 @@ fun AppTextFieldDialog(
             }
 
             pendingExternalSyncText != null -> {
-                localTextFieldValue = TextFieldValue(
-                    text = value,
-                    selection = TextRange(value.length),
-                )
+                localTextFieldValue =
+                    TextFieldValue(text = value, selection = TextRange(value.length))
                 pendingExternalSyncText = null
             }
         }
@@ -147,9 +138,9 @@ fun AppTextFieldDialog(
         renderInRootScaffold = renderInRootScaffold,
     ) {
         AppDialogColumn {
-            val textFieldModifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = if (supportingContent == null) UiDp.dp0 else UiDp.dp8)
+            val textFieldModifier =
+                Modifier.fillMaxWidth()
+                    .padding(bottom = if (supportingContent == null) UiDp.dp0 else UiDp.dp8)
             if (label.isBlank()) {
                 TextField(
                     modifier = textFieldModifier,
@@ -176,10 +167,7 @@ fun AppTextFieldDialog(
                 )
             }
             supportingContent?.invoke()
-            DialogButtonRow(
-                onCancel = onDismissRequest,
-                onConfirm = onConfirm,
-            )
+            DialogButtonRow(onCancel = onDismissRequest, onConfirm = onConfirm)
         }
     }
 }

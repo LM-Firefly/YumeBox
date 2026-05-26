@@ -62,7 +62,7 @@ class AccessControlController(
                     name = "access_control_apply_packages",
                     intervalMillis = 350L,
                     initialDelayMillis = 350L,
-                ),
+                )
             )
 
             if (!isRunning()) return@launch

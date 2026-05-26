@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,35 +34,45 @@ val Yume.Speed: ImageVector
         if (_Gauge != null) {
             return _Gauge!!
         }
-        _Gauge = ImageVector.Builder(
-            name = "Gauge",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveToRelative(12f, 14f)
-                lineToRelative(4f, -4f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(3.34f, 19f)
-                arcToRelative(10f, 10f, 0f, isMoreThanHalf = true, isPositiveArc = true, 17.32f, 0f)
-            }
-        }.build()
+        _Gauge =
+            ImageVector.Builder(
+                    name = "Gauge",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveToRelative(12f, 14f)
+                        lineToRelative(4f, -4f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(3.34f, 19f)
+                        arcToRelative(
+                            10f,
+                            10f,
+                            0f,
+                            isMoreThanHalf = true,
+                            isPositiveArc = true,
+                            17.32f,
+                            0f,
+                        )
+                    }
+                }
+                .build()
 
         return _Gauge!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _Gauge: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _Gauge: ImageVector? = null

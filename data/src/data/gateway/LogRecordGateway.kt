@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.gateway
 
 import android.app.Application
@@ -34,6 +32,8 @@ interface LogRecordGateway {
     val stopWaitSpec: PollingTimerSpec
 
     fun start(application: Application)
+
     fun stop(application: Application)
+
     fun getLogDir(application: Application): File
 }

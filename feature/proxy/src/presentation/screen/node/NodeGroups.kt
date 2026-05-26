@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
+import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.state.IntColorDrawableStateImage
 import com.github.yumelira.yumebox.core.model.Proxy
@@ -55,11 +56,8 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
-import com.github.panpf.sketch.AsyncImage as SketchAsyncImage
 
-private data class GroupBadge(
-    val label: String,
-)
+private data class GroupBadge(val label: String)
 
 private fun groupBadge(type: Proxy.Type): GroupBadge = GroupBadge(type.name)
 
@@ -78,9 +76,7 @@ internal fun LazyListScope.nodeGroupItems(
             group = group,
             isDelayTesting = testingGroupNames.contains(group.name),
             onClick = onGroupClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = itemVerticalPadding),
+            modifier = Modifier.fillMaxWidth().padding(vertical = itemVerticalPadding),
         )
     }
 }
@@ -95,45 +91,45 @@ internal fun NodeGroupCard(
     val cardShape = RoundedCornerShape(AppTheme.radii.radius24)
     val interactionSource = remember { MutableInteractionSource() }
 
-    val proxiesByName = remember(group.proxies) {
-        group.proxies.associateBy(Proxy::name)
-    }
-    val currentProxy = remember(group.now, proxiesByName) {
-        proxiesByName[group.now]
-    }
-    val currentNode = remember(currentProxy?.name, currentProxy?.title, group.now) {
-        resolveProxyDisplayPresentation(
-            name = currentProxy?.name ?: group.now,
-            title = currentProxy?.title,
-        )
-    }
-    val currentNodeName = remember(currentNode.displayName, group.now) {
-        currentNode.displayName.ifBlank { group.now.trim() }.ifBlank { MLang.Proxy.Mode.Direct }
-    }
-    val iconUri = remember(group.icon) {
-        group.icon?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeNodeGroupIconUri)
-    }
+    val proxiesByName = remember(group.proxies) { group.proxies.associateBy(Proxy::name) }
+    val currentProxy = remember(group.now, proxiesByName) { proxiesByName[group.now] }
+    val currentNode =
+        remember(currentProxy?.name, currentProxy?.title, group.now) {
+            resolveProxyDisplayPresentation(
+                name = currentProxy?.name ?: group.now,
+                title = currentProxy?.title,
+            )
+        }
+    val currentNodeName =
+        remember(currentNode.displayName, group.now) {
+            currentNode.displayName.ifBlank { group.now.trim() }.ifBlank { MLang.Proxy.Mode.Direct }
+        }
+    val iconUri =
+        remember(group.icon) {
+            group.icon?.trim()?.takeIf { it.isNotEmpty() }?.let(::normalizeNodeGroupIconUri)
+        }
     val currentDelay = remember(currentProxy) { currentProxy?.delay }
     val badge = remember(group.type) { groupBadge(group.type) }
     val delayLabel = nodeLatencyLabel(currentDelay)
 
     Column(
-        modifier = modifier
-            .shadow(
-                elevation = UiDp.dp4,
-                shape = cardShape,
-                ambientColor = Color.Black.copy(alpha = 0.05f),
-                spotColor = Color.Black.copy(alpha = 0.05f),
-            )
-            .clip(cardShape)
-            .background(MiuixTheme.colorScheme.background)
-            .pressable(interactionSource = interactionSource, indication = SinkFeedback())
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = { onClick(group) },
-            )
-            .padding(horizontal = UiDp.dp16, vertical = UiDp.dp14),
+        modifier =
+            modifier
+                .shadow(
+                    elevation = UiDp.dp4,
+                    shape = cardShape,
+                    ambientColor = Color.Black.copy(alpha = 0.05f),
+                    spotColor = Color.Black.copy(alpha = 0.05f),
+                )
+                .clip(cardShape)
+                .background(MiuixTheme.colorScheme.background)
+                .pressable(interactionSource = interactionSource, indication = SinkFeedback())
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = { onClick(group) },
+                )
+                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp14),
         verticalArrangement = Arrangement.spacedBy(UiDp.dp10),
     ) {
         Row(
@@ -141,13 +137,10 @@ internal fun NodeGroupCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(UiDp.dp16),
         ) {
-
             if (iconUri != null) {
                 NodeGroupIcon(
                     iconUri = iconUri,
-                    modifier = Modifier
-                        .size(UiDp.dp44)
-                        .clip(RoundedCornerShape(UiDp.dp14)),
+                    modifier = Modifier.size(UiDp.dp44).clip(RoundedCornerShape(UiDp.dp14)),
                 )
             }
 
@@ -155,7 +148,6 @@ internal fun NodeGroupCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(UiDp.dp10),
             ) {
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -166,7 +158,6 @@ internal fun NodeGroupCard(
                         horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
                         modifier = Modifier.weight(1f),
                     ) {
-
                         Text(
                             text = group.name,
                             style = MiuixTheme.textStyles.body1,
@@ -181,10 +172,10 @@ internal fun NodeGroupCard(
                             text = badge.label,
                             style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
                             color = primary,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(UiDp.dp100))
-                                .background(primary.copy(alpha = 0.1f))
-                                .padding(horizontal = UiDp.dp8, vertical = UiDp.dp3),
+                            modifier =
+                                Modifier.clip(RoundedCornerShape(UiDp.dp100))
+                                    .background(primary.copy(alpha = 0.1f))
+                                    .padding(horizontal = UiDp.dp8, vertical = UiDp.dp3),
                         )
                     }
 
@@ -242,12 +233,13 @@ internal fun NodeGroupCard(
                                 )
                             }
 
-                            else -> Icon(
-                                Yume.chevron,
-                                contentDescription = null,
-                                modifier = Modifier.size(UiDp.dp18),
-                                tint = AppTheme.colors.state.subtleDivider,
-                            )
+                            else ->
+                                Icon(
+                                    Yume.chevron,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(UiDp.dp18),
+                                    tint = AppTheme.colors.state.subtleDivider,
+                                )
                         }
                     }
                 }
@@ -266,19 +258,17 @@ private fun normalizeNodeGroupIconUri(raw: String): String {
 }
 
 @Composable
-private fun NodeGroupIcon(
-    iconUri: String,
-    modifier: Modifier = Modifier,
-) {
+private fun NodeGroupIcon(iconUri: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val placeholderColorInt = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.10f).toArgb()
-    val request = remember(context, iconUri, placeholderColorInt) {
-        ImageRequest(context, iconUri) {
-            placeholder(IntColorDrawableStateImage(placeholderColorInt))
-            error(IntColorDrawableStateImage(placeholderColorInt))
-            crossfade(true)
+    val request =
+        remember(context, iconUri, placeholderColorInt) {
+            ImageRequest(context, iconUri) {
+                placeholder(IntColorDrawableStateImage(placeholderColorInt))
+                error(IntColorDrawableStateImage(placeholderColorInt))
+                crossfade(true)
+            }
         }
-    }
     SketchAsyncImage(
         request = request,
         contentDescription = null,

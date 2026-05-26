@@ -18,21 +18,19 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Check
 import com.github.yumelira.yumebox.presentation.icon.yume.Close
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -43,18 +41,17 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 object AppBottomSheetDefaults {
     val insideMargin = DpSize(UiDp.dp32, UiDp.dp16)
 
-    @Composable
-    fun backgroundColor(): Color = MiuixTheme.colorScheme.surface
+    @Composable fun backgroundColor(): Color = MiuixTheme.colorScheme.surface
+
+    @Composable fun dragHandleColor(): Color = MiuixTheme.colorScheme.onSurfaceVariantActions
 
     @Composable
-    fun dragHandleColor(): Color = MiuixTheme.colorScheme.onSurfaceVariantActions
-
-    @Composable
-    fun actionIconTint(enabled: Boolean): Color = if (enabled) {
-        MiuixTheme.colorScheme.onSurface
-    } else {
-        MiuixTheme.colorScheme.onSurface.copy(alpha = AppTheme.opacity.disabled)
-    }
+    fun actionIconTint(enabled: Boolean): Color =
+        if (enabled) {
+            MiuixTheme.colorScheme.onSurface
+        } else {
+            MiuixTheme.colorScheme.onSurface.copy(alpha = AppTheme.opacity.disabled)
+        }
 }
 
 data class AppBottomSheetAction(
@@ -66,22 +63,18 @@ data class AppBottomSheetAction(
 )
 
 @Composable
-fun AppBottomSheetIconAction(
-    action: AppBottomSheetAction,
-) {
-    IconButton(
-        enabled = action.enabled,
-        onClick = action.onClick,
-    ) {
+fun AppBottomSheetIconAction(action: AppBottomSheetAction) {
+    IconButton(enabled = action.enabled, onClick = action.onClick) {
         Icon(
             modifier = Modifier.alpha(if (action.enabled) 1f else AppTheme.opacity.medium),
             imageVector = action.icon,
             contentDescription = action.contentDescription,
-            tint = if (action.tint == Color.Unspecified) {
-                AppBottomSheetDefaults.actionIconTint(action.enabled)
-            } else {
-                action.tint
-            },
+            tint =
+                if (action.tint == Color.Unspecified) {
+                    AppBottomSheetDefaults.actionIconTint(action.enabled)
+                } else {
+                    action.tint
+                },
         )
     }
 }
@@ -93,12 +86,13 @@ fun AppBottomSheetCloseAction(
     contentDescription: String = MLang.Component.Button.Cancel,
 ) {
     AppBottomSheetIconAction(
-        action = AppBottomSheetAction(
-            icon = Yume.Close,
-            contentDescription = contentDescription,
-            enabled = enabled,
-            onClick = onClick,
-        ),
+        action =
+            AppBottomSheetAction(
+                icon = Yume.Close,
+                contentDescription = contentDescription,
+                enabled = enabled,
+                onClick = onClick,
+            )
     )
 }
 
@@ -109,12 +103,13 @@ fun AppBottomSheetConfirmAction(
     contentDescription: String = MLang.Component.Button.Confirm,
 ) {
     AppBottomSheetIconAction(
-        action = AppBottomSheetAction(
-            icon = Yume.Check,
-            contentDescription = contentDescription,
-            enabled = enabled,
-            onClick = onClick,
-        ),
+        action =
+            AppBottomSheetAction(
+                icon = Yume.Check,
+                contentDescription = contentDescription,
+                enabled = enabled,
+                onClick = onClick,
+            )
     )
 }
 
@@ -140,16 +135,18 @@ fun AppActionBottomSheet(
     renderInRootScaffold: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val resolvedBackgroundColor = if (backgroundColor == Color.Unspecified) {
-        AppBottomSheetDefaults.backgroundColor()
-    } else {
-        backgroundColor
-    }
-    val resolvedDragHandleColor = if (dragHandleColor == Color.Unspecified) {
-        AppBottomSheetDefaults.dragHandleColor()
-    } else {
-        dragHandleColor
-    }
+    val resolvedBackgroundColor =
+        if (backgroundColor == Color.Unspecified) {
+            AppBottomSheetDefaults.backgroundColor()
+        } else {
+            backgroundColor
+        }
+    val resolvedDragHandleColor =
+        if (dragHandleColor == Color.Unspecified) {
+            AppBottomSheetDefaults.dragHandleColor()
+        } else {
+            dragHandleColor
+        }
 
     OverlayBottomSheet(
         show = show,

@@ -18,16 +18,11 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.screen.node
 
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 
-internal data class ProxyDisplayPresentation(
-    val countryCode: String?,
-    val displayName: String,
-)
+internal data class ProxyDisplayPresentation(val countryCode: String?, val displayName: String)
 
 internal fun resolveProxyDisplayPresentation(
     name: String,
@@ -40,8 +35,7 @@ internal fun resolveProxyDisplayPresentation(
 
     return ProxyDisplayPresentation(
         countryCode = primary.countryCode ?: fallback.countryCode,
-        displayName = primary.displayName.ifBlank {
-            fallback.displayName.ifBlank { normalizedName }
-        },
+        displayName =
+            primary.displayName.ifBlank { fallback.displayName.ifBlank { normalizedName } },
     )
 }

@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.screen
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.Provider
@@ -46,9 +44,12 @@ import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import java.text.SimpleDateFormat
+import java.util.*
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
@@ -59,24 +60,20 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.window.WindowListPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Edit
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.text.SimpleDateFormat
-import java.util.*
+import top.yukonga.miuix.kmp.window.WindowListPopup
 
-private fun Provider.VehicleType.localizedDisplayName(): String = when (this) {
-    Provider.VehicleType.HTTP -> MLang.Providers.VehicleType.Http
-    Provider.VehicleType.File -> MLang.Providers.VehicleType.File
-    Provider.VehicleType.Inline -> MLang.Providers.VehicleType.Inline
-    Provider.VehicleType.Compatible -> MLang.Providers.VehicleType.Compatible
-}
+private fun Provider.VehicleType.localizedDisplayName(): String =
+    when (this) {
+        Provider.VehicleType.HTTP -> MLang.Providers.VehicleType.Http
+        Provider.VehicleType.File -> MLang.Providers.VehicleType.File
+        Provider.VehicleType.Inline -> MLang.Providers.VehicleType.Inline
+        Provider.VehicleType.Compatible -> MLang.Providers.VehicleType.Compatible
+    }
 
-private data class ProviderSection(
-    val title: String,
-    val providers: List<Provider>,
-)
+private data class ProviderSection(val title: String, val providers: List<Provider>)
 
 @Composable
 fun ProvidersContent(navigator: DestinationsNavigator) {
@@ -108,30 +105,31 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
         }
     }
 
-    val updatableProviders = remember(providers) {
-        providers.filter { it.vehicleType == Provider.VehicleType.HTTP }
-    }
-    val sections = remember(providers) {
-        val (proxyProviders, ruleProviders) = providers.partition { it.type == Provider.Type.Proxy }
-        buildList {
-            if (proxyProviders.isNotEmpty()) {
-                add(
-                    ProviderSection(
-                        title = MLang.Providers.Type.ProxyProviders.format(proxyProviders.size),
-                        providers = proxyProviders,
+    val updatableProviders =
+        remember(providers) { providers.filter { it.vehicleType == Provider.VehicleType.HTTP } }
+    val sections =
+        remember(providers) {
+            val (proxyProviders, ruleProviders) =
+                providers.partition { it.type == Provider.Type.Proxy }
+            buildList {
+                if (proxyProviders.isNotEmpty()) {
+                    add(
+                        ProviderSection(
+                            title = MLang.Providers.Type.ProxyProviders.format(proxyProviders.size),
+                            providers = proxyProviders,
+                        )
                     )
-                )
-            }
-            if (ruleProviders.isNotEmpty()) {
-                add(
-                    ProviderSection(
-                        title = MLang.Providers.Type.RuleProviders.format(ruleProviders.size),
-                        providers = ruleProviders,
+                }
+                if (ruleProviders.isNotEmpty()) {
+                    add(
+                        ProviderSection(
+                            title = MLang.Providers.Type.RuleProviders.format(ruleProviders.size),
+                            providers = ruleProviders,
+                        )
                     )
-                )
+                }
             }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -140,28 +138,26 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                 scrollBehavior = scrollBehavior,
                 actions = {
                     if (isRunning && updatableProviders.isNotEmpty()) {
-                        IconButton(
-                            onClick = { viewModel.updateAllProviders() }
-                        ) {
+                        IconButton(onClick = { viewModel.updateAllProviders() }) {
                             Icon(
                                 imageVector = Yume.`Circle-fading-arrow-up`,
-                                contentDescription = MLang.Providers.Action.UpdateAll
+                                contentDescription = MLang.Providers.Action.UpdateAll,
                             )
                         }
                     }
-                }
+                },
             )
-        },
+        }
     ) { innerPadding ->
         if (!isRunning) {
             CenteredText(
                 firstLine = MLang.Providers.Empty.NotRunning,
-                secondLine = MLang.Providers.Empty.NotRunningHint
+                secondLine = MLang.Providers.Empty.NotRunningHint,
             )
         } else if (providers.isEmpty() && !uiState.isLoading) {
             CenteredText(
                 firstLine = MLang.Providers.Empty.NoProviders,
-                secondLine = MLang.Providers.Empty.NoProvidersHint
+                secondLine = MLang.Providers.Empty.NoProvidersHint,
             )
         } else {
             val mainLikePadding = rememberStandalonePageMainPadding()
@@ -172,7 +168,9 @@ fun ProvidersContent(navigator: DestinationsNavigator) {
                 sections.forEach { section ->
                     providerSection(
                         section = section,
-                        isUpdating = { providerKey -> uiState.updatingProviders.contains(providerKey) },
+                        isUpdating = { providerKey ->
+                            uiState.updatingProviders.contains(providerKey)
+                        },
                         onUpdate = { provider -> viewModel.updateProvider(provider) },
                         onUpload = { provider, uri ->
                             viewModel.uploadProviderFile(context, provider, uri)
@@ -189,53 +187,52 @@ private fun ProviderCard(
     provider: Provider,
     isUpdating: Boolean,
     onUpdate: () -> Unit,
-    onUpload: (Uri) -> Unit
+    onUpload: (Uri) -> Unit,
 ) {
     val showPopup = remember { mutableStateOf(false) }
     val colorScheme = MiuixTheme.colorScheme
     val updateBg = remember(colorScheme) { colorScheme.primary.copy(alpha = 0.1f) }
     val updateTint = remember(colorScheme) { colorScheme.primary }
 
-    val filePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { onUpload(it) }
-    }
+    val filePicker =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) {
+            uri: Uri? ->
+            uri?.let { onUpload(it) }
+        }
 
     Card(modifier = Modifier.padding(vertical = UiDp.dp4)) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
+            modifier =
+                Modifier.fillMaxWidth().padding(horizontal = UiDp.dp16, vertical = UiDp.dp12),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = provider.name,
                     style = MiuixTheme.textStyles.body1,
-                    color = MiuixTheme.colorScheme.onSurface
+                    color = MiuixTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.size(UiDp.dp4))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = provider.vehicleType.localizedDisplayName(),
                         style = MiuixTheme.textStyles.body2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
                     if (provider.updatedAt > 0) {
                         Text(
                             text = "•",
                             style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                         Text(
                             text = formatTimestamp(provider.updatedAt),
                             style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }
                 }
@@ -250,7 +247,7 @@ private fun ProviderCard(
                         minHeight = UiDp.dp35,
                         minWidth = UiDp.dp35,
                         enabled = !isUpdating,
-                        onClick = { showPopup.value = true }
+                        onClick = { showPopup.value = true },
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = UiDp.dp10),
@@ -268,18 +265,19 @@ private fun ProviderCard(
                                 text = MLang.Providers.Action.Operation,
                                 color = updateTint,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = 15.sp
+                                fontSize = 15.sp,
                             )
                         }
                     }
 
-                    val popupItems = listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
+                    val popupItems =
+                        listOf(MLang.Providers.Action.Update, MLang.Providers.Action.Upload)
 
-                    WindowListPopup  (
+                    WindowListPopup(
                         show = showPopup.value,
                         popupPositionProvider = ListPopupDefaults.DropdownPositionProvider,
                         alignment = PopupPositionProvider.Align.End,
-                        onDismissRequest = { showPopup.value = false }
+                        onDismissRequest = { showPopup.value = false },
                     ) {
                         ListPopupColumn {
                             popupItems.forEachIndexed { index, item ->
@@ -294,7 +292,7 @@ private fun ProviderCard(
                                             1 -> filePicker.launch("*/*")
                                         }
                                     },
-                                    index = index
+                                    index = index,
                                 )
                             }
                         }
@@ -311,9 +309,7 @@ private fun LazyListScope.providerSection(
     onUpdate: (Provider) -> Unit,
     onUpload: (Provider, Uri) -> Unit,
 ) {
-    item(key = "title_${section.title}") {
-        Title(section.title)
-    }
+    item(key = "title_${section.title}") { Title(section.title) }
     items(
         items = section.providers,
         key = { provider -> "${provider.type}_${provider.name}" },

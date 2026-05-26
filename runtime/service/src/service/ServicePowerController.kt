@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.content.BroadcastReceiver
@@ -44,11 +42,12 @@ class ServicePowerController(private val context: Context) {
 
     private var started = false
 
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            updateState()
+    private val receiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                updateState()
+            }
         }
-    }
 
     fun start() {
         if (started) return
@@ -81,18 +80,23 @@ class ServicePowerController(private val context: Context) {
     }
 
     private fun register() {
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_SCREEN_OFF)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
+        val filter =
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
+                }
             }
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+            ContextCompat.registerReceiver(
+                context,
+                receiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
         } else {
-            @Suppress("DEPRECATION")
-            context.registerReceiver(receiver, filter)
+            @Suppress("DEPRECATION") context.registerReceiver(receiver, filter)
         }
     }
 

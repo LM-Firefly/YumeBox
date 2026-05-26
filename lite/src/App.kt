@@ -21,15 +21,15 @@
 package com.github.yumelira.yumebox
 
 import android.app.Application
-import com.github.yumelira.yumebox.lite.BuildConfig
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
-import com.github.yumelira.yumebox.di.featureProxyModules
 import com.github.yumelira.yumebox.di.appModule
+import com.github.yumelira.yumebox.di.featureProxyModules
+import com.github.yumelira.yumebox.lite.BuildConfig
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
@@ -54,10 +54,12 @@ class App : Application() {
         Global.init(this)
         MMKV.initialize(this)
 
-        val koin = startKoin {
-            androidContext(this@App)
-            modules(appModule + featureProxyModules)
-        }.koin
+        val koin =
+            startKoin {
+                    androidContext(this@App)
+                    modules(appModule + featureProxyModules)
+                }
+                .koin
 
         bootstrapDefaults(
             appSettings = koin.get(),

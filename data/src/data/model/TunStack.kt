@@ -18,12 +18,10 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 enum class TunStack {
     System,
     GVisor,
-    Mixed
+    Mixed,
 }

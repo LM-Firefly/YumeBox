@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.runtime.Composable
@@ -34,12 +32,17 @@ fun NullableBooleanSelector(
     onValueChange: (Boolean?) -> Unit,
 ) {
     val items =
-        listOf(MLang.Component.Selector.NotModify, MLang.Component.Selector.Enable, MLang.Component.Selector.Disable)
-    val selectedIndex = when (value) {
-        null -> 0
-        true -> 1
-        false -> 2
-    }
+        listOf(
+            MLang.Component.Selector.NotModify,
+            MLang.Component.Selector.Enable,
+            MLang.Component.Selector.Disable,
+        )
+    val selectedIndex =
+        when (value) {
+            null -> 0
+            true -> 1
+            false -> 2
+        }
 
     WindowDropdownPreference(
         title = title,
@@ -85,20 +88,15 @@ fun <T> NullableEnumSelector(
 enum class ListMergeStrategy {
 
     None,
-
     Replace,
-
     Start,
-
     End,
 }
 
 enum class MapMergeStrategy {
 
     None,
-
     Replace,
-
     Merge,
 }
 
@@ -109,18 +107,20 @@ fun ListMergeStrategySelector(
     value: ListMergeStrategy,
     onValueChange: (ListMergeStrategy) -> Unit,
 ) {
-    val items = listOf(
-        MLang.Component.Selector.NotModify,
-        MLang.Component.Selector.Replace,
-        MLang.Component.Selector.Prepend,
-        MLang.Component.Selector.Append,
-    )
-    val values = listOf(
-        ListMergeStrategy.None,
-        ListMergeStrategy.Replace,
-        ListMergeStrategy.Start,
-        ListMergeStrategy.End,
-    )
+    val items =
+        listOf(
+            MLang.Component.Selector.NotModify,
+            MLang.Component.Selector.Replace,
+            MLang.Component.Selector.Prepend,
+            MLang.Component.Selector.Append,
+        )
+    val values =
+        listOf(
+            ListMergeStrategy.None,
+            ListMergeStrategy.Replace,
+            ListMergeStrategy.Start,
+            ListMergeStrategy.End,
+        )
 
     NullableEnumSelector(
         title = title,
@@ -139,16 +139,13 @@ fun MapMergeStrategySelector(
     value: MapMergeStrategy,
     onValueChange: (MapMergeStrategy) -> Unit,
 ) {
-    val items = listOf(
-        MLang.Component.Selector.NotModify,
-        MLang.Component.Selector.Replace,
-        MLang.Component.Selector.Merge,
-    )
-    val values = listOf(
-        MapMergeStrategy.None,
-        MapMergeStrategy.Replace,
-        MapMergeStrategy.Merge,
-    )
+    val items =
+        listOf(
+            MLang.Component.Selector.NotModify,
+            MLang.Component.Selector.Replace,
+            MLang.Component.Selector.Merge,
+        )
+    val values = listOf(MapMergeStrategy.None, MapMergeStrategy.Replace, MapMergeStrategy.Merge)
 
     NullableEnumSelector(
         title = title,

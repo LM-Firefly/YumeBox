@@ -18,19 +18,15 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.config
 
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.tencent.mmkv.MMKV
-import kotlinx.serialization.json.Json
 import java.util.*
+import kotlinx.serialization.json.Json
 
 class ServiceStore {
-    private val store = Store(
-        MMKV.mmkvWithID("service", MMKV.MULTI_PROCESS_MODE).asStoreProvider()
-    )
+    private val store = Store(MMKV.mmkvWithID("service", MMKV.MULTI_PROCESS_MODE).asStoreProvider())
     private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
 
     private fun readBoolean(newKey: String, legacyKey: String, defaultValue: Boolean): Boolean {
@@ -42,7 +38,8 @@ class ServiceStore {
 
     private fun readString(newKey: String, legacyKey: String, defaultValue: String): String {
         return when {
-            networkSettings.containsKey(newKey) -> networkSettings.decodeString(newKey, defaultValue) ?: defaultValue
+            networkSettings.containsKey(newKey) ->
+                networkSettings.decodeString(newKey, defaultValue) ?: defaultValue
             else -> store.provider.getString(legacyKey, defaultValue)
         }
     }
@@ -54,9 +51,14 @@ class ServiceStore {
         }
     }
 
-    private fun readStringSet(newKey: String, legacyKey: String, defaultValue: Set<String>): Set<String> {
+    private fun readStringSet(
+        newKey: String,
+        legacyKey: String,
+        defaultValue: Set<String>,
+    ): Set<String> {
         return when {
-            networkSettings.containsKey(newKey) -> networkSettings.decodeStringSet(newKey, defaultValue) ?: defaultValue
+            networkSettings.containsKey(newKey) ->
+                networkSettings.decodeStringSet(newKey, defaultValue) ?: defaultValue
             else -> store.provider.getStringSet(legacyKey, defaultValue)
         }
     }
@@ -64,15 +66,20 @@ class ServiceStore {
     private fun readStringList(newKey: String, defaultValue: List<String>): List<String> {
         if (!networkSettings.containsKey(newKey)) return defaultValue
         return runCatching {
-            networkSettings.decodeString(newKey)?.let { json.decodeFromString<List<String>>(it) } ?: defaultValue
-        }.getOrDefault(defaultValue)
+                networkSettings.decodeString(newKey)?.let {
+                    json.decodeFromString<List<String>>(it)
+                } ?: defaultValue
+            }
+            .getOrDefault(defaultValue)
     }
 
     private fun readIntList(newKey: String, defaultValue: List<Int>): List<Int> {
         if (!networkSettings.containsKey(newKey)) return defaultValue
         return runCatching {
-            networkSettings.decodeString(newKey)?.let { json.decodeFromString<List<Int>>(it) } ?: defaultValue
-        }.getOrDefault(defaultValue)
+                networkSettings.decodeString(newKey)?.let { json.decodeFromString<List<Int>>(it) }
+                    ?: defaultValue
+            }
+            .getOrDefault(defaultValue)
     }
 
     private inline fun <reified T : Enum<T>> readEnum(newKey: String, defaultValue: T): T {
@@ -81,103 +88,98 @@ class ServiceStore {
         return runCatching { enumValueOf<T>(raw) }.getOrDefault(defaultValue)
     }
 
-    var activeProfile: UUID? by store.typedString(
-        key = "active_profile",
-        from = { if (it.isBlank()) null else UUID.fromString(it) },
-        to = { it?.toString() ?: "" }
-    )
+    var activeProfile: UUID? by
+        store.typedString(
+            key = "active_profile",
+            from = { if (it.isBlank()) null else UUID.fromString(it) },
+            to = { it?.toString() ?: "" },
+        )
 
     var bypassPrivateNetwork: Boolean
-        get() = readBoolean(
-            newKey = "bypassPrivateNetwork",
-            legacyKey = "bypass_private_network",
-            defaultValue = true
-        )
+        get() =
+            readBoolean(
+                newKey = "bypassPrivateNetwork",
+                legacyKey = "bypass_private_network",
+                defaultValue = true,
+            )
         set(value) {
             networkSettings.encode("bypassPrivateNetwork", value)
             store.provider.setBoolean("bypass_private_network", value)
         }
 
     private var accessControlModeRaw: String
-        get() = readString(
-            newKey = "accessControlMode",
-            legacyKey = "access_control_mode",
-            defaultValue = AccessControlMode.AcceptAll.name
-        )
+        get() =
+            readString(
+                newKey = "accessControlMode",
+                legacyKey = "access_control_mode",
+                defaultValue = AccessControlMode.AcceptAll.name,
+            )
         set(value) {
             networkSettings.encode("accessControlMode", value)
             store.provider.setString("access_control_mode", value)
         }
 
     var accessControlMode: AccessControlMode
-        get() = when (accessControlModeRaw) {
-            AccessControlMode.AcceptAll.name,
-            "ALLOW_ALL" -> AccessControlMode.AcceptAll
+        get() =
+            when (accessControlModeRaw) {
+                AccessControlMode.AcceptAll.name,
+                "ALLOW_ALL" -> AccessControlMode.AcceptAll
 
-            AccessControlMode.AcceptSelected.name,
-            "ALLOW_SPECIFIC" -> AccessControlMode.AcceptSelected
+                AccessControlMode.AcceptSelected.name,
+                "ALLOW_SPECIFIC" -> AccessControlMode.AcceptSelected
 
-            AccessControlMode.RejectAll.name,
-            "DENY_ALL" -> AccessControlMode.RejectAll
+                AccessControlMode.RejectAll.name,
+                "DENY_ALL" -> AccessControlMode.RejectAll
 
-            AccessControlMode.RejectSelected.name,
-            "DENY_SPECIFIC" -> AccessControlMode.RejectSelected
+                AccessControlMode.RejectSelected.name,
+                "DENY_SPECIFIC" -> AccessControlMode.RejectSelected
 
-            else -> AccessControlMode.AcceptAll
-        }
+                else -> AccessControlMode.AcceptAll
+            }
         set(value) {
             accessControlModeRaw = value.name
         }
 
     var accessControlPackages: Set<String>
-        get() = readStringSet(
-            newKey = "accessControlPackages",
-            legacyKey = "access_control_packages",
-            defaultValue = emptySet()
-        )
+        get() =
+            readStringSet(
+                newKey = "accessControlPackages",
+                legacyKey = "access_control_packages",
+                defaultValue = emptySet(),
+            )
         set(value) {
             networkSettings.encode("accessControlPackages", value)
             store.provider.setStringSet("access_control_packages", value)
         }
 
     var dnsHijacking: Boolean
-        get() = readBoolean(
-            newKey = "dnsHijack",
-            legacyKey = "dns_hijacking",
-            defaultValue = true
-        )
+        get() = readBoolean(newKey = "dnsHijack", legacyKey = "dns_hijacking", defaultValue = true)
         set(value) {
             networkSettings.encode("dnsHijack", value)
             store.provider.setBoolean("dns_hijacking", value)
         }
 
     var systemProxy: Boolean
-        get() = readBoolean(
-            newKey = "systemProxy",
-            legacyKey = "system_proxy",
-            defaultValue = true
-        )
+        get() = readBoolean(newKey = "systemProxy", legacyKey = "system_proxy", defaultValue = true)
         set(value) {
             networkSettings.encode("systemProxy", value)
             store.provider.setBoolean("system_proxy", value)
         }
 
     var allowBypass: Boolean
-        get() = readBoolean(
-            newKey = "allowBypass",
-            legacyKey = "allow_bypass",
-            defaultValue = true
-        )
+        get() = readBoolean(newKey = "allowBypass", legacyKey = "allow_bypass", defaultValue = true)
         set(value) {
             networkSettings.encode("allowBypass", value)
             store.provider.setBoolean("allow_bypass", value)
         }
 
     var allowIpv6: Boolean
-        get() = when {
-            networkSettings.containsKey("enableIPv6") -> networkSettings.decodeBool("enableIPv6", false)
-            else -> store.provider.getBoolean("allow_ipv6", false)
-        }
+        get() =
+            when {
+                networkSettings.containsKey("enableIPv6") ->
+                    networkSettings.decodeBool("enableIPv6", false)
+                else -> store.provider.getBoolean("allow_ipv6", false)
+            }
         set(value) {
             networkSettings.encode("enableIPv6", value)
             store.provider.setBoolean("allow_ipv6", value)
@@ -187,9 +189,12 @@ class ServiceStore {
         get() {
             if (networkSettings.containsKey("tunStack")) {
                 return when (networkSettings.decodeString("tunStack", "System")) {
-                    "System", "system" -> "system"
-                    "GVisor", "gvisor" -> "gvisor"
-                    "Mixed", "mixed" -> "mixed"
+                    "System",
+                    "system" -> "system"
+                    "GVisor",
+                    "gvisor" -> "gvisor"
+                    "Mixed",
+                    "mixed" -> "mixed"
                     else -> "system"
                 }
             }
@@ -205,7 +210,7 @@ class ServiceStore {
                     "gvisor" -> "GVisor"
                     "mixed" -> "Mixed"
                     else -> "System"
-                }
+                },
             )
         }
 
@@ -282,10 +287,8 @@ class ServiceStore {
             store.provider.setString("root_tun_fake_ip_range6", value)
         }
 
-    var showTrafficNotification by store.boolean(
-        key = "show_traffic_notification",
-        defaultValue = true
-    )
+    var showTrafficNotification by
+        store.boolean(key = "show_traffic_notification", defaultValue = true)
 
     private companion object {
         val json = Json { ignoreUnknownKeys = true }

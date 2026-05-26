@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,37 +34,55 @@ val Yume.Cancel: ImageVector
         if (_IconName != null) {
             return _IconName!!
         }
-        _IconName = ImageVector.Builder(
-            name = "IconName",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(12f, 12f)
-                moveToRelative(-10f, 0f)
-                arcToRelative(10f, 10f, 0f, isMoreThanHalf = true, isPositiveArc = true, 20f, 0f)
-                arcToRelative(10f, 10f, 0f, isMoreThanHalf = true, isPositiveArc = true, -20f, 0f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(9f, 15f)
-                lineTo(15f, 9f)
-            }
-        }.build()
+        _IconName =
+            ImageVector.Builder(
+                    name = "IconName",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(12f, 12f)
+                        moveToRelative(-10f, 0f)
+                        arcToRelative(
+                            10f,
+                            10f,
+                            0f,
+                            isMoreThanHalf = true,
+                            isPositiveArc = true,
+                            20f,
+                            0f,
+                        )
+                        arcToRelative(
+                            10f,
+                            10f,
+                            0f,
+                            isMoreThanHalf = true,
+                            isPositiveArc = true,
+                            -20f,
+                            0f,
+                        )
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(9f, 15f)
+                        lineTo(15f, 9f)
+                    }
+                }
+                .build()
 
         return _IconName!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _IconName: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _IconName: ImageVector? = null

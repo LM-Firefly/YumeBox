@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.content.Context
@@ -34,21 +32,19 @@ import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
 import com.github.yumelira.yumebox.service.runtime.util.generateProfileUUID
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
+import java.io.FileNotFoundException
+import java.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.FileNotFoundException
-import java.util.*
 
-class ProfileManager(private val context: Context) : IProfileManager,
-    CoroutineScope by CoroutineScope(Dispatchers.IO) {
+class ProfileManager(private val context: Context) :
+    IProfileManager, CoroutineScope by CoroutineScope(Dispatchers.IO) {
     private val store = ServiceStore()
 
     init {
-        launch {
-            context.importedDir.mkdirs()
-        }
+        launch { context.importedDir.mkdirs() }
     }
 
     override suspend fun create(type: Profile.Type, name: String, source: String): UUID {
@@ -56,18 +52,19 @@ class ProfileManager(private val context: Context) : IProfileManager,
         val normalizedName = name.trim().ifBlank { "New Profile" }
         val now = System.currentTimeMillis()
 
-        val imported = Imported(
-            uuid = uuid,
-            name = normalizedName,
-            type = type,
-            source = source,
-            interval = 0,
-            upload = 0,
-            total = 0,
-            download = 0,
-            expire = 0,
-            createdAt = now,
-        )
+        val imported =
+            Imported(
+                uuid = uuid,
+                name = normalizedName,
+                type = type,
+                source = source,
+                interval = 0,
+                upload = 0,
+                total = 0,
+                download = 0,
+                expire = 0,
+                createdAt = now,
+            )
 
         ImportedDao.insert(imported)
 
@@ -77,28 +74,28 @@ class ProfileManager(private val context: Context) : IProfileManager,
     override suspend fun clone(uuid: UUID): UUID {
         val newUUID = generateProfileUUID()
 
-        val imported = ImportedDao.queryByUUID(uuid)
-            ?: throw FileNotFoundException("profile $uuid not found")
+        val imported =
+            ImportedDao.queryByUUID(uuid) ?: throw FileNotFoundException("profile $uuid not found")
 
         val now = System.currentTimeMillis()
-        val newImported = Imported(
-            uuid = newUUID,
-            name = imported.name,
-            type = Profile.Type.File,
-            source = imported.source,
-            interval = imported.interval,
-            upload = imported.upload,
-            total = imported.total,
-            download = imported.download,
-            expire = imported.expire,
-            createdAt = now,
-        )
+        val newImported =
+            Imported(
+                uuid = newUUID,
+                name = imported.name,
+                type = Profile.Type.File,
+                source = imported.source,
+                interval = imported.interval,
+                upload = imported.upload,
+                total = imported.total,
+                download = imported.download,
+                expire = imported.expire,
+                createdAt = now,
+            )
 
         val sourceDir = context.importedDir.resolve(uuid.toString())
         val targetDir = context.importedDir.resolve(newUUID.toString())
 
-        if (!sourceDir.exists())
-            throw FileNotFoundException("profile $uuid not found")
+        if (!sourceDir.exists()) throw FileNotFoundException("profile $uuid not found")
 
         targetDir.deleteRecursively()
         sourceDir.copyRecursively(targetDir)
@@ -109,14 +106,10 @@ class ProfileManager(private val context: Context) : IProfileManager,
     }
 
     override suspend fun patch(uuid: UUID, name: String, source: String, interval: Long) {
-        val imported = ImportedDao.queryByUUID(uuid)
-            ?: throw FileNotFoundException("profile $uuid not found")
+        val imported =
+            ImportedDao.queryByUUID(uuid) ?: throw FileNotFoundException("profile $uuid not found")
 
-        val updated = imported.copy(
-            name = name,
-            source = source,
-            interval = interval,
-        )
+        val updated = imported.copy(name = name, source = source, interval = interval)
 
         ImportedDao.update(updated)
         context.sendProfileChanged(uuid)
@@ -135,17 +128,17 @@ class ProfileManager(private val context: Context) : IProfileManager,
     }
 
     override suspend fun queryAll(): List<Profile> {
-        val uuids = withContext(Dispatchers.IO) {
-            ImportedDao.queryAllUUIDs()
-        }
+        val uuids = withContext(Dispatchers.IO) { ImportedDao.queryAllUUIDs() }
 
-        val orderIndex = ProfileStore.loadProfileOrder()
-            .withIndex()
-            .associate { it.value to it.index }
+        val orderIndex =
+            ProfileStore.loadProfileOrder().withIndex().associate { it.value to it.index }
 
-        return uuids.mapNotNull { resolveProfile(it) }
-            .sortedWith(compareBy<Profile> { orderIndex[it.uuid] ?: Int.MAX_VALUE }
-                .thenByDescending { it.updatedAt })
+        return uuids
+            .mapNotNull { resolveProfile(it) }
+            .sortedWith(
+                compareBy<Profile> { orderIndex[it.uuid] ?: Int.MAX_VALUE }
+                    .thenByDescending { it.updatedAt }
+            )
     }
 
     override suspend fun queryActive(): Profile? {
@@ -176,12 +169,8 @@ class ProfileManager(private val context: Context) : IProfileManager,
         val existingSet = existing.toSet()
 
         val normalized = buildList {
-            uuids.forEach { uuid ->
-                if (uuid in existingSet && uuid !in this) add(uuid)
-            }
-            existing.forEach { uuid ->
-                if (uuid !in this) add(uuid)
-            }
+            uuids.forEach { uuid -> if (uuid in existingSet && uuid !in this) add(uuid) }
+            existing.forEach { uuid -> if (uuid !in this) add(uuid) }
         }
 
         ProfileStore.saveProfileOrder(normalized)
@@ -211,5 +200,4 @@ class ProfileManager(private val context: Context) : IProfileManager,
     private fun resolveUpdatedAt(uuid: UUID): Long {
         return context.importedDir.resolve(uuid.toString()).directoryLastModified ?: -1
     }
-
 }

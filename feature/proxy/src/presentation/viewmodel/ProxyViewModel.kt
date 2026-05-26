@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
@@ -44,7 +42,10 @@ class ProxyViewModel(
     private val proxyFacade: ProxyFacade,
     private val proxyDisplaySettingsStore: ProxyDisplaySettingsStore,
     appSettings: AppSettingsStore,
-) : ContractStateViewModel<ProxyViewModel.ProxyUiState, ProxyViewModel.ProxyUiEffect>(ProxyUiState()) {
+) :
+    ContractStateViewModel<ProxyViewModel.ProxyUiState, ProxyViewModel.ProxyUiEffect>(
+        ProxyUiState()
+    ) {
     private val _testingGroupNames = MutableStateFlow<Set<String>>(emptySet())
     val testingGroupNames: StateFlow<Set<String>> = _testingGroupNames.asStateFlow()
 
@@ -53,15 +54,24 @@ class ProxyViewModel(
 
     private val groupSorter = ProxyGroupSorter()
 
-    val sortMode: StateFlow<ProxySortMode> = proxyDisplaySettingsStore.sortMode.state
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProxySortMode.DEFAULT)
+    val sortMode: StateFlow<ProxySortMode> =
+        proxyDisplaySettingsStore.sortMode.state.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            ProxySortMode.DEFAULT,
+        )
 
-    val singleNodeTest: StateFlow<Boolean> = appSettings.singleNodeTest.state
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val singleNodeTest: StateFlow<Boolean> =
+        appSettings.singleNodeTest.state.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            true,
+        )
 
-    val proxyGroups: StateFlow<List<ProxyGroupInfo>> = proxyFacade.proxyGroups
-        .map { groups -> groups.filterNot(ProxyGroupInfo::hidden) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val proxyGroups: StateFlow<List<ProxyGroupInfo>> =
+        proxyFacade.proxyGroups
+            .map { groups -> groups.filterNot(ProxyGroupInfo::hidden) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val activeSyncSources = mutableSetOf<String>()
 
@@ -70,27 +80,20 @@ class ProxyViewModel(
         viewModelScope.launch {
             proxyGroups
                 .distinctUntilChangedBy { groups -> groups.map(ProxyGroupInfo::name) }
-                .collect { groups ->
-                    groupSorter.track(groups)
-                }
+                .collect { groups -> groupSorter.track(groups) }
         }
     }
 
-    val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> = groupSorter.bind(
-        scope = viewModelScope,
-        proxyGroups = proxyGroups,
-        sortMode = sortMode,
-    )
+    val sortedProxyGroups: StateFlow<List<ProxyGroupInfo>> =
+        groupSorter.bind(scope = viewModelScope, proxyGroups = proxyGroups, sortMode = sortMode)
 
-    fun ensureCoreLoaded(
-        isActive: Boolean,
-        source: String = "proxy_page",
-    ) {
-        val changed = if (isActive) {
-            activeSyncSources.add(source)
-        } else {
-            activeSyncSources.remove(source)
-        }
+    fun ensureCoreLoaded(isActive: Boolean, source: String = "proxy_page") {
+        val changed =
+            if (isActive) {
+                activeSyncSources.add(source)
+            } else {
+                activeSyncSources.remove(source)
+            }
         if (!changed) return
         proxyFacade.setProxyGroupSyncPriority(
             priority = if (isActive) ProxyGroupSyncPriority.FAST else ProxyGroupSyncPriority.OFF,
@@ -99,23 +102,19 @@ class ProxyViewModel(
         if (isActive) {
             viewModelScope.launch {
                 runCatching {
-                    if (proxyGroups.value.isEmpty()) {
-                        proxyFacade.refreshProxyGroups()
+                        if (proxyGroups.value.isEmpty()) {
+                            proxyFacade.refreshProxyGroups()
+                        }
                     }
-                }.onFailure { error ->
-                    if (error is CancellationException) throw error
-                }
+                    .onFailure { error -> if (error is CancellationException) throw error }
             }
         }
     }
 
     fun refreshGroup(groupName: String) {
         viewModelScope.launch {
-            runCatching {
-                proxyFacade.refreshProxyGroup(groupName)
-            }.onFailure { error ->
-                if (error is CancellationException) throw error
-            }
+            runCatching { proxyFacade.refreshProxyGroup(groupName) }
+                .onFailure { error -> if (error is CancellationException) throw error }
         }
     }
 
@@ -124,11 +123,12 @@ class ProxyViewModel(
             setLoading(true)
             clearError()
             val currentGroups = proxyGroups.value
-            val testingTargets: Set<String> = if (groupName != null) {
-                setOf(groupName)
-            } else {
-                currentGroups.mapTo(linkedSetOf()) { it.name }
-            }
+            val testingTargets: Set<String> =
+                if (groupName != null) {
+                    setOf(groupName)
+                } else {
+                    currentGroups.mapTo(linkedSetOf()) { it.name }
+                }
             if (testingTargets.isNotEmpty()) {
                 _testingGroupNames.update { it + testingTargets }
             }
@@ -170,24 +170,21 @@ class ProxyViewModel(
     fun selectProxy(groupName: String, proxyName: String) {
         viewModelScope.launch {
             runCatching {
-                val success = proxyFacade.selectProxy(groupName, proxyName)
-                if (success) {
-                    showMessage(MLang.Proxy.Selection.Switched.format(proxyName))
-                } else {
-                    showError(MLang.Proxy.Selection.Failed)
+                    val success = proxyFacade.selectProxy(groupName, proxyName)
+                    if (success) {
+                        showMessage(MLang.Proxy.Selection.Switched.format(proxyName))
+                    } else {
+                        showError(MLang.Proxy.Selection.Failed)
+                    }
                 }
-            }.onFailure { error ->
-                showError(MLang.Proxy.Selection.Error.format(error.message))
-            }
+                .onFailure { error -> showError(MLang.Proxy.Selection.Error.format(error.message)) }
         }
     }
 
     fun testProxyDelay(groupName: String, proxyName: String) {
         viewModelScope.launch {
             _testingProxyNames.update { it + proxyName }
-            runCatching {
-                proxyFacade.healthCheckProxy(groupName, proxyName)
-            }
+            runCatching { proxyFacade.healthCheckProxy(groupName, proxyName) }
             PollingTimers.awaitTick(PollingTimerSpecs.ProxySwitchFeedback)
             _testingProxyNames.update { it - proxyName }
         }
@@ -208,15 +205,18 @@ class ProxyViewModel(
     data class ProxyUiState(
         override val isLoading: Boolean = false,
         override val message: String? = null,
-        override val error: String? = null
+        override val error: String? = null,
     ) : LoadableState<ProxyUiState> {
         override fun withLoading(loading: Boolean): ProxyUiState = copy(isLoading = loading)
+
         override fun withError(error: String?): ProxyUiState = copy(error = error)
+
         override fun withMessage(message: String?): ProxyUiState = copy(message = message)
     }
 
     sealed interface ProxyUiEffect {
         data class ShowMessage(val message: String) : ProxyUiEffect
+
         data class ShowError(val message: String) : ProxyUiEffect
     }
 }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.editor
 
 import android.util.TypedValue
@@ -103,7 +101,7 @@ fun CodeEditor(
             } catch (error: Exception) {
                 Timber.e(error, "Failed to release editor in onRelease")
             }
-        }
+        },
     )
 }
 
@@ -111,13 +109,12 @@ private fun createCodeEditor(
     context: android.content.Context,
     state: CodeEditorState,
     isDark: Boolean,
-    onTextChange: ((String) -> Unit)?
+    onTextChange: ((String) -> Unit)?,
 ): CodeEditor {
 
     TextMateInitializer.initialize(context)
 
     return CodeEditor(context).apply {
-
         isEditable = !state.readOnly
 
         val font = EditorFontManager.getEditorTypeface(context)
@@ -129,7 +126,7 @@ private fun createCodeEditor(
                 TypedValue.COMPLEX_UNIT_DIP,
                 12f,
                 context.resources.displayMetrics,
-            ),
+            )
         )
 
         setScrollBarEnabled(false)
@@ -144,7 +141,6 @@ private fun createCodeEditor(
         setText(state.content)
 
         subscribeAlways<ContentChangeEvent> {
-
             state.syncContentFromEditor()
 
             state.updateDiagnostics()

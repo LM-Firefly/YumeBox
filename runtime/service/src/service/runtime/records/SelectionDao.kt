@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.records
 
 import com.github.yumelira.yumebox.service.runtime.entity.Selection
@@ -50,24 +48,25 @@ object SelectionDao {
                 proxy = groupName.trim(),
                 selected = selectedProxy.trim(),
                 updatedAt = System.currentTimeMillis(),
-            ),
+            )
         )
     }
 
     fun upsertManualSelection(selection: Selection) {
         migrateLegacyIfNeeded()
-        val normalized = selection.copy(
-            proxy = selection.proxy.trim(),
-            selected = selection.selected.trim(),
-            updatedAt = if (selection.updatedAt > 0L) selection.updatedAt else System.currentTimeMillis(),
-        )
+        val normalized =
+            selection.copy(
+                proxy = selection.proxy.trim(),
+                selected = selection.selected.trim(),
+                updatedAt =
+                    if (selection.updatedAt > 0L) selection.updatedAt
+                    else System.currentTimeMillis(),
+            )
         if (normalized.proxy.isEmpty() || normalized.selected.isEmpty()) {
             return
         }
         val list = ProfileStore.loadSelections().toMutableList()
-        val index = list.indexOfFirst {
-            it.uuid == normalized.uuid && it.proxy == normalized.proxy
-        }
+        val index = list.indexOfFirst { it.uuid == normalized.uuid && it.proxy == normalized.proxy }
         if (index >= 0) {
             list[index] = normalized
         } else {

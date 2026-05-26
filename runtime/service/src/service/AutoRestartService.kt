@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.app.Notification
@@ -46,9 +44,9 @@ import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.*
 import timber.log.Timber
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AutoRestartService : Service() {
 
@@ -65,7 +63,9 @@ class AutoRestartService : Service() {
     private val mmkvProvider by lazy { MMKVProvider() }
     private val appSettingsStorage by lazy { AppSettingsStore(mmkvProvider.getMMKV("settings")) }
     private val featureStore by lazy { FeatureStore(mmkvProvider.getMMKV("substore")) }
-    private val networkSettingsStorage by lazy { NetworkSettingsStore(mmkvProvider.getMMKV("network_settings")) }
+    private val networkSettingsStorage by lazy {
+        NetworkSettingsStore(mmkvProvider.getMMKV("network_settings"))
+    }
     private val serviceCache by lazy { mmkvProvider.getMMKV("service_cache") }
     private val profileManager by lazy { ProfileManager(applicationContext) }
     private val foregroundStarted = AtomicBoolean(false)
@@ -84,14 +84,16 @@ class AutoRestartService : Service() {
         serviceScope.launch {
             val reason = intent?.getStringExtra(EXTRA_REASON).orEmpty().ifBlank { "unknown" }
             try {
-                runCatching {
-                    checkAndAutoStart(reason)
-                }.onFailure { error ->
-                    Timber.tag(TAG).e(error, "Auto start failed: ${error.message}")
-                }
+                runCatching { checkAndAutoStart(reason) }
+                    .onFailure { error ->
+                        Timber.tag(TAG).e(error, "Auto start failed: ${error.message}")
+                    }
             } finally {
                 AutoStartExecutionGate.clear(serviceCache)
-                ServiceCompat.stopForeground(this@AutoRestartService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                ServiceCompat.stopForeground(
+                    this@AutoRestartService,
+                    ServiceCompat.STOP_FOREGROUND_REMOVE,
+                )
                 stopSelf()
             }
         }
@@ -105,11 +107,12 @@ class AutoRestartService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel()
             val notification = createNotification()
-            val foregroundFlags = when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                else -> 0
-            }
+            val foregroundFlags =
+                when {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    else -> 0
+                }
             startForeground(NOTIFICATION_ID, notification, foregroundFlags)
         }
     }
@@ -135,11 +138,12 @@ class AutoRestartService : Service() {
             skipForPostUpdateColdStart = skipUpdateOnPostUpdateColdStart,
         )
 
-        val startupSource = when (reason) {
-            REASON_BOOT_COMPLETED -> RuntimeServiceLauncher.SOURCE_AUTO_RESTART_BOOT
-            REASON_PACKAGE_REPLACED -> RuntimeServiceLauncher.SOURCE_AUTO_RESTART_REPLACED
-            else -> RuntimeServiceLauncher.SOURCE_AUTO_RESTART
-        }
+        val startupSource =
+            when (reason) {
+                REASON_BOOT_COMPLETED -> RuntimeServiceLauncher.SOURCE_AUTO_RESTART_BOOT
+                REASON_PACKAGE_REPLACED -> RuntimeServiceLauncher.SOURCE_AUTO_RESTART_REPLACED
+                else -> RuntimeServiceLauncher.SOURCE_AUTO_RESTART
+            }
         when (networkSettingsStorage.proxyMode.value) {
             ProxyMode.Tun -> {
                 if (VpnService.prepare(this) != null) {
@@ -159,7 +163,10 @@ class AutoRestartService : Service() {
             }
         }
 
-        Timber.tag(TAG).i("Auto start triggered: reason=$reason profile=${activeProfile.name}, mode=${networkSettingsStorage.proxyMode.value}")
+        Timber.tag(TAG)
+            .i(
+                "Auto start triggered: reason=$reason profile=${activeProfile.name}, mode=${networkSettingsStorage.proxyMode.value}"
+            )
     }
 
     private suspend fun tryUpdateActiveProfileOnStart(
@@ -187,7 +194,8 @@ class AutoRestartService : Service() {
                 return
             }
             AutoStartUpdatePolicy.Decision.UnsupportedProfileType -> {
-                Timber.tag(TAG).d("Skip boot update: unsupported profile type=${activeProfile.type}")
+                Timber.tag(TAG)
+                    .d("Skip boot update: unsupported profile type=${activeProfile.type}")
                 return
             }
             AutoStartUpdatePolicy.Decision.NoActiveProfile -> return
@@ -203,14 +211,16 @@ class AutoRestartService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Auto Restart Service",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Used to restart proxy service automatically"
-                setShowBadge(false)
-            }
+            val channel =
+                NotificationChannel(
+                        CHANNEL_ID,
+                        "Auto Restart Service",
+                        NotificationManager.IMPORTANCE_LOW,
+                    )
+                    .apply {
+                        description = "Used to restart proxy service automatically"
+                        setShowBadge(false)
+                    }
 
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)

@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.core.util
 
 import android.os.SystemClock
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -33,7 +34,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
-import java.util.concurrent.ConcurrentHashMap
 
 data class PollingTimerSpec(
     val name: String,
@@ -84,26 +84,27 @@ object PollingTimers {
     private const val STOP_TIMEOUT_MILLIS = 5_000L
 
     // One lightweight scheduler lane for all periodic tick emission in this process.
-    private val schedulerScope = CoroutineScope(
-        SupervisorJob() + Dispatchers.Default.limitedParallelism(1),
-    )
+    private val schedulerScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
     private val tickerCache = ConcurrentHashMap<PollingTimerSpec, SharedFlow<Long>>()
 
     fun ticks(spec: PollingTimerSpec): Flow<Long> {
         return tickerCache.getOrPut(spec) {
             flow {
-                if (spec.initialDelayMillis > 0L) {
-                    delay(spec.initialDelayMillis)
+                    if (spec.initialDelayMillis > 0L) {
+                        delay(spec.initialDelayMillis)
+                    }
+                    while (currentCoroutineContext().isActive) {
+                        emit(SystemClock.elapsedRealtime())
+                        delay(spec.intervalMillis)
+                    }
                 }
-                while (currentCoroutineContext().isActive) {
-                    emit(SystemClock.elapsedRealtime())
-                    delay(spec.intervalMillis)
-                }
-            }.shareIn(
-                scope = schedulerScope,
-                started = SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
-                replay = 0,
-            )
+                .shareIn(
+                    scope = schedulerScope,
+                    started =
+                        SharingStarted.WhileSubscribed(stopTimeoutMillis = STOP_TIMEOUT_MILLIS),
+                    replay = 0,
+                )
         }
     }
 

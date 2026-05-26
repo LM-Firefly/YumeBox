@@ -21,7 +21,6 @@
 package com.github.yumelira.yumebox.screen.navigation
 
 import androidx.compose.runtime.Composable
-import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.data.model.OverrideContentType
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.feature.editor.screen.ConfigPreviewScreen
@@ -52,15 +51,13 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
                 },
             )
             navigator.navigate(OverrideConfigPreviewRouteDestination)
-        },
+        }
     )
 }
 
 @Composable
 @Destination<RootGraph>
-fun OverrideConfigPreviewRoute(
-    navigator: DestinationsNavigator,
-) {
+fun OverrideConfigPreviewRoute(navigator: DestinationsNavigator) {
     ConfigPreviewScreen(
         navigator = navigator,
         title = OverrideEditorStore.configPreviewTitle,

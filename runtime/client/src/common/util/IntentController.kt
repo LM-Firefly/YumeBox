@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.common.util
 
 import android.content.Intent
@@ -33,9 +31,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
 
-class IntentController(
-    private val scope: CoroutineScope
-) : KoinComponent {
+class IntentController(private val scope: CoroutineScope) : KoinComponent {
 
     companion object {
         private const val ACTION_START_CLASH = "com.github.yumelira.yumebox.action.START_CLASH"
@@ -51,8 +47,7 @@ class IntentController(
             when (safeIntent.action) {
                 ACTION_START_CLASH -> handleStartClash()
                 ACTION_STOP_CLASH -> handleStopClash()
-                else -> {
-                }
+                else -> {}
             }
         }
     }
@@ -60,22 +55,21 @@ class IntentController(
     private fun handleStartClash() {
         scope.launch {
             runCatching {
-                val activeProfile = profilesRepository.queryActiveProfile()
-                if (activeProfile == null) {
-                    Timber.w("Skip external start: no active profile")
-                    return@launch
+                    val activeProfile = profilesRepository.queryActiveProfile()
+                    if (activeProfile == null) {
+                        Timber.w("Skip external start: no active profile")
+                        return@launch
+                    }
+
+                    Timber.i("External start: profile=${activeProfile.name}")
+                    AutoStartSessionGate.clearManualPaused()
+
+                    val mode = networkSettingsStorage.proxyMode.value
+                    proxyFacade.startProxy(mode)
+
+                    Timber.i("External start ok")
                 }
-
-                Timber.i("External start: profile=${activeProfile.name}")
-                AutoStartSessionGate.clearManualPaused()
-
-                val mode = networkSettingsStorage.proxyMode.value
-                proxyFacade.startProxy(mode)
-
-                Timber.i("External start ok")
-            }.onFailure { error ->
-                Timber.e(error, "External start failed")
-            }
+                .onFailure { error -> Timber.e(error, "External start failed") }
         }
     }
 

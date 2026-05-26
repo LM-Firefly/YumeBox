@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.foundation.lazy.LazyListState
@@ -53,57 +51,54 @@ class BottomBarScrollBehavior {
 
     private var accumulatedScroll = 0f
 
-    val nestedScrollConnection = object : NestedScrollConnection {
-        override fun onPreScroll(
-            available: Offset,
-            source: NestedScrollSource
-        ): Offset {
-            if (!isAutoHideEnabled) return Offset.Zero
-            if (source != NestedScrollSource.UserInput) return Offset.Zero
+    val nestedScrollConnection =
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (!isAutoHideEnabled) return Offset.Zero
+                if (source != NestedScrollSource.UserInput) return Offset.Zero
 
-            updateVisibilityFromDelta(available.y)
-            return Offset.Zero
-        }
-
-        override fun onPostScroll(
-            consumed: Offset,
-            available: Offset,
-            source: NestedScrollSource
-        ): Offset {
-            if (!isAutoHideEnabled) return Offset.Zero
-            if (source != NestedScrollSource.UserInput) return Offset.Zero
-
-            val delta = when {
-                abs(consumed.y) >= 0.5f -> consumed.y
-                abs(available.y) >= 0.5f -> available.y
-                else -> 0f
-            }
-            if (delta == 0f) return Offset.Zero
-
-            updateVisibilityFromDelta(delta)
-            return Offset.Zero
-        }
-
-        override suspend fun onPostFling(
-            consumed: Velocity,
-            available: Velocity
-        ): Velocity {
-            if (!isAutoHideEnabled) return Velocity.Zero
-
-            accumulatedScroll = 0f
-            val velocityY = when {
-                abs(consumed.y) >= flingThreshold -> consumed.y
-                abs(available.y) >= flingThreshold -> available.y
-                else -> 0f
+                updateVisibilityFromDelta(available.y)
+                return Offset.Zero
             }
 
-            when {
-                velocityY < 0f -> hideBottomBar()
-                velocityY > 0f -> showBottomBar()
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (!isAutoHideEnabled) return Offset.Zero
+                if (source != NestedScrollSource.UserInput) return Offset.Zero
+
+                val delta =
+                    when {
+                        abs(consumed.y) >= 0.5f -> consumed.y
+                        abs(available.y) >= 0.5f -> available.y
+                        else -> 0f
+                    }
+                if (delta == 0f) return Offset.Zero
+
+                updateVisibilityFromDelta(delta)
+                return Offset.Zero
             }
-            return Velocity.Zero
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                if (!isAutoHideEnabled) return Velocity.Zero
+
+                accumulatedScroll = 0f
+                val velocityY =
+                    when {
+                        abs(consumed.y) >= flingThreshold -> consumed.y
+                        abs(available.y) >= flingThreshold -> available.y
+                        else -> 0f
+                    }
+
+                when {
+                    velocityY < 0f -> hideBottomBar()
+                    velocityY > 0f -> showBottomBar()
+                }
+                return Velocity.Zero
+            }
         }
-    }
 
     private fun updateVisibilityFromDelta(deltaY: Float) {
         if (abs(deltaY) < 0.5f) return
@@ -138,26 +133,20 @@ class BottomBarScrollBehavior {
 }
 
 @Composable
-fun rememberBottomBarScrollBehavior(
-    autoHideEnabled: Boolean = true
-): BottomBarScrollBehavior {
+fun rememberBottomBarScrollBehavior(autoHideEnabled: Boolean = true): BottomBarScrollBehavior {
     return remember(autoHideEnabled) {
-        BottomBarScrollBehavior().apply {
-            isAutoHideEnabled = autoHideEnabled
-        }
+        BottomBarScrollBehavior().apply { isAutoHideEnabled = autoHideEnabled }
     }
 }
 
 @Composable
-fun BottomBarScrollBehavior.withLazyListState(
-    listState: LazyListState
-): BottomBarScrollBehavior {
-    val isAtTop by remember(listState) {
-        derivedStateOf {
-            listState.firstVisibleItemIndex == 0 &&
-                listState.firstVisibleItemScrollOffset == 0
+fun BottomBarScrollBehavior.withLazyListState(listState: LazyListState): BottomBarScrollBehavior {
+    val isAtTop by
+        remember(listState) {
+            derivedStateOf {
+                listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+            }
         }
-    }
 
     LaunchedEffect(isAtTop) {
         if (isAtTop) {
@@ -168,6 +157,4 @@ fun BottomBarScrollBehavior.withLazyListState(
     return this
 }
 
-val LocalBottomBarScrollBehavior = compositionLocalOf<BottomBarScrollBehavior?> {
-    null
-}
+val LocalBottomBarScrollBehavior = compositionLocalOf<BottomBarScrollBehavior?> { null }

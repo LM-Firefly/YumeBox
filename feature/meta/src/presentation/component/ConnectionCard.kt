@@ -19,6 +19,7 @@
  */
 
 package com.github.yumelira.yumebox.feature.meta.presentation.component
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,13 +35,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.serialization.json.jsonPrimitive
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.SinkFeedback
 import top.yukonga.miuix.kmp.utils.pressable
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -57,68 +58,72 @@ fun ConnectionCard(
     val backgroundColor = MiuixTheme.colorScheme.background
     val interactionSource = remember { MutableInteractionSource() }
 
-    val host = remember(connectionInfo.metadata) {
-        connectionInfo.metadata["host"]?.jsonPrimitive?.content ?: ""
-    }
-    val network = remember(connectionInfo.metadata) {
-        connectionInfo.metadata["network"]?.jsonPrimitive?.content ?: "TCP"
-    }
-    val destinationPort = remember(connectionInfo.metadata) {
-        connectionInfo.metadata["destinationPort"]?.jsonPrimitive?.content ?: ""
-    }
-    val sourceIP = remember(connectionInfo.metadata) {
-        connectionInfo.metadata["sourceIP"]?.jsonPrimitive?.content ?: ""
-    }
-    val sourcePort = remember(connectionInfo.metadata) {
-        connectionInfo.metadata["sourcePort"]?.jsonPrimitive?.content ?: ""
-    }
-
-    val destinationIp = remember(connectionInfo.metadata) {
-        connectionInfo.metadata["destinationIP"]?.jsonPrimitive?.content ?: ""
-    }
-
-    val displayHost = remember(host, destinationIp, destinationPort, sourceIP, sourcePort) {
-        if (host.isNotEmpty() && destinationPort.isNotEmpty()) {
-            "$host:$destinationPort"
-        } else if (host.isNotEmpty()) {
-            host
-        } else if (destinationIp.isNotEmpty() && destinationPort.isNotEmpty()) {
-            "$destinationIp:$destinationPort"
-        } else if (destinationIp.isNotEmpty()) {
-            destinationIp
-        } else {
-            "$sourceIP:$sourcePort"
+    val host =
+        remember(connectionInfo.metadata) {
+            connectionInfo.metadata["host"]?.jsonPrimitive?.content ?: ""
         }
-    }
+    val network =
+        remember(connectionInfo.metadata) {
+            connectionInfo.metadata["network"]?.jsonPrimitive?.content ?: "TCP"
+        }
+    val destinationPort =
+        remember(connectionInfo.metadata) {
+            connectionInfo.metadata["destinationPort"]?.jsonPrimitive?.content ?: ""
+        }
+    val sourceIP =
+        remember(connectionInfo.metadata) {
+            connectionInfo.metadata["sourceIP"]?.jsonPrimitive?.content ?: ""
+        }
+    val sourcePort =
+        remember(connectionInfo.metadata) {
+            connectionInfo.metadata["sourcePort"]?.jsonPrimitive?.content ?: ""
+        }
+
+    val destinationIp =
+        remember(connectionInfo.metadata) {
+            connectionInfo.metadata["destinationIP"]?.jsonPrimitive?.content ?: ""
+        }
+
+    val displayHost =
+        remember(host, destinationIp, destinationPort, sourceIP, sourcePort) {
+            if (host.isNotEmpty() && destinationPort.isNotEmpty()) {
+                "$host:$destinationPort"
+            } else if (host.isNotEmpty()) {
+                host
+            } else if (destinationIp.isNotEmpty() && destinationPort.isNotEmpty()) {
+                "$destinationIp:$destinationPort"
+            } else if (destinationIp.isNotEmpty()) {
+                destinationIp
+            } else {
+                "$sourceIP:$sourcePort"
+            }
+        }
 
     val relativeTime = formatRelativeTime(connectionInfo.start)
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .pressable(interactionSource = interactionSource, indication = SinkFeedback())
-            .clip(shape)
-            .background(backgroundColor)
-            .border(sizes.nodeCardBorderWidth, MiuixTheme.colorScheme.surfaceVariant, shape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = spacing.space16, vertical = spacing.space12),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .pressable(interactionSource = interactionSource, indication = SinkFeedback())
+                .clip(shape)
+                .background(backgroundColor)
+                .border(sizes.nodeCardBorderWidth, MiuixTheme.colorScheme.surfaceVariant, shape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                )
+                .padding(horizontal = spacing.space16, vertical = spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing.space16),
     ) {
-        ConnectionLeadingIcon(
-            metadata = connectionInfo.metadata,
-            network = network,
-        )
+        ConnectionLeadingIcon(metadata = connectionInfo.metadata, network = network)
 
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(spacing.space6),
         ) {
-
             Text(
                 text = displayHost,
                 style = MiuixTheme.textStyles.body2,
@@ -131,13 +136,11 @@ fun ConnectionCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-
                 FlowRow(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(sizes.listItemVerticalMinimal),
                     verticalArrangement = Arrangement.spacedBy(spacing.space4),
                 ) {
-
                     ConnectionTagChip(
                         label = network.uppercase(),
                         backgroundColor = getProtocolColor(network),
@@ -148,9 +151,10 @@ fun ConnectionCard(
                     }
 
                     if (connectionInfo.chains.isNotEmpty()) {
-                        ConnectionTagChip(label = MLang.Connection.ChainCount.format(connectionInfo.chains.size))
+                        ConnectionTagChip(
+                            label = MLang.Connection.ChainCount.format(connectionInfo.chains.size)
+                        )
                     }
-
                 }
 
                 Text(
@@ -178,10 +182,10 @@ private fun ConnectionTagChip(
         text = label,
         style = MiuixTheme.textStyles.footnote1.copy(fontSize = 10.sp),
         color = backgroundColor,
-        modifier = Modifier
-            .clip(RoundedCornerShape(radii.full))
-            .background(backgroundColor.copy(alpha = opacity.subtle))
-            .padding(horizontal = spacing.space4, vertical = spacing.space2),
+        modifier =
+            Modifier.clip(RoundedCornerShape(radii.full))
+                .background(backgroundColor.copy(alpha = opacity.subtle))
+                .padding(horizontal = spacing.space4, vertical = spacing.space2),
     )
 }
 
@@ -204,7 +208,8 @@ private fun formatRelativeTime(start: String): String {
             hours < 24 -> MLang.Connection.RelativeTime.HoursAgo.format(hours)
             days < 7 -> MLang.Connection.RelativeTime.DaysAgo.format(days)
             else -> {
-                val date = java.time.LocalDateTime.ofInstant(startTime, java.time.ZoneId.systemDefault())
+                val date =
+                    java.time.LocalDateTime.ofInstant(startTime, java.time.ZoneId.systemDefault())
                 MLang.Connection.RelativeTime.Date.format(date.monthValue, date.dayOfMonth)
             }
         }

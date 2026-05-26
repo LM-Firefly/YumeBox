@@ -18,13 +18,13 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.theme.horizontalPadding
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardColors
@@ -40,11 +40,12 @@ fun Card(
     content: @Composable () -> Unit,
 ) {
     Card(
-        modifier = if (applyHorizontalPadding) {
-            modifier.horizontalPadding()
-        } else {
-            modifier
-        },
+        modifier =
+            if (applyHorizontalPadding) {
+                modifier.horizontalPadding()
+            } else {
+                modifier
+            },
         cornerRadius = cornerRadius.dp,
         insideMargin = insideMargin,
         colors = colors,

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.controller
 
 import com.github.yumelira.yumebox.data.model.OverrideConfig
@@ -32,15 +30,12 @@ class RuntimeOverrideController(
     private val configStore: OverrideConfigStore,
     private val queryActiveProfile: suspend () -> Profile?,
 ) {
-    suspend fun updateProfile(
-        transform: (String) -> String,
-    ): Result<String> = updateInternal(transform)
+    suspend fun updateProfile(transform: (String) -> String): Result<String> =
+        updateInternal(transform)
 
     private suspend fun loadInternal(): Result<String> = runCatching {
         val activeProfile = queryActiveProfile() ?: return@runCatching ""
-        configStore.getById(runtimeOverrideId(activeProfile.uuid))
-            ?.content
-            .orEmpty()
+        configStore.getById(runtimeOverrideId(activeProfile.uuid))?.content.orEmpty()
     }
 
     private suspend fun saveInternal(content: String): Result<Unit> = runCatching {
@@ -60,7 +55,7 @@ class RuntimeOverrideController(
                 content = content,
                 createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis(),
-            ),
+            )
         )
     }
 
@@ -69,14 +64,17 @@ class RuntimeOverrideController(
         configStore.delete(runtimeOverrideId(activeProfile.uuid))
     }
 
-    private suspend fun updateInternal(
-        transform: (String) -> String,
-    ): Result<String> {
-        val current = loadInternal().getOrElse { return Result.failure(it) }
+    private suspend fun updateInternal(transform: (String) -> String): Result<String> {
+        val current =
+            loadInternal().getOrElse {
+                return Result.failure(it)
+            }
         val updated = transform(current)
         val saveResult = saveInternal(updated)
         if (saveResult.isFailure) {
-            return Result.failure(saveResult.exceptionOrNull() ?: IllegalStateException("保存运行时覆写失败"))
+            return Result.failure(
+                saveResult.exceptionOrNull() ?: IllegalStateException("保存运行时覆写失败")
+            )
         }
         return Result.success(updated)
     }

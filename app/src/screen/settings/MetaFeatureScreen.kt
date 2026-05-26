@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.settings
 
 import androidx.compose.foundation.layout.Column
@@ -39,6 +37,7 @@ import com.ramcosta.composedestinations.generated.destinations.ConnectionScreenD
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,7 +47,6 @@ import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.preference.ArrowPreference
-import java.io.File
 
 @Composable
 @Destination<RootGraph>
@@ -61,12 +59,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
     val showGeoXDownloadSheet = remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
-            TopBar(
-                title = MLang.MetaFeature.Title,
-                scrollBehavior = scrollBehavior,
-            )
-        },
+        topBar = { TopBar(title = MLang.MetaFeature.Title, scrollBehavior = scrollBehavior) }
     ) { innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -103,7 +96,10 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                         title = MLang.MetaFeature.CustomRouting.Title,
                         summary = MLang.MetaFeature.CustomRouting.Summary,
                         onClick = {
-                            navigator.navigate(com.ramcosta.composedestinations.generated.destinations.CustomRoutingRouteDestination) {
+                            navigator.navigate(
+                                com.ramcosta.composedestinations.generated.destinations
+                                    .CustomRoutingRouteDestination
+                            ) {
                                 launchSingleTop = true
                             }
                         },
@@ -144,11 +140,7 @@ private fun GeoXDownloadSheet(
         show = show.value,
         title = MLang.MetaFeature.Download.DialogTitle,
         onDismissRequest = { show.value = false },
-        startAction = {
-            AppBottomSheetCloseAction(
-                onClick = { show.value = false },
-            )
-        },
+        startAction = { AppBottomSheetCloseAction(onClick = { show.value = false }) },
         endAction = {
             AppBottomSheetConfirmAction(
                 enabled = selectedItems.values.any { it },
@@ -172,16 +164,17 @@ private fun GeoXDownloadSheet(
                                 state = ToggleableState(selectedItems[item.type] ?: false),
                                 onClick = {
                                     selectedItems[item.type] = !(selectedItems[item.type] ?: false)
-                                }
+                                },
                             )
                         },
                         onClick = {
                             selectedItems[item.type] = !(selectedItems[item.type] ?: false)
-                        }
+                        },
                     )
                 }
             }
-        })
+        },
+    )
 }
 
 private fun downloadGeoXFiles(

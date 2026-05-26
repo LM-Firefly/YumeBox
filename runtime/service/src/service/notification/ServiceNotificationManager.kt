@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.notification
 
 import android.app.Notification
@@ -41,15 +39,8 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 
-class ServiceNotificationManager(
-    private val service: Service,
-    private val config: Config,
-) {
-    data class Config(
-        val notificationId: Int,
-        val channelId: String,
-        val channelName: String,
-    )
+class ServiceNotificationManager(private val service: Service, private val config: Config) {
+    data class Config(val notificationId: Int, val channelId: String, val channelName: String)
 
     private val serviceStore by lazy { ServiceStore() }
     private val settingsStore by lazy { MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE) }
@@ -59,9 +50,11 @@ class ServiceNotificationManager(
     fun createChannel() {
         notificationManager.createNotificationChannel(
             NotificationChannelCompat.Builder(
-                config.channelId,
-                NotificationManagerCompat.IMPORTANCE_LOW
-            ).setName(config.channelName).build()
+                    config.channelId,
+                    NotificationManagerCompat.IMPORTANCE_LOW,
+                )
+                .setName(config.channelName)
+                .build()
         )
     }
 
@@ -73,8 +66,9 @@ class ServiceNotificationManager(
         return scope.launch(Dispatchers.Default) {
             PollingTimers.ticks(PollingTimerSpecs.ServiceTrafficNotification).collect {
                 val notification = buildRunningNotification()
-                val fingerprint = "${notification.extras.getCharSequence(Notification.EXTRA_TITLE)}|" +
-                    "${notification.extras.getCharSequence(Notification.EXTRA_TEXT)}"
+                val fingerprint =
+                    "${notification.extras.getCharSequence(Notification.EXTRA_TITLE)}|" +
+                        "${notification.extras.getCharSequence(Notification.EXTRA_TEXT)}"
                 if (fingerprint != lastNotificationFingerprint) {
                     lastNotificationFingerprint = fingerprint
                     notificationManager.notify(config.notificationId, notification)
@@ -90,7 +84,7 @@ class ServiceNotificationManager(
                 NotificationPresentationFactory.createStatus(
                     profileName = profileName,
                     status = MLang.Service.Notification.Running,
-                ),
+                )
             )
         }
 
@@ -101,24 +95,25 @@ class ServiceNotificationManager(
                 profileName = profileName,
                 trafficNow = now,
                 trafficTotal = total,
-            ),
+            )
         )
     }
 
     private fun buildNotification(presentation: NotificationPresentation): Notification {
-        val contentIntent = PendingIntent.getActivity(
-            service,
-            0,
-            Intent().apply {
-                component = Components.PROXY_SHEET_ACTIVITY
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_NO_ANIMATION
-                )
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val contentIntent =
+            PendingIntent.getActivity(
+                service,
+                0,
+                Intent().apply {
+                    component = Components.PROXY_SHEET_ACTIVITY
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                            Intent.FLAG_ACTIVITY_NO_ANIMATION
+                    )
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         return NotificationCompat.Builder(service, config.channelId)
             .setContentTitle(presentation.title)
@@ -142,8 +137,7 @@ class ServiceNotificationManager(
 
     private fun resolveProfileName(): String {
         val active = serviceStore.activeProfile ?: return MLang.Service.Notification.UnknownProfile
-        return ImportedDao.queryByUUID(active)?.name
-            ?.takeIf { it.isNotBlank() }
+        return ImportedDao.queryByUUID(active)?.name?.takeIf { it.isNotBlank() }
             ?: MLang.Service.Notification.UnknownProfile
     }
 
@@ -156,16 +150,18 @@ class ServiceNotificationManager(
     }
 
     companion object {
-        val VPN_CONFIG = Config(
-            notificationId = 1001,
-            channelId = "clash_vpn_service",
-            channelName = "Clash VPN Service",
-        )
+        val VPN_CONFIG =
+            Config(
+                notificationId = 1001,
+                channelId = "clash_vpn_service",
+                channelName = "Clash VPN Service",
+            )
 
-        val HTTP_CONFIG = Config(
-            notificationId = 1002,
-            channelId = "clash_http_service",
-            channelName = "Clash HTTP Service",
-        )
+        val HTTP_CONFIG =
+            Config(
+                notificationId = 1002,
+                channelId = "clash_http_service",
+                channelName = "Clash HTTP Service",
+            )
     }
 }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.format
 
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
@@ -75,10 +73,7 @@ object CodeFormatter {
 
     private fun formatYaml(content: String): String? {
         return try {
-            content.lines()
-                .map { it.trimEnd() }
-                .joinToString("\n")
-                .replace(Regex("\n{3,}"), "\n\n")
+            content.lines().map { it.trimEnd() }.joinToString("\n").replace(Regex("\n{3,}"), "\n\n")
         } catch (error: Exception) {
             null
         }

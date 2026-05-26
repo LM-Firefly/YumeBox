@@ -18,24 +18,17 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.onboarding
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -47,28 +40,20 @@ import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem
 import com.github.yumelira.yumebox.screen.settings.component.ThemeModeSelectorItem
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.Checkbox
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-internal fun StartupHeroShell(
-    enabled: Boolean,
-    onStart: () -> Unit,
-) {
+internal fun StartupHeroShell(enabled: Boolean, onStart: () -> Unit) {
     OnboardingPageFrame {
         Spacer(modifier = Modifier.height(UiDp.dp212))
 
-        RevealBlock(
-            delayMillis = 0,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        ) {
+        RevealBlock(delayMillis = 0, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             StartupTypewriterWord(
                 phrases = StartupTypewriterPhrases,
                 modifier = Modifier.widthIn(max = UiDp.dp320),
@@ -77,17 +62,13 @@ internal fun StartupHeroShell(
 
         Spacer(modifier = Modifier.height(UiDp.dp18))
 
-        DetailScrollableContent(
-            modifier = Modifier.weight(1f),
-        ) {
+        DetailScrollableContent(modifier = Modifier.weight(1f)) {
             Spacer(modifier = Modifier.height(UiDp.dp20))
         }
 
         RevealScaleBlock(
             delayMillis = 680,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .offset(y = (-156).dp),
+            modifier = Modifier.align(Alignment.CenterHorizontally).offset(y = (-156).dp),
         ) {
             HeroStartButton(enabled = enabled, onStart = onStart)
         }
@@ -108,19 +89,13 @@ internal fun ProvisionDetailShell(
     OnboardingPageFrame {
         Spacer(modifier = Modifier.height(UiDp.dp88))
 
-        RevealBlock(
-            delayMillis = 0,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        ) {
+        RevealBlock(delayMillis = 0, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             DetailPreviewBadge(icon = previewIcon)
         }
 
         Spacer(modifier = Modifier.height(UiDp.dp32))
 
-        DetailHeadline(
-            title = title,
-            subtitle = subtitle,
-        )
+        DetailHeadline(title = title, subtitle = subtitle)
 
         Spacer(modifier = Modifier.height(UiDp.dp40))
 
@@ -129,18 +104,12 @@ internal fun ProvisionDetailShell(
             verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
         ) {
             RevealBlock(delayMillis = 160) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
-                    content = content,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp18), content = content)
             }
             Spacer(modifier = Modifier.height(UiDp.dp20))
         }
 
-        DetailFooter(
-            delayMillis = 220,
-            offsetY = (-36).dp,
-        ) {
+        DetailFooter(delayMillis = 220, offsetY = (-36).dp) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
@@ -162,18 +131,16 @@ internal fun ProvisionDetailShell(
 }
 
 @Composable
-private fun OnboardingPageFrame(
-    content: @Composable ColumnScope.() -> Unit,
-) {
+private fun OnboardingPageFrame(content: @Composable ColumnScope.() -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
         DetailBackdrop()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = PagePadding, vertical = UiDp.dp12),
+            modifier =
+                Modifier.fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = PagePadding, vertical = UiDp.dp12),
             content = content,
         )
     }
@@ -186,11 +153,12 @@ private fun DetailScrollableContent(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally)
-            .widthIn(max = DetailWidth)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = DetailWidth)
+                .verticalScroll(rememberScrollState()),
         verticalArrangement = verticalArrangement,
         content = content,
     )
@@ -198,12 +166,13 @@ private fun DetailScrollableContent(
 
 @Composable
 internal fun PermissionContent(state: PermissionState) {
-    val notificationSummary = when {
-        state.notificationGranted -> MLang.Onboarding.Permission.Common.Granted
-        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU ->
-            MLang.Onboarding.Permission.Notification.SummaryNeed
-        else -> MLang.Onboarding.Permission.Notification.SummaryNotRequired
-    }
+    val notificationSummary =
+        when {
+            state.notificationGranted -> MLang.Onboarding.Permission.Common.Granted
+            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU ->
+                MLang.Onboarding.Permission.Notification.SummaryNeed
+            else -> MLang.Onboarding.Permission.Notification.SummaryNotRequired
+        }
 
     DetailGroup {
         PermissionRow(
@@ -225,11 +194,12 @@ internal fun PermissionContent(state: PermissionState) {
         PermissionRow(
             icon = Yume.List,
             title = MLang.Onboarding.Permission.AppList.Title,
-            summary = if (state.appListGranted) {
-                MLang.Onboarding.Permission.Common.Granted
-            } else {
-                MLang.Onboarding.Permission.AppList.SummaryNeed
-            },
+            summary =
+                if (state.appListGranted) {
+                    MLang.Onboarding.Permission.Common.Granted
+                } else {
+                    MLang.Onboarding.Permission.AppList.SummaryNeed
+                },
             granted = state.appListGranted,
             onClick = {
                 if (!state.appListGranted) {
@@ -247,44 +217,39 @@ internal fun TermsContent(
     onPrivacySheetRequest: () -> Unit,
 ) {
     val colorScheme = MiuixTheme.colorScheme
-    val linkStyle = remember(colorScheme.primary) {
-        SpanStyle(
-            color = colorScheme.primary,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
-    val linkStyles = remember(linkStyle) { TextLinkStyles(style = linkStyle) }
-    val annotatedText = remember(linkStyles, onPrivacySheetRequest) {
-        buildAnnotatedString {
-            append(MLang.Onboarding.Privacy.RichTextLead)
-            append(" ")
-            append(MLang.Onboarding.Privacy.RichTextPrefix)
-            withLink(
-                LinkAnnotation.Clickable(
-                    tag = LinkTermsTag,
-                    styles = linkStyles,
-                    linkInteractionListener = { onPrivacySheetRequest() }
-                )
-            ) {
-                withStyle(linkStyle) {
-                    append(MLang.Onboarding.Privacy.TermsLink)
-                }
-            }
-            append(MLang.Onboarding.Privacy.RichTextConnector)
-            withLink(
-                LinkAnnotation.Clickable(
-                    tag = LinkPolicyTag,
-                    styles = linkStyles,
-                    linkInteractionListener = { onPrivacySheetRequest() }
-                )
-            ) {
-                withStyle(linkStyle) {
-                    append(MLang.Onboarding.Privacy.PolicyLink)
-                }
-            }
-            append(MLang.Onboarding.Privacy.RichTextSuffix)
+    val linkStyle =
+        remember(colorScheme.primary) {
+            SpanStyle(color = colorScheme.primary, fontWeight = FontWeight.SemiBold)
         }
-    }
+    val linkStyles = remember(linkStyle) { TextLinkStyles(style = linkStyle) }
+    val annotatedText =
+        remember(linkStyles, onPrivacySheetRequest) {
+            buildAnnotatedString {
+                append(MLang.Onboarding.Privacy.RichTextLead)
+                append(" ")
+                append(MLang.Onboarding.Privacy.RichTextPrefix)
+                withLink(
+                    LinkAnnotation.Clickable(
+                        tag = LinkTermsTag,
+                        styles = linkStyles,
+                        linkInteractionListener = { onPrivacySheetRequest() },
+                    )
+                ) {
+                    withStyle(linkStyle) { append(MLang.Onboarding.Privacy.TermsLink) }
+                }
+                append(MLang.Onboarding.Privacy.RichTextConnector)
+                withLink(
+                    LinkAnnotation.Clickable(
+                        tag = LinkPolicyTag,
+                        styles = linkStyles,
+                        linkInteractionListener = { onPrivacySheetRequest() },
+                    )
+                ) {
+                    withStyle(linkStyle) { append(MLang.Onboarding.Privacy.PolicyLink) }
+                }
+                append(MLang.Onboarding.Privacy.RichTextSuffix)
+            }
+        }
 
     DetailGroup {
         Column(
@@ -293,10 +258,11 @@ internal fun TermsContent(
         ) {
             Text(
                 text = annotatedText,
-                style = MiuixTheme.textStyles.body2.copy(
-                    color = MiuixTheme.colorScheme.onSurface,
-                    lineHeight = 24.sp,
-                ),
+                style =
+                    MiuixTheme.textStyles.body2.copy(
+                        color = MiuixTheme.colorScheme.onSurface,
+                        lineHeight = 24.sp,
+                    ),
             )
 
             Row(
@@ -331,10 +297,7 @@ internal fun PersonalizeContent(
     onShowThemeColorPickerChange: (Boolean) -> Unit,
 ) {
     DetailGroup {
-        ThemeModeSelectorItem(
-            themeMode = themeMode,
-            onThemeModeChange = onThemeModeChange,
-        )
+        ThemeModeSelectorItem(themeMode = themeMode, onThemeModeChange = onThemeModeChange)
         DetailDivider()
         ThemeColorPickerItem(
             themeSeedColorArgb = themeSeedColorArgb,
@@ -355,10 +318,7 @@ internal fun FinishHeroShell(
     OnboardingPageFrame {
         Spacer(modifier = Modifier.height(UiDp.dp88))
 
-        RevealBlock(
-            delayMillis = 0,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        ) {
+        RevealBlock(delayMillis = 0, modifier = Modifier.align(Alignment.CenterHorizontally)) {
             DetailPreviewBadge(icon = Yume.CircleCheckBig)
         }
 
@@ -395,10 +355,7 @@ internal fun FinishHeroShell(
             Spacer(modifier = Modifier.height(UiDp.dp20))
         }
 
-        DetailFooter(
-            delayMillis = 220,
-            offsetY = (-36).dp,
-        ) {
+        DetailFooter(delayMillis = 220, offsetY = (-36).dp) {
             PrimaryFooterAction(
                 text = MLang.Onboarding.Navigation.Enter,
                 enabled = enabled,
@@ -410,25 +367,21 @@ internal fun FinishHeroShell(
 }
 
 @Composable
-private fun ColumnScope.DetailHeadline(
-    title: String,
-    subtitle: String,
-) {
+private fun ColumnScope.DetailHeadline(title: String, subtitle: String) {
     Column(
-        modifier = Modifier
-            .widthIn(max = DetailWidth)
-            .fillMaxWidth()
-            .align(Alignment.CenterHorizontally),
+        modifier =
+            Modifier.widthIn(max = DetailWidth).fillMaxWidth().align(Alignment.CenterHorizontally),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
     ) {
         RevealBlock(delayMillis = 50) {
             Text(
                 text = title,
-                style = MiuixTheme.textStyles.title2.copy(
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                ),
+                style =
+                    MiuixTheme.textStyles.title2.copy(
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 color = MiuixTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
@@ -452,11 +405,11 @@ private fun ColumnScope.DetailFooter(
 ) {
     RevealBlock(
         delayMillis = delayMillis,
-        modifier = Modifier
-            .widthIn(max = DetailWidth)
-            .fillMaxWidth()
-            .align(Alignment.CenterHorizontally)
-            .offset(y = offsetY),
+        modifier =
+            Modifier.widthIn(max = DetailWidth)
+                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+                .offset(y = offsetY),
     ) {
         content()
     }

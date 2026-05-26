@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.store
 
 import android.app.Application
@@ -27,11 +25,11 @@ import android.net.Uri
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import kotlin.enums.enumEntries
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class LogStore(
     private val application: Application,
@@ -65,7 +63,9 @@ class LogStore(
     fun listLogFiles(): List<LogFileInfo> {
         val currentlyRecording = isRecording()
         val currentFileName = logRecordGateway.currentLogFileName
-        val files = logDir.listFiles(::isManagedLogFile)?.sortedByDescending { it.lastModified() } ?: emptyList()
+        val files =
+            logDir.listFiles(::isManagedLogFile)?.sortedByDescending { it.lastModified() }
+                ?: emptyList()
         return files.map { file ->
             LogFileInfo(
                 name = file.name,
@@ -76,11 +76,13 @@ class LogStore(
         }
     }
 
-    suspend fun getLogFileSize(fileName: String): Long? = withContext(Dispatchers.IO) {
-        resolveLogFile(fileName)?.length()
-    }
+    suspend fun getLogFileSize(fileName: String): Long? =
+        withContext(Dispatchers.IO) { resolveLogFile(fileName)?.length() }
 
-    suspend fun readLogEntries(fileName: String, maxEntries: Int = DEFAULT_MAX_ENTRIES): List<LogEntry> =
+    suspend fun readLogEntries(
+        fileName: String,
+        maxEntries: Int = DEFAULT_MAX_ENTRIES,
+    ): List<LogEntry> =
         withContext(Dispatchers.IO) {
             val file = resolveLogFile(fileName) ?: return@withContext emptyList()
             if (maxEntries <= 0) return@withContext emptyList()
@@ -93,59 +95,62 @@ class LogStore(
             }
         }
 
-    suspend fun exportLogFile(fileName: String, targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
-        val source = resolveLogFile(fileName) ?: return@withContext false
-        try {
-            application.contentResolver.openOutputStream(targetUri)?.use { output ->
-                source.inputStream().use { input ->
-                    input.copyTo(output)
-                }
-            } ?: return@withContext false
-            true
-        } catch (_: IOException) {
-            false
-        } catch (_: SecurityException) {
-            false
-        }
-    }
-
-    suspend fun readTempLogEntries(maxEntries: Int = 2000): List<LogEntry> = withContext(Dispatchers.IO) {
-        val currentlyRecording = isRecording()
-        val currentFileName = logRecordGateway.currentLogFileName
-        if (!currentlyRecording || currentFileName == null) {
-            return@withContext emptyList()
-        }
-        readLogEntries(currentFileName, maxEntries)
-    }
-
-    suspend fun writeLogEntries(targetUri: Uri, entries: List<LogEntry>): Boolean = withContext(Dispatchers.IO) {
-        try {
-            application.contentResolver.openOutputStream(targetUri)?.use { output ->
-                val sb = StringBuilder()
-                entries.forEach { entry ->
-                    sb.append("[${entry.time}] [${entry.level.name}] ${entry.message}\n")
-                }
-                output.write(sb.toString().toByteArray())
+    suspend fun exportLogFile(fileName: String, targetUri: Uri): Boolean =
+        withContext(Dispatchers.IO) {
+            val source = resolveLogFile(fileName) ?: return@withContext false
+            try {
+                application.contentResolver.openOutputStream(targetUri)?.use { output ->
+                    source.inputStream().use { input -> input.copyTo(output) }
+                } ?: return@withContext false
+                true
+            } catch (_: IOException) {
+                false
+            } catch (_: SecurityException) {
+                false
             }
-            true
-        } catch (_: IOException) {
-            false
-        } catch (_: SecurityException) {
-            false
         }
-    }
 
-    suspend fun deleteLogFile(fileName: String): Boolean = withContext(Dispatchers.IO) {
-        val file = resolveLogFile(fileName) ?: return@withContext false
-        stopRecordingIfNeeded(file.name)
-        file.delete()
-    }
+    suspend fun readTempLogEntries(maxEntries: Int = 2000): List<LogEntry> =
+        withContext(Dispatchers.IO) {
+            val currentlyRecording = isRecording()
+            val currentFileName = logRecordGateway.currentLogFileName
+            if (!currentlyRecording || currentFileName == null) {
+                return@withContext emptyList()
+            }
+            readLogEntries(currentFileName, maxEntries)
+        }
 
-    suspend fun deleteAllLogs() = withContext(Dispatchers.IO) {
-        stopRecordingIfNeeded()
-        val files = logDir.listFiles(::isManagedLogFile) ?: return@withContext
-        files.forEach { it.delete() }
-    }
+    suspend fun writeLogEntries(targetUri: Uri, entries: List<LogEntry>): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                application.contentResolver.openOutputStream(targetUri)?.use { output ->
+                    val sb = StringBuilder()
+                    entries.forEach { entry ->
+                        sb.append("[${entry.time}] [${entry.level.name}] ${entry.message}\n")
+                    }
+                    output.write(sb.toString().toByteArray())
+                }
+                true
+            } catch (_: IOException) {
+                false
+            } catch (_: SecurityException) {
+                false
+            }
+        }
+
+    suspend fun deleteLogFile(fileName: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val file = resolveLogFile(fileName) ?: return@withContext false
+            stopRecordingIfNeeded(file.name)
+            file.delete()
+        }
+
+    suspend fun deleteAllLogs() =
+        withContext(Dispatchers.IO) {
+            stopRecordingIfNeeded()
+            val files = logDir.listFiles(::isManagedLogFile) ?: return@withContext
+            files.forEach { it.delete() }
+        }
 
     private suspend fun stopRecordingIfNeeded(fileName: String? = null) {
         if (!isRecording()) return
@@ -191,7 +196,8 @@ class LogStore(
 
     private fun isSafeLogFileName(fileName: String): Boolean {
         if (fileName.isBlank()) return false
-        if (fileName.contains('/') || fileName.contains('\\') || fileName.contains("..")) return false
+        if (fileName.contains('/') || fileName.contains('\\') || fileName.contains(".."))
+            return false
         if (!fileName.endsWith(logRecordGateway.logSuffix)) return false
         val prefix = logRecordGateway.logPrefix
         return prefix.isBlank() || fileName.startsWith(prefix)
@@ -204,9 +210,5 @@ class LogStore(
         val isRecording: Boolean,
     )
 
-    data class LogEntry(
-        val time: String,
-        val level: LogMessage.Level,
-        val message: String,
-    )
+    data class LogEntry(val time: String, val level: LogMessage.Level, val message: String)
 }

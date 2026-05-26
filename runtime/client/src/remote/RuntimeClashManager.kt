@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.remote
 
 import android.content.Context
@@ -39,10 +37,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import timber.log.Timber
 
-class RuntimeClashManager(
-    context: Context,
-    private val local: IClashManager,
-) : IClashManager {
+class RuntimeClashManager(context: Context, private val local: IClashManager) : IClashManager {
     private val appContext = context.appContextOrSelf
     private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -116,9 +111,7 @@ class RuntimeClashManager(
     override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
         return queryWithRuntime(
             rootCall = {
-                runBlocking {
-                    RootTunController.queryProxyGroup(appContext, name, proxySort)
-                }
+                runBlocking { RootTunController.queryProxyGroup(appContext, name, proxySort) }
             },
             localCall = { local.queryProxyGroup(name, proxySort) },
             fallbackOnRootFailure = false,
@@ -134,11 +127,12 @@ class RuntimeClashManager(
     }
 
     override fun queryProviders(): ProviderList {
-        val providers = queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryProviders(appContext) } },
-            localCall = { local.queryProviders().toList() },
-            fallbackOnRootFailure = false,
-        )
+        val providers =
+            queryWithRuntime(
+                rootCall = { runBlocking { RootTunController.queryProviders(appContext) } },
+                localCall = { local.queryProviders().toList() },
+                fallbackOnRootFailure = false,
+            )
         return ProviderList(providers)
     }
 
@@ -213,21 +207,18 @@ class RuntimeClashManager(
             rootLogJob = scope.launch {
                 PollingTimers.ticks(PollingTimerSpecs.RuntimeRootLogPolling).collect {
                     runCatching {
-                        val chunk = RootTunController.queryRecentLogs(appContext, rootLogSeq)
-                        if (chunk.items.isNotEmpty()) {
-                            chunk.items.forEach { raw ->
-                                observer.newItem(
-                                    com.github.yumelira.yumebox.service.root.RootTunJson.Default.decodeFromString(
-                                        LogMessage.serializer(),
-                                        raw,
-                                    ),
-                                )
+                            val chunk = RootTunController.queryRecentLogs(appContext, rootLogSeq)
+                            if (chunk.items.isNotEmpty()) {
+                                chunk.items.forEach { raw ->
+                                    observer.newItem(
+                                        com.github.yumelira.yumebox.service.root.RootTunJson.Default
+                                            .decodeFromString(LogMessage.serializer(), raw)
+                                    )
+                                }
                             }
+                            rootLogSeq = chunk.nextSeq
                         }
-                        rootLogSeq = chunk.nextSeq
-                    }.onFailure { error ->
-                        Timber.d(error, "Root runtime log polling skipped")
-                    }
+                        .onFailure { error -> Timber.d(error, "Root runtime log polling skipped") }
                 }
             }
         } else {
@@ -279,7 +270,10 @@ class RuntimeClashManager(
             rootLogJob?.cancel()
             rootLogJob = null
             rootLogSeq = 0L
-            RootTunRuntimeRecovery.handleBinderGone(appContext, RootTunRuntimeRecovery.binderFailureReason(error))
+            RootTunRuntimeRecovery.handleBinderGone(
+                appContext,
+                RootTunRuntimeRecovery.binderFailureReason(error),
+            )
             Timber.w(error, "Root runtime binder died")
             return
         }

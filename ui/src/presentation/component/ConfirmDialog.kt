@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.runtime.Composable
@@ -37,11 +35,7 @@ fun ConfirmDialog(
     cancelText: String = MLang.Component.Button.Cancel,
     confirmText: String = MLang.Component.Button.Confirm,
 ) {
-    AppActionBottomSheet(
-        show = show.isShown,
-        title = title,
-        onDismissRequest = onDismiss,
-    ) {
+    AppActionBottomSheet(show = show.isShown, title = title, onDismissRequest = onDismiss) {
         ConfirmDialogContent(
             message = message,
             onCancel = onDismiss,

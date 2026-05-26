@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.log
 
 import android.net.Uri
@@ -34,9 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class LogViewModel(
-    private val repository: LogStore,
-) : ViewModel() {
+class LogViewModel(private val repository: LogStore) : ViewModel() {
 
     private val _isRecording = MutableStateFlow(repository.isRecording())
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
@@ -66,15 +62,16 @@ class LogViewModel(
         _tempLogEntries.value = emptyList()
     }
 
-    suspend fun saveTempLog(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
-        val entries = _tempLogEntries.value
-        if (entries.isEmpty()) return@withContext false
-        try {
-            repository.writeLogEntries(targetUri, entries)
-            true
-        } catch (error: Exception) {
-            if (error is CancellationException) throw error
-            false
+    suspend fun saveTempLog(targetUri: Uri): Boolean =
+        withContext(Dispatchers.IO) {
+            val entries = _tempLogEntries.value
+            if (entries.isEmpty()) return@withContext false
+            try {
+                repository.writeLogEntries(targetUri, entries)
+                true
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                false
+            }
         }
-    }
 }

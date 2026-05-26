@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.clash.module
 
 import android.app.Service
@@ -29,71 +27,76 @@ import androidx.core.content.getSystemService
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.common.log.Log
 import com.github.yumelira.yumebox.service.runtime.util.asSocketAddressText
+import java.net.InetAddress
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
-import java.net.InetAddress
-import java.util.concurrent.ConcurrentHashMap
 
 class NetworkObserveModule(service: Service) : Module<Network>(service) {
     private val connectivity = service.getSystemService<ConnectivityManager>()
     private val networks: Channel<Network> = Channel(Channel.CONFLATED)
-    private val request = NetworkRequest.Builder().apply {
-        addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-        addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
-        }
-        addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-    }.build()
+    private val request =
+        NetworkRequest.Builder()
+            .apply {
+                addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+                addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    addCapability(NetworkCapabilities.NET_CAPABILITY_FOREGROUND)
+                }
+                addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+            }
+            .build()
 
     private data class NetworkInfo(
         @Volatile var losingMs: Long = 0,
-        @Volatile var dnsList: List<InetAddress> = emptyList()
+        @Volatile var dnsList: List<InetAddress> = emptyList(),
     ) {
         fun isAvailable(): Boolean = losingMs < System.currentTimeMillis()
     }
 
     private val networkInfos = ConcurrentHashMap<Network, NetworkInfo>()
 
-    @Volatile
-    private var curDnsList = emptyList<String>()
+    @Volatile private var curDnsList = emptyList<String>()
 
-    private val callback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            networkInfos[network] = NetworkInfo()
+    private val callback =
+        object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                networkInfos[network] = NetworkInfo()
+            }
+
+            override fun onLosing(network: Network, maxMsToLive: Int) {
+                networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
+                notifyDnsChange()
+
+                networks.trySend(network)
+            }
+
+            override fun onLost(network: Network) {
+                networkInfos.remove(network)
+                notifyDnsChange()
+
+                networks.trySend(network)
+            }
+
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+                networkInfos[network]?.dnsList = linkProperties.dnsServers
+                notifyDnsChange()
+
+                networks.trySend(network)
+            }
+
+            override fun onUnavailable() {}
         }
-
-        override fun onLosing(network: Network, maxMsToLive: Int) {
-            networkInfos[network]?.losingMs = System.currentTimeMillis() + maxMsToLive
-            notifyDnsChange()
-
-            networks.trySend(network)
-        }
-
-        override fun onLost(network: Network) {
-            networkInfos.remove(network)
-            notifyDnsChange()
-
-            networks.trySend(network)
-        }
-
-        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
-            networkInfos[network]?.dnsList = linkProperties.dnsServers
-            notifyDnsChange()
-
-            networks.trySend(network)
-        }
-
-        override fun onUnavailable() {}
-    }
 
     private fun register(): Boolean {
-        val connectivityManager = connectivity ?: run {
-            Log.w("Register network callback failed: ConnectivityManager unavailable")
-            return false
-        }
+        val connectivityManager =
+            connectivity
+                ?: run {
+                    Log.w("Register network callback failed: ConnectivityManager unavailable")
+                    return false
+                }
         return try {
             connectivityManager.registerNetworkCallback(request, callback)
             true
@@ -123,18 +126,22 @@ class NetworkObserveModule(service: Service) : Module<Network>(service) {
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> 90
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> 0
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> 1
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_USB) -> 2
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_USB) -> 2
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH) -> 3
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> 4
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE) -> 5
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_SATELLITE) -> 5
 
             else -> 20
         } + (if (entry.value.isAvailable()) 0 else 10)
     }
 
     private fun notifyDnsChange() {
-        val dnsList = (networkInfos.asSequence().minByOrNull { networkToInt(it) }?.value?.dnsList
-            ?: emptyList()).map { address -> address.asSocketAddressText(53) }
+        val dnsList =
+            (networkInfos.asSequence().minByOrNull { networkToInt(it) }?.value?.dnsList
+                    ?: emptyList())
+                .map { address -> address.asSocketAddressText(53) }
         val prevDnsList = curDnsList
         if (dnsList.isNotEmpty() && prevDnsList != dnsList) {
             curDnsList = dnsList

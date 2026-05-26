@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.meta.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -65,7 +63,8 @@ data class ConnectionState(
     val selectedTab: ConnectionTab = ConnectionTab.ACTIVE,
     val error: String? = null,
 ) {
-    val totalConnections: Int get() = snapshot?.connections?.size ?: 0
+    val totalConnections: Int
+        get() = snapshot?.connections?.size ?: 0
 }
 
 class ConnectionViewModel : ViewModel() {
@@ -73,13 +72,14 @@ class ConnectionViewModel : ViewModel() {
     private val _state = MutableStateFlow(ConnectionState())
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
-    val filteredConnections: StateFlow<List<ConnectionInfo>> = state
-        .map(::buildFilteredConnections)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList(),
-        )
+    val filteredConnections: StateFlow<List<ConnectionInfo>> =
+        state
+            .map(::buildFilteredConnections)
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList(),
+            )
 
     private var pollingJob: Job? = null
     private var _isPolling = false
@@ -125,22 +125,19 @@ class ConnectionViewModel : ViewModel() {
 
     suspend fun closeConnection(id: String): Boolean {
         return withContext(Dispatchers.IO) {
-            runCatching {
-                ServiceClient.clash().closeConnection(id)
-            }.onFailure { error ->
-                Timber.w(error, "Failed to close connection: %s", id)
-                _state.update { it.copy(error = error.message) }
-            }.getOrDefault(false)
-        }.also {
-            refreshConnections(showRefreshing = true)
-        }
+                runCatching { ServiceClient.clash().closeConnection(id) }
+                    .onFailure { error ->
+                        Timber.w(error, "Failed to close connection: %s", id)
+                        _state.update { it.copy(error = error.message) }
+                    }
+                    .getOrDefault(false)
+            }
+            .also { refreshConnections(showRefreshing = true) }
     }
 
     private suspend fun refreshConnections(showRefreshing: Boolean) {
         if (showRefreshing) {
-            _state.update { current ->
-                current.copy(isRefreshing = true)
-            }
+            _state.update { current -> current.copy(isRefreshing = true) }
         }
         withContext(Dispatchers.IO) {
             try {
@@ -157,49 +154,49 @@ class ConnectionViewModel : ViewModel() {
             } catch (error: Exception) {
                 Timber.w(error, "Failed to query connections")
                 _state.update {
-                    it.copy(
-                        error = error.message,
-                        isLoading = false,
-                        isRefreshing = false,
-                    )
+                    it.copy(error = error.message, isLoading = false, isRefreshing = false)
                 }
             }
         }
     }
 
     private fun buildFilteredConnections(currentState: ConnectionState): List<ConnectionInfo> {
-        val connections = when (currentState.selectedTab) {
-            ConnectionTab.ACTIVE -> currentState.snapshot?.connections ?: emptyList()
-            ConnectionTab.CLOSED -> ConnectionHistoryManager.getClosedConnections()
-        }
-
-        val filtered = if (currentState.searchQuery.isEmpty()) {
-            connections
-        } else {
-            val query = currentState.searchQuery.lowercase()
-            connections.filter { conn ->
-                val host = connectionDisplayTarget(conn).lowercase()
-                val process = conn.metadata["process"]?.jsonPrimitive?.content?.lowercase() ?: ""
-                val chains = conn.chains.joinToString(" ").lowercase()
-                val rule = conn.rule.lowercase()
-
-                host.contains(query) ||
-                    process.contains(query) ||
-                    chains.contains(query) ||
-                    rule.contains(query)
+        val connections =
+            when (currentState.selectedTab) {
+                ConnectionTab.ACTIVE -> currentState.snapshot?.connections ?: emptyList()
+                ConnectionTab.CLOSED -> ConnectionHistoryManager.getClosedConnections()
             }
-        }
 
-        val sorted = if (currentState.selectedTab == ConnectionTab.ACTIVE) {
-            when (currentState.sortBy) {
-                ConnectionSort.Time -> filtered.sortedByDescending { it.start }
-                ConnectionSort.Upload -> filtered.sortedByDescending { it.upload }
-                ConnectionSort.Download -> filtered.sortedByDescending { it.download }
-                ConnectionSort.Host -> filtered.sortedBy { connectionDisplayTarget(it) }
+        val filtered =
+            if (currentState.searchQuery.isEmpty()) {
+                connections
+            } else {
+                val query = currentState.searchQuery.lowercase()
+                connections.filter { conn ->
+                    val host = connectionDisplayTarget(conn).lowercase()
+                    val process =
+                        conn.metadata["process"]?.jsonPrimitive?.content?.lowercase() ?: ""
+                    val chains = conn.chains.joinToString(" ").lowercase()
+                    val rule = conn.rule.lowercase()
+
+                    host.contains(query) ||
+                        process.contains(query) ||
+                        chains.contains(query) ||
+                        rule.contains(query)
+                }
             }
-        } else {
-            filtered
-        }
+
+        val sorted =
+            if (currentState.selectedTab == ConnectionTab.ACTIVE) {
+                when (currentState.sortBy) {
+                    ConnectionSort.Time -> filtered.sortedByDescending { it.start }
+                    ConnectionSort.Upload -> filtered.sortedByDescending { it.upload }
+                    ConnectionSort.Download -> filtered.sortedByDescending { it.download }
+                    ConnectionSort.Host -> filtered.sortedBy { connectionDisplayTarget(it) }
+                }
+            } else {
+                filtered
+            }
         return sorted
     }
 
@@ -219,7 +216,8 @@ private fun connectionDisplayTarget(connection: ConnectionInfo): String {
     return when {
         host.isNotBlank() && destinationPort.isNotBlank() -> "$host:$destinationPort"
         host.isNotBlank() -> host
-        destinationIp.isNotBlank() && destinationPort.isNotBlank() -> "$destinationIp:$destinationPort"
+        destinationIp.isNotBlank() && destinationPort.isNotBlank() ->
+            "$destinationIp:$destinationPort"
         destinationIp.isNotBlank() -> destinationIp
         sourceIp.isNotBlank() && sourcePort.isNotBlank() -> "$sourceIp:$sourcePort"
         else -> sourceIp

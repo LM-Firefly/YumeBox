@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
@@ -32,6 +30,4 @@ val featureProxyViewModelModule = module {
     viewModel { ProvidersViewModel(get(), get()) }
 }
 
-val featureProxyModules = listOf(
-    featureProxyViewModelModule,
-)
+val featureProxyModules = listOf(featureProxyViewModelModule)

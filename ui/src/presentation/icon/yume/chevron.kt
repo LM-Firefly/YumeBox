@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -32,31 +30,33 @@ import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.icon.Yume
 
 val Yume.chevron: ImageVector
-get() {
-    if (_IconName != null) {
+    get() {
+        if (_IconName != null) {
+            return _IconName!!
+        }
+        _IconName =
+            ImageVector.Builder(
+                    name = "IconName",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveToRelative(9f, 18f)
+                        lineToRelative(6f, -6f)
+                        lineToRelative(-6f, -6f)
+                    }
+                }
+                .build()
+
         return _IconName!!
     }
-    _IconName = ImageVector.Builder(
-        name = "IconName",
-        defaultWidth = 24.dp,
-        defaultHeight = 24.dp,
-        viewportWidth = 24f,
-        viewportHeight = 24f
-    ).apply {
-        path(
-            stroke = SolidColor(Color.Black),
-            strokeLineWidth = 2f,
-            strokeLineCap = StrokeCap.Round,
-            strokeLineJoin = StrokeJoin.Round
-        ) {
-            moveToRelative(9f, 18f)
-            lineToRelative(6f, -6f)
-            lineToRelative(-6f, -6f)
-        }
-    }.build()
 
-    return _IconName!!
-}
-
-@Suppress("ObjectPropertyName")
-private var _IconName: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _IconName: ImageVector? = null

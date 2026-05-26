@@ -24,20 +24,15 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class OverrideContentType(
-    val extension: String,
-) {
-    @SerialName("yaml")
-    Yaml("yaml"),
-
-    @SerialName("js")
-    JavaScript("js"),
-    ;
+enum class OverrideContentType(val extension: String) {
+    @SerialName("yaml") Yaml("yaml"),
+    @SerialName("js") JavaScript("js");
 
     companion object {
         fun fromExtension(extension: String?): OverrideContentType? {
             return when (extension?.lowercase()?.removePrefix(".")) {
-                "yaml", "yml" -> Yaml
+                "yaml",
+                "yml" -> Yaml
                 "js" -> JavaScript
                 else -> null
             }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -38,43 +36,60 @@ val Yume.`Squares-exclude`: ImageVector
         if (`_squares-exclude` != null) {
             return `_squares-exclude`!!
         }
-        `_squares-exclude` = Builder(name = "Squares-exclude", defaultWidth = 24.0.dp, defaultHeight
-                = 24.0.dp, viewportWidth = 24.0f, viewportHeight = 24.0f).apply {
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(16.0f, 12.0f)
-                verticalLineToRelative(2.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, 2.0f)
-                horizontalLineTo(9.0f)
-                arcToRelative(1.0f, 1.0f, 0.0f, false, false, -1.0f, 1.0f)
-                verticalLineToRelative(3.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, false, 2.0f, 2.0f)
-                horizontalLineToRelative(10.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, false, 2.0f, -2.0f)
-                verticalLineTo(10.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, false, -2.0f, -2.0f)
-                horizontalLineToRelative(0.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(4.0f, 16.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, -2.0f)
-                verticalLineTo(4.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, 2.0f, -2.0f)
-                horizontalLineToRelative(10.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, true, 2.0f, 2.0f)
-                verticalLineToRelative(3.0f)
-                arcToRelative(1.0f, 1.0f, 0.0f, false, true, -1.0f, 1.0f)
-                horizontalLineToRelative(-5.0f)
-                arcToRelative(2.0f, 2.0f, 0.0f, false, false, -2.0f, 2.0f)
-                verticalLineToRelative(2.0f)
-            }
-        }
-        .build()
+        `_squares-exclude` =
+            Builder(
+                    name = "Squares-exclude",
+                    defaultWidth = 24.0.dp,
+                    defaultHeight = 24.0.dp,
+                    viewportWidth = 24.0f,
+                    viewportHeight = 24.0f,
+                )
+                .apply {
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(16.0f, 12.0f)
+                        verticalLineToRelative(2.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, 2.0f)
+                        horizontalLineTo(9.0f)
+                        arcToRelative(1.0f, 1.0f, 0.0f, false, false, -1.0f, 1.0f)
+                        verticalLineToRelative(3.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, false, 2.0f, 2.0f)
+                        horizontalLineToRelative(10.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, false, 2.0f, -2.0f)
+                        verticalLineTo(10.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, false, -2.0f, -2.0f)
+                        horizontalLineToRelative(0.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(4.0f, 16.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, -2.0f, -2.0f)
+                        verticalLineTo(4.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, 2.0f, -2.0f)
+                        horizontalLineToRelative(10.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, true, 2.0f, 2.0f)
+                        verticalLineToRelative(3.0f)
+                        arcToRelative(1.0f, 1.0f, 0.0f, false, true, -1.0f, 1.0f)
+                        horizontalLineToRelative(-5.0f)
+                        arcToRelative(2.0f, 2.0f, 0.0f, false, false, -2.0f, 2.0f)
+                        verticalLineToRelative(2.0f)
+                    }
+                }
+                .build()
         return `_squares-exclude`!!
     }
 

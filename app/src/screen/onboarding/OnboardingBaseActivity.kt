@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.content.Context
@@ -66,14 +64,8 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
     }
 
-    protected fun setOnboardingContent(
-        content: @Composable () -> Unit,
-    ) {
-        setContent {
-            OnboardingActivityTheme {
-                content()
-            }
-        }
+    protected fun setOnboardingContent(content: @Composable () -> Unit) {
+        setContent { OnboardingActivityTheme { content() } }
     }
 
     protected fun finishOnboarding() {
@@ -81,18 +73,17 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
             finish()
             return
         }
-        val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
+        val intent =
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
         startActivity(intent)
         finish()
     }
 }
 
 @Composable
-private fun OnboardingActivityTheme(
-    content: @Composable () -> Unit,
-) {
+private fun OnboardingActivityTheme(content: @Composable () -> Unit) {
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
     val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
@@ -102,10 +93,11 @@ private fun OnboardingActivityTheme(
 
     ProvideAndroidPlatformTheme {
         val systemDensity = LocalDensity.current
-        val scaledDensity = Density(
-            density = systemDensity.density * pageScale,
-            fontScale = systemDensity.fontScale,
-        )
+        val scaledDensity =
+            Density(
+                density = systemDensity.density * pageScale,
+                fontScale = systemDensity.fontScale,
+            )
         CompositionLocalProvider(LocalDensity provides scaledDensity) {
             YumeTheme(
                 themeMode = themeMode,

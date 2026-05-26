@@ -48,10 +48,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Destination<RootGraph>
 @Composable
-fun ImportConfigScreen(
-    navigator: DestinationsNavigator,
-    prefillUrl: String = "",
-) {
+fun ImportConfigScreen(navigator: DestinationsNavigator, prefillUrl: String = "") {
     navigator
     val viewModel = koinViewModel<ImportConfigViewModel>()
     val profiles by viewModel.profiles.collectAsState()
@@ -133,7 +130,7 @@ fun ImportConfigScreen(
                     }
                 },
             )
-        },
+        }
     ) { innerPadding ->
         if (profiles.isEmpty()) {
             CenteredText(
@@ -145,13 +142,11 @@ fun ImportConfigScreen(
             ScreenLazyColumn(
                 lazyListState = lazyListState,
                 scrollBehavior = scrollBehavior,
-                innerPadding = combinePaddingValues(innerPadding, rememberStandalonePageMainPadding()),
+                innerPadding =
+                    combinePaddingValues(innerPadding, rememberStandalonePageMainPadding()),
                 topPadding = 20.dp,
             ) {
-                items(
-                    items = profiles,
-                    key = { it.uuid.toString() },
-                ) { profile ->
+                items(items = profiles, key = { it.uuid.toString() }) { profile ->
                     ProfileCard(
                         profile = profile,
                         workDir = filesDir.resolve("imported"),
@@ -160,9 +155,7 @@ fun ImportConfigScreen(
                         onUpdate = {
                             if (!isDownloading) {
                                 isDownloading = true
-                                viewModel.updateProfile(profile.uuid) {
-                                    isDownloading = false
-                                }
+                                viewModel.updateProfile(profile.uuid) { isDownloading = false }
                             }
                         },
                         onDelete = {
@@ -188,7 +181,10 @@ fun ImportConfigScreen(
                         },
                         onToggleEnabled = {
                             if (!isDownloading) {
-                                viewModel.toggleProfileEnabled(profile.uuid, stopService = profile.active && isRunning)
+                                viewModel.toggleProfileEnabled(
+                                    profile.uuid,
+                                    stopService = profile.active && isRunning,
+                                )
                             }
                         },
                     )
@@ -211,9 +207,7 @@ fun ImportConfigScreen(
             },
             onUpdateProfile = { uuid, name, source, interval ->
                 isDownloading = true
-                viewModel.patchProfile(uuid, name, source, interval) {
-                    isDownloading = false
-                }
+                viewModel.patchProfile(uuid, name, source, interval) { isDownloading = false }
             },
             onDismissFinished = {
                 keepAddSheetComposed = false
@@ -255,43 +249,50 @@ fun ImportConfigScreen(
             onShareFile = { target ->
                 val file = importedConfigFile(filesDir, target)
                 if (!file.exists()) {
-                    context.toast(MLang.ProfilesPage.ShareDialog.ImportedConfigMissing.format(file.absolutePath))
+                    context.toast(
+                        MLang.ProfilesPage.ShareDialog.ImportedConfigMissing.format(
+                            file.absolutePath
+                        )
+                    )
                 } else {
                     runCatching {
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            file,
-                        )
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "application/x-yaml"
-                            putExtra(Intent.EXTRA_STREAM, uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            val uri =
+                                FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    file,
+                                )
+                            val intent =
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/x-yaml"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                            context.startActivity(
+                                Intent.createChooser(
+                                        intent,
+                                        MLang.ProfilesPage.ShareDialog.ShareFile,
+                                    )
+                                    .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                            )
                         }
-                        context.startActivity(
-                            Intent.createChooser(intent, MLang.ProfilesPage.ShareDialog.ShareFile).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            },
-                        )
-                    }.onFailure {
-                        context.toast(it.message ?: "Share failed")
-                    }
+                        .onFailure { context.toast(it.message ?: "Share failed") }
                 }
                 showShareDialogVisible.value = false
             },
             onShareLink = { target ->
                 val url = if (target.type == Profile.Type.Url) target.source else null
                 url?.let {
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, it)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(
-                        Intent.createChooser(intent, MLang.ProfilesPage.ShareDialog.ShareLink).apply {
+                    val intent =
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, it)
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        },
+                        }
+                    context.startActivity(
+                        Intent.createChooser(intent, MLang.ProfilesPage.ShareDialog.ShareLink)
+                            .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
                     )
                 } ?: context.toast(MLang.ProfilesPage.ShareDialog.NoLink)
                 showShareDialogVisible.value = false

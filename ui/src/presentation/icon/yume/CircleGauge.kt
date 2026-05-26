@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,46 +34,72 @@ val Yume.CircleGauge: ImageVector
         if (_CircleGauge != null) {
             return _CircleGauge!!
         }
-        _CircleGauge = ImageVector.Builder(
-            name = "CircleGauge",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.White),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(15.6f, 2.7f)
-                arcToRelative(10f, 10f, 0f, isMoreThanHalf = true, isPositiveArc = false, 5.7f, 5.7f)
-            }
-            path(
-                stroke = SolidColor(Color.White),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(12f, 12f)
-                moveToRelative(-2f, 0f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, 4f, 0f)
-                arcToRelative(2f, 2f, 0f, isMoreThanHalf = true, isPositiveArc = true, -4f, 0f)
-            }
-            path(
-                stroke = SolidColor(Color.White),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(13.4f, 10.6f)
-                lineTo(19f, 5f)
-            }
-        }.build()
+        _CircleGauge =
+            ImageVector.Builder(
+                    name = "CircleGauge",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.White),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(15.6f, 2.7f)
+                        arcToRelative(
+                            10f,
+                            10f,
+                            0f,
+                            isMoreThanHalf = true,
+                            isPositiveArc = false,
+                            5.7f,
+                            5.7f,
+                        )
+                    }
+                    path(
+                        stroke = SolidColor(Color.White),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(12f, 12f)
+                        moveToRelative(-2f, 0f)
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = true,
+                            isPositiveArc = true,
+                            4f,
+                            0f,
+                        )
+                        arcToRelative(
+                            2f,
+                            2f,
+                            0f,
+                            isMoreThanHalf = true,
+                            isPositiveArc = true,
+                            -4f,
+                            0f,
+                        )
+                    }
+                    path(
+                        stroke = SolidColor(Color.White),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(13.4f, 10.6f)
+                        lineTo(19f, 5f)
+                    }
+                }
+                .build()
 
         return _CircleGauge!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _CircleGauge: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _CircleGauge: ImageVector? = null

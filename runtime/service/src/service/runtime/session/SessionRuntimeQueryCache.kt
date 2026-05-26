@@ -40,13 +40,14 @@ internal class SessionRuntimeQueryCache {
         trafficNow: Long,
         trafficTotal: Long,
     ) {
-        snapshot = SessionRuntimeQuerySnapshot(
-            configuration = configuration,
-            providers = providers,
-            proxyGroups = proxyGroups,
-            trafficNow = trafficNow,
-            trafficTotal = trafficTotal,
-        )
+        snapshot =
+            SessionRuntimeQuerySnapshot(
+                configuration = configuration,
+                providers = providers,
+                proxyGroups = proxyGroups,
+                trafficNow = trafficNow,
+                trafficTotal = trafficTotal,
+            )
     }
 
     fun updateTrafficNow(trafficNow: Long) {
@@ -63,13 +64,15 @@ internal class SessionRuntimeQueryCache {
 
     fun upsertProxyGroup(name: String, proxyGroup: ProxyGroup) {
         val currentGroups = snapshot.proxyGroups
-        snapshot = snapshot.copy(
-            proxyGroups = if (currentGroups.any { it.name == name }) {
-                currentGroups.map { if (it.name == name) proxyGroup else it }
-            } else {
-                currentGroups + proxyGroup
-            },
-        )
+        snapshot =
+            snapshot.copy(
+                proxyGroups =
+                    if (currentGroups.any { it.name == name }) {
+                        currentGroups.map { if (it.name == name) proxyGroup else it }
+                    } else {
+                        currentGroups + proxyGroup
+                    }
+            )
     }
 }
 

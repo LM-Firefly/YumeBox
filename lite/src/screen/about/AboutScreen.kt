@@ -41,11 +41,8 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 fun AboutScreen(navigator: DestinationsNavigator) {
     val scrollBehavior = MiuixScrollBehavior()
 
-    Scaffold(
-        topBar = {
-            TopBar(title = "关于 Lite", scrollBehavior = scrollBehavior)
-        },
-    ) { innerPadding ->
+    Scaffold(topBar = { TopBar(title = "关于 Lite", scrollBehavior = scrollBehavior) }) { innerPadding
+        ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
@@ -53,19 +50,11 @@ fun AboutScreen(navigator: DestinationsNavigator) {
         ) {
             item {
                 Title("版本")
-                Card {
-                    BasicComponent(
-                        title = "YumeBox Lite",
-                        summary = BuildConfig.VERSION_NAME,
-                    )
-                }
+                Card { BasicComponent(title = "YumeBox Lite", summary = BuildConfig.VERSION_NAME) }
 
                 Title("链接")
                 Card {
-                    LinkItem(
-                        title = "源码",
-                        url = "https://github.com/YumeLira/YumeBox",
-                    )
+                    LinkItem(title = "源码", url = "https://github.com/YumeLira/YumeBox")
                     LinkItem(
                         title = "许可证",
                         url = "https://github.com/YumeLira/YumeBox/blob/main/LICENSE",

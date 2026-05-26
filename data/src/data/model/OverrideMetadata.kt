@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 import kotlinx.serialization.Serializable
@@ -38,7 +36,8 @@ data class OverrideMetadata(
         const val ID_PREFIX = "cfg-"
         const val LEGACY_SYSTEM_PREFIX = "preset-"
 
-        fun generateId(): String = "$ID_PREFIX${System.currentTimeMillis()}-${(1000..9999).random()}"
+        fun generateId(): String =
+            "$ID_PREFIX${System.currentTimeMillis()}-${(1000..9999).random()}"
 
         fun create(
             name: String,
@@ -102,39 +101,31 @@ data class MetadataIndex(
 
     fun removeOverrideFromProfileChains(overrideId: String): MetadataIndex {
         return copy(
-            profileChains = profileChains.mapValues { (_, binding) ->
-                binding.removeOverride(overrideId)
-            },
+            profileChains =
+                profileChains.mapValues { (_, binding) -> binding.removeOverride(overrideId) }
         )
     }
 
-    fun sanitizeProfileChains(
-        predicate: (String) -> Boolean,
-    ): MetadataIndex {
+    fun sanitizeProfileChains(predicate: (String) -> Boolean): MetadataIndex {
         return copy(
-            profileChains = profileChains.mapValues { (_, binding) ->
-                binding.copy(
-                    overrideIds = binding.overrideIds.filter(predicate),
-                )
-            },
+            profileChains =
+                profileChains.mapValues { (_, binding) ->
+                    binding.copy(overrideIds = binding.overrideIds.filter(predicate))
+                }
         )
     }
 
     fun sortedUserMetadata(): List<OverrideMetadata> {
-        return configs.values
-            .sortedWith(
-                compareBy<OverrideMetadata> { if (it.sortOrder > 0L) 0 else 1 }
-                    .thenBy { if (it.sortOrder > 0L) it.sortOrder else Long.MAX_VALUE }
-                    .thenByDescending(OverrideMetadata::updatedAt)
-                    .thenBy(OverrideMetadata::createdAt),
-            )
+        return configs.values.sortedWith(
+            compareBy<OverrideMetadata> { if (it.sortOrder > 0L) 0 else 1 }
+                .thenBy { if (it.sortOrder > 0L) it.sortOrder else Long.MAX_VALUE }
+                .thenByDescending(OverrideMetadata::updatedAt)
+                .thenBy(OverrideMetadata::createdAt)
+        )
     }
 
     fun nextUserSortOrder(): Long {
-        return sortedUserMetadata()
-            .maxOfOrNull(OverrideMetadata::sortOrder)
-            ?.plus(1L)
-            ?: 1L
+        return sortedUserMetadata().maxOfOrNull(OverrideMetadata::sortOrder)?.plus(1L) ?: 1L
     }
 
     fun normalizeUserSortOrders(): MetadataIndex {

@@ -42,13 +42,13 @@ class ProxySheetActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setFinishOnTouchOutside(true)
-        @Suppress("DEPRECATION")
-        overridePendingTransition(0, 0)
+        @Suppress("DEPRECATION") overridePendingTransition(0, 0)
 
         setContent {
             val themeMode by appSettingsStorage.themeMode.state.collectAsState()
             val themeSeedColorArgb by appSettingsStorage.themeAccentColorArgb.state.collectAsState()
-            val invertOnPrimaryColors by appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
+            val invertOnPrimaryColors by
+                appSettingsStorage.invertOnPrimaryColors.state.collectAsState()
             val smoothCornerEnabled by appSettingsStorage.smoothCornerEnabled.state.collectAsState()
 
             ProvideAndroidPlatformTheme {
@@ -61,9 +61,8 @@ class ProxySheetActivity : ComponentActivity() {
                     ProxySheetContent(
                         onDismiss = {
                             finish()
-                            @Suppress("DEPRECATION")
-                            overridePendingTransition(0, 0)
-                        },
+                            @Suppress("DEPRECATION") overridePendingTransition(0, 0)
+                        }
                     )
                 }
             }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.model
 
 import kotlinx.serialization.Serializable

@@ -18,19 +18,13 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.util
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.*
 import kotlin.math.abs
 
-@Stable
-private data class LazyListTopAnchor(
-    val key: String,
-    val offset: Int,
-)
+@Stable private data class LazyListTopAnchor(val key: String, val offset: Int)
 
 @Composable
 fun KeepLazyListTopAnchorOnReorder(
@@ -53,7 +47,11 @@ fun KeepLazyListTopAnchorOnReorder(
                 val targetIndex = itemKeys.indexOf(anchor.key)
                 if (targetIndex >= 0) {
                     val topNow = listState.captureTopAnchor()
-                    if (topNow == null || topNow.key != anchor.key || abs(topNow.offset - anchor.offset) > 1) {
+                    if (
+                        topNow == null ||
+                            topNow.key != anchor.key ||
+                            abs(topNow.offset - anchor.offset) > 1
+                    ) {
                         listState.scrollToItem(targetIndex, anchor.offset)
                     }
                 }

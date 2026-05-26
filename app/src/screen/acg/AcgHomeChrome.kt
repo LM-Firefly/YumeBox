@@ -22,15 +22,15 @@ package com.github.yumelira.yumebox.screen.acg
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -55,8 +55,8 @@ import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Waiting
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.util.extractFlaggedName
 import com.github.yumelira.yumebox.screen.home.HomeProxyControlState
 import dev.oom_wg.purejoy.mlang.MLang
@@ -76,56 +76,67 @@ internal fun AcgSidebarDecoration(
     val spacing = AppTheme.spacing
     val surface = MiuixTheme.colorScheme.surface
     val isDarkSurface = surface.luminance() < 0.5f
-    val glassBase = if (isDarkSurface) {
-        Color.Black.copy(alpha = 0.24f)
-    } else {
-        surface.copy(alpha = 0.13f)
-    }
+    val glassBase =
+        if (isDarkSurface) {
+            Color.Black.copy(alpha = 0.24f)
+        } else {
+            surface.copy(alpha = 0.13f)
+        }
     val glassTint = Color.Black.copy(alpha = 0.10f)
-    val glassGradientStart = if (isDarkSurface) {
-        Color.Black.copy(alpha = 0.36f)
-    } else {
-        surface.copy(alpha = 0.23f)
-    }
-    val glassGradientEnd = if (isDarkSurface) {
-        surface.copy(alpha = 0.18f)
-    } else {
-        surface.copy(alpha = 0.16f)
-    }
+    val glassGradientStart =
+        if (isDarkSurface) {
+            Color.Black.copy(alpha = 0.36f)
+        } else {
+            surface.copy(alpha = 0.23f)
+        }
+    val glassGradientEnd =
+        if (isDarkSurface) {
+            surface.copy(alpha = 0.18f)
+        } else {
+            surface.copy(alpha = 0.16f)
+        }
     val clampedBlurProgress = blurProgress.coerceIn(0f, 1f)
     val blurRadiusPx = lerpFloat(30f, 52f, clampedBlurProgress)
-    val blurColors = BlurDefaults.blurColors(
-        blendColors = listOf(
-            BlendColorEntry(color = glassBase, mode = BlurBlendMode.SrcOver),
-            BlendColorEntry(color = glassTint, mode = BlurBlendMode.SrcOver),
-        ),
-        saturation = if (isDarkSurface) 1.06f else 1.02f,
-        contrast = if (isDarkSurface) 1.08f else 1.10f,
-        brightness = if (isDarkSurface) 0.00f else -0.05f,
-    )
-    val blurModifier = if (blurEnabled) {
-        Modifier.textureBlur(
-            backdrop = backdrop,
-            shape = RectangleShape,
-            blurRadius = blurRadiusPx,
-            noiseCoefficient = 0f,
-            colors = blurColors,
-            enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+    val blurColors =
+        BlurDefaults.blurColors(
+            blendColors =
+                listOf(
+                    BlendColorEntry(color = glassBase, mode = BlurBlendMode.SrcOver),
+                    BlendColorEntry(color = glassTint, mode = BlurBlendMode.SrcOver),
+                ),
+            saturation = if (isDarkSurface) 1.06f else 1.02f,
+            contrast = if (isDarkSurface) 1.08f else 1.10f,
+            brightness = if (isDarkSurface) 0.00f else -0.05f,
         )
-    } else {
-        Modifier
-    }
+    val blurModifier =
+        if (blurEnabled) {
+            Modifier.textureBlur(
+                backdrop = backdrop,
+                shape = RectangleShape,
+                blurRadius = blurRadiusPx,
+                noiseCoefficient = 0f,
+                colors = blurColors,
+                enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+            )
+        } else {
+            Modifier
+        }
 
     Box(
-        modifier = modifier
-            .then(blurModifier)
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(glassGradientStart, glassGradientEnd),
+        modifier =
+            modifier
+                .then(blurModifier)
+                .background(
+                    brush =
+                        Brush.horizontalGradient(
+                            colors = listOf(glassGradientStart, glassGradientEnd)
+                        ),
+                    shape = RectangleShape,
+                )
+                .padding(
+                    horizontal = AcgUi.Sidebar.innerHorizontalPadding,
+                    vertical = spacing.space24,
                 ),
-                shape = RectangleShape,
-            )
-            .padding(horizontal = AcgUi.Sidebar.innerHorizontalPadding, vertical = spacing.space24),
         content = content,
     )
 }
@@ -144,20 +155,16 @@ internal fun AcgSidebarContent(
             bottomValue = bottomValue,
             proxyMode = proxyMode,
             icons = icons,
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(AcgUi.Sidebar.statsWidth)
-                .offset(x = calculateAcgSidebarLaneStart(visibleWidth)),
+            modifier =
+                Modifier.fillMaxHeight()
+                    .width(AcgUi.Sidebar.statsWidth)
+                    .offset(x = calculateAcgSidebarLaneStart(visibleWidth)),
         )
     }
 }
 
 @Composable
-internal fun AcgQuoteText(
-    quote: AcgQuote,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
+internal fun AcgQuoteText(quote: AcgQuote, color: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(AcgUi.Quote.contentGap),
@@ -174,9 +181,7 @@ internal fun AcgQuoteText(
         )
         Text(
             text = "— ${quote.author}",
-            modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = AcgUi.Quote.authorTopGap),
+            modifier = Modifier.align(Alignment.End).padding(top = AcgUi.Quote.authorTopGap),
             color = color.copy(alpha = AcgUi.Quote.authorAlpha),
             style = MiuixTheme.textStyles.footnote1,
             fontWeight = FontWeight.Medium,
@@ -196,44 +201,44 @@ internal fun AcgLaunchButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val isRunning = controlState == HomeProxyControlState.Running
-    val background = if (isRunning) {
-        MiuixTheme.colorScheme.primary
-    } else {
-        MiuixTheme.colorScheme.onBackground
-    }
-    val contentColor = if (isRunning) {
-        MiuixTheme.colorScheme.onPrimary
-    } else {
-        MiuixTheme.colorScheme.background
-    }
-    val pressScale by animateFloatAsState(
-        targetValue = if (isPressed && enabled) AcgUi.Button.pressedScale else 1f,
-        animationSpec = spring(
-            dampingRatio = 0.42f,
-            stiffness = 520f,
-        ),
-        label = "acg_launch_button_press_scale",
-    )
+    val background =
+        if (isRunning) {
+            MiuixTheme.colorScheme.primary
+        } else {
+            MiuixTheme.colorScheme.onBackground
+        }
+    val contentColor =
+        if (isRunning) {
+            MiuixTheme.colorScheme.onPrimary
+        } else {
+            MiuixTheme.colorScheme.background
+        }
+    val pressScale by
+        animateFloatAsState(
+            targetValue = if (isPressed && enabled) AcgUi.Button.pressedScale else 1f,
+            animationSpec = spring(dampingRatio = 0.42f, stiffness = 520f),
+            label = "acg_launch_button_press_scale",
+        )
 
     Box(
-        modifier = Modifier
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-            }
-            .width(AcgUi.Button.fixedWidth)
-            .clip(AcgUi.Shape.launchButton)
-            .background(background, AcgUi.Shape.launchButton)
-            .clickable(
-                enabled = enabled,
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(
-                horizontal = AcgUi.Button.horizontalPadding,
-                vertical = AcgUi.Button.verticalPadding,
-            ),
+        modifier =
+            Modifier.graphicsLayer {
+                    scaleX = pressScale
+                    scaleY = pressScale
+                }
+                .width(AcgUi.Button.fixedWidth)
+                .clip(AcgUi.Shape.launchButton)
+                .background(background, AcgUi.Shape.launchButton)
+                .clickable(
+                    enabled = enabled,
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                )
+                .padding(
+                    horizontal = AcgUi.Button.horizontalPadding,
+                    vertical = AcgUi.Button.verticalPadding,
+                )
     ) {
         Row(
             modifier = Modifier.align(Alignment.Center),
@@ -241,64 +246,66 @@ internal fun AcgLaunchButton(
             horizontalArrangement = Arrangement.spacedBy(spacing.space10),
         ) {
             Icon(
-                imageVector = when (controlState) {
-                    HomeProxyControlState.Idle -> ShellIcons.StartProxy
-                    HomeProxyControlState.Running -> ShellIcons.StopProxy
-                    HomeProxyControlState.Connecting,
-                    HomeProxyControlState.Disconnecting,
-                        -> Yume.Waiting
-                },
+                imageVector =
+                    when (controlState) {
+                        HomeProxyControlState.Idle -> ShellIcons.StartProxy
+                        HomeProxyControlState.Running -> ShellIcons.StopProxy
+                        HomeProxyControlState.Connecting,
+                        HomeProxyControlState.Disconnecting -> Yume.Waiting
+                    },
                 contentDescription = null,
                 tint = contentColor,
                 modifier = Modifier.size(spacing.space18),
             )
-            Box(
-                modifier = Modifier
-                    .height(22.dp),
-                contentAlignment = Alignment.CenterStart,
-            ) {
+            Box(modifier = Modifier.height(22.dp), contentAlignment = Alignment.CenterStart) {
                 AnimatedContent(
                     targetState = controlState,
                     transitionSpec = {
-                        (
-                            slideInVertically(
+                        (slideInVertically(
                                 initialOffsetY = { it / 2 },
-                                animationSpec = tween(
-                                    durationMillis = AnimationSpecs.DURATION_FAST,
-                                    easing = AnimationSpecs.EmphasizedDecelerate,
-                                ),
-                            ) + fadeIn(
-                                animationSpec = tween(
-                                    durationMillis = AnimationSpecs.DURATION_FAST,
-                                    easing = AnimationSpecs.EnterEasing,
-                                ),
+                                animationSpec =
+                                    tween(
+                                        durationMillis = AnimationSpecs.DURATION_FAST,
+                                        easing = AnimationSpecs.EmphasizedDecelerate,
+                                    ),
+                            ) +
+                                fadeIn(
+                                    animationSpec =
+                                        tween(
+                                            durationMillis = AnimationSpecs.DURATION_FAST,
+                                            easing = AnimationSpecs.EnterEasing,
+                                        )
+                                ))
+                            .togetherWith(
+                                slideOutVertically(
+                                    targetOffsetY = { -it / 2 },
+                                    animationSpec =
+                                        tween(
+                                            durationMillis = AnimationSpecs.DURATION_INSTANT,
+                                            easing = AnimationSpecs.EmphasizedAccelerate,
+                                        ),
+                                ) +
+                                    fadeOut(
+                                        animationSpec =
+                                            tween(
+                                                durationMillis = AnimationSpecs.DURATION_INSTANT,
+                                                easing = AnimationSpecs.ExitEasing,
+                                            )
+                                    )
                             )
-                        ).togetherWith(
-                            slideOutVertically(
-                                targetOffsetY = { -it / 2 },
-                                animationSpec = tween(
-                                    durationMillis = AnimationSpecs.DURATION_INSTANT,
-                                    easing = AnimationSpecs.EmphasizedAccelerate,
-                                ),
-                            ) + fadeOut(
-                                animationSpec = tween(
-                                    durationMillis = AnimationSpecs.DURATION_INSTANT,
-                                    easing = AnimationSpecs.ExitEasing,
-                                ),
-                            )
-                        ).using(
-                            SizeTransform(clip = false)
-                        )
+                            .using(SizeTransform(clip = false))
                     },
                     label = "acg_launch_button_text",
                 ) { state ->
                     Text(
-                        text = when (state) {
-                            HomeProxyControlState.Idle -> MLang.Home.Control.Start
-                            HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
-                            HomeProxyControlState.Running -> MLang.Home.Control.Stop
-                            HomeProxyControlState.Disconnecting -> MLang.Home.Status.Disconnecting
-                        },
+                        text =
+                            when (state) {
+                                HomeProxyControlState.Idle -> MLang.Home.Control.Start
+                                HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
+                                HomeProxyControlState.Running -> MLang.Home.Control.Stop
+                                HomeProxyControlState.Disconnecting ->
+                                    MLang.Home.Status.Disconnecting
+                            },
                         color = contentColor,
                         style = MiuixTheme.textStyles.body1,
                         fontWeight = FontWeight.SemiBold,
@@ -311,7 +318,6 @@ internal fun AcgLaunchButton(
     }
 }
 
-
 @Composable
 internal fun AcgTrafficStrip(
     downloadSpeed: Long,
@@ -323,32 +329,17 @@ internal fun AcgTrafficStrip(
         horizontalArrangement = Arrangement.spacedBy(AcgUi.Hero.trafficRowGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            AcgTrafficItem(
-                label = MLang.Home.Traffic.UpShort,
-                speed = uploadSpeed,
-            )
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            AcgTrafficItem(label = MLang.Home.Traffic.UpShort, speed = uploadSpeed)
         }
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.CenterEnd,
-        ) {
-            AcgTrafficItem(
-                label = MLang.Home.Traffic.DownShort,
-                speed = downloadSpeed,
-            )
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            AcgTrafficItem(label = MLang.Home.Traffic.DownShort, speed = downloadSpeed)
         }
     }
 }
 
 @Composable
-private fun AcgTrafficItem(
-    label: String,
-    speed: Long,
-) {
+private fun AcgTrafficItem(label: String, speed: Long) {
     val (value, unit) = formatBytesForDisplay(speed)
     val onSurface = MiuixTheme.colorScheme.onSurface
     Row(
@@ -389,44 +380,41 @@ internal fun AcgHomeInfoPanel(
 ) {
     val flaggedNode = remember(serverName) { serverName?.let(::extractFlaggedName) }
     val resolvedNodeName = flaggedNode?.displayName ?: serverName.orEmpty().ifBlank { "" }
-    val resolvedPing = serverPing
-        ?.takeIf { it in 1..1000 }
-        ?.let { ping -> MLang.Home.NodeInfo.DelayValue.format(ping) }
+    val resolvedPing =
+        serverPing
+            ?.takeIf { it in 1..1000 }
+            ?.let { ping -> MLang.Home.NodeInfo.DelayValue.format(ping) }
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = AcgUi.Hero.infoRowMinHeight),
+        modifier = modifier.fillMaxWidth().heightIn(min = AcgUi.Hero.infoRowMinHeight),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (resolvedNodeName.isNotBlank()) {
             AcgInfoBlock(
                 value = resolvedNodeName,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = AcgUi.Info.trailingPadding),
+                modifier = Modifier.weight(1f).padding(end = AcgUi.Info.trailingPadding),
                 leading = {
                     flaggedNode?.countryCode?.let { countryCode ->
-                        CountryFlagCircle(countryCode = countryCode, size = AppTheme.spacing.space16)
+                        CountryFlagCircle(
+                            countryCode = countryCode,
+                            size = AppTheme.spacing.space16,
+                        )
                     }
                 },
             )
         } else {
-            Spacer(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = AcgUi.Info.trailingPadding),
-            )
+            Spacer(modifier = Modifier.weight(1f).padding(end = AcgUi.Info.trailingPadding))
         }
 
         if (resolvedPing != null) {
             AcgInfoBlock(
                 value = resolvedPing,
                 modifier = Modifier.width(AcgUi.Hero.delayWidth),
-                valueColor = when {
-                    serverPing < 500 -> AppTheme.colors.acg.pingExcellent
-                    else -> AppTheme.colors.acg.pingWarning
-                },
+                valueColor =
+                    when {
+                        serverPing < 500 -> AppTheme.colors.acg.pingExcellent
+                        else -> AppTheme.colors.acg.pingWarning
+                    },
                 alignEnd = true,
             )
         }
@@ -444,10 +432,11 @@ private fun AcgInfoBlock(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(
-            space = AcgUi.Info.blockGap,
-            alignment = if (alignEnd) Alignment.End else Alignment.Start,
-        ),
+        horizontalArrangement =
+            Arrangement.spacedBy(
+                space = AcgUi.Info.blockGap,
+                alignment = if (alignEnd) Alignment.End else Alignment.Start,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         leading?.invoke()

@@ -18,8 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.feature.meta.presentation.component
+
 import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,9 +40,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.core.graphics.drawable.toBitmap
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.theme.AppColors
 import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
+import com.github.yumelira.yumebox.presentation.theme.AppColors
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -62,43 +62,38 @@ internal fun ConnectionLeadingIcon(
     val sizes = AppTheme.sizes
     val context = LocalContext.current
     val appIdentityResolver = remember(context) { AppIdentityResolver(context) }
-    val identity = remember(metadata, appIdentityResolver) {
-        appIdentityResolver.resolve(metadata)
-    }
+    val identity = remember(metadata, appIdentityResolver) { appIdentityResolver.resolve(metadata) }
     val resolvedSize = size.takeOrElse { sizes.connectionLeadingIconSize }
-    val iconKey = remember(identity, bitmapSize) {
-        "${identity.appKey}|${identity.packageName.orEmpty()}|$bitmapSize"
-    }
-    val iconBitmap by produceState<ImageBitmap?>(
-        initialValue = null,
-        key1 = iconKey,
-    ) {
-        value = withContext(Dispatchers.IO) {
-            ConnectionAppIconResolver.resolveIcon(
-                context = context,
-                packageName = identity.packageName,
-                bitmapSize = bitmapSize,
-            )
+    val iconKey =
+        remember(identity, bitmapSize) {
+            "${identity.appKey}|${identity.packageName.orEmpty()}|$bitmapSize"
         }
-    }
+    val iconBitmap by
+        produceState<ImageBitmap?>(initialValue = null, key1 = iconKey) {
+            value =
+                withContext(Dispatchers.IO) {
+                    ConnectionAppIconResolver.resolveIcon(
+                        context = context,
+                        packageName = identity.packageName,
+                        bitmapSize = bitmapSize,
+                    )
+                }
+        }
 
     val bitmap = iconBitmap
     if (bitmap != null) {
         Image(
             bitmap = bitmap,
             contentDescription = identity.appName.ifEmpty { network },
-            modifier = modifier
-                .size(resolvedSize)
-                .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius)),
+            modifier =
+                modifier
+                    .size(resolvedSize)
+                    .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius)),
         )
         return
     }
 
-    ProtocolFallbackIcon(
-        network = network,
-        modifier = modifier,
-        size = resolvedSize,
-    )
+    ProtocolFallbackIcon(network = network, modifier = modifier, size = resolvedSize)
 }
 
 @Composable
@@ -113,10 +108,15 @@ private fun ProtocolFallbackIcon(
     val protocolColor = getProtocolColor(network)
 
     Box(
-        modifier = modifier
-            .size(resolvedSize)
-            .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius))
-            .background(neutral.copy(alpha = AppTheme.opacity.ultraSubtle + AppTheme.opacity.ambientShadow)),
+        modifier =
+            modifier
+                .size(resolvedSize)
+                .clip(RoundedCornerShape(sizes.connectionLeadingIconCornerRadius))
+                .background(
+                    neutral.copy(
+                        alpha = AppTheme.opacity.ultraSubtle + AppTheme.opacity.ambientShadow
+                    )
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -128,18 +128,16 @@ private fun ProtocolFallbackIcon(
 }
 
 private object ConnectionAppIconResolver {
-    fun resolveIcon(
-        context: Context,
-        packageName: String?,
-        bitmapSize: Int,
-    ): ImageBitmap? {
-        val resolvedPackageName = packageName?.trim().orEmpty().takeIf { it.isNotEmpty() } ?: return null
+    fun resolveIcon(context: Context, packageName: String?, bitmapSize: Int): ImageBitmap? {
+        val resolvedPackageName =
+            packageName?.trim().orEmpty().takeIf { it.isNotEmpty() } ?: return null
         return runCatching {
-            context.packageManager
-                .getApplicationIcon(resolvedPackageName)
-                .toBitmap(width = bitmapSize, height = bitmapSize)
-                .asImageBitmap()
-        }.getOrNull()
+                context.packageManager
+                    .getApplicationIcon(resolvedPackageName)
+                    .toBitmap(width = bitmapSize, height = bitmapSize)
+                    .asImageBitmap()
+            }
+            .getOrNull()
     }
 }
 
@@ -147,13 +145,11 @@ private object ConnectionAppIconResolver {
 internal fun getProtocolColor(network: String): androidx.compose.ui.graphics.Color =
     getProtocolColor(network, AppTheme.colors)
 
-internal fun getProtocolColor(
-    network: String,
-    appColors: AppColors,
-) = when (network.uppercase()) {
-    "TCP" -> appColors.protocol.tcp
-    "UDP" -> appColors.protocol.udp
-    "HTTP" -> appColors.protocol.http
-    "HTTPS" -> appColors.protocol.https
-    else -> appColors.protocol.unknown
-}
+internal fun getProtocolColor(network: String, appColors: AppColors) =
+    when (network.uppercase()) {
+        "TCP" -> appColors.protocol.tcp
+        "UDP" -> appColors.protocol.udp
+        "HTTP" -> appColors.protocol.http
+        "HTTPS" -> appColors.protocol.https
+        else -> appColors.protocol.unknown
+    }

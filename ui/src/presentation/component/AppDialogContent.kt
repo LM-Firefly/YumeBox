@@ -18,16 +18,15 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -45,10 +44,7 @@ internal fun AppDialogColumn(
 }
 
 @Composable
-internal fun AppDialogMessage(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
+internal fun AppDialogMessage(message: String, modifier: Modifier = Modifier) {
     Text(
         text = message,
         modifier = modifier,

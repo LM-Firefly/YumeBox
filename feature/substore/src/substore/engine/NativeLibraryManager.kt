@@ -18,17 +18,15 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.substore.engine
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
-import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
+import timber.log.Timber
 
 @SuppressLint("StaticFieldLeak")
 object NativeLibraryManager {
@@ -39,12 +37,12 @@ object NativeLibraryManager {
 
     enum class LibraryType {
         JNI_LOAD,
-        PROCESS_EXEC
+        PROCESS_EXEC,
     }
 
     enum class LibrarySource {
         MAIN_APK,
-        EXTENSION_APK
+        EXTENSION_APK,
     }
 
     data class LibraryInfo(
@@ -52,7 +50,7 @@ object NativeLibraryManager {
         val type: LibraryType,
         val source: LibrarySource,
         val packageName: String? = null,
-        val version: String? = null
+        val version: String? = null,
     )
 
     private val managedLibraries = mutableMapOf<String, LibraryInfo>()
@@ -75,7 +73,7 @@ object NativeLibraryManager {
                 name = "libjavet-node-android",
                 type = LibraryType.JNI_LOAD,
                 source = LibrarySource.EXTENSION_APK,
-                packageName = "com.github.yumelira.yumebox.extension"
+                packageName = "com.github.yumelira.yumebox.extension",
             )
         )
     }
@@ -86,17 +84,17 @@ object NativeLibraryManager {
 
     fun extractAllLibraries(): Map<String, Boolean> {
         val results = mutableMapOf<String, Boolean>()
-        managedLibraries.forEach { (name, info) ->
-            results[name] = extractLibrary(info)
-        }
+        managedLibraries.forEach { (name, info) -> results[name] = extractLibrary(info) }
         return results
     }
 
     fun extractLibrary(info: LibraryInfo): Boolean {
-        val targetDir = libsBaseDir ?: run {
-            Timber.w("Library manager not initialized")
-            return false
-        }
+        val targetDir =
+            libsBaseDir
+                ?: run {
+                    Timber.w("Library manager not initialized")
+                    return false
+                }
         targetDir.mkdirs()
         val targetFile = File(targetDir, info.name)
 
@@ -108,20 +106,21 @@ object NativeLibraryManager {
         }
 
         return runCatching {
-            when (info.source) {
-                LibrarySource.MAIN_APK -> extractFromMainApk(info, targetFile)
-                LibrarySource.EXTENSION_APK -> extractFromExtensionApk(info, targetFile)
+                when (info.source) {
+                    LibrarySource.MAIN_APK -> extractFromMainApk(info, targetFile)
+                    LibrarySource.EXTENSION_APK -> extractFromExtensionApk(info, targetFile)
+                }
             }
-        }.getOrElse { error ->
-            Timber.w(error, "Library extract failed: ${info.name}")
-            false
-        }
+            .getOrElse { error ->
+                Timber.w(error, "Library extract failed: ${info.name}")
+                false
+            }
     }
 
     @SuppressLint("SetWorldReadable")
     private fun extractFromMainApk(info: LibraryInfo, targetFile: File): Boolean {
-        val apkPath = context?.applicationInfo?.sourceDir
-            ?: throw RuntimeException("Context not initialized")
+        val apkPath =
+            context?.applicationInfo?.sourceDir ?: throw RuntimeException("Context not initialized")
 
         val abi = getSupportedAbi()
         ZipFile(apkPath).use { zip ->
@@ -139,9 +138,7 @@ object NativeLibraryManager {
             }
 
             zip.getInputStream(libEntry).use { input ->
-                FileOutputStream(targetFile).use { output ->
-                    input.copyTo(output)
-                }
+                FileOutputStream(targetFile).use { output -> input.copyTo(output) }
             }
 
             targetFile.setReadable(true, false)
@@ -169,10 +166,11 @@ object NativeLibraryManager {
 
         ZipFile(extensionApk).use { zip ->
             val pattern =
-                Regex("lib/($abi|${Build.SUPPORTED_ABIS.joinToString("|")})/${info.name}\\.v\\.\\d+\\.\\d+\\.\\d+\\.so")
-            val entry = zip.entries().asSequence().firstOrNull { error ->
-                pattern.matches(error.name)
-            }
+                Regex(
+                    "lib/($abi|${Build.SUPPORTED_ABIS.joinToString("|")})/${info.name}\\.v\\.\\d+\\.\\d+\\.\\d+\\.so"
+                )
+            val entry =
+                zip.entries().asSequence().firstOrNull { error -> pattern.matches(error.name) }
 
             if (entry == null) {
                 Timber.w("Library not found in extension APK: ${info.name}")
@@ -185,9 +183,7 @@ object NativeLibraryManager {
             actualLibraryNames[info.name] = actualFileName
 
             zip.getInputStream(entry).use { input ->
-                FileOutputStream(actualTargetFile).use { output ->
-                    input.copyTo(output)
-                }
+                FileOutputStream(actualTargetFile).use { output -> input.copyTo(output) }
             }
 
             actualTargetFile.setReadable(true, false)
@@ -201,11 +197,13 @@ object NativeLibraryManager {
 
     private val actualLibraryNames = mutableMapOf<String, String>()
 
-    private fun getExtensionApk(packageName: String): File? = runCatching {
-        val pm = context?.packageManager ?: return null
-        val info = pm.getApplicationInfo(packageName, 0)
-        File(info.sourceDir)
-    }.getOrNull()
+    private fun getExtensionApk(packageName: String): File? =
+        runCatching {
+                val pm = context?.packageManager ?: return null
+                val info = pm.getApplicationInfo(packageName, 0)
+                File(info.sourceDir)
+            }
+            .getOrNull()
 
     fun getLibraryPath(name: String): String? {
         if (!isInitialized) return null
@@ -236,12 +234,13 @@ object NativeLibraryManager {
         val path = getLibraryPath(name) ?: return false
 
         return runCatching {
-            System.load(path)
-            true
-        }.getOrElse { error ->
-            Timber.e(error, "JNI load failed: $name")
-            false
-        }
+                System.load(path)
+                true
+            }
+            .getOrElse { error ->
+                Timber.e(error, "JNI load failed: $name")
+                false
+            }
     }
 
     fun getLibraryStatus(name: String): String {

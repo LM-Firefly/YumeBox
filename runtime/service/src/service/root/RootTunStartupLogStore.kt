@@ -18,13 +18,11 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.root
 
 import android.content.Context
-import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
 import com.github.yumelira.yumebox.service.runtime.records.ProfileStore
+import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
 
 class RootTunStartupLogStore(context: Context) {
     private val delegate = RuntimeStartupLogStore(context, RuntimeStartupLogStore.Scope.ROOT_TUN)

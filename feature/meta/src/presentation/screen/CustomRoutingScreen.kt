@@ -21,10 +21,6 @@
 package com.github.yumelira.yumebox.feature.meta.presentation.screen
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,9 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.feature.meta.presentation.util.OverridePresetItem
 import com.github.yumelira.yumebox.feature.meta.presentation.util.OverridePresetRegion
@@ -48,7 +42,6 @@ import com.github.yumelira.yumebox.feature.meta.presentation.util.presetGroupTyp
 import com.github.yumelira.yumebox.feature.meta.presentation.util.sortPresetItems
 import com.github.yumelira.yumebox.feature.meta.presentation.util.sortPresetRegions
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.CustomRoutingViewModel
-import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.RoutingSwitchCard
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -63,17 +56,11 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun CustomRoutingScreen(
     onNavigateBack: () -> Unit,
-    onOpenYamlEditor: (
-        title: String,
-        content: String,
-        onSave: suspend (String) -> Unit,
-    ) -> Unit,
+    onOpenYamlEditor: (title: String, content: String, onSave: suspend (String) -> Unit) -> Unit,
 ) {
     val viewModel: CustomRoutingViewModel = koinViewModel()
     val presetSelection by viewModel.presetSelection.collectAsState()
@@ -109,30 +96,28 @@ fun CustomRoutingScreen(
             return
         }
 
-        val updatedSelection = OverridePresetTemplateSelection(
-            urlTestRegions = selectedUrlTestRegions.toSet(),
-            fallbackRegions = selectedFallbackRegions.toSet(),
-            enabledItems = enabledItems.toSet(),
-            enableUrlTestGroup = enableUrlTestGroup,
-            enableFallbackGroup = enableFallbackGroup,
-        )
+        val updatedSelection =
+            OverridePresetTemplateSelection(
+                urlTestRegions = selectedUrlTestRegions.toSet(),
+                fallbackRegions = selectedFallbackRegions.toSet(),
+                enabledItems = enabledItems.toSet(),
+                enableUrlTestGroup = enableUrlTestGroup,
+                enableFallbackGroup = enableFallbackGroup,
+            )
         scope.launch {
             isSaving = true
-            viewModel.savePresetSelection(updatedSelection)
+            viewModel
+                .savePresetSelection(updatedSelection)
                 .onSuccess {
                     isDirty = false
                     onNavigateBack()
                 }
-                .onFailure { error ->
-                    context.toast(error.message ?: "保存失败")
-                }
+                .onFailure { error -> context.toast(error.message ?: "保存失败") }
             isSaving = false
         }
     }
 
-    BackHandler {
-        saveAndExit()
-    }
+    BackHandler { saveAndExit() }
 
     Scaffold(
         topBar = {
@@ -147,19 +132,15 @@ fun CustomRoutingScreen(
                                 MLang.MetaFeature.CustomRouting.EditYaml,
                                 customRoutingContent,
                             ) { content ->
-                                viewModel.saveCustomRoutingYaml(content)
-                                    .getOrElse { throw it }
+                                viewModel.saveCustomRoutingYaml(content).getOrElse { throw it }
                             }
                         },
                     ) {
-                        Icon(
-                            imageVector = Yume.Edit,
-                            contentDescription = "Edit",
-                        )
+                        Icon(imageVector = Yume.Edit, contentDescription = "Edit")
                     }
                 },
             )
-        },
+        }
     ) { paddingValues ->
         val mainPadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -251,11 +232,7 @@ fun CustomRoutingScreen(
     }
 }
 
-private fun <T> toggleSelection(
-    items: MutableList<T>,
-    item: T,
-    checked: Boolean,
-) {
+private fun <T> toggleSelection(items: MutableList<T>, item: T, checked: Boolean) {
     if (checked) {
         if (item !in items) {
             items.add(item)

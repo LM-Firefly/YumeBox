@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox
 
 import android.app.Application
@@ -42,8 +40,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.startKoin
 import org.koin.core.Koin
+import org.koin.core.context.startKoin
 import timber.log.Timber
 
 class App : Application() {
@@ -97,11 +95,12 @@ class App : Application() {
             if (featureStore.isFirstTimeOpen()) {
                 withContext(Dispatchers.IO) {
                     runCatching {
-                        AppUtil.initFirstOpen()
-                        featureStore.markFirstOpenHandled()
-                    }.onFailure { error ->
-                        Timber.w(error, "First-open asset initialization failed")
-                    }
+                            AppUtil.initFirstOpen()
+                            featureStore.markFirstOpenHandled()
+                        }
+                        .onFailure { error ->
+                            Timber.w(error, "First-open asset initialization failed")
+                        }
                 }
             }
         }

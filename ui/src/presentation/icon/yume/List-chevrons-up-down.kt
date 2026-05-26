@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -38,47 +36,79 @@ val Yume.`List-chevrons-up-down`: ImageVector
         if (`_list-chevrons-up-down` != null) {
             return `_list-chevrons-up-down`!!
         }
-        `_list-chevrons-up-down` = Builder(name = "List-chevrons-up-down", defaultWidth = 24.0.dp,
-                defaultHeight = 24.0.dp, viewportWidth = 24.0f, viewportHeight = 24.0f).apply {
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(3.0f, 5.0f)
-                horizontalLineToRelative(8.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(3.0f, 12.0f)
-                horizontalLineToRelative(8.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveTo(3.0f, 19.0f)
-                horizontalLineToRelative(8.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveToRelative(15.0f, 8.0f)
-                lineToRelative(3.0f, -3.0f)
-                lineToRelative(3.0f, 3.0f)
-            }
-            path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
-                    strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
-                    StrokeJoin.Round, strokeLineMiter = 4.0f, pathFillType = NonZero
-            ) {
-                moveToRelative(15.0f, 16.0f)
-                lineToRelative(3.0f, 3.0f)
-                lineToRelative(3.0f, -3.0f)
-            }
-        }
-        .build()
+        `_list-chevrons-up-down` =
+            Builder(
+                    name = "List-chevrons-up-down",
+                    defaultWidth = 24.0.dp,
+                    defaultHeight = 24.0.dp,
+                    viewportWidth = 24.0f,
+                    viewportHeight = 24.0f,
+                )
+                .apply {
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(3.0f, 5.0f)
+                        horizontalLineToRelative(8.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(3.0f, 12.0f)
+                        horizontalLineToRelative(8.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveTo(3.0f, 19.0f)
+                        horizontalLineToRelative(8.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveToRelative(15.0f, 8.0f)
+                        lineToRelative(3.0f, -3.0f)
+                        lineToRelative(3.0f, 3.0f)
+                    }
+                    path(
+                        fill = SolidColor(Color(0x00000000)),
+                        stroke = SolidColor(Color(0xFF000000)),
+                        strokeLineWidth = 2.0f,
+                        strokeLineCap = Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                        strokeLineMiter = 4.0f,
+                        pathFillType = NonZero,
+                    ) {
+                        moveToRelative(15.0f, 16.0f)
+                        lineToRelative(3.0f, 3.0f)
+                        lineToRelative(3.0f, -3.0f)
+                    }
+                }
+                .build()
         return `_list-chevrons-up-down`!!
     }
 

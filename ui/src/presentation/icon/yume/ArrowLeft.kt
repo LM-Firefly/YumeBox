@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.icon.yume
 
 import androidx.compose.ui.graphics.Color
@@ -36,36 +34,38 @@ val Yume.ArrowLeft: ImageVector
         if (_ArrowLeft != null) {
             return _ArrowLeft!!
         }
-        _ArrowLeft = ImageVector.Builder(
-            name = "ArrowLeft",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).apply {
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveToRelative(12f, 19f)
-                lineToRelative(-7f, -7f)
-                lineToRelative(7f, -7f)
-            }
-            path(
-                stroke = SolidColor(Color.Black),
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round
-            ) {
-                moveTo(19f, 12f)
-                horizontalLineTo(5f)
-            }
-        }.build()
+        _ArrowLeft =
+            ImageVector.Builder(
+                    name = "ArrowLeft",
+                    defaultWidth = 24.dp,
+                    defaultHeight = 24.dp,
+                    viewportWidth = 24f,
+                    viewportHeight = 24f,
+                )
+                .apply {
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveToRelative(12f, 19f)
+                        lineToRelative(-7f, -7f)
+                        lineToRelative(7f, -7f)
+                    }
+                    path(
+                        stroke = SolidColor(Color.Black),
+                        strokeLineWidth = 2f,
+                        strokeLineCap = StrokeCap.Round,
+                        strokeLineJoin = StrokeJoin.Round,
+                    ) {
+                        moveTo(19f, 12f)
+                        horizontalLineTo(5f)
+                    }
+                }
+                .build()
 
         return _ArrowLeft!!
     }
 
-@Suppress("ObjectPropertyName")
-private var _ArrowLeft: ImageVector? = null
+@Suppress("ObjectPropertyName") private var _ArrowLeft: ImageVector? = null

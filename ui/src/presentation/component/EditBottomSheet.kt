@@ -18,16 +18,14 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -45,28 +43,28 @@ fun TextEditBottomSheet(
     secondaryButtonText: String = MLang.Component.Button.Cancel,
     onSecondaryClick: () -> Unit = onDismiss,
 ) {
-    AppActionBottomSheet(
-        show = show.value,
-        title = title,
-        onDismissRequest = onDismiss,
-    ) {
+    AppActionBottomSheet(show = show.value, title = title, onDismissRequest = onDismiss) {
         Column {
             TextField(
                 value = textFieldValue.value,
                 onValueChange = { textFieldValue.value = it },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(UiDp.dp16))
             Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
-                Button(
-                    onClick = onSecondaryClick, modifier = Modifier.weight(1f)
-                ) { Text(secondaryButtonText) }
+                Button(onClick = onSecondaryClick, modifier = Modifier.weight(1f)) {
+                    Text(secondaryButtonText)
+                }
                 Button(
                     onClick = {
                         onConfirm(textFieldValue.value.text)
                         show.value = false
-                    }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColorsPrimary()
-                ) { Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary) }
+                    },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColorsPrimary(),
+                ) {
+                    Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary)
+                }
             }
             Spacer(modifier = Modifier.height(UiDp.dp16))
         }
@@ -81,11 +79,7 @@ fun WarningBottomSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit = { show.value = false },
 ) {
-    AppActionBottomSheet(
-        show = show.value,
-        title = title,
-        onDismissRequest = onDismiss,
-    ) {
+    AppActionBottomSheet(show = show.value, title = title, onDismissRequest = onDismiss) {
         Column {
             messages.forEachIndexed { index, message ->
                 Text(message)
@@ -98,8 +92,12 @@ fun WarningBottomSheet(
                 onClick = {
                     onConfirm()
                     show.value = false
-                }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColorsPrimary()
-            ) { Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary) }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColorsPrimary(),
+            ) {
+                Text(MLang.Component.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary)
+            }
             Spacer(modifier = Modifier.height(UiDp.dp16))
         }
     }

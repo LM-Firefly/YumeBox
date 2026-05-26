@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.webview
 
 import android.app.Activity
@@ -29,18 +27,11 @@ import androidx.compose.ui.platform.LocalContext
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun WebViewScreen(
-    initialUrl: String,
-    onBack: (() -> Unit)? = null,
-) {
+fun WebViewScreen(initialUrl: String, onBack: (() -> Unit)? = null) {
     val context = LocalContext.current
     val activity = context as? Activity
 
-    BackHandler {
-        onBack?.invoke() ?: activity?.finish()
-    }
+    BackHandler { onBack?.invoke() ?: activity?.finish() }
 
-    MiuixTheme {
-        LocalWebView(initialUrl = initialUrl)
-    }
+    MiuixTheme { LocalWebView(initialUrl = initialUrl) }
 }

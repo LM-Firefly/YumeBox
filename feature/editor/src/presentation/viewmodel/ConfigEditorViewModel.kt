@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.feature.editor.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -32,37 +30,33 @@ class ConfigEditorViewModel : ViewModel() {
     private val _session = MutableStateFlow(EditorSession())
     val session: StateFlow<EditorSession> = _session.asStateFlow()
 
-    fun loadConfig(
-        configId: String,
-        configType: ConfigType,
-        initialContent: String,
-    ) {
-        _session.value = EditorSession(
-            configId = configId,
-            configType = configType,
-            savedContent = initialContent,
-            draftContent = initialContent,
-            isDirty = false,
-            error = null,
-        )
+    fun loadConfig(configId: String, configType: ConfigType, initialContent: String) {
+        _session.value =
+            EditorSession(
+                configId = configId,
+                configType = configType,
+                savedContent = initialContent,
+                draftContent = initialContent,
+                isDirty = false,
+                error = null,
+            )
     }
 
     fun updateDraft(content: String) {
-        _session.value = _session.value.let { session ->
-            session.copy(
-                draftContent = content,
-                isDirty = content != session.savedContent,
-            )
-        }
+        _session.value =
+            _session.value.let { session ->
+                session.copy(draftContent = content, isDirty = content != session.savedContent)
+            }
     }
 
     fun markPersisted(content: String) {
-        _session.value = _session.value.copy(
-            savedContent = content,
-            draftContent = content,
-            isDirty = false,
-            error = null,
-        )
+        _session.value =
+            _session.value.copy(
+                savedContent = content,
+                draftContent = content,
+                isDirty = false,
+                error = null,
+            )
     }
 
     fun setError(message: String?) {
@@ -70,13 +64,10 @@ class ConfigEditorViewModel : ViewModel() {
     }
 
     fun discardDraft() {
-        _session.value = _session.value.let { session ->
-            session.copy(
-                draftContent = session.savedContent,
-                isDirty = false,
-                error = null,
-            )
-        }
+        _session.value =
+            _session.value.let { session ->
+                session.copy(draftContent = session.savedContent, isDirty = false, error = null)
+            }
     }
 
     fun formatContent(content: String): String = content.trimIndent()
@@ -93,5 +84,5 @@ data class EditorSession(
 
 enum class ConfigType {
     Override,
-    Profile
+    Profile,
 }

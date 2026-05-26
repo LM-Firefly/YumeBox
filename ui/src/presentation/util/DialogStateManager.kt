@@ -28,8 +28,8 @@ import androidx.compose.runtime.remember
 /**
  * Type-safe Dialog state management utility.
  *
- * Provides a consistent pattern for managing dialog visibility and payload across the app,
- * reducing boilerplate show/hide/dismiss logic.
+ * Provides a consistent pattern for managing dialog visibility and payload across the app, reducing
+ * boilerplate show/hide/dismiss logic.
  *
  * Usage example:
  * ```kotlin
@@ -73,44 +73,32 @@ class DialogState<T>(
     private val isShownState: MutableState<Boolean> = mutableStateOf(false),
     private val payloadState: MutableState<T?> = mutableStateOf(null),
 ) {
-    /**
-     * Whether the dialog is currently shown.
-     */
+    /** Whether the dialog is currently shown. */
     val isShown: Boolean
         get() = isShownState.value
 
-    /**
-     * The payload associated with this dialog, if any.
-     */
+    /** The payload associated with this dialog, if any. */
     val payload: T?
         get() = payloadState.value
 
-    /**
-     * Shows the dialog without payload.
-     */
+    /** Shows the dialog without payload. */
     fun show() {
         isShownState.value = true
     }
 
-    /**
-     * Shows the dialog with associated payload.
-     */
+    /** Shows the dialog with associated payload. */
     fun show(payload: T) {
         payloadState.value = payload
         isShownState.value = true
     }
 
-    /**
-     * Dismisses the dialog and clears payload.
-     */
+    /** Dismisses the dialog and clears payload. */
     fun dismiss() {
         isShownState.value = false
         payloadState.value = null
     }
 
-    /**
-     * Updates the dialog payload without changing visibility.
-     */
+    /** Updates the dialog payload without changing visibility. */
     fun updatePayload(payload: T?) {
         payloadState.value = payload
     }
@@ -166,9 +154,14 @@ class ConfirmDialogState<T>(
     private val payloadState: MutableState<T?> = mutableStateOf(null),
     private val messageState: MutableState<String> = mutableStateOf(""),
 ) {
-    val isShown: Boolean get() = isShownState.value
-    val payload: T? get() = payloadState.value
-    val message: String get() = messageState.value
+    val isShown: Boolean
+        get() = isShownState.value
+
+    val payload: T?
+        get() = payloadState.value
+
+    val message: String
+        get() = messageState.value
 
     fun show(payload: T, message: String) {
         payloadState.value = payload
@@ -183,9 +176,7 @@ class ConfirmDialogState<T>(
     }
 }
 
-/**
- * Creates and remembers a [ConfirmDialogState] for confirm dialogs.
- */
+/** Creates and remembers a [ConfirmDialogState] for confirm dialogs. */
 @Composable
 fun <T> rememberConfirmDialogState(): ConfirmDialogState<T> {
     return remember { ConfirmDialogState() }

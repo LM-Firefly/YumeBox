@@ -18,12 +18,8 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.substore.util
 
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -31,31 +27,32 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 
 object ArchiveUtil {
 
-    fun unzipZip(
-        zipFile: File,
-        destination: File
-    ): Boolean {
+    fun unzipZip(zipFile: File, destination: File): Boolean {
         if (!zipFile.exists() || !zipFile.isFile) return false
 
         return runCatching {
-            prepareDestination(destination)
+                prepareDestination(destination)
 
-            ZipInputStream(FileInputStream(zipFile)).use { zis ->
-                generateSequence { zis.nextEntry }.forEach { entry ->
-                    val outFile = resolveEntryTarget(destination, entry.name)
+                ZipInputStream(FileInputStream(zipFile)).use { zis ->
+                    generateSequence { zis.nextEntry }
+                        .forEach { entry ->
+                            val outFile = resolveEntryTarget(destination, entry.name)
 
-                    if (entry.isDirectory) {
-                        ensureDirectory(outFile)
-                    } else {
-                        writeEntry(zis, outFile)
-                    }
+                            if (entry.isDirectory) {
+                                ensureDirectory(outFile)
+                            } else {
+                                writeEntry(zis, outFile)
+                            }
+                        }
                 }
+                true
             }
-            true
-        }.getOrDefault(false)
+            .getOrDefault(false)
     }
 
     private fun addToZip(
@@ -74,9 +71,7 @@ object ArchiveUtil {
                 entry.time = file.lastModified()
                 zos.putNextEntry(entry)
 
-                FileInputStream(file).use { fis ->
-                    fis.copyTo(zos)
-                }
+                FileInputStream(file).use { fis -> fis.copyTo(zos) }
 
                 zos.closeEntry()
                 onProgress?.invoke(path, file.length())
@@ -84,69 +79,67 @@ object ArchiveUtil {
         }
     }
 
-    fun untar(
-        tarFile: File,
-        destination: File
-    ): Boolean {
+    fun untar(tarFile: File, destination: File): Boolean {
         if (!tarFile.exists() || !tarFile.isFile) return false
 
         return runCatching {
-            prepareDestination(destination)
+                prepareDestination(destination)
 
-            TarArchiveInputStream(FileInputStream(tarFile)).use { tis ->
-                var entry = tis.nextEntry
-                while (entry != null) {
-                    val outFile = resolveEntryTarget(destination, entry.name)
+                TarArchiveInputStream(FileInputStream(tarFile)).use { tis ->
+                    var entry = tis.nextEntry
+                    while (entry != null) {
+                        val outFile = resolveEntryTarget(destination, entry.name)
 
-                    if (entry.isDirectory) {
-                        ensureDirectory(outFile)
-                    } else {
-                        writeEntry(tis, outFile)
+                        if (entry.isDirectory) {
+                            ensureDirectory(outFile)
+                        } else {
+                            writeEntry(tis, outFile)
+                        }
+
+                        entry = tis.nextEntry
                     }
-
-                    entry = tis.nextEntry
                 }
+                true
             }
-            true
-        }.getOrDefault(false)
+            .getOrDefault(false)
     }
 
-    fun untarGz(
-        tarGzFile: File,
-        destination: File
-    ): Boolean {
+    fun untarGz(tarGzFile: File, destination: File): Boolean {
         if (!tarGzFile.exists() || !tarGzFile.isFile) return false
 
         return runCatching {
-            prepareDestination(destination)
+                prepareDestination(destination)
 
-            FileInputStream(tarGzFile).use { fis ->
-                GzipCompressorInputStream(fis).use { gzip ->
-                    TarArchiveInputStream(gzip).use { tis ->
-                        var entry = tis.nextEntry
-                        while (entry != null) {
-                            val outFile = resolveEntryTarget(destination, entry.name)
+                FileInputStream(tarGzFile).use { fis ->
+                    GzipCompressorInputStream(fis).use { gzip ->
+                        TarArchiveInputStream(gzip).use { tis ->
+                            var entry = tis.nextEntry
+                            while (entry != null) {
+                                val outFile = resolveEntryTarget(destination, entry.name)
 
-                            if (entry.isDirectory) {
-                                ensureDirectory(outFile)
-                            } else {
-                                writeEntry(tis, outFile)
+                                if (entry.isDirectory) {
+                                    ensureDirectory(outFile)
+                                } else {
+                                    writeEntry(tis, outFile)
+                                }
+
+                                entry = tis.nextEntry
                             }
-
-                            entry = tis.nextEntry
                         }
                     }
                 }
+                true
             }
-            true
-        }.getOrDefault(false)
+            .getOrDefault(false)
     }
 
     private fun prepareDestination(destination: File) {
         if (!destination.exists()) {
-            if (!destination.mkdirs()) throw IllegalStateException("无法创建目录: ${destination.absolutePath}")
+            if (!destination.mkdirs())
+                throw IllegalStateException("无法创建目录: ${destination.absolutePath}")
         }
-        if (!destination.isDirectory) throw IllegalStateException("目标不是目录: ${destination.absolutePath}")
+        if (!destination.isDirectory)
+            throw IllegalStateException("目标不是目录: ${destination.absolutePath}")
     }
 
     private fun resolveEntryTarget(destination: File, entryName: String): File {
@@ -174,7 +167,8 @@ object ArchiveUtil {
 
     private fun ensureDirectory(directory: File) {
         if (directory.exists()) {
-            if (!directory.isDirectory) throw IllegalStateException("路径已存在但不是目录: ${directory.absolutePath}")
+            if (!directory.isDirectory)
+                throw IllegalStateException("路径已存在但不是目录: ${directory.absolutePath}")
         } else if (!directory.mkdirs()) {
             throw IllegalStateException("无法创建目录: ${directory.absolutePath}")
         }
@@ -182,8 +176,6 @@ object ArchiveUtil {
 
     private fun writeEntry(input: InputStream, targetFile: File) {
         targetFile.parentFile?.let { ensureDirectory(it) }
-        FileOutputStream(targetFile).use { output ->
-            input.copyTo(output)
-        }
+        FileOutputStream(targetFile).use { output -> input.copyTo(output) }
     }
 }

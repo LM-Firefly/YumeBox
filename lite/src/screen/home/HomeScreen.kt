@@ -60,8 +60,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.util.formatBytesPerSecond
-import com.github.yumelira.yumebox.util.showToast
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -75,6 +73,8 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.presentation.icon.yume.Play
 import com.github.yumelira.yumebox.presentation.icon.yume.Tun
+import com.github.yumelira.yumebox.util.formatBytesPerSecond
+import com.github.yumelira.yumebox.util.showToast
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
@@ -120,78 +120,65 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val selectedServerName by viewModel.selectedServerName.collectAsState()
     val trafficData by viewModel.trafficData.collectAsState()
 
-    val vpnPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        viewModel.onVpnPermissionResult(result.resultCode == Activity.RESULT_OK)
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.messages.collect { context.showToast(it) }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.vpnPrepareIntent.collect { intent ->
-            vpnPermissionLauncher.launch(intent)
+    val vpnPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            viewModel.onVpnPermissionResult(result.resultCode == Activity.RESULT_OK)
         }
+
+    LaunchedEffect(Unit) { viewModel.messages.collect { context.showToast(it) } }
+
+    LaunchedEffect(Unit) {
+        viewModel.vpnPrepareIntent.collect { intent -> vpnPermissionLauncher.launch(intent) }
     }
 
     DisposableEffect(viewModel) {
         viewModel.setActive(true)
-        onDispose {
-            viewModel.setActive(false)
-        }
+        onDispose { viewModel.setActive(false) }
     }
 
-    val trafficText = when (controlState) {
-        HomeControlState.Running -> {
-            "下行 ${formatBytesPerSecond(trafficData.download)} · 上行 ${formatBytesPerSecond(trafficData.upload)}"
-        }
+    val trafficText =
+        when (controlState) {
+            HomeControlState.Running -> {
+                "下行 ${formatBytesPerSecond(trafficData.download)} · 上行 ${formatBytesPerSecond(trafficData.upload)}"
+            }
 
-        HomeControlState.Connecting -> "正在建立 VPN 通道"
-        HomeControlState.Disconnecting -> "正在断开 VPN 通道"
-        HomeControlState.Idle -> "点击启动 VPN"
-    }
+            HomeControlState.Connecting -> "正在建立 VPN 通道"
+            HomeControlState.Disconnecting -> "正在断开 VPN 通道"
+            HomeControlState.Idle -> "点击启动 VPN"
+        }
     var lastProxyName by remember { mutableStateOf<String?>(selectedServerName) }
     LaunchedEffect(controlState, selectedServerName) {
-        if (
-            controlState == HomeControlState.Running &&
-            !selectedServerName.isNullOrBlank()
-        ) {
+        if (controlState == HomeControlState.Running && !selectedServerName.isNullOrBlank()) {
             lastProxyName = selectedServerName
         }
     }
 
-    val proxySummary = when {
-        !selectedServerName.isNullOrBlank() -> selectedServerName!!
-        controlState == HomeControlState.Connecting -> "连接中"
-        controlState == HomeControlState.Disconnecting -> lastProxyName ?: "断开中"
-        else -> lastProxyName ?: "未连接"
-    }
+    val proxySummary =
+        when {
+            !selectedServerName.isNullOrBlank() -> selectedServerName!!
+            controlState == HomeControlState.Connecting -> "连接中"
+            controlState == HomeControlState.Disconnecting -> lastProxyName ?: "断开中"
+            else -> lastProxyName ?: "未连接"
+        }
     val showProxyCard = controlState != HomeControlState.Idle
 
-    Scaffold(
-        topBar = {
-            TopBar(
-                title = "YumeBox Lite",
-                scrollBehavior = scrollBehavior,
-            )
-        },
-    ) { innerPadding ->
+    Scaffold(topBar = { TopBar(title = "YumeBox Lite", scrollBehavior = scrollBehavior) }) {
+        innerPadding ->
         val pagePadding = combinePaddingValues(innerPadding, rememberStandalonePageMainPadding())
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
             innerPadding = pagePadding,
-            contentPadding = PaddingValues(
-                start = 24.dp,
-                end = 24.dp,
-                top = pagePadding.calculateTopPadding(),
-                bottom = pagePadding.calculateBottomPadding(),
-            ),
+            contentPadding =
+                PaddingValues(
+                    start = 24.dp,
+                    end = 24.dp,
+                    top = pagePadding.calculateTopPadding(),
+                    bottom = pagePadding.calculateBottomPadding(),
+                ),
         ) {
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            item { Spacer(modifier = Modifier.height(24.dp)) }
 
             item {
                 Column {
@@ -209,16 +196,18 @@ fun HomeScreen(navigator: DestinationsNavigator) {
                     Spacer(modifier = Modifier.height(HomeCardTokens.topCardGroupGap))
                     AnimatedVisibility(
                         visible = showProxyCard,
-                        enter = fadeIn(animationSpec = tween(220)) +
-                            expandVertically(animationSpec = tween(220)) +
-                            slideInVertically(
-                                initialOffsetY = { -it / 4 },
-                                animationSpec = tween(220),
-                            ),
-                        exit = shrinkVertically(
-                            shrinkTowards = Alignment.Top,
-                            animationSpec = tween(180),
-                        ) + fadeOut(animationSpec = tween(120)),
+                        enter =
+                            fadeIn(animationSpec = tween(220)) +
+                                expandVertically(animationSpec = tween(220)) +
+                                slideInVertically(
+                                    initialOffsetY = { -it / 4 },
+                                    animationSpec = tween(220),
+                                ),
+                        exit =
+                            shrinkVertically(
+                                shrinkTowards = Alignment.Top,
+                                animationSpec = tween(180),
+                            ) + fadeOut(animationSpec = tween(120)),
                     ) {
                         Column {
                             TopEntryCard(
@@ -263,30 +252,26 @@ fun HomeScreen(navigator: DestinationsNavigator) {
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
 }
 
 @Composable
-private fun StatusCard(
-    controlState: HomeControlState,
-    trafficText: String,
-    onToggle: () -> Unit,
-) {
+private fun StatusCard(controlState: HomeControlState, trafficText: String, onToggle: () -> Unit) {
     val isRunning = controlState == HomeControlState.Running
-    val background = if (isRunning) {
-        MiuixTheme.colorScheme.primary
-    } else {
-        MiuixTheme.colorScheme.onBackground
-    }
-    val contentColor = if (isRunning) {
-        MiuixTheme.colorScheme.onPrimary
-    } else {
-        MiuixTheme.colorScheme.background
-    }
+    val background =
+        if (isRunning) {
+            MiuixTheme.colorScheme.primary
+        } else {
+            MiuixTheme.colorScheme.onBackground
+        }
+    val contentColor =
+        if (isRunning) {
+            MiuixTheme.colorScheme.onPrimary
+        } else {
+            MiuixTheme.colorScheme.background
+        }
     val secondaryColor = contentColor.copy(alpha = 0.78f)
 
     Card(
@@ -297,18 +282,18 @@ private fun StatusCard(
     ) {
         val interactionSource = remember { MutableInteractionSource() }
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 72.dp)
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onToggle,
-                )
-                .padding(
-                    horizontal = HomeCardTokens.topCardHorizontal,
-                    vertical = HomeCardTokens.statusCardVertical,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .defaultMinSize(minHeight = 72.dp)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onToggle,
+                    )
+                    .padding(
+                        horizontal = HomeCardTokens.topCardHorizontal,
+                        vertical = HomeCardTokens.statusCardVertical,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HomeCardTokens.topCardGap),
         ) {
@@ -357,16 +342,18 @@ private fun TopEntryCard(
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val titleColor = if (enabled) {
-        MiuixTheme.colorScheme.onBackground
-    } else {
-        MiuixTheme.colorScheme.disabledOnSecondaryVariant
-    }
-    val endColor = if (enabled) {
-        MiuixTheme.colorScheme.onSurfaceVariantSummary
-    } else {
-        MiuixTheme.colorScheme.disabledOnSecondaryVariant
-    }
+    val titleColor =
+        if (enabled) {
+            MiuixTheme.colorScheme.onBackground
+        } else {
+            MiuixTheme.colorScheme.disabledOnSecondaryVariant
+        }
+    val endColor =
+        if (enabled) {
+            MiuixTheme.colorScheme.onSurfaceVariantSummary
+        } else {
+            MiuixTheme.colorScheme.disabledOnSecondaryVariant
+        }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -374,19 +361,19 @@ private fun TopEntryCard(
         cornerRadius = HomeCardTokens.topCardCorner,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 55.dp)
-                .clickable(
-                    enabled = enabled,
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick,
-                )
-                .padding(
-                    horizontal = HomeCardTokens.topCardHorizontal,
-                    vertical = HomeCardTokens.topEntryCardVertical,
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .defaultMinSize(minHeight = 55.dp)
+                    .clickable(
+                        enabled = enabled,
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = onClick,
+                    )
+                    .padding(
+                        horizontal = HomeCardTokens.topCardHorizontal,
+                        vertical = HomeCardTokens.topEntryCardVertical,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(HomeCardTokens.topCardGap),
         ) {
@@ -429,7 +416,7 @@ private fun ArrowCard(
         modifier = Modifier.fillMaxWidth(),
         applyHorizontalPadding = false,
         colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.surface),
-        ) {
+    ) {
         ArrowPreference(
             title = title,
             titleColor = BasicComponentDefaults.titleColor(),
@@ -441,11 +428,12 @@ private fun ArrowCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = if (enabled) {
-                            MiuixTheme.colorScheme.onBackground
-                        } else {
-                            MiuixTheme.colorScheme.disabledOnSecondaryVariant
-                        },
+                        tint =
+                            if (enabled) {
+                                MiuixTheme.colorScheme.onBackground
+                            } else {
+                                MiuixTheme.colorScheme.disabledOnSecondaryVariant
+                            },
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -455,11 +443,12 @@ private fun ArrowCard(
                     Text(
                         text = endText,
                         modifier = Modifier.widthIn(max = 140.dp),
-                        color = if (enabled) {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        } else {
-                            MiuixTheme.colorScheme.disabledOnSecondaryVariant
-                        },
+                        color =
+                            if (enabled) {
+                                MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            } else {
+                                MiuixTheme.colorScheme.disabledOnSecondaryVariant
+                            },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

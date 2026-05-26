@@ -28,8 +28,8 @@ import kotlinx.coroutines.flow.update
 /**
  * Base ViewModel providing common state management patterns.
  *
- * This class encapsulates the standard MutableStateFlow → StateFlow pattern used across
- * the application, reducing boilerplate code in ViewModels.
+ * This class encapsulates the standard MutableStateFlow → StateFlow pattern used across the
+ * application, reducing boilerplate code in ViewModels.
  *
  * @param State The UI state data class managed by this ViewModel
  * @param initialState The initial state value
@@ -72,9 +72,7 @@ abstract class BaseViewModel<State>(initialState: State) {
         _uiState.update(transform)
     }
 
-    /**
-     * Gets the current state value synchronously.
-     */
+    /** Gets the current state value synchronously. */
     protected val currentState: State
         get() = _uiState.value
 }
@@ -82,8 +80,8 @@ abstract class BaseViewModel<State>(initialState: State) {
 /**
  * Base ViewModel with built-in loading, error, and message state management.
  *
- * Use this when your state contains common UI patterns like loading indicators,
- * error messages, and transient user messages.
+ * Use this when your state contains common UI patterns like loading indicators, error messages, and
+ * transient user messages.
  *
  * Requirements: Your state class must implement [LoadableState] interface.
  *
@@ -117,37 +115,27 @@ abstract class BaseViewModel<State>(initialState: State) {
 abstract class BaseLoadableViewModel<State : LoadableState<State>>(initialState: State) :
     BaseViewModel<State>(initialState) {
 
-    /**
-     * Sets the loading state.
-     */
+    /** Sets the loading state. */
     protected fun setLoading(loading: Boolean) {
         updateState { it.withLoading(loading) }
     }
 
-    /**
-     * Shows an error message and clears loading state.
-     */
+    /** Shows an error message and clears loading state. */
     protected fun showError(error: String) {
         updateState { it.withError(error).withLoading(false) }
     }
 
-    /**
-     * Shows a transient message to the user.
-     */
+    /** Shows a transient message to the user. */
     protected fun showMessage(message: String) {
         updateState { it.withMessage(message) }
     }
 
-    /**
-     * Clears the error message.
-     */
+    /** Clears the error message. */
     protected fun clearError() {
         updateState { it.withError(null) }
     }
 
-    /**
-     * Clears the transient message (typically after displaying it).
-     */
+    /** Clears the transient message (typically after displaying it). */
     protected fun clearMessage() {
         updateState { it.withMessage(null) }
     }
@@ -163,18 +151,12 @@ interface LoadableState<T : LoadableState<T>> {
     val error: String?
     val message: String?
 
-    /**
-     * Creates a copy of this state with updated loading status.
-     */
+    /** Creates a copy of this state with updated loading status. */
     fun withLoading(loading: Boolean): T
 
-    /**
-     * Creates a copy of this state with updated error message.
-     */
+    /** Creates a copy of this state with updated error message. */
     fun withError(error: String?): T
 
-    /**
-     * Creates a copy of this state with updated transient message.
-     */
+    /** Creates a copy of this state with updated transient message. */
     fun withMessage(message: String?): T
 }

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.session
 
 import com.github.yumelira.yumebox.core.Clash
@@ -34,14 +32,14 @@ import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
 import com.github.yumelira.yumebox.service.runtime.util.mergeProxyGroupNames
-import kotlinx.coroutines.*
-import kotlinx.serialization.builtins.serializer
-import timber.log.Timber
 import java.io.File
+import java.security.MessageDigest
 import java.util.TimeZone
 import java.util.UUID
 import kotlin.math.min
-import java.security.MessageDigest
+import kotlinx.coroutines.*
+import kotlinx.serialization.builtins.serializer
+import timber.log.Timber
 
 class SessionRuntime(
     private val host: RuntimeHost,
@@ -50,36 +48,37 @@ class SessionRuntime(
 ) {
     private val compiledConfigPipeline = CompiledConfigPipeline(host.context.appContextOrSelf)
     private val lock = Any()
-    @Volatile
-    private var interruptReason: String? = null
+    @Volatile private var interruptReason: String? = null
     private var currentSpec: RuntimeSpec? = null
     private var currentSnapshot: RuntimeSnapshot = RuntimeSnapshot(targetMode = host.mode)
     private var networkObserver: ServiceNetworkObserver? = null
     private val queryCache = SessionRuntimeQueryCache()
-    private val telemetry = SessionRuntimeTelemetry(
-        host = host,
-        scope = scope,
-    ) { ready ->
-        publishSnapshot(currentSnapshot.copy(logReady = ready))
-    }
+    private val telemetry =
+        SessionRuntimeTelemetry(host = host, scope = scope) { ready ->
+            publishSnapshot(currentSnapshot.copy(logReady = ready))
+        }
 
     fun start(spec: RuntimeSpec): RuntimeOperationResult {
         return synchronized(lock) {
             clearInterruptRequest()
             runCatching {
-                stopInternal(reason = null, notifyHost = false)
-                startupLog(spec, "session: start begin")
-                startInternal(spec)
-                RuntimeOperationResult(success = true)
-            }.getOrElse { error ->
-                if (error is RuntimeInterruptedException) {
-                    startupLog(spec, "session: start interrupted reason=${error.message}")
+                    stopInternal(reason = null, notifyHost = false)
+                    startupLog(spec, "session: start begin")
+                    startInternal(spec)
                     RuntimeOperationResult(success = true)
-                } else {
-                    rollback(spec, error.message ?: "start runtime failed")
-                    RuntimeOperationResult(success = false, error = error.message ?: "start runtime failed")
                 }
-            }
+                .getOrElse { error ->
+                    if (error is RuntimeInterruptedException) {
+                        startupLog(spec, "session: start interrupted reason=${error.message}")
+                        RuntimeOperationResult(success = true)
+                    } else {
+                        rollback(spec, error.message ?: "start runtime failed")
+                        RuntimeOperationResult(
+                            success = false,
+                            error = error.message ?: "start runtime failed",
+                        )
+                    }
+                }
         }
     }
 
@@ -87,18 +86,22 @@ class SessionRuntime(
         return synchronized(lock) {
             clearInterruptRequest()
             runCatching {
-                startupLog(spec, "session: reload begin")
-                reloadInternal(spec)
-                RuntimeOperationResult(success = true)
-            }.getOrElse { error ->
-                if (error is RuntimeInterruptedException) {
-                    startupLog(spec, "session: reload interrupted reason=${error.message}")
+                    startupLog(spec, "session: reload begin")
+                    reloadInternal(spec)
                     RuntimeOperationResult(success = true)
-                } else {
-                    startupLog(spec, "failed=${error.message ?: "reload runtime failed"}")
-                    RuntimeOperationResult(success = false, error = error.message ?: "reload runtime failed")
                 }
-            }
+                .getOrElse { error ->
+                    if (error is RuntimeInterruptedException) {
+                        startupLog(spec, "session: reload interrupted reason=${error.message}")
+                        RuntimeOperationResult(success = true)
+                    } else {
+                        startupLog(spec, "failed=${error.message ?: "reload runtime failed"}")
+                        RuntimeOperationResult(
+                            success = false,
+                            error = error.message ?: "reload runtime failed",
+                        )
+                    }
+                }
         }
     }
 
@@ -106,19 +109,23 @@ class SessionRuntime(
         return synchronized(lock) {
             clearInterruptRequest()
             runCatching {
-                stopInternal(reason = null, notifyHost = false)
-                startupLog(spec, "session: restart begin")
-                startInternal(spec)
-                RuntimeOperationResult(success = true)
-            }.getOrElse { error ->
-                if (error is RuntimeInterruptedException) {
-                    startupLog(spec, "session: restart interrupted reason=${error.message}")
+                    stopInternal(reason = null, notifyHost = false)
+                    startupLog(spec, "session: restart begin")
+                    startInternal(spec)
                     RuntimeOperationResult(success = true)
-                } else {
-                    rollback(spec, error.message ?: "restart runtime failed")
-                    RuntimeOperationResult(success = false, error = error.message ?: "restart runtime failed")
                 }
-            }
+                .getOrElse { error ->
+                    if (error is RuntimeInterruptedException) {
+                        startupLog(spec, "session: restart interrupted reason=${error.message}")
+                        RuntimeOperationResult(success = true)
+                    } else {
+                        rollback(spec, error.message ?: "restart runtime failed")
+                        RuntimeOperationResult(
+                            success = false,
+                            error = error.message ?: "restart runtime failed",
+                        )
+                    }
+                }
         }
     }
 
@@ -126,11 +133,15 @@ class SessionRuntime(
         requestStop(reason)
         return synchronized(lock) {
             runCatching {
-                stopInternal(reason = reason, notifyHost = true)
-                RuntimeOperationResult(success = true)
-            }.getOrElse { error ->
-                RuntimeOperationResult(success = false, error = error.message ?: "stop runtime failed")
-            }
+                    stopInternal(reason = reason, notifyHost = true)
+                    RuntimeOperationResult(success = true)
+                }
+                .getOrElse { error ->
+                    RuntimeOperationResult(
+                        success = false,
+                        error = error.message ?: "stop runtime failed",
+                    )
+                }
         }
     }
 
@@ -149,7 +160,8 @@ class SessionRuntime(
     fun snapshot(): RuntimeSnapshot = currentSnapshot
 
     fun queryTunnelState(): TunnelState {
-        return if (currentSnapshot.phase == RuntimePhase.Running) Clash.queryTunnelState() else TunnelState(TunnelState.Mode.Rule)
+        return if (currentSnapshot.phase == RuntimePhase.Running) Clash.queryTunnelState()
+        else TunnelState(TunnelState.Mode.Rule)
     }
 
     fun queryTrafficNow(): Long {
@@ -181,16 +193,19 @@ class SessionRuntime(
 
     fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         if (currentSnapshot.phase != RuntimePhase.Running) return emptyList()
-        val groups = runCatching {
-            resolveRuntimeProxyGroupNames(excludeNotSelectable).mapNotNull(::queryRuntimeProxyGroupOrNull)
-        }.getOrElse {
-            if (excludeNotSelectable) {
-                val selectable = Clash.queryGroupNames(true).toSet()
-                ensureRuntimeSnapshot().proxyGroups.filter { selectable.contains(it.name) }
-            } else {
-                ensureRuntimeSnapshot().proxyGroups
-            }
-        }
+        val groups =
+            runCatching {
+                    resolveRuntimeProxyGroupNames(excludeNotSelectable)
+                        .mapNotNull(::queryRuntimeProxyGroupOrNull)
+                }
+                .getOrElse {
+                    if (excludeNotSelectable) {
+                        val selectable = Clash.queryGroupNames(true).toSet()
+                        ensureRuntimeSnapshot().proxyGroups.filter { selectable.contains(it.name) }
+                    } else {
+                        ensureRuntimeSnapshot().proxyGroups
+                    }
+                }
         queryCache.replaceProxyGroups(groups)
         publishSnapshot(currentSnapshot.copy(groupsReady = groups.isNotEmpty()))
         return groups
@@ -231,7 +246,10 @@ class SessionRuntime(
                 return@also
             }
 
-            if (currentSnapshot.phase == RuntimePhase.Running || currentSnapshot.phase == RuntimePhase.Starting) {
+            if (
+                currentSnapshot.phase == RuntimePhase.Running ||
+                    currentSnapshot.phase == RuntimePhase.Starting
+            ) {
                 val refreshedGroup = refreshRuntimeProxyGroup(group)
                 if (refreshedGroup?.type == Proxy.Type.Selector) {
                     profileUuid?.let { SelectionDao.upsertManualSelection(it, group, name) }
@@ -253,12 +271,18 @@ class SessionRuntime(
     }
 
     suspend fun healthCheck(group: String): String? {
-        Timber.d("SessionRuntime healthCheck: group=%s phase=%s owner=%s", group, currentSnapshot.phase, currentSnapshot.owner)
+        Timber.d(
+            "SessionRuntime healthCheck: group=%s phase=%s owner=%s",
+            group,
+            currentSnapshot.phase,
+            currentSnapshot.owner,
+        )
         return runCatching {
-            Clash.healthCheck(group).await()
-            refreshRuntimeProxyGroup(group)
-            null
-        }.getOrElse { it.message ?: "health check failed" }
+                Clash.healthCheck(group).await()
+                refreshRuntimeProxyGroup(group)
+                null
+            }
+            .getOrElse { it.message ?: "health check failed" }
     }
 
     suspend fun healthCheckProxy(group: String, proxyName: String): String {
@@ -270,23 +294,25 @@ class SessionRuntime(
             currentSnapshot.owner,
         )
         return runCatching {
-            Clash.healthCheckProxy(proxyName).await().also {
-                refreshRuntimeProxyGroup(group)
+                Clash.healthCheckProxy(proxyName).await().also { refreshRuntimeProxyGroup(group) }
             }
-        }.getOrElse {
-            """{"delay":-1,"error":${com.github.yumelira.yumebox.service.root.RootTunJson.Default.encodeToString(String.serializer(), it.message ?: "health check proxy failed")}}"""
-        }
+            .getOrElse {
+                """{"delay":-1,"error":${com.github.yumelira.yumebox.service.root.RootTunJson.Default.encodeToString(String.serializer(), it.message ?: "health check proxy failed")}}"""
+            }
     }
 
     suspend fun updateProvider(type: String, name: String): String? {
-        val providerType = runCatching { Provider.Type.valueOf(type) }.getOrElse {
-            return "invalid provider type: $type"
-        }
+        val providerType =
+            runCatching { Provider.Type.valueOf(type) }
+                .getOrElse {
+                    return "invalid provider type: $type"
+                }
         return runCatching {
-            Clash.updateProvider(providerType, name).await()
-            refreshRuntimeSnapshot()
-            null
-        }.getOrElse { it.message ?: "update provider failed" }
+                Clash.updateProvider(providerType, name).await()
+                refreshRuntimeSnapshot()
+                null
+            }
+            .getOrElse { it.message ?: "update provider failed" }
     }
 
     fun setLogObserver(observer: ((LogMessage) -> Unit)?) {
@@ -310,7 +336,7 @@ class SessionRuntime(
                 profileReady = true,
                 startedAt = startedAt,
                 effectiveFingerprint = spec.effectiveFingerprint,
-            ),
+            )
         )
         host.onStarting(spec)
         ensureNotInterrupted(spec)
@@ -344,7 +370,7 @@ class SessionRuntime(
                 logReady = telemetry.isLogStreaming(),
                 startedAt = startedAt,
                 effectiveFingerprint = spec.effectiveFingerprint,
-            ),
+            )
         )
         host.onProfileLoaded(spec.profileUuid)
         host.onStarted(spec)
@@ -361,7 +387,7 @@ class SessionRuntime(
                 effectiveFingerprint = spec.effectiveFingerprint,
                 groupsReady = false,
                 trafficReady = false,
-            ),
+            )
         )
 
         compileAndLoad(spec)
@@ -383,7 +409,7 @@ class SessionRuntime(
                 logReady = telemetry.isLogStreaming(),
                 effectiveFingerprint = spec.effectiveFingerprint,
                 lastError = null,
-            ),
+            )
         )
         host.onProfileLoaded(spec.profileUuid)
         startupLog(spec, "reload done")
@@ -397,14 +423,16 @@ class SessionRuntime(
 
         publishSnapshot(
             currentSnapshot.copy(
-                phase = if (currentSnapshot.phase == RuntimePhase.Idle) RuntimePhase.Idle else RuntimePhase.Stopping,
+                phase =
+                    if (currentSnapshot.phase == RuntimePhase.Idle) RuntimePhase.Idle
+                    else RuntimePhase.Stopping,
                 transportReady = false,
                 groupsReady = false,
                 trafficReady = false,
                 configReady = false,
                 logReady = false,
                 lastError = reason,
-            ),
+            )
         )
         stopLogStream()
         stopConnectionTracking()
@@ -419,7 +447,7 @@ class SessionRuntime(
                 phase = if (reason.isNullOrBlank()) RuntimePhase.Idle else RuntimePhase.Failed,
                 targetMode = host.mode,
                 lastError = reason,
-            ),
+            )
         )
         if (notifyHost) {
             host.onStopped(reason)
@@ -444,7 +472,7 @@ class SessionRuntime(
                 profileReady = false,
                 lastError = reason,
                 effectiveFingerprint = spec.effectiveFingerprint,
-            ),
+            )
         )
         startupLog(spec, "failed=$reason")
         host.reportFailure(reason)
@@ -472,9 +500,7 @@ class SessionRuntime(
         startupLog(
             spec,
             "runtime verify: expectedGroups=${expectedGroups.size}" +
-                expectedGroups.takeIf { it.isNotEmpty() }
-                    ?.let { " sample=${it.take(5)}" }
-                    .orEmpty(),
+                expectedGroups.takeIf { it.isNotEmpty() }?.let { " sample=${it.take(5)}" }.orEmpty(),
         )
         if (expectedGroups.isEmpty()) {
             return
@@ -484,7 +510,10 @@ class SessionRuntime(
             ensureNotInterrupted(spec)
             val names = runCatching { Clash.queryGroupNames(false) }.getOrDefault(emptyList())
             if (names.isNotEmpty()) {
-                startupLog(spec, "runtime verify: actualGroups=${names.size} sample=${names.take(5)}")
+                startupLog(
+                    spec,
+                    "runtime verify: actualGroups=${names.size} sample=${names.take(5)}",
+                )
                 return
             }
             if (attempt < PROXY_GROUP_READY_RETRY_COUNT - 1) {
@@ -495,7 +524,7 @@ class SessionRuntime(
                             name = "runtime_group_ready_retry",
                             intervalMillis = PROXY_GROUP_READY_RETRY_DELAY_MS,
                             initialDelayMillis = PROXY_GROUP_READY_RETRY_DELAY_MS,
-                        ),
+                        )
                     )
                 }
             }
@@ -504,14 +533,17 @@ class SessionRuntime(
         ensureNotInterrupted(spec)
         error(
             "runtime loaded but exposed 0 proxy groups; expected=${expectedGroups.size} " +
-                "sample=${expectedGroups.take(min(5, expectedGroups.size))}",
+                "sample=${expectedGroups.take(min(5, expectedGroups.size))}"
         )
     }
 
     private fun readExpectedGroupNames(spec: RuntimeSpec): List<String> {
         val runtimeFile = File(spec.runtimeConfigPath)
         if (!runtimeFile.exists()) {
-            startupLog(spec, "runtime verify: runtime.yaml missing path=${runtimeFile.absolutePath}")
+            startupLog(
+                spec,
+                "runtime verify: runtime.yaml missing path=${runtimeFile.absolutePath}",
+            )
             return emptyList()
         }
         val yamlText = runtimeFile.readText()
@@ -520,13 +552,18 @@ class SessionRuntime(
             return emptyList()
         }
         return runCatching {
-            Clash.inspectCompiledGroups(yamlText, File(spec.profileDir), excludeNotSelectable = false)
-                .map { it.name }
-                .filter { it.isNotBlank() }
-        }.getOrElse { error ->
-            startupLog(spec, "runtime verify: inspect failed=${error.message}")
-            emptyList()
-        }
+                Clash.inspectCompiledGroups(
+                        yamlText,
+                        File(spec.profileDir),
+                        excludeNotSelectable = false,
+                    )
+                    .map { it.name }
+                    .filter { it.isNotBlank() }
+            }
+            .getOrElse { error ->
+                startupLog(spec, "runtime verify: inspect failed=${error.message}")
+                emptyList()
+            }
     }
 
     private fun restoreSelections(spec: RuntimeSpec) {
@@ -535,9 +572,12 @@ class SessionRuntime(
         if (restoreSelections.isEmpty()) {
             return
         }
-        val runtimeGroups = runCatching {
-            resolveRuntimeProxyGroupNames(excludeNotSelectable = false).mapNotNull(::queryRuntimeProxyGroupOrNull)
-        }.getOrDefault(emptyList())
+        val runtimeGroups =
+            runCatching {
+                    resolveRuntimeProxyGroupNames(excludeNotSelectable = false)
+                        .mapNotNull(::queryRuntimeProxyGroupOrNull)
+                }
+                .getOrDefault(emptyList())
         SelectionRestoreExecutor.restore(
             profileUuid = profileUuid,
             selections = restoreSelections,
@@ -548,9 +588,11 @@ class SessionRuntime(
 
     private fun startObservers() {
         if (networkObserver == null) {
-            networkObserver = ServiceNetworkObserver(host.context.appContextOrSelf) {
-                transport.onNetworkChanged()
-            }.also { it.start() }
+            networkObserver =
+                ServiceNetworkObserver(host.context.appContextOrSelf) {
+                        transport.onNetworkChanged()
+                    }
+                    .also { it.start() }
         }
     }
 
@@ -572,16 +614,23 @@ class SessionRuntime(
     }
 
     private fun refreshRuntimeSnapshot() {
-        if (currentSnapshot.phase != RuntimePhase.Running && currentSnapshot.phase != RuntimePhase.Starting) {
+        if (
+            currentSnapshot.phase != RuntimePhase.Running &&
+                currentSnapshot.phase != RuntimePhase.Starting
+        ) {
             queryCache.clear()
             return
         }
 
-        val configuration = runCatching { Clash.queryConfiguration() }.getOrDefault(UiConfiguration())
+        val configuration =
+            runCatching { Clash.queryConfiguration() }.getOrDefault(UiConfiguration())
         val providers = runCatching { Clash.queryProviders() }.getOrDefault(emptyList())
-        val proxyGroups = runCatching {
-            resolveRuntimeProxyGroupNames(excludeNotSelectable = false).mapNotNull(::queryRuntimeProxyGroupOrNull)
-        }.getOrDefault(emptyList())
+        val proxyGroups =
+            runCatching {
+                    resolveRuntimeProxyGroupNames(excludeNotSelectable = false)
+                        .mapNotNull(::queryRuntimeProxyGroupOrNull)
+                }
+                .getOrDefault(emptyList())
         val trafficNow = runCatching { Clash.queryTrafficNow() }.getOrDefault(0L)
         val trafficTotal = runCatching { Clash.queryTrafficTotal() }.getOrDefault(0L)
         queryCache.replace(
@@ -593,8 +642,14 @@ class SessionRuntime(
         )
     }
 
-    private fun refreshRuntimeProxyGroup(name: String, proxySort: ProxySort = ProxySort.Default): ProxyGroup? {
-        if (currentSnapshot.phase != RuntimePhase.Running && currentSnapshot.phase != RuntimePhase.Starting) {
+    private fun refreshRuntimeProxyGroup(
+        name: String,
+        proxySort: ProxySort = ProxySort.Default,
+    ): ProxyGroup? {
+        if (
+            currentSnapshot.phase != RuntimePhase.Running &&
+                currentSnapshot.phase != RuntimePhase.Starting
+        ) {
             return null
         }
 
@@ -604,9 +659,7 @@ class SessionRuntime(
     }
 
     private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        val expectedNames = currentSpec
-            ?.let(::readExpectedGroupNames)
-            .orEmpty()
+        val expectedNames = currentSpec?.let(::readExpectedGroupNames).orEmpty()
         val runtimeNames = Clash.queryGroupNames(excludeNotSelectable)
 
         if (expectedNames.isEmpty()) {
@@ -665,12 +718,13 @@ class SessionRuntime(
     }
 
     private fun startupLog(spec: RuntimeSpec, message: String) {
-        val scope = when (spec.owner) {
-            RuntimeOwner.LocalTun -> RuntimeStartupLogStore.Scope.LOCAL_TUN
-            RuntimeOwner.LocalHttp -> RuntimeStartupLogStore.Scope.LOCAL_HTTP
-            RuntimeOwner.RootTun -> RuntimeStartupLogStore.Scope.ROOT_TUN
-            RuntimeOwner.None -> return
-        }
+        val scope =
+            when (spec.owner) {
+                RuntimeOwner.LocalTun -> RuntimeStartupLogStore.Scope.LOCAL_TUN
+                RuntimeOwner.LocalHttp -> RuntimeStartupLogStore.Scope.LOCAL_HTTP
+                RuntimeOwner.RootTun -> RuntimeStartupLogStore.Scope.ROOT_TUN
+                RuntimeOwner.None -> return
+            }
         RuntimeStartupLogStore(host.context.appContextOrSelf, scope)
             .append("${scope.tag} session: $message")
     }
@@ -697,7 +751,8 @@ class SessionRuntime(
             append(content.length)
             append(" sha=")
             append(content.sha256Short())
-            content.lineSequence()
+            content
+                .lineSequence()
                 .map(String::trim)
                 .firstOrNull { it.isNotEmpty() }
                 ?.let {

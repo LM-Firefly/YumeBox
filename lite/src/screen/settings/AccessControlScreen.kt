@@ -97,16 +97,21 @@ private data class SearchStatus(
     val resultStatus: ResultStatus = ResultStatus.DEFAULT,
 ) {
     fun isExpanded() = current == Status.EXPANDED
+
     fun isCollapsed() = current == Status.COLLAPSED
+
     fun shouldExpand() = current == Status.EXPANDED || current == Status.EXPANDING
+
     fun shouldCollapse() = current == Status.COLLAPSED || current == Status.COLLAPSING
+
     fun isExpanding() = current == Status.EXPANDING
 
-    fun onAnimationComplete(): SearchStatus = when (current) {
-        Status.EXPANDING -> copy(current = Status.EXPANDED)
-        Status.COLLAPSING -> copy(searchText = "", current = Status.COLLAPSED)
-        else -> this
-    }
+    fun onAnimationComplete(): SearchStatus =
+        when (current) {
+            Status.EXPANDING -> copy(current = Status.EXPANDED)
+            Status.COLLAPSING -> copy(searchText = "", current = Status.COLLAPSED)
+            else -> this
+        }
 
     enum class Status {
         EXPANDED,
@@ -136,36 +141,34 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
 
     var showSettingsSheet by remember { mutableStateOf(false) }
     var searchStatus by remember {
-        mutableStateOf(
-            SearchStatus(
-                label = "搜索应用 / 包名",
-                searchText = uiState.searchQuery,
-            ),
-        )
+        mutableStateOf(SearchStatus(label = "搜索应用 / 包名", searchText = uiState.searchQuery))
     }
     val dynamicTopPadding by remember {
         derivedStateOf { 12.dp * (1f - scrollBehavior.state.collapsedFraction) }
     }
     val listStartPadding = AccessControlPageSpacing.contentHorizontal
     val listEndPadding = AccessControlPageSpacing.contentHorizontal
-    val currentSearchStatus = remember(searchStatus, filteredApps) {
-        searchStatus.copy(
-            resultStatus = when {
-                searchStatus.searchText.isBlank() -> SearchStatus.ResultStatus.DEFAULT
-                filteredApps.isEmpty() -> SearchStatus.ResultStatus.EMPTY
-                else -> SearchStatus.ResultStatus.SHOW
+    val currentSearchStatus =
+        remember(searchStatus, filteredApps) {
+            searchStatus.copy(
+                resultStatus =
+                    when {
+                        searchStatus.searchText.isBlank() -> SearchStatus.ResultStatus.DEFAULT
+                        filteredApps.isEmpty() -> SearchStatus.ResultStatus.EMPTY
+                        else -> SearchStatus.ResultStatus.SHOW
+                    }
+            )
+        }
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                if (granted) {
+                    viewModel.onPermissionResult()
+                }
             },
         )
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            if (granted) {
-                viewModel.onPermissionResult()
-            }
-        },
-    )
 
     LaunchedEffect(uiState.needsMiuiPermission) {
         if (uiState.needsMiuiPermission) {
@@ -194,15 +197,12 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                         scrollBehavior = scrollBehavior,
                         actions = {
                             IconButton(onClick = { showSettingsSheet = true }) {
-                                Icon(
-                                    Yume.`Settings-2`,
-                                    contentDescription = "访问控制设置",
-                                )
+                                Icon(Yume.`Settings-2`, contentDescription = "访问控制设置")
                             }
                         },
                     )
                 }
-            },
+            }
         ) { innerPadding ->
             val combinedInnerPadding = combinePaddingValues(innerPadding, mainLikePadding)
             currentSearchStatus.SearchBox(
@@ -210,22 +210,26 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                 searchBarTopPadding = dynamicTopPadding,
                 startPadding = listStartPadding,
                 endPadding = listEndPadding,
-                contentPadding = PaddingValues(
-                    top = combinedInnerPadding.calculateTopPadding(),
-                    start = combinedInnerPadding.calculateStartPadding(layoutDirection),
-                    end = combinedInnerPadding.calculateEndPadding(layoutDirection),
-                ),
+                contentPadding =
+                    PaddingValues(
+                        top = combinedInnerPadding.calculateTopPadding(),
+                        start = combinedInnerPadding.calculateStartPadding(layoutDirection),
+                        end = combinedInnerPadding.calculateEndPadding(layoutDirection),
+                    ),
             ) { boxHeight ->
                 if (uiState.isLoading) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
-                                start = listStartPadding,
-                                end = listEndPadding,
-                                bottom = combinedBottomPadding,
-                            ),
+                        modifier =
+                            Modifier.fillMaxSize()
+                                .padding(
+                                    top =
+                                        combinedInnerPadding.calculateTopPadding() +
+                                            boxHeight +
+                                            6.dp,
+                                    start = listStartPadding,
+                                    end = listEndPadding,
+                                    bottom = combinedBottomPadding,
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text("正在读取应用列表")
@@ -234,21 +238,17 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
                     ScreenLazyColumn(
                         scrollBehavior = scrollBehavior,
                         innerPadding = combinedInnerPadding,
-                        contentPadding = PaddingValues(
-                            top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
-                            bottom = combinedBottomPadding,
-                            start = listStartPadding,
-                            end = listEndPadding,
-                        ),
+                        contentPadding =
+                            PaddingValues(
+                                top = combinedInnerPadding.calculateTopPadding() + boxHeight + 6.dp,
+                                bottom = combinedBottomPadding,
+                                start = listStartPadding,
+                                end = listEndPadding,
+                            ),
                     ) {
-                        item {
-                            Title("应用列表 (${uiState.selectedPackages.size})")
-                        }
+                        item { Title("应用列表 (${uiState.selectedPackages.size})") }
 
-                        items(
-                            items = filteredApps,
-                            key = { it.packageName },
-                        ) { app ->
+                        items(items = filteredApps, key = { it.packageName }) { app ->
                             AppCard(
                                 app = app,
                                 selected = app.packageName in uiState.selectedPackages,
@@ -305,17 +305,15 @@ fun AccessControlScreen(navigator: DestinationsNavigator) {
             LazyColumn(
                 state = searchListState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = listStartPadding,
-                    end = listEndPadding,
-                    top = 6.dp,
-                    bottom = combinedBottomPadding,
-                ),
+                contentPadding =
+                    PaddingValues(
+                        start = listStartPadding,
+                        end = listEndPadding,
+                        top = 6.dp,
+                        bottom = combinedBottomPadding,
+                    ),
             ) {
-                items(
-                    items = filteredApps,
-                    key = { it.packageName },
-                ) { app ->
+                items(items = filteredApps, key = { it.packageName }) { app ->
                     AppCard(
                         app = app,
                         selected = app.packageName in uiState.selectedPackages,
@@ -352,9 +350,10 @@ private fun AccessControlSettingsSheet(
     onExportPackages: () -> String,
 ) {
     val context = LocalContext.current
-    val clipboardManager = remember(context) {
-        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    }
+    val clipboardManager =
+        remember(context) {
+            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        }
     val sortModeEntries = remember { AccessControlViewModel.SortMode.entries }
 
     AppActionBottomSheet(
@@ -402,11 +401,12 @@ private fun AccessControlSettingsSheet(
                     items = listOf("中国应用", "海外应用"),
                     selectedIndex = 0,
                     onSelectedIndexChange = { index ->
-                        val (label, count) = when (index) {
-                            0 -> "中国应用" to onSelectChinaApps()
-                            1 -> "海外应用" to onSelectNonChinaApps()
-                            else -> "" to 0
-                        }
+                        val (label, count) =
+                            when (index) {
+                                0 -> "中国应用" to onSelectChinaApps()
+                                1 -> "海外应用" to onSelectNonChinaApps()
+                                else -> "" to 0
+                            }
                         if (label.isNotEmpty()) {
                             context.toast("已选择 $label: $count 个")
                         }
@@ -419,12 +419,13 @@ private fun AccessControlSettingsSheet(
                     onSelectedIndexChange = { index ->
                         when (index) {
                             0 -> {
-                                val text = clipboardManager.primaryClip
-                                    ?.takeIf { it.itemCount > 0 }
-                                    ?.getItemAt(0)
-                                    ?.text
-                                    ?.toString()
-                                    .orEmpty()
+                                val text =
+                                    clipboardManager.primaryClip
+                                        ?.takeIf { it.itemCount > 0 }
+                                        ?.getItemAt(0)
+                                        ?.text
+                                        ?.toString()
+                                        .orEmpty()
                                 if (text.isNotEmpty()) {
                                     val count = onImportPackages(text)
                                     context.toast("已导入 $count 个应用")
@@ -435,7 +436,7 @@ private fun AccessControlSettingsSheet(
 
                             1 -> {
                                 clipboardManager.setPrimaryClip(
-                                    ClipData.newPlainText("packages", onExportPackages()),
+                                    ClipData.newPlainText("packages", onExportPackages())
                                 )
                                 context.toast("已导出 ${uiState.selectedPackages.size} 个应用")
                             }
@@ -448,21 +449,13 @@ private fun AccessControlSettingsSheet(
         Spacer(modifier = Modifier.height(24.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text("关闭")
-            }
+            Button(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("关闭") }
             Button(
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColorsPrimary(),
             ) {
-                Text(
-                    "完成",
-                    color = MiuixTheme.colorScheme.onPrimary,
-                )
+                Text("完成", color = MiuixTheme.colorScheme.onPrimary)
             }
         }
     }
@@ -475,10 +468,7 @@ private fun AppCard(
     onSelectionChange: (Boolean) -> Unit,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.padding(vertical = 4.dp),
-        applyHorizontalPadding = false,
-    ) {
+    Card(modifier = Modifier.padding(vertical = 4.dp), applyHorizontalPadding = false) {
         BasicComponent(
             title = app.label,
             summary = app.packageName,
@@ -511,16 +501,19 @@ private fun AppIcon(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val iconBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = packageName, key2 = bitmapSize) {
-        value = withContext(Dispatchers.IO) {
-            runCatching {
-                context.packageManager
-                    .getApplicationIcon(packageName)
-                    .toBitmap(width = bitmapSize, height = bitmapSize)
-                    .asImageBitmap()
-            }.getOrNull()
+    val iconBitmap by
+        produceState<ImageBitmap?>(initialValue = null, key1 = packageName, key2 = bitmapSize) {
+            value =
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                            context.packageManager
+                                .getApplicationIcon(packageName)
+                                .toBitmap(width = bitmapSize, height = bitmapSize)
+                                .asImageBitmap()
+                        }
+                        .getOrNull()
+                }
         }
-    }
 
     val bitmap = iconBitmap ?: return
     Image(
@@ -531,18 +524,9 @@ private fun AppIcon(
 }
 
 @Composable
-private fun SearchEmptyState(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        )
+private fun SearchEmptyState(text: String, modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text = text, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }
 
@@ -552,19 +536,14 @@ private fun SearchStatus.TopAppBarAnim(
     visible: Boolean = shouldCollapse(),
     content: @Composable () -> Unit,
 ) {
-    val alpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(if (visible) 550 else 0, easing = FastOutSlowInEasing),
-        label = "SearchTopBarAlpha",
-    )
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MiuixTheme.colorScheme.surface),
-    ) {
-        Box(modifier = Modifier.graphicsLayer { this.alpha = alpha }) {
-            content()
-        }
+    val alpha by
+        animateFloatAsState(
+            targetValue = if (visible) 1f else 0f,
+            animationSpec = tween(if (visible) 550 else 0, easing = FastOutSlowInEasing),
+            label = "SearchTopBarAlpha",
+        )
+    Box(modifier = modifier.fillMaxWidth().background(MiuixTheme.colorScheme.surface)) {
+        Box(modifier = Modifier.graphicsLayer { this.alpha = alpha }) { content() }
     }
 }
 
@@ -583,26 +562,28 @@ private fun SearchStatus.SearchBox(
     var offsetY by remember { mutableStateOf(0.dp) }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .zIndex(10f)
-            .alpha(if (searchStatus.isCollapsed()) 1f else 0f)
-            .padding(top = contentPadding.calculateTopPadding())
-            .onGloballyPositioned { coordinates ->
-                with(density) {
-                    offsetY = coordinates.positionInWindow().y.toDp()
-                    boxHeight = coordinates.size.height.toDp()
+        modifier =
+            Modifier.fillMaxWidth()
+                .zIndex(10f)
+                .alpha(if (searchStatus.isCollapsed()) 1f else 0f)
+                .padding(top = contentPadding.calculateTopPadding())
+                .onGloballyPositioned { coordinates ->
+                    with(density) {
+                        offsetY = coordinates.positionInWindow().y.toDp()
+                        boxHeight = coordinates.size.height.toDp()
+                    }
+                    if (searchStatus.offsetY != offsetY) {
+                        onSearchStatusChange(searchStatus.copy(offsetY = offsetY))
+                    }
                 }
-                if (searchStatus.offsetY != offsetY) {
-                    onSearchStatusChange(searchStatus.copy(offsetY = offsetY))
+                .pointerInput(searchStatus.current) {
+                    detectTapGestures {
+                        onSearchStatusChange(
+                            searchStatus.copy(current = SearchStatus.Status.EXPANDING)
+                        )
+                    }
                 }
-            }
-            .pointerInput(searchStatus.current) {
-                detectTapGestures {
-                    onSearchStatusChange(searchStatus.copy(current = SearchStatus.Status.EXPANDING))
-                }
-            }
-            .background(MiuixTheme.colorScheme.surface),
+                .background(MiuixTheme.colorScheme.surface)
     ) {
         SearchBarCollapsed(
             label = searchStatus.label,
@@ -615,10 +596,16 @@ private fun SearchStatus.SearchBox(
 
     AnimatedVisibility(
         visible = searchStatus.shouldCollapse(),
-        enter = fadeIn(tween(300, easing = LinearOutSlowInEasing)) +
-            slideInVertically(tween(300, easing = LinearOutSlowInEasing)) { -with(density) { offsetY.roundToPx() } },
-        exit = fadeOut(tween(300, easing = LinearOutSlowInEasing)) +
-            slideOutVertically(tween(300, easing = LinearOutSlowInEasing)) { -with(density) { offsetY.roundToPx() } },
+        enter =
+            fadeIn(tween(300, easing = LinearOutSlowInEasing)) +
+                slideInVertically(tween(300, easing = LinearOutSlowInEasing)) {
+                    -with(density) { offsetY.roundToPx() }
+                },
+        exit =
+            fadeOut(tween(300, easing = LinearOutSlowInEasing)) +
+                slideOutVertically(tween(300, easing = LinearOutSlowInEasing)) {
+                    -with(density) { offsetY.roundToPx() }
+                },
     ) {
         content(boxHeight)
     }
@@ -636,66 +623,60 @@ private fun SearchStatus.SearchPager(
 ) {
     val searchStatus = this
     val systemBarsPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
-    val topPadding by animateDpAsState(
-        targetValue = if (searchStatus.shouldExpand()) {
-            systemBarsPadding + 5.dp
-        } else {
-            max(searchStatus.offsetY, 0.dp)
-        },
-        animationSpec = tween(300, easing = LinearOutSlowInEasing),
-        label = "SearchTopPadding",
-        finishedListener = {
-            onSearchStatusChange(searchStatus.onAnimationComplete())
-        },
-    )
-    val surfaceAlpha by animateFloatAsState(
-        targetValue = if (searchStatus.shouldExpand()) 1f else 0f,
-        animationSpec = tween(200, easing = FastOutSlowInEasing),
-        label = "SearchSurfaceAlpha",
-    )
+    val topPadding by
+        animateDpAsState(
+            targetValue =
+                if (searchStatus.shouldExpand()) {
+                    systemBarsPadding + 5.dp
+                } else {
+                    max(searchStatus.offsetY, 0.dp)
+                },
+            animationSpec = tween(300, easing = LinearOutSlowInEasing),
+            label = "SearchTopPadding",
+            finishedListener = { onSearchStatusChange(searchStatus.onAnimationComplete()) },
+        )
+    val surfaceAlpha by
+        animateFloatAsState(
+            targetValue = if (searchStatus.shouldExpand()) 1f else 0f,
+            animationSpec = tween(200, easing = FastOutSlowInEasing),
+            label = "SearchSurfaceAlpha",
+        )
 
     BackHandler(enabled = !searchStatus.isCollapsed()) {
         onSearchStatusChange(
-            searchStatus.copy(
-                searchText = "",
-                current = SearchStatus.Status.COLLAPSING,
-            ),
+            searchStatus.copy(searchText = "", current = SearchStatus.Status.COLLAPSING)
         )
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .zIndex(5f)
-            .background(MiuixTheme.colorScheme.surface.copy(alpha = surfaceAlpha))
-            .then(
-                if (!searchStatus.isCollapsed()) {
-                    Modifier.pointerInput(searchStatus.current) {}
-                } else {
-                    Modifier
-                },
-            ),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = topPadding)
+        modifier =
+            Modifier.fillMaxSize()
+                .zIndex(5f)
+                .background(MiuixTheme.colorScheme.surface.copy(alpha = surfaceAlpha))
                 .then(
                     if (!searchStatus.isCollapsed()) {
-                        Modifier.background(MiuixTheme.colorScheme.surface)
+                        Modifier.pointerInput(searchStatus.current) {}
                     } else {
                         Modifier
-                    },
-                ),
+                    }
+                )
+    ) {
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(top = topPadding)
+                    .then(
+                        if (!searchStatus.isCollapsed()) {
+                            Modifier.background(MiuixTheme.colorScheme.surface)
+                        } else {
+                            Modifier
+                        }
+                    ),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (!searchStatus.isCollapsed()) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(MiuixTheme.colorScheme.surface),
-                ) {
+                Box(modifier = Modifier.weight(1f).background(MiuixTheme.colorScheme.surface)) {
                     SearchBar(
                         searchStatus = searchStatus,
                         onSearchStatusChange = onSearchStatusChange,
@@ -715,29 +696,32 @@ private fun SearchStatus.SearchPager(
                     text = "取消",
                     fontWeight = FontWeight.Bold,
                     color = MiuixTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(start = 4.dp, end = 16.dp, top = searchBarTopPadding, bottom = 6.dp)
-                        .clickable(
-                            interactionSource = null,
-                            indication = null,
-                            enabled = searchStatus.isExpanded(),
-                        ) {
-                            onSearchStatusChange(
-                                searchStatus.copy(
-                                    searchText = "",
-                                    current = SearchStatus.Status.COLLAPSING,
-                                ),
+                    modifier =
+                        Modifier.padding(
+                                start = 4.dp,
+                                end = 16.dp,
+                                top = searchBarTopPadding,
+                                bottom = 6.dp,
                             )
-                        },
+                            .clickable(
+                                interactionSource = null,
+                                indication = null,
+                                enabled = searchStatus.isExpanded(),
+                            ) {
+                                onSearchStatusChange(
+                                    searchStatus.copy(
+                                        searchText = "",
+                                        current = SearchStatus.Status.COLLAPSING,
+                                    )
+                                )
+                            },
                 )
             }
         }
 
         AnimatedVisibility(
             visible = searchStatus.isExpanded(),
-            modifier = Modifier
-                .fillMaxSize()
-                .zIndex(1f),
+            modifier = Modifier.fillMaxSize().zIndex(1f),
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
@@ -780,20 +764,21 @@ private fun SearchBar(
             onSearchStatusChange(searchStatus.copy(searchText = it.text))
         },
         singleLine = true,
-        textStyle = TextStyle(
-            fontWeight = FontWeight.Medium,
-            fontSize = 17.sp,
-            color = MiuixTheme.colorScheme.onSurface,
-        ),
+        textStyle =
+            TextStyle(
+                fontWeight = FontWeight.Medium,
+                fontSize = 17.sp,
+                color = MiuixTheme.colorScheme.onSurface,
+            ),
         cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = startPadding, end = endPadding)
-            .padding(top = searchBarTopPadding, bottom = 6.dp)
-            .heightIn(min = 45.dp)
-            .background(MiuixTheme.colorScheme.secondaryContainer, CircleShape)
-            .focusRequester(focusRequester),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(start = startPadding, end = endPadding)
+                .padding(top = searchBarTopPadding, bottom = 6.dp)
+                .heightIn(min = 45.dp)
+                .background(MiuixTheme.colorScheme.secondaryContainer, CircleShape)
+                .focusRequester(focusRequester),
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -802,9 +787,7 @@ private fun SearchBar(
                 Icon(
                     imageVector = MiuixIcons.Basic.Search,
                     contentDescription = "搜索",
-                    modifier = Modifier
-                        .size(44.dp)
-                        .padding(start = 16.dp, end = 8.dp),
+                    modifier = Modifier.size(44.dp).padding(start = 16.dp, end = 8.dp),
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 Box(modifier = Modifier.weight(1f)) {
@@ -825,10 +808,8 @@ private fun SearchBar(
                         imageVector = MiuixIcons.Basic.SearchCleanup,
                         contentDescription = "清空",
                         tint = MiuixTheme.colorScheme.onSurface,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .padding(start = 8.dp, end = 16.dp)
-                            .clickable(
+                        modifier =
+                            Modifier.size(44.dp).padding(start = 8.dp, end = 16.dp).clickable(
                                 interactionSource = null,
                                 indication = null,
                             ) {
@@ -853,29 +834,24 @@ private fun SearchBarCollapsed(
     val layoutDirection = LocalLayoutDirection.current
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = startPadding, end = endPadding)
-            .padding(
-                start = innerPadding.calculateStartPadding(layoutDirection),
-                end = innerPadding.calculateEndPadding(layoutDirection),
-            )
-            .padding(top = searchBarTopPadding, bottom = 6.dp)
-            .height(45.dp)
-            .background(MiuixTheme.colorScheme.secondaryContainer, CircleShape),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(start = startPadding, end = endPadding)
+                .padding(
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    end = innerPadding.calculateEndPadding(layoutDirection),
+                )
+                .padding(top = searchBarTopPadding, bottom = 6.dp)
+                .height(45.dp)
+                .background(MiuixTheme.colorScheme.secondaryContainer, CircleShape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = MiuixIcons.Basic.Search,
             contentDescription = "搜索",
-            modifier = Modifier
-                .size(44.dp)
-                .padding(start = 16.dp, end = 8.dp),
+            modifier = Modifier.size(44.dp).padding(start = 16.dp, end = 8.dp),
             tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
-        Text(
-            text = label,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        )
+        Text(text = label, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
     }
 }

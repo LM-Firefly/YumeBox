@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.util
 
 import android.content.Context
@@ -41,15 +39,14 @@ fun Context.sendBroadcastSelf(intent: Intent) {
 }
 
 fun Context.sendProfileChanged(uuid: UUID) {
-    val intent = Intent(Intents.ACTION_PROFILE_CHANGED)
-        .putExtra(Intents.EXTRA_UUID, uuid.toString())
+    val intent =
+        Intent(Intents.ACTION_PROFILE_CHANGED).putExtra(Intents.EXTRA_UUID, uuid.toString())
 
     sendBroadcastSelf(intent)
 }
 
 fun Context.sendProfileLoaded(uuid: UUID) {
-    val intent = Intent(Intents.ACTION_PROFILE_LOADED)
-        .putExtra(Intents.EXTRA_UUID, uuid.toString())
+    val intent = Intent(Intents.ACTION_PROFILE_LOADED).putExtra(Intents.EXTRA_UUID, uuid.toString())
 
     sendBroadcastSelf(intent)
 }
@@ -70,9 +67,6 @@ fun Context.sendClashStarted() {
 
 fun Context.sendClashStopped(reason: String?) {
     sendBroadcastSelf(
-        Intent(Intents.ACTION_CLASH_STOPPED).putExtra(
-            Intents.EXTRA_STOP_REASON,
-            reason
-        )
+        Intent(Intents.ACTION_CLASH_STOPPED).putExtra(Intents.EXTRA_STOP_REASON, reason)
     )
 }

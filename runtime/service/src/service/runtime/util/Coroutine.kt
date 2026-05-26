@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service.runtime.util
 
 import android.os.Looper
@@ -37,7 +35,5 @@ fun CoroutineScope.cancelAndJoinBlocking() {
         return
     }
 
-    runBlocking {
-        job.join()
-    }
+    runBlocking { job.join() }
 }

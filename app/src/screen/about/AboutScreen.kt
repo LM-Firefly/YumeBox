@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.about
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -30,7 +29,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.util.openUrl
@@ -41,6 +39,7 @@ import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.destinations.OpenSourceLicensesScreenDestination
@@ -56,20 +55,19 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun AboutScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
-    val coreVersion by produceState(initialValue = MLang.About.App.VersionLoading) {
-        value = try {
-            Bridge.nativeCoreVersion()
-        } catch (error: Exception) {
-            if (error is CancellationException) throw error
-            MLang.About.App.VersionFailed
+    val coreVersion by
+        produceState(initialValue = MLang.About.App.VersionLoading) {
+            value =
+                try {
+                    Bridge.nativeCoreVersion()
+                } catch (error: Exception) {
+                    if (error is CancellationException) throw error
+                    MLang.About.App.VersionFailed
+                }
         }
-    }
 
-    Scaffold(
-        topBar = {
-            TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior)
-        },
-    ) { innerPadding ->
+    Scaffold(topBar = { TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior) }) {
+        innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
@@ -85,9 +83,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     Icon(
                         painter = painterResource(id = R.drawable.yume),
                         contentDescription = "App Icon",
-                        modifier = Modifier
-                            .size(UiDp.dp120)
-                            .clip(RoundedCornerShape(UiDp.dp24)),
+                        modifier = Modifier.size(UiDp.dp120).clip(RoundedCornerShape(UiDp.dp24)),
                         tint = Color.Unspecified,
                     )
 
@@ -161,15 +157,10 @@ fun AboutScreen(navigator: DestinationsNavigator) {
 
             item {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = UiDp.dp32),
+                    modifier = Modifier.fillMaxWidth().padding(top = UiDp.dp32),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = MLang.About.Copyright,
-                        style = MiuixTheme.textStyles.footnote1,
-                    )
+                    Text(text = MLang.About.Copyright, style = MiuixTheme.textStyles.footnote1)
                 }
                 Spacer(modifier = Modifier.height(UiDp.dp32))
             }
@@ -185,16 +176,8 @@ private fun AboutLinkItem(
     showArrow: Boolean,
 ) {
     if (showArrow) {
-        ArrowPreference(
-            title = title,
-            summary = url,
-            onClick = { onOpenUrl(url) },
-        )
+        ArrowPreference(title = title, summary = url, onClick = { onOpenUrl(url) })
     } else {
-        BasicComponent(
-            title = title,
-            summary = url,
-            onClick = { onOpenUrl(url) },
-        )
+        BasicComponent(title = title, summary = url, onClick = { onOpenUrl(url) })
     }
 }

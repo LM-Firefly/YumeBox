@@ -35,29 +35,31 @@ class TunProfileSync(
     private val profilesRepository: ProfilesRepository,
     private val networkSettingsStore: NetworkSettingsStore,
 ) {
-    suspend fun syncActiveProfile() = withContext(Dispatchers.IO) {
-        val activeProfile = profilesRepository.queryActiveProfile()
-        if (activeProfile == null) {
-            applyRouteExcludeAddress(emptyList())
-            return@withContext
+    suspend fun syncActiveProfile() =
+        withContext(Dispatchers.IO) {
+            val activeProfile = profilesRepository.queryActiveProfile()
+            if (activeProfile == null) {
+                applyRouteExcludeAddress(emptyList())
+                return@withContext
+            }
+
+            val profileDir = context.importedDir.resolve(activeProfile.uuid.toString())
+            val result =
+                Clash.compilePreview(
+                    CompileRequest(
+                        profileUuid = activeProfile.uuid.toString(),
+                        profileDir = profileDir.absolutePath,
+                        profilePath = profileDir.resolve("config.yaml").absolutePath,
+                        overrides = emptyList(),
+                        outputPath = profileDir.resolve("runtime.yaml").absolutePath,
+                    )
+                )
+            check(result.success) { result.error ?: "Lite tun profile preview failed" }
+
+            val routeExcludeAddress = result.finalYaml.routeExcludeAddress()
+
+            applyRouteExcludeAddress(routeExcludeAddress)
         }
-
-        val profileDir = context.importedDir.resolve(activeProfile.uuid.toString())
-        val result = Clash.compilePreview(
-            CompileRequest(
-                profileUuid = activeProfile.uuid.toString(),
-                profileDir = profileDir.absolutePath,
-                profilePath = profileDir.resolve("config.yaml").absolutePath,
-                overrides = emptyList(),
-                outputPath = profileDir.resolve("runtime.yaml").absolutePath,
-            ),
-        )
-        check(result.success) { result.error ?: "Lite tun profile preview failed" }
-
-        val routeExcludeAddress = result.finalYaml.routeExcludeAddress()
-
-        applyRouteExcludeAddress(routeExcludeAddress)
-    }
 
     private fun applyRouteExcludeAddress(routeExcludeAddress: List<String>) {
         networkSettingsStore.tunRouteExcludeAddress.set(routeExcludeAddress)
@@ -69,7 +71,5 @@ private fun String.routeExcludeAddress(): List<String> {
     val root = runCatching { YamlCodec.loadMap(this) }.getOrDefault(emptyMap())
     val tun = root["tun"] as? Map<*, *> ?: return emptyList()
     val raw = tun["route-exclude-address"] as? List<*> ?: return emptyList()
-    return raw.mapNotNull { item ->
-        item?.toString()?.trim()?.takeIf(String::isNotEmpty)
-    }
+    return raw.mapNotNull { item -> item?.toString()?.trim()?.takeIf(String::isNotEmpty) }
 }

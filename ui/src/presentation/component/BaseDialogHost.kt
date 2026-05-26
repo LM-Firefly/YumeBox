@@ -44,8 +44,6 @@ fun <T> BaseDialogPayloadHost(
         content(payload, dismiss)
     } else {
         // Ensure stale payload does not survive invisible state transitions.
-        LaunchedEffect(dialogState.isShown) {
-            if (!dialogState.isShown) dialogState.dismiss()
-        }
+        LaunchedEffect(dialogState.isShown) { if (!dialogState.isShown) dialogState.dismiss() }
     }
 }

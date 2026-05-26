@@ -18,15 +18,14 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.feature.editor.screen
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +40,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.ArrowLeft
 import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
 import com.github.yumelira.yumebox.presentation.icon.yume.ListCollapse
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.*
@@ -57,19 +57,21 @@ fun ConfigPreviewScreen(
     val coroutineScope = rememberCoroutineScope()
     var isSaving by remember { mutableStateOf(false) }
 
-    val formattedContent = remember(initialContent, language) {
-        if (language == LanguageScope.Json) {
-            CodeFormatter.format(initialContent, language) ?: initialContent
-        } else {
-            initialContent
+    val formattedContent =
+        remember(initialContent, language) {
+            if (language == LanguageScope.Json) {
+                CodeFormatter.format(initialContent, language) ?: initialContent
+            } else {
+                initialContent
+            }
         }
-    }
 
-    val editorState = rememberConfiguredCodeEditorState(
-        initialContent = formattedContent,
-        language = language,
-        readOnly = false,
-    )
+    val editorState =
+        rememberConfiguredCodeEditorState(
+            initialContent = formattedContent,
+            language = language,
+            readOnly = false,
+        )
     val scrollBehavior = MiuixScrollBehavior()
 
     Scaffold(
@@ -81,18 +83,22 @@ fun ConfigPreviewScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
                         IconButton(
                             onClick = { editorState.undo() },
-                            enabled = editorState.canUndo()
-                        ) { Icon(Yume.ArrowLeft, null) }
+                            enabled = editorState.canUndo(),
+                        ) {
+                            Icon(Yume.ArrowLeft, null)
+                        }
                         IconButton(
                             onClick = { editorState.redo() },
-                            enabled = editorState.canRedo()
-                        ) { Icon(Yume.ArrowRight, null) }
+                            enabled = editorState.canRedo(),
+                        ) {
+                            Icon(Yume.ArrowRight, null)
+                        }
                     }
                 },
                 actions = {
                     IconButton(
                         modifier = Modifier.padding(end = UiDp.dp12),
-                        onClick = { editorState.format() }
+                        onClick = { editorState.format() },
                     ) {
                         Icon(Yume.ListCollapse, contentDescription = "Format")
                     }
@@ -101,30 +107,25 @@ fun ConfigPreviewScreen(
                             if (isSaving || onSave == null) return@IconButton
                             coroutineScope.launch {
                                 isSaving = true
-                                runCatching {
-                                    onSave(editorState.content)
-                                }.onSuccess {
-                                    editorState.resetModified()
-                                    navigator.navigateUp()
-                                }.onFailure {
-                                    context.toast(it.message ?: "保存失败")
-                                }
+                                runCatching { onSave(editorState.content) }
+                                    .onSuccess {
+                                        editorState.resetModified()
+                                        navigator.navigateUp()
+                                    }
+                                    .onFailure { context.toast(it.message ?: "保存失败") }
                                 isSaving = false
                             }
                         },
-                        enabled = onSave != null && editorState.isModified && !isSaving
+                        enabled = onSave != null && editorState.isModified && !isSaving,
                     ) {
                         Icon(Yume.Save, contentDescription = "Save")
                     }
-                }
+                },
             )
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
-            CodeEditor(
-                state = editorState,
-                modifier = Modifier.fillMaxSize()
-            )
+            CodeEditor(state = editorState, modifier = Modifier.fillMaxSize())
         }
     }
 }

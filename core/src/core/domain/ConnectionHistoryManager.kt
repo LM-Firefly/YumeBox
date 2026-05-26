@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.core.domain
 
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
@@ -38,10 +36,7 @@ object ConnectionHistoryManager {
             val currentIds = currentMap.keys
 
             previousConnections.keys.minus(currentIds).forEach { closedId ->
-                previousConnections[closedId]?.let { conn ->
-
-                    _closedConnections.add(0, conn)
-                }
+                previousConnections[closedId]?.let { conn -> _closedConnections.add(0, conn) }
             }
 
             while (_closedConnections.size > MAX_SIZE) {

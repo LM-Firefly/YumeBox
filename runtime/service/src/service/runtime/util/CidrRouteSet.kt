@@ -26,10 +26,7 @@ import java.math.BigInteger
 import java.net.InetAddress
 import kotlin.math.max
 
-data class IncludedRouteSet(
-    val ipv4: List<IPNet>,
-    val ipv6: List<IPNet>,
-)
+data class IncludedRouteSet(val ipv4: List<IPNet>, val ipv6: List<IPNet>)
 
 fun buildIncludedRoutesFromExcludedCidrs(
     cidrs: List<String>,
@@ -42,18 +39,12 @@ fun buildIncludedRoutesFromExcludedCidrs(
     )
 }
 
-private data class ParsedCidr(
-    val address: InetAddress,
-    val prefix: Int,
-) {
+private data class ParsedCidr(val address: InetAddress, val prefix: Int) {
     val bitSize: Int
         get() = address.address.size * 8
 }
 
-private data class AddressRange(
-    val start: BigInteger,
-    val endInclusive: BigInteger,
-)
+private data class AddressRange(val start: BigInteger, val endInclusive: BigInteger)
 
 private fun parseIpCidrOrNull(raw: String): ParsedCidr? {
     val parts = raw.split("/", limit = 2)
@@ -67,29 +58,28 @@ private fun parseIpCidrOrNull(raw: String): ParsedCidr? {
     return ParsedCidr(address = address, prefix = prefix)
 }
 
-private fun buildIncludedRoutes(
-    cidrs: List<ParsedCidr>,
-    bitSize: Int,
-): List<IPNet> {
-    val mergedExcluded = cidrs
-        .asSequence()
-        .filter { it.bitSize == bitSize }
-        .map(::toRange)
-        .sortedBy { it.start }
-        .fold(mutableListOf<AddressRange>()) { acc, range ->
-            val last = acc.lastOrNull()
-            if (last == null) {
-                acc += range
-            } else if (range.start <= last.endInclusive + BigInteger.ONE) {
-                acc[acc.lastIndex] = AddressRange(
-                    start = last.start,
-                    endInclusive = maxOf(last.endInclusive, range.endInclusive),
-                )
-            } else {
-                acc += range
+private fun buildIncludedRoutes(cidrs: List<ParsedCidr>, bitSize: Int): List<IPNet> {
+    val mergedExcluded =
+        cidrs
+            .asSequence()
+            .filter { it.bitSize == bitSize }
+            .map(::toRange)
+            .sortedBy { it.start }
+            .fold(mutableListOf<AddressRange>()) { acc, range ->
+                val last = acc.lastOrNull()
+                if (last == null) {
+                    acc += range
+                } else if (range.start <= last.endInclusive + BigInteger.ONE) {
+                    acc[acc.lastIndex] =
+                        AddressRange(
+                            start = last.start,
+                            endInclusive = maxOf(last.endInclusive, range.endInclusive),
+                        )
+                } else {
+                    acc += range
+                }
+                acc
             }
-            acc
-        }
 
     if (mergedExcluded.isEmpty()) {
         return listOf(IPNet(rootRouteAddress(bitSize), 0))
@@ -121,11 +111,12 @@ private fun toRange(cidr: ParsedCidr): AddressRange {
     val bitSize = cidr.bitSize
     val hostBits = bitSize - cidr.prefix
     val addressValue = BigInteger(1, cidr.address.address)
-    val networkValue = if (hostBits == 0) {
-        addressValue
-    } else {
-        addressValue.shiftRight(hostBits).shiftLeft(hostBits)
-    }
+    val networkValue =
+        if (hostBits == 0) {
+            addressValue
+        } else {
+            addressValue.shiftRight(hostBits).shiftLeft(hostBits)
+        }
     val blockSize = BigInteger.ONE.shiftLeft(hostBits)
     return AddressRange(
         start = networkValue,
@@ -133,10 +124,7 @@ private fun toRange(cidr: ParsedCidr): AddressRange {
     )
 }
 
-private fun rangeToCidrs(
-    range: AddressRange,
-    bitSize: Int,
-): List<IPNet> {
+private fun rangeToCidrs(range: AddressRange, bitSize: Int): List<IPNet> {
     val result = mutableListOf<IPNet>()
     var current = range.start
     while (current <= range.endInclusive) {
@@ -150,18 +138,12 @@ private fun rangeToCidrs(
     return result
 }
 
-private fun trailingZeroBitCount(
-    value: BigInteger,
-    bitSize: Int,
-): Int {
+private fun trailingZeroBitCount(value: BigInteger, bitSize: Int): Int {
     if (value.signum() == 0) return bitSize
     return minOf(bitSize, value.lowestSetBit)
 }
 
-private fun bigIntegerToAddressString(
-    value: BigInteger,
-    bitSize: Int,
-): String {
+private fun bigIntegerToAddressString(value: BigInteger, bitSize: Int): String {
     val byteLength = bitSize / 8
     val raw = value.toByteArray()
     val normalized = ByteArray(byteLength)

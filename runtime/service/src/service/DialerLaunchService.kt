@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.service
 
 import android.app.Service
@@ -34,23 +32,25 @@ class DialerLaunchService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         runCatching {
-            val launchIntent = Intent(Intent.ACTION_MAIN).apply {
-                component = Components.MAIN_ACTIVITY
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED,
-                )
+                val launchIntent =
+                    Intent(Intent.ACTION_MAIN).apply {
+                        component = Components.MAIN_ACTIVITY
+                        addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                        )
+                    }
+                startActivity(launchIntent)
             }
-            startActivity(launchIntent)
-        }.onFailure {
-            runCatching {
-                packageManager.getLaunchIntentForPackage(packageName)?.apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(this)
+            .onFailure {
+                runCatching {
+                    packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(this)
+                    }
                 }
             }
-        }
 
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()

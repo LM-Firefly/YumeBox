@@ -18,9 +18,8 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -34,36 +33,34 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.common.util.LocaleUtil
-import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.panpf.sketch.rememberAsyncImagePainter
 import com.github.panpf.sketch.request.ImageRequest
+import com.github.yumelira.yumebox.common.util.LocaleUtil
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 
 @Composable
-fun CountryFlagCircle(
-    countryCode: String,
-    modifier: Modifier = Modifier,
-    size: Dp = UiDp.dp18,
-) {
+fun CountryFlagCircle(countryCode: String, modifier: Modifier = Modifier, size: Dp = UiDp.dp18) {
     val semanticColors = AppTheme.colors
     val flagUrl = remember(countryCode) { LocaleUtil.normalizeFlagUrl(countryCode) }
     val context = LocalContext.current
 
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(semanticColors.neutralPlaceholderBackground),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(semanticColors.neutralPlaceholderBackground),
+        contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = rememberAsyncImagePainter(
-                request = ImageRequest(context, flagUrl),
-                alignment = Alignment.Center,
-                contentScale = ContentScale.Crop,
-            ),
+            painter =
+                rememberAsyncImagePainter(
+                    request = ImageRequest(context, flagUrl),
+                    alignment = Alignment.Center,
+                    contentScale = ContentScale.Crop,
+                ),
             contentDescription = MLang.Component.Flag.ContentDescription.format(countryCode),
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop,

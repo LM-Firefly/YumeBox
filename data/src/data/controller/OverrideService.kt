@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.data.controller
 
 import android.content.Context
@@ -71,7 +69,7 @@ class OverrideService(
     private fun notifyRuntimeOverrideChanged() {
         appContext.sendBroadcast(
             Intent(Intents.actionOverrideChanged(appContext.packageName))
-                .setPackage(appContext.packageName),
+                .setPackage(appContext.packageName)
         )
         onRuntimeOverrideChanged()
     }

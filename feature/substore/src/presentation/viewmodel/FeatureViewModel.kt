@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.presentation.viewmodel
 
 import android.app.Application
@@ -63,21 +61,24 @@ class FeatureViewModel(
     private val _autoCloseMode = MutableStateFlow(AutoCloseMode.DISABLED)
     val autoCloseMode: StateFlow<AutoCloseMode> = _autoCloseMode.asStateFlow()
 
-    val serviceRunningState: StateFlow<Boolean> = SubStoreServiceController.snapshot
-        .map { it.isActive }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = SubStoreServiceController.snapshot.value.isActive,
-        )
+    val serviceRunningState: StateFlow<Boolean> =
+        SubStoreServiceController.snapshot
+            .map { it.isActive }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = SubStoreServiceController.snapshot.value.isActive,
+            )
 
     private var autoCloseJob: Job? = null
 
     private val _isDownloadingSubStoreFrontend = MutableStateFlow(false)
-    val isDownloadingSubStoreFrontend: StateFlow<Boolean> = _isDownloadingSubStoreFrontend.asStateFlow()
+    val isDownloadingSubStoreFrontend: StateFlow<Boolean> =
+        _isDownloadingSubStoreFrontend.asStateFlow()
 
     private val _isDownloadingSubStoreBackend = MutableStateFlow(false)
-    val isDownloadingSubStoreBackend: StateFlow<Boolean> = _isDownloadingSubStoreBackend.asStateFlow()
+    val isDownloadingSubStoreBackend: StateFlow<Boolean> =
+        _isDownloadingSubStoreBackend.asStateFlow()
 
     private val _isSubStoreInitialized = MutableStateFlow(false)
     val isSubStoreInitialized: StateFlow<Boolean> = _isSubStoreInitialized.asStateFlow()
@@ -101,34 +102,36 @@ class FeatureViewModel(
         if (!checkSubStoreReadiness()) return
         viewModelScope.launch {
             runCatching {
-                SubStoreServiceController.startService(
-                    context = application,
-                    request = SubStoreServiceRequest(
-                        backendPort = backendPort.value,
-                        frontendPort = frontendPort.value,
-                        allowLan = allowLanAccess.value,
-                    ),
-                )
-            }.onSuccess {
-                setupAutoCloseTimer()
-            }.onFailure { error ->
-                showToast(error.message ?: MLang.Util.Error.UnknownError)
-            }
+                    SubStoreServiceController.startService(
+                        context = application,
+                        request =
+                            SubStoreServiceRequest(
+                                backendPort = backendPort.value,
+                                frontendPort = frontendPort.value,
+                                allowLan = allowLanAccess.value,
+                            ),
+                    )
+                }
+                .onSuccess { setupAutoCloseTimer() }
+                .onFailure { error -> showToast(error.message ?: MLang.Util.Error.UnknownError) }
         }
     }
 
     private fun checkSubStoreReadiness(): Boolean {
         return when {
             !_isExtensionInstalled.value -> {
-                showToast(MLang.Feature.SubStore.InstallExtension); false
+                showToast(MLang.Feature.SubStore.InstallExtension)
+                false
             }
 
             !_isSubStoreInitialized.value -> {
-                showToast(MLang.Feature.SubStore.DownloadSubStoreFirst); false
+                showToast(MLang.Feature.SubStore.DownloadSubStoreFirst)
+                false
             }
 
             !_isJavetLoaded.value -> {
-                showToast(MLang.Feature.SubStore.JavetNotReady); false
+                showToast(MLang.Feature.SubStore.JavetNotReady)
+                false
             }
 
             else -> true
@@ -144,6 +147,7 @@ class FeatureViewModel(
     }
 
     fun setAllowLanAccess(allow: Boolean) = allowLanAccess.set(allow)
+
     fun setAutoCloseMode(mode: AutoCloseMode) {
         _autoCloseMode.value = mode
         if (serviceRunningState.value) {
@@ -160,19 +164,23 @@ class FeatureViewModel(
         }
     }
 
-    private fun checkExtensionInstalled(): Boolean = runCatching {
-        application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
-        true
-    }.getOrDefault(false)
+    private fun checkExtensionInstalled(): Boolean =
+        runCatching {
+                application.packageManager.getApplicationInfo(EXTENSION_PACKAGE_NAME, 0)
+                true
+            }
+            .getOrDefault(false)
 
     private fun initializeJavetStatus() {
         if (!_isExtensionInstalled.value) {
-            _isJavetLoaded.value = false; return
+            _isJavetLoaded.value = false
+            return
         }
         NativeLibraryManager.initialize(application)
-        _isJavetLoaded.value = if (!NativeLibraryManager.isLibraryAvailable(JAVET_LIB_NAME)) {
-            NativeLibraryManager.extractAllLibraries()[JAVET_LIB_NAME] == true
-        } else true
+        _isJavetLoaded.value =
+            if (!NativeLibraryManager.isLibraryAvailable(JAVET_LIB_NAME)) {
+                NativeLibraryManager.extractAllLibraries()[JAVET_LIB_NAME] == true
+            } else true
     }
 
     fun refreshExtensionStatus() {
@@ -187,6 +195,7 @@ class FeatureViewModel(
     }
 
     fun setPanelOpenMode(mode: LinkOpenMode) = panelOpenMode.set(mode)
+
     fun setExitUiWhenBackground(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 
     fun downloadSubStoreFrontend() {
@@ -198,7 +207,8 @@ class FeatureViewModel(
             SubStorePaths.ensureStructure()
             SubStorePaths.frontendDir.apply { if (!exists()) mkdirs() }
             downloadClient.downloadAndExtract(
-                url = "https://github.com/sub-store-org/Sub-Store-Front-End/releases/latest/download/dist.zip",
+                url =
+                    "https://github.com/sub-store-org/Sub-Store-Front-End/releases/latest/download/dist.zip",
                 targetDir = SubStorePaths.frontendDir,
             )
         }
@@ -213,7 +223,8 @@ class FeatureViewModel(
             SubStorePaths.ensureStructure()
             SubStorePaths.backendDir.apply { if (!exists()) mkdirs() }
             downloadClient.download(
-                url = "https://github.com/sub-store-org/Sub-Store/releases/latest/download/sub-store.bundle.js",
+                url =
+                    "https://github.com/sub-store-org/Sub-Store/releases/latest/download/sub-store.bundle.js",
                 targetFile = SubStorePaths.backendBundle,
             )
         }
@@ -221,7 +232,8 @@ class FeatureViewModel(
 
     fun downloadSubStoreAll() {
         viewModelScope.launch {
-            if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value) return@launch
+            if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value)
+                return@launch
             downloadSubStoreFrontend()
             while (_isDownloadingSubStoreFrontend.value) {
                 PollingTimers.awaitTick(
@@ -229,7 +241,7 @@ class FeatureViewModel(
                         name = "substore_frontend_download_wait",
                         intervalMillis = 200L,
                         initialDelayMillis = 200L,
-                    ),
+                    )
                 )
             }
             downloadSubStoreBackend()
@@ -248,14 +260,19 @@ class FeatureViewModel(
         viewModelScope.launch {
             loadingState.value = true
             runCatching {
-                val success = action()
-                showToast(if (success) successMessage else failureMessage)
-                if (success) {
-                    _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
+                    val success = action()
+                    showToast(if (success) successMessage else failureMessage)
+                    if (success) {
+                        _isSubStoreInitialized.value = SubStorePaths.isResourcesReady()
+                    }
                 }
-            }.onFailure { error ->
-                showToast(MLang.Feature.SubStore.DownloadError.format(error.message ?: MLang.Util.Error.UnknownError))
-            }
+                .onFailure { error ->
+                    showToast(
+                        MLang.Feature.SubStore.DownloadError.format(
+                            error.message ?: MLang.Util.Error.UnknownError
+                        )
+                    )
+                }
             loadingState.value = false
         }
     }
@@ -271,7 +288,7 @@ class FeatureViewModel(
                         name = "substore_auto_close",
                         intervalMillis = timeoutMillis,
                         initialDelayMillis = timeoutMillis,
-                    ),
+                    )
                 )
                 showToast(MLang.Feature.ServiceStatus.AutoClosed)
                 stopService()

@@ -18,8 +18,6 @@
  *
  */
 
-
-
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.os.Bundle
@@ -73,12 +71,8 @@ internal class OnboardingActivity : OnboardingBaseActivity() {
                     }
                     finishOnboarding()
                 },
-                onGithubClick = {
-                    openUrl(this, "https://github.com/YumeLira/YumeBox")
-                },
-                onCommunityClick = {
-                    openUrl(this, "https://t.me/YumeLira")
-                },
+                onGithubClick = { openUrl(this, "https://github.com/YumeLira/YumeBox") },
+                onCommunityClick = { openUrl(this, "https://t.me/YumeLira") },
             )
         }
     }
@@ -104,25 +98,25 @@ private fun OnboardingPagerScreen(
     val coroutineScope = rememberCoroutineScope()
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val lifecycleOwner = LocalLifecycleOwner.current
-    val permissionState = rememberPermissionState(
-        context = activity,
-        lifecycleOwner = lifecycleOwner,
-    )
+    val permissionState =
+        rememberPermissionState(context = activity, lifecycleOwner = lifecycleOwner)
     val privacyState = rememberPrivacyAcceptedState(appSettingsViewModel)
     val themeState = rememberThemeCustomizationState(appSettingsViewModel)
     val showPrivacySheet = remember { mutableStateOf(false) }
     var showThemeColorPicker by remember { mutableStateOf(false) }
-    var editingThemeSeedColor by remember(themeState.themeSeedColorArgb) {
-        mutableStateOf(
-            runCatching { colorFromArgb(themeState.themeSeedColorArgb) }
-                .getOrDefault(Color.White)
-        )
-    }
-    var editingThemeSeedHex by remember(themeState.themeSeedColorArgb) {
-        mutableStateOf(
-            "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
-        )
-    }
+    var editingThemeSeedColor by
+        remember(themeState.themeSeedColorArgb) {
+            mutableStateOf(
+                runCatching { colorFromArgb(themeState.themeSeedColorArgb) }
+                    .getOrDefault(Color.White)
+            )
+        }
+    var editingThemeSeedHex by
+        remember(themeState.themeSeedColorArgb) {
+            mutableStateOf(
+                "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
+            )
+        }
 
     fun navigateTo(page: Int) {
         if (page !in steps.indices || pagerState.isScrollInProgress) {
@@ -131,18 +125,13 @@ private fun OnboardingPagerScreen(
         coroutineScope.launch {
             pagerState.animateScrollToPage(
                 page = page,
-                animationSpec = tween(
-                    durationMillis = 420,
-                    easing = FastOutSlowInEasing,
-                ),
+                animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
             )
         }
     }
 
     BackHandler(
-        enabled = pagerState.currentPage > 0 &&
-            !showPrivacySheet.value &&
-            !showThemeColorPicker,
+        enabled = pagerState.currentPage > 0 && !showPrivacySheet.value && !showThemeColorPicker
     ) {
         navigateTo(pagerState.currentPage - 1)
     }
@@ -158,9 +147,7 @@ private fun OnboardingPagerScreen(
             OnboardingStep.Startup -> {
                 StartupHeroShell(
                     enabled = true,
-                    onStart = {
-                        navigateTo(OnboardingStep.Permissions.ordinal)
-                    },
+                    onStart = { navigateTo(OnboardingStep.Permissions.ordinal) },
                 )
             }
 
@@ -171,12 +158,8 @@ private fun OnboardingPagerScreen(
                     subtitle = MLang.Onboarding.Permission.Subtitle,
                     primaryText = MLang.Onboarding.Navigation.Next,
                     primaryEnabled = true,
-                    onPrimaryClick = {
-                        navigateTo(OnboardingStep.Terms.ordinal)
-                    },
-                    onBack = {
-                        navigateTo(OnboardingStep.Startup.ordinal)
-                    },
+                    onPrimaryClick = { navigateTo(OnboardingStep.Terms.ordinal) },
+                    onBack = { navigateTo(OnboardingStep.Startup.ordinal) },
                 ) {
                     PermissionContent(permissionState)
                 }
@@ -194,16 +177,12 @@ private fun OnboardingPagerScreen(
                             navigateTo(OnboardingStep.Personalize.ordinal)
                         }
                     },
-                    onBack = {
-                        navigateTo(OnboardingStep.Permissions.ordinal)
-                    },
+                    onBack = { navigateTo(OnboardingStep.Permissions.ordinal) },
                 ) {
                     TermsContent(
                         accepted = privacyState.accepted,
                         onAcceptedChange = privacyState.onAcceptedChange,
-                        onPrivacySheetRequest = {
-                            showPrivacySheet.value = true
-                        },
+                        onPrivacySheetRequest = { showPrivacySheet.value = true },
                     )
                 }
             }
@@ -215,12 +194,8 @@ private fun OnboardingPagerScreen(
                     subtitle = MLang.Onboarding.Personalize.Subtitle,
                     primaryText = MLang.Onboarding.Navigation.Next,
                     primaryEnabled = true,
-                    onPrimaryClick = {
-                        navigateTo(OnboardingStep.Finish.ordinal)
-                    },
-                    onBack = {
-                        navigateTo(OnboardingStep.Terms.ordinal)
-                    },
+                    onPrimaryClick = { navigateTo(OnboardingStep.Finish.ordinal) },
+                    onBack = { navigateTo(OnboardingStep.Terms.ordinal) },
                 ) {
                     PersonalizeContent(
                         themeMode = themeState.themeMode,

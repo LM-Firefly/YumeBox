@@ -18,18 +18,16 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.screen.home
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -40,6 +38,7 @@ import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
@@ -48,10 +47,7 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
-fun HomePager(
-    mainInnerPadding: PaddingValues,
-    isActive: Boolean,
-) {
+fun HomePager(mainInnerPadding: PaddingValues, isActive: Boolean) {
     val homeViewModel = koinViewModel<HomeViewModel>()
     val navigator = LocalNavigator.current
 
@@ -74,19 +70,11 @@ fun HomePager(
 
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        homeViewModel.refreshProxyMode()
-    }
+    LaunchedEffect(Unit) { homeViewModel.refreshProxyMode() }
 
-    LaunchedEffect(isActive) {
-        homeViewModel.setHomeScreenActive(isActive)
-    }
+    LaunchedEffect(isActive) { homeViewModel.setHomeScreenActive(isActive) }
 
-    DisposableEffect(homeViewModel) {
-        onDispose {
-            homeViewModel.setHomeScreenActive(false)
-        }
-    }
+    DisposableEffect(homeViewModel) { onDispose { homeViewModel.setHomeScreenActive(false) } }
 
     DisposableEffect(lifecycleOwner, homeViewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -96,9 +84,7 @@ fun HomePager(
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(uiState.error) {
@@ -108,39 +94,35 @@ fun HomePager(
         }
     }
 
-    LaunchedEffect(uiState.message) {
-        uiState.message?.let {
-            homeViewModel.consumeMessage()
-        }
-    }
+    LaunchedEffect(uiState.message) { uiState.message?.let { homeViewModel.consumeMessage() } }
 
     val scrollBehavior = MiuixScrollBehavior()
 
     val isRunning = controlState == HomeProxyControlState.Running
     val isProxyEnabled = profilesLoaded && profiles.isNotEmpty() && controlState.canInteract
 
-    Scaffold(
-        topBar = { TopBar(title = MLang.Home.Title, scrollBehavior = scrollBehavior) },
-    ) { innerPadding ->
+    Scaffold(topBar = { TopBar(title = MLang.Home.Title, scrollBehavior = scrollBehavior) }) {
+        innerPadding ->
         ScreenLazyColumn(
             scrollBehavior = scrollBehavior,
             innerPadding = combinePaddingValues(innerPadding, mainInnerPadding),
         ) {
             item {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = AppConstants.UI.DEFAULT_HORIZONTAL_PADDING),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = AppConstants.UI.DEFAULT_HORIZONTAL_PADDING),
                     horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(AppConstants.UI.DEFAULT_VERTICAL_SPACING)
+                    verticalArrangement =
+                        Arrangement.spacedBy(AppConstants.UI.DEFAULT_VERTICAL_SPACING),
                 ) {
-
                     TrafficDisplay(
-                        trafficNow = if (isRunning) {
-                            TrafficData.from(trafficNow)
-                        } else {
-                            TrafficData.ZERO
-                        },
+                        trafficNow =
+                            if (isRunning) {
+                                TrafficData.from(trafficNow)
+                            } else {
+                                TrafficData.ZERO
+                            },
                         profileName = currentProfile?.name?.takeIf { isRunning },
                         tunnelMode = null,
                         controlState = controlState,
@@ -158,23 +140,25 @@ fun HomePager(
                                 onStart = { profile ->
                                     homeViewModel.startProxy(
                                         profileId = profile.uuid.toString(),
-                                        mode = null
+                                        mode = null,
                                     )
                                 },
-                                onStop = {
-                                    coroutineScope.launch { homeViewModel.stopProxy() }
-                                }
+                                onStop = { coroutineScope.launch { homeViewModel.stopProxy() } },
                             )
-                        }
+                        },
                     )
 
                     Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp16)) {
                         NodeInfoDisplay(
                             serverName = selectedServerName.takeIf { isRunning },
-                            serverPing = selectedServerPing.takeIf { isRunning }
+                            serverPing = selectedServerPing.takeIf { isRunning },
                         )
                         IpInfoDisplay(
-                            state = if (isRunning) ipMonitoringState else com.github.yumelira.yumebox.data.gateway.IpMonitoringState.Loading
+                            state =
+                                if (isRunning) ipMonitoringState
+                                else
+                                    com.github.yumelira.yumebox.data.gateway.IpMonitoringState
+                                        .Loading
                         )
                     }
 
@@ -185,7 +169,7 @@ fun HomePager(
                             navigator.navigate(TrafficStatisticsScreenDestination) {
                                 launchSingleTop = true
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -199,7 +183,7 @@ private fun handleProxyToggle(
     isRunning: Boolean,
     recommendedProfile: com.github.yumelira.yumebox.service.runtime.entity.Profile?,
     onStart: (com.github.yumelira.yumebox.service.runtime.entity.Profile) -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
 ) {
     if (!isRunning) {
         recommendedProfile?.let { profile -> onStart(profile) }

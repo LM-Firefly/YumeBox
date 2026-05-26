@@ -18,16 +18,15 @@
  *
  */
 
-
 package com.github.yumelira.yumebox.presentation.component
-import com.github.yumelira.yumebox.presentation.theme.UiDp
+
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -48,11 +47,7 @@ fun DialogButtonRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(UiDp.dp16),
     ) {
-        TextButton(
-            text = cancelText,
-            onClick = onCancel,
-            modifier = Modifier.weight(1f),
-        )
+        TextButton(text = cancelText, onClick = onCancel, modifier = Modifier.weight(1f))
         TextButton(
             text = confirmText,
             onClick = onConfirm,
@@ -77,11 +72,7 @@ fun DialogFilledButtonRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
     ) {
-        Button(
-            onClick = onSecondary,
-            enabled = secondaryEnabled,
-            modifier = Modifier.weight(1f),
-        ) {
+        Button(onClick = onSecondary, enabled = secondaryEnabled, modifier = Modifier.weight(1f)) {
             Text(secondaryText)
         }
         Button(
@@ -90,10 +81,7 @@ fun DialogFilledButtonRow(
             modifier = Modifier.weight(1f),
             colors = ButtonDefaults.buttonColorsPrimary(),
         ) {
-            Text(
-                text = primaryText,
-                color = MiuixTheme.colorScheme.onPrimary,
-            )
+            Text(text = primaryText, color = MiuixTheme.colorScheme.onPrimary)
         }
     }
 }
