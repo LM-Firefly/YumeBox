@@ -78,7 +78,7 @@ jobs:
           name: native-${{ inputs.channel }}
           path: jniLibs
 
-      - name: Verify native inputs
+      - name: Verify native and geo inputs
         shell: bash
         run: |
           set -eu
@@ -87,6 +87,9 @@ jobs:
             test -f "jniLibs/${abi}/liboverride.so"
             test -f "jniLibs/${abi}/libbridge.so"
           done
+          test -f "build/generated/assets/geo/geoip.metadb.xz"
+          test -f "build/generated/assets/geo/geosite.dat.xz"
+          test -f "build/generated/assets/geo/ASN.mmdb.xz"
 
       - name: Write signing config
         run: |

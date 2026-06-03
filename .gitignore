@@ -81,4 +81,7 @@ Thumbs.db
 /lib/mihomo/mihomo/
 /.codex/environments/environment.toml
 /docs/code-review/
-/docs/code-review/
+.cursor
+.agents
+.codex
+.trellis

@@ -39,6 +39,8 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.qualifier.named
 import timber.log.Timber
+import java.io.File
+import org.tukaani.xz.XZInputStream
 
 class App : Application() {
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -66,6 +68,7 @@ class App : Application() {
             networkSettings = koin.get(),
             networkSettingsStore = koin.get(named("network_settings")),
         )
+        extractGeoFiles()
         scheduleWarmup(koin.get())
     }
 
@@ -91,13 +94,32 @@ class App : Application() {
         }
     }
 
+    private fun extractGeoFiles() {
+        val dir = runtimeHomeDir.apply { mkdirs() }
+        for (name in listOf("geoip.metadb", "geosite.dat", "ASN.mmdb")) {
+            val target = File(dir, name)
+            if (!target.exists()) {
+                extractXzAsset("$name.xz", target) ?: copyAsset(name, target)
+            }
+        }
+    }
+
+    private fun copyAsset(name: String, target: File) {
+        assets.open(name).use { it.copyTo(target.outputStream()) }
+    }
+
+    private fun extractXzAsset(assetName: String, target: File): Unit? = runCatching {
+        assets.open(assetName).use { input ->
+            XZInputStream(input.buffered()).use { xz ->
+                target.outputStream().buffered().use { xz.copyTo(it) }
+            }
+        }
+        Unit
+    }.getOrNull()
+
     private fun scheduleWarmup(proxyFacade: ProxyFacade) {
         StartupTaskCoordinator.startRuntimeWarmup(startupScope) {
-            try {
-                proxyFacade.awaitProxyGroupWarmUp()
-            } catch (error: Exception) {
-                Timber.w(error, "Proxy preview warm-up skipped")
-            }
+            runCatching { proxyFacade.awaitProxyGroupWarmUp() }
         }
     }
 }
