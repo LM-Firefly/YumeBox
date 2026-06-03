@@ -48,13 +48,13 @@
     "links": [
       {
         "label": "Support",
-        "href": "https://github.com/YumeLira/YumeBox/issues"
+        "href": "https://github.com/YumeRiMoe/YumeBox/issues"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Github",
-      "href": "https://github.com/YumeLira/YumeBox"
+      "href": "https://github.com/YumeRiMoe/YumeBox"
     }
   },
   "contextual": {
@@ -82,7 +82,7 @@
       "rating": "general",
       "revisit-after": "7 days",
       "language": "en-US",
-      "copyright": "YumeLira",
+      "copyright": "YumeRiMoe",
       "distribution": "global",
       "HandheldFriendly": "True",
       "MobileOptimized": "320",

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025 - Present
+ * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
  *
  */
 
@@ -54,14 +54,14 @@ fun AboutScreen(navigator: DestinationsNavigator) {
 
                 Title("链接")
                 Card {
-                    LinkItem(title = "源码", url = "https://github.com/YumeLira/YumeBox")
+                    LinkItem(title = "源码", url = "https://github.com/YumeRiMoe/YumeBox")
                     LinkItem(
                         title = "许可证",
-                        url = "https://github.com/YumeLira/YumeBox/blob/main/LICENSE",
+                        url = "https://github.com/YumeRiMoe/YumeBox/blob/main/LICENSE",
                     )
                     LinkItem(
                         title = "隐私政策",
-                        url = "https://github.com/YumeLira/YumeBox/blob/main/PRIVACY_POLICY.md",
+                        url = "https://github.com/YumeRiMoe/YumeBox/blob/main/PRIVACY_POLICY.md",
                     )
                 }
             }

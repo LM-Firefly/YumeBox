@@ -6,7 +6,7 @@
 
 ## YumeBox
 
-[![Latest release](https://img.shields.io/github/v/release/YumeLira/YumeBox?label=Release&logo=github)](https://github.com/YumeLira/YumeBox/releases/latest)[![GitHub License](https://img.shields.io/github/license/YumeLira/YumeBox?logo=gnu)](/LICENSE)![Downloads](https://img.shields.io/github/downloads/YumeLira/YumeBox/total)[![Codacy Badge](https://app.codacy.com/project/badge/Grade/d4e3ab7c51254da9959598e34f639e0d)](https://app.codacy.com/gh/YumeLira/YumeBox/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Latest release](https://img.shields.io/github/v/release/YumeRiMoe/YumeBox?label=Release&logo=github)](https://github.com/YumeRiMoe/YumeBox/releases/latest)[![GitHub License](https://img.shields.io/github/license/YumeRiMoe/YumeBox?logo=gnu)](/LICENSE)![Downloads](https://img.shields.io/github/downloads/YumeRiMoe/YumeBox/total)[![Codacy Badge](https://app.codacy.com/project/badge/Grade/d4e3ab7c51254da9959598e34f639e0d)](https://app.codacy.com/gh/YumeRiMoe/YumeBox/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 **一个基于 [mihomo](https://github.com/MetaCubeX/mihomo) 内核的开源 Android 客户端**
 
@@ -16,13 +16,13 @@
 
 YumeBox 目前仅支持 **Android 8.0（API 26）及以上系统**。
 
-请前往 Release 页面下载对应架构的安装包：[Release](https://github.com/YumeLira/YumeBox/releases)更多内容请访问官网：[YumeBox](https://yumebox.oom-wg.dev)
+请前往 Release 页面下载对应架构的安装包：[Release](https://github.com/YumeRiMoe/YumeBox/releases)更多内容请访问官网：[YumeBox](https://yumebox.oom-wg.dev)
 覆写配置语法参考：[override 文档](https://yumebox.oom-wg.dev/override?utm_source=chatgpt.com)如果这个项目对你有帮助，请点下 Star ，这是持续更新的动力
 
 ### 反馈与建议
 
 如果遇到 Bug，请在 Issues 页面提交：
-[Issues](https://github.com/YumeLira/YumeBox/issues)
+[Issues](https://github.com/YumeRiMoe/YumeBox/issues)
 
 有想法或改进建议也可以在这里提出
 更多讨论与反馈可加入群组：[@OOM_WG](https://t.me/OOM_Group)
@@ -38,5 +38,11 @@ Fork 本项目，并在 `locale/lang` 目录下创建或更新对应的翻译文
 
 以及该项目中使用的 [第三方](ThirdParty.md) 库。
 
+### 图标与品牌声明
 
+1. **图标版权**：YumeBox 应用图标及品牌标识的版权归项目所有者所有。
+2. **Fork 发行版限制**：
+   - 发行版不得使用 YumeBox 项目名称。
+   - 发行版不得沿用 YumeBox 原始图标。
+   - 发行版不得包含 YumeBox Issue 反馈渠道。
 
