@@ -42,6 +42,7 @@ Fork this project and create or update the corresponding translation file in the
 
 And the [third-party](ThirdParty.md) libraries used in this project.
 
+
 1. **Icon Copyright**: The copyright of the YumeBox application icon and brand assets belongs to the project owners.
 2. **Fork Release Restrictions**:
    - Releases must not use the YumeBox project name.

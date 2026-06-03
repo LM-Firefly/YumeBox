@@ -76,7 +76,6 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: native-${{ inputs.channel }}
-          path: jniLibs
 
       - name: Verify native and geo inputs
         shell: bash
