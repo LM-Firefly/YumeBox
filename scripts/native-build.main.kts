@@ -743,17 +743,21 @@ fun main(args: Array<String>) {
     }
 
     val config = ProjectConfig()
-    val ndkTools = NdkTools(config)
-
-    println("NDK: ${ndkTools.ndkDir.absolutePath}")
-    println("Go: ${if (SystemDetector.checkCommandExists("go")) "OK" else "NOT FOUND"}")
-    println("Rust: ${if (SystemDetector.checkCommandExists("cargo")) "OK" else "NOT FOUND"}")
-    println("XZ library: org.tukaani:xz:1.12")
 
     val buildGo = args.isEmpty() || args.contains("--all") || args.contains("--go")
     val buildRust = args.isEmpty() || args.contains("--all") || args.contains("--rust")
     val buildCpp = args.isEmpty() || args.contains("--all") || args.contains("--cpp")
     val downloadGeo = args.isEmpty() || args.contains("--all") || args.contains("--geo")
+
+    val needsNdk = buildGo || buildCpp
+    val ndkTools by lazy { NdkTools(config) }
+
+    if (needsNdk) {
+        println("NDK: ${ndkTools.ndkDir.absolutePath}")
+    }
+    println("Go: ${if (SystemDetector.checkCommandExists("go")) "OK" else "NOT FOUND"}")
+    println("Rust: ${if (SystemDetector.checkCommandExists("cargo")) "OK" else "NOT FOUND"}")
+    println("XZ library: org.tukaani:xz:1.12")
 
     if (buildGo) {
         GoBuilder(config, ndkTools).buildAll()
