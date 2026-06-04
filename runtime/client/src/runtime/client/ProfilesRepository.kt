@@ -45,11 +45,11 @@ class ProfilesRepository(private val context: Context) {
     private val appContext = context.appContextOrSelf
     private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
 
-    suspend fun createProfile(type: Profile.Type, name: String, source: String = ""): UUID =
+    suspend fun createProfile(type: Profile.Type, name: String, source: String = "", ageSecretKey: String = ""): UUID =
         safeApiCall(TAG, "createProfile") {
                 Timber.d("Creating profile: type=$type, name=$name")
                 ServiceClient.connect(context)
-                ServiceClient.profile().create(type, name, source)
+                ServiceClient.profile().create(type, name, source, ageSecretKey)
             }
             .getOrThrow()
 
@@ -155,11 +155,11 @@ class ProfilesRepository(private val context: Context) {
             .getOrThrow()
     }
 
-    suspend fun patchProfile(uuid: UUID, name: String, source: String, interval: Long) {
+    suspend fun patchProfile(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String? = null) {
         safeApiCall(TAG, "patchProfile") {
                 Timber.d("Patching profile: uuid=$uuid")
                 ServiceClient.connect(context)
-                ServiceClient.profile().patch(uuid, name, source, interval)
+                ServiceClient.profile().patch(uuid, name, source, interval, ageSecretKey)
             }
             .getOrThrow()
     }

@@ -172,7 +172,7 @@ internal fun ProfileSettingsDialog(
     binding: ProfileBinding?,
     onDismiss: () -> Unit,
     onDismissFinished: () -> Unit,
-    onSaveProfileMeta: (String, String) -> Unit,
+    onSaveProfileMeta: (String, String, String?) -> Unit,
     onSaveOverrideSettings: (List<String>) -> Unit,
 ) {
     val spacing = AppTheme.spacing
@@ -190,6 +190,8 @@ internal fun ProfileSettingsDialog(
         mutableStateOf(TextFieldValue(profile.name, TextRange(profile.name.length)))
     }
     var editSource by remember { mutableStateOf(TextFieldValue()) }
+    var editAgeSecretKey by remember { mutableStateOf(TextFieldValue()) }
+    var initialAgeSecretKey by remember { mutableStateOf("") }
     var customRoutingSelected by remember { mutableStateOf(initialCustomRoutingEnabled) }
     var pendingSelectedUserOverrideIds by remember { mutableStateOf(emptyList<String>()) }
 
@@ -197,6 +199,9 @@ internal fun ProfileSettingsDialog(
         if (show) {
             editName = TextFieldValue(profile.name, TextRange(profile.name.length))
             editSource = TextFieldValue()
+            val currentKey = profile.ageSecretKey
+            editAgeSecretKey = TextFieldValue(currentKey, TextRange(currentKey.length))
+            initialAgeSecretKey = currentKey
             customRoutingSelected = initialCustomRoutingEnabled
             pendingSelectedUserOverrideIds = initialOverrideIds
         }
@@ -209,6 +214,7 @@ internal fun ProfileSettingsDialog(
     val saveSettings = {
         val trimmedName = editName.text.trim()
         val trimmedSource = editSource.text.trim()
+        val trimmedAgeSecretKey = editAgeSecretKey.text.trim()
         val targetSource =
             if (profile.type == Profile.Type.Url && trimmedSource.isNotEmpty()) {
                 trimmedSource
@@ -218,9 +224,13 @@ internal fun ProfileSettingsDialog(
         if (
             trimmedName.isNotEmpty() &&
                 targetSource.isNotEmpty() &&
-                (trimmedName != profile.name || targetSource != profile.source)
+                (trimmedName != profile.name || targetSource != profile.source || trimmedAgeSecretKey != initialAgeSecretKey)
         ) {
-            onSaveProfileMeta(trimmedName, targetSource)
+            onSaveProfileMeta(
+                trimmedName,
+                targetSource,
+                if (trimmedAgeSecretKey != initialAgeSecretKey) trimmedAgeSecretKey else null,
+            )
         }
 
         val basicFinalIds = buildFinalOverrideIds(pendingSelectedUserOverrideIds)
@@ -283,6 +293,15 @@ internal fun ProfileSettingsDialog(
                         maxLines = 2,
                     )
                 }
+
+                TextField(
+                    value = editAgeSecretKey,
+                    onValueChange = { editAgeSecretKey = it },
+                    label = MLang.ProfilesPage.SettingsDialog.AgeSecretKey,
+                    useLabelAsPlaceholder = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
 
                 Card {
                     Column {

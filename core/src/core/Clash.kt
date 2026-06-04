@@ -290,4 +290,8 @@ object Clash {
     fun setCustomUserAgent(userAgent: String) {
         Bridge.nativeSetCustomUserAgent(userAgent)
     }
+
+    fun setAgeSecretKey(key: String) {
+        Bridge.nativeSetAgeSecretKey(key)
+    }
 }

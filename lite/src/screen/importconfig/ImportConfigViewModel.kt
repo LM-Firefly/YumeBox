@@ -91,13 +91,14 @@ class ImportConfigViewModel(
         source: String = "",
         interval: Long = 0L,
         fileUri: Uri? = null,
+        ageSecretKey: String = "",
         onComplete: (() -> Unit)? = null,
     ) {
         viewModelScope.launch {
             var createdUuid: UUID? = null
             try {
                 applyLoading(true)
-                val uuid = profilesRepository.createProfile(type, name, source)
+                val uuid = profilesRepository.createProfile(type, name, source, ageSecretKey)
                 createdUuid = uuid
                 _downloadProgress.value = DownloadProgress(0, MLang.ProfilesVM.Progress.Preparing)
 

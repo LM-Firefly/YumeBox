@@ -82,6 +82,7 @@ internal fun AddProfileSheet(
             type: Profile.Type,
             interval: Long,
             fileUri: android.net.Uri?,
+            ageSecretKey: String,
         ) -> Unit,
     onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long) -> Unit,
     onDownloadComplete: () -> Unit,
@@ -102,6 +103,8 @@ internal fun AddProfileSheet(
     var filePath by remember { mutableStateOf("") }
     var fileName by remember { mutableStateOf("") }
     var fileNameTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+    var ageSecretKey by remember { mutableStateOf("") }
+    var ageSecretKeyTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
 
@@ -161,6 +164,8 @@ internal fun AddProfileSheet(
         applyUrlText("")
         filePath = ""
         applyFileNameText("")
+        ageSecretKey = ""
+        ageSecretKeyTextFieldValue = TextFieldValue()
         error = ""
         isDownloading = false
         hasShownCompleteAnimation = false
@@ -365,6 +370,7 @@ internal fun AddProfileSheet(
                     Profile.Type.Url,
                     0L,
                     null,
+                    ageSecretKey,
                 )
             }
         } else {
@@ -382,6 +388,7 @@ internal fun AddProfileSheet(
                     Profile.Type.File,
                     0L,
                     filePath.toUri(),
+                    ageSecretKey,
                 )
             }
         }
@@ -457,6 +464,7 @@ internal fun AddProfileSheet(
                         nameTextFieldValue = nameTextFieldValue,
                         urlTextFieldValue = urlTextFieldValue,
                         fileNameTextFieldValue = fileNameTextFieldValue,
+                        ageSecretKeyTextFieldValue = ageSecretKeyTextFieldValue,
                         error = error,
                         hasCameraPermission = hasCameraPermission,
                         showCameraPreview = showCameraPreview,
@@ -476,6 +484,10 @@ internal fun AddProfileSheet(
                             urlTextFieldValue = updatedTextFieldValue
                             url = updatedTextFieldValue.text
                             error = ""
+                        },
+                        onAgeSecretKeyChange = { updatedTextFieldValue ->
+                            ageSecretKeyTextFieldValue = updatedTextFieldValue
+                            ageSecretKey = updatedTextFieldValue.text
                         },
                         onPickFile = { launcher.launch("*/*") },
                         onSelectQrImage = { qrImageLauncher.launch("image/*") },
@@ -560,6 +572,7 @@ private fun ProfileFormContent(
     nameTextFieldValue: TextFieldValue,
     urlTextFieldValue: TextFieldValue,
     fileNameTextFieldValue: TextFieldValue,
+    ageSecretKeyTextFieldValue: TextFieldValue,
     error: String,
     hasCameraPermission: Boolean,
     showCameraPreview: Boolean,
@@ -567,6 +580,7 @@ private fun ProfileFormContent(
     onTypeSelected: (Int) -> Unit,
     onNameChange: (TextFieldValue) -> Unit,
     onUrlChange: (TextFieldValue) -> Unit,
+    onAgeSecretKeyChange: (TextFieldValue) -> Unit,
     onPickFile: () -> Unit,
     onSelectQrImage: () -> Unit,
     onQrScanned: (String) -> Unit,
@@ -602,9 +616,11 @@ private fun ProfileFormContent(
                         nameTextFieldValue = nameTextFieldValue,
                         urlTextFieldValue = urlTextFieldValue,
                         fileNameTextFieldValue = fileNameTextFieldValue,
+                        ageSecretKeyTextFieldValue = ageSecretKeyTextFieldValue,
                         error = error,
                         onNameChange = onNameChange,
                         onUrlChange = onUrlChange,
+                        onAgeSecretKeyChange = onAgeSecretKeyChange,
                         onPickFile = onPickFile,
                     )
             }
@@ -688,9 +704,11 @@ private fun ManualProfileContent(
     nameTextFieldValue: TextFieldValue,
     urlTextFieldValue: TextFieldValue,
     fileNameTextFieldValue: TextFieldValue,
+    ageSecretKeyTextFieldValue: TextFieldValue,
     error: String,
     onNameChange: (TextFieldValue) -> Unit,
     onUrlChange: (TextFieldValue) -> Unit,
+    onAgeSecretKeyChange: (TextFieldValue) -> Unit,
     onPickFile: () -> Unit,
 ) {
     Column(
@@ -734,6 +752,14 @@ private fun ManualProfileContent(
             )
         }
 
+        TextField(
+            value = ageSecretKeyTextFieldValue,
+            onValueChange = onAgeSecretKeyChange,
+            label = MLang.ProfilesPage.Input.AgeSecretKey,
+            useLabelAsPlaceholder = true,
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
         if (error.isNotEmpty()) {
             Text(
                 text = error,

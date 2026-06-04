@@ -223,8 +223,8 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
         show = showAddBottomSheet,
         profileToEdit = profileToEdit,
         importUrl = importUrlFromScheme ?: scannedUrl,
-        onAddProfile = { name, source, type, interval, fileUri ->
-            profilesViewModel.createProfile(type, name, source, interval, fileUri)
+        onAddProfile = { name, source, type, interval, fileUri, ageSecretKey ->
+            profilesViewModel.createProfile(type, name, source, interval, fileUri, ageSecretKey)
         },
         onUpdateProfile = { uuid, name, source, interval ->
             profilesViewModel.patchProfile(uuid, name, source, interval)
@@ -262,13 +262,14 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 profileToEdit = null
                 profileBinding = null
             },
-            onSaveProfileMeta = { newName, newSource ->
+            onSaveProfileMeta = { newName, newSource, ageSecretKey ->
                 if (newName.isNotBlank() && newSource.isNotBlank()) {
                     profilesViewModel.patchProfile(
                         currentProfileToEdit.uuid,
                         newName,
                         newSource,
                         currentProfileToEdit.interval,
+                        ageSecretKey,
                     )
                 }
             },

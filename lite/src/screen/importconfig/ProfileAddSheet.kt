@@ -95,6 +95,7 @@ internal fun AddProfileSheet(
             type: Profile.Type,
             interval: Long,
             fileUri: android.net.Uri?,
+            ageSecretKey: String,
         ) -> Unit,
     onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long) -> Unit,
     onDismissFinished: () -> Unit,
@@ -113,6 +114,7 @@ internal fun AddProfileSheet(
     var url by remember { mutableStateOf("") }
     var filePath by remember { mutableStateOf("") }
     var fileName by remember { mutableStateOf("") }
+    var ageSecretKey by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
     var hasShownCompleteAnimation by remember { mutableStateOf(false) }
@@ -286,6 +288,7 @@ internal fun AddProfileSheet(
                     Profile.Type.Url,
                     0L,
                     null,
+                    ageSecretKey,
                 )
             }
         } else {
@@ -303,6 +306,7 @@ internal fun AddProfileSheet(
                     Profile.Type.File,
                     0L,
                     filePath.toUri(),
+                    ageSecretKey,
                 )
             }
         }
@@ -467,6 +471,15 @@ internal fun AddProfileSheet(
                             )
                         }
 
+                        TextField(
+                            value = ageSecretKey,
+                            onValueChange = {
+                                ageSecretKey = it
+                            },
+                            label = MLang.ProfilesPage.Input.AgeSecretKey,
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                         if (error.isNotEmpty()) {
                             Text(
                                 text = error,

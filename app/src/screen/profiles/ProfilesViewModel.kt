@@ -99,12 +99,13 @@ class ProfilesViewModel(
         source: String = "",
         interval: Long = 0L,
         fileUri: Uri? = null,
+        ageSecretKey: String = "",
     ) {
         viewModelScope.launch {
             var createdUuid: UUID? = null
             try {
                 applyLoading(true)
-                val uuid = profilesRepository.createProfile(type, name, source)
+                val uuid = profilesRepository.createProfile(type, name, source, ageSecretKey)
                 createdUuid = uuid
 
                 _downloadProgress.value =
@@ -248,11 +249,11 @@ class ProfilesViewModel(
         }
     }
 
-    fun patchProfile(uuid: UUID, name: String, source: String, interval: Long) {
+    fun patchProfile(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String? = null) {
         viewModelScope.launch {
             try {
                 applyLoading(true)
-                profilesRepository.patchProfile(uuid, name, source, interval)
+                profilesRepository.patchProfile(uuid, name, source, interval, ageSecretKey)
                 showMessage(MLang.ProfilesVM.Message.ProfileUpdated.format(name))
                 refreshProfiles()
                 Timber.i("Profile patched: $uuid")

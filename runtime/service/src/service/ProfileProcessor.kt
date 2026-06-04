@@ -393,6 +393,15 @@ object ProfileProcessor {
                 var subInfo: SubscriptionInfo? = null
 
                 try {
+                    // Apply age secret key before fetching/decrypting config
+                    if (snapshot.imported.ageSecretKey.isNotBlank()) {
+                        Clash.setAgeSecretKey(snapshot.imported.ageSecretKey)
+                        Log.d("Applied age secret key for profile: ${snapshot.imported.uuid}")
+                    } else {
+                        // Clear any previously set age identities
+                        Clash.setAgeSecretKey("")
+                    }
+
                     if (snapshot.imported.type == Profile.Type.Url) {
                         subInfo =
                             fetchUrlSubscription(stagingDir, snapshot.imported.source) { progress ->
@@ -455,6 +464,7 @@ object ProfileProcessor {
                                     subInfo?.total ?: snapshot.imported.total,
                                     subInfo?.expire ?: snapshot.imported.expire,
                                     snapshot.imported.createdAt,
+                                    ageSecretKey = snapshot.imported.ageSecretKey,
                                 )
                             ImportedDao.update(updated)
 
@@ -473,7 +483,16 @@ object ProfileProcessor {
                             context.sendProfileChanged(snapshot.imported.uuid)
                         }
                     }
-                    throw error
+                    // Provide a more user-friendly error message for age decryption failures
+                    val errorMessage = error.message ?: ""
+                    if (errorMessage.contains("no identities specified") || errorMessage.contains("decrypt config error")) {
+                        throw IllegalArgumentException(
+                            "This config is encrypted with age. Please provide the age secret key when importing the config.",
+                            error
+                        )
+                    } else {
+                        throw error
+                    }
                 } finally {
                     stagingDir.deleteRecursively()
                 }

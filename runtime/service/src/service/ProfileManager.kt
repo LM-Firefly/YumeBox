@@ -47,7 +47,7 @@ class ProfileManager(private val context: Context) :
         launch { context.importedDir.mkdirs() }
     }
 
-    override suspend fun create(type: Profile.Type, name: String, source: String): UUID {
+    override suspend fun create(type: Profile.Type, name: String, source: String, ageSecretKey: String): UUID {
         val uuid = generateProfileUUID()
         val normalizedName = name.trim().ifBlank { "New Profile" }
         val now = System.currentTimeMillis()
@@ -64,6 +64,7 @@ class ProfileManager(private val context: Context) :
                 download = 0,
                 expire = 0,
                 createdAt = now,
+                ageSecretKey = ageSecretKey,
             )
 
         ImportedDao.insert(imported)
@@ -90,6 +91,7 @@ class ProfileManager(private val context: Context) :
                 download = imported.download,
                 expire = imported.expire,
                 createdAt = now,
+                ageSecretKey = imported.ageSecretKey,
             )
 
         val sourceDir = context.importedDir.resolve(uuid.toString())
@@ -105,11 +107,16 @@ class ProfileManager(private val context: Context) :
         return newUUID
     }
 
-    override suspend fun patch(uuid: UUID, name: String, source: String, interval: Long) {
+    override suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String?) {
         val imported =
             ImportedDao.queryByUUID(uuid) ?: throw FileNotFoundException("profile $uuid not found")
 
-        val updated = imported.copy(name = name, source = source, interval = interval)
+        val updated = imported.copy(
+            name = name,
+            source = source,
+            interval = interval,
+            ageSecretKey = ageSecretKey ?: imported.ageSecretKey,
+        )
 
         ImportedDao.update(updated)
         context.sendProfileChanged(uuid)
@@ -194,6 +201,7 @@ class ProfileManager(private val context: Context) :
             imported.total,
             imported.expire,
             resolveUpdatedAt(uuid),
+            imported.ageSecretKey,
         )
     }
 

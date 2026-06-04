@@ -199,9 +199,9 @@ fun ImportConfigScreen(navigator: DestinationsNavigator, prefillUrl: String = ""
             profileToEdit = profileToEdit,
             importUrl = importUrlFromScheme,
             initialType = initialType,
-            onAddProfile = { name, source, type, interval, fileUri ->
+            onAddProfile = { name, source, type, interval, fileUri, ageSecretKey ->
                 isDownloading = true
-                viewModel.createProfile(type, name, source, interval, fileUri) {
+                viewModel.createProfile(type, name, source, interval, fileUri, ageSecretKey) {
                     isDownloading = false
                 }
             },

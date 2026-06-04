@@ -120,6 +120,8 @@ object Bridge {
 
     external fun nativeSetCustomUserAgent(userAgent: String)
 
+    external fun nativeSetAgeSecretKey(key: String)
+
     private external fun nativeInit(home: String, versionName: String, sdkVersion: Int)
 
     init {

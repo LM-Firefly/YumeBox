@@ -29,6 +29,8 @@ ProfilesPage = {
         SubscriptionUrl = "Subscription URL (HTTP/HTTPS)"
         SelectFile = "Click to select file"
         NewProfile = "New Profile"
+        AgeSecretKey = "Age Secret Key (optional)"
+        AgeSecretKeyHint = "Required if the config is encrypted with age"
     }
 
     QrScanner = {
@@ -113,5 +115,6 @@ ProfilesPage = {
         EditSettings = "Edit Settings"
         SaveFailed = "Failed to save profile"
         ConfigMissing = "Config not found: %s"
+        AgeSecretKey = "Age Secret Key"
     }
 }

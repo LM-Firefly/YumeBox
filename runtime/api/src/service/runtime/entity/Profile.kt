@@ -45,6 +45,7 @@ data class Profile(
     val total: Long,
     val expire: Long,
     val updatedAt: Long,
+    val ageSecretKey: String = "",
 ) : Parcelable {
     enum class Type {
         File,

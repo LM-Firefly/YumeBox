@@ -650,4 +650,13 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSetCustomUserAgent(JNI
     setCustomUserAgent(ua);
 }
 
+JNIEXPORT void JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeSetAgeSecretKey(JNIEnv *env, jobject thiz, jstring key) {
+    TRACE_METHOD();
+
+    scoped_string k = get_string(key);
+
+    setAgeSecretKey(k);
+}
+
 } // extern "C"

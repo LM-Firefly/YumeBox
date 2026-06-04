@@ -29,6 +29,7 @@ ProfilesPage = {
         SubscriptionUrl = "订阅链接 (HTTP/HTTPS)"
         SelectFile = "点击选择文件"
         NewProfile = "新配置"
+        AgeSecretKey = "Age 私钥（可选）"
     }
 
     QrScanner = {
@@ -113,5 +114,6 @@ ProfilesPage = {
         EditSettings = "编辑设置"
         SaveFailed = "保存配置失败"
         ConfigMissing = "配置不存在：%s"
+        AgeSecretKey = "Age 私钥"
     }
 }
