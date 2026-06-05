@@ -8,8 +8,6 @@ import (
 	"unsafe"
 
 	"cfa/native/config"
-
-	"github.com/metacubex/mihomo/component/age"
 )
 
 type remoteValidCallback struct {
@@ -70,14 +68,14 @@ func inspectCompiledGroups(yamlText C.c_string, profileDir C.c_string, excludeNo
 	return marshalYaml(groups)
 }
 
-//export setAgeSecretKey
-func setAgeSecretKey(key C.c_string) {
-	k := C.GoString(key)
-	if k == "" {
-		age.SetGlobalIdentities(nil)
-		return
+//export inspectCompiledGroupNames
+func inspectCompiledGroupNames(yamlText C.c_string, excludeNotSelectable C.int) *C.char {
+	names, err := config.QueryGroupNamesFromCompiledYaml(
+		C.GoString(yamlText),
+		excludeNotSelectable != 0,
+	)
+	if err != nil {
+		return nil
 	}
-	if identities, err := age.ParseIdentities(k); err == nil {
-		age.SetGlobalIdentities(identities)
-	}
+	return marshalJson(names)
 }

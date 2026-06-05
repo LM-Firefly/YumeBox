@@ -18,20 +18,24 @@
  *
  */
 
-package com.github.yumelira.yumebox.remote
+package com.github.yumelira.yumebox.runtime.client.remote
 
 import android.content.Context
+import com.github.yumelira.yumebox.core.appContextOrSelf
 import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.util.AppForegroundState
+import com.github.yumelira.yumebox.core.util.AppScreenState
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.core.util.throttleByScene
+import com.github.yumelira.yumebox.core.util.throttleWhenScreenOff
 import com.github.yumelira.yumebox.runtime.client.root.RootTunController
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.ILogObserver
-import com.github.yumelira.yumebox.service.root.RootTunRuntimeRecovery
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -39,122 +43,121 @@ import timber.log.Timber
 
 class RuntimeClashManager(context: Context, private val local: IClashManager) : IClashManager {
     private val appContext = context.appContextOrSelf
-    private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
+    private val rootTunStateStore by lazy { RuntimeContractResolver.rootTunStateStore(appContext) }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var rootLogJob: Job? = null
     private var rootLogSeq: Long = 0L
+    fun close() {
+        rootLogJob?.cancel()
+        rootLogJob = null
+        runCatching { scope.cancel() }
+    }
 
-    override fun queryTunnelState(): TunnelState {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryTunnelState(appContext) } },
+    override suspend fun queryTunnelState(): TunnelState {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryTunnelState(appContext) },
             localCall = { local.queryTunnelState() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryTrafficNow(): Long {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryTrafficNow(appContext) } },
+    override suspend fun queryTrafficNow(): Long {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryTrafficNow(appContext) },
             localCall = { local.queryTrafficNow() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryTrafficTotal(): Long {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryTrafficTotal(appContext) } },
+    override suspend fun queryTrafficTotal(): Long {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryTrafficTotal(appContext) },
             localCall = { local.queryTrafficTotal() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryConnections(): ConnectionSnapshot {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryConnections(appContext) } },
+    override suspend fun queryConnections(): ConnectionSnapshot {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryConnections(appContext) },
             localCall = { local.queryConnections() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+    override suspend fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
         return local.queryProfileProxyGroupNames(excludeNotSelectable)
     }
 
-    override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+    override suspend fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         return local.queryProfileProxyGroups(excludeNotSelectable)
     }
 
-    override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
-        return queryWithRuntime(
-            rootCall = {
-                runBlocking {
-                    RootTunController.queryAllProxyGroups(appContext, excludeNotSelectable)
-                }
-            },
+    override suspend fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+        return queryWithRuntimeSuspend(
+            rootCall = {RootTunController.queryAllProxyGroups(appContext, excludeNotSelectable) },
             localCall = { local.queryAllProxyGroups(excludeNotSelectable) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return queryWithRuntime(
-            rootCall = {
-                runBlocking {
-                    RootTunController.queryProxyGroupNames(appContext, excludeNotSelectable)
-                }
-            },
+    override suspend fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryProxyGroupNames(appContext, excludeNotSelectable) },
             localCall = { local.queryProxyGroupNames(excludeNotSelectable) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
-        return queryWithRuntime(
-            rootCall = {
-                runBlocking { RootTunController.queryProxyGroup(appContext, name, proxySort) }
-            },
+    override suspend fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryProxyGroup(appContext, name, proxySort) },
             localCall = { local.queryProxyGroup(name, proxySort) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryConfiguration(): UiConfiguration {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.queryConfiguration(appContext) } },
+    override suspend fun queryConfiguration(): UiConfiguration {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.queryConfiguration(appContext) },
             localCall = { local.queryConfiguration() },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun queryProviders(): ProviderList {
+    override suspend fun queryProviders(): ProviderList {
         val providers =
-            queryWithRuntime(
-                rootCall = { runBlocking { RootTunController.queryProviders(appContext) } },
+            queryWithRuntimeSuspend(
+                rootCall = { RootTunController.queryProviders(appContext) },
                 localCall = { local.queryProviders().toList() },
                 fallbackOnRootFailure = false,
             )
         return ProviderList(providers)
     }
 
-    override fun patchSelector(group: String, name: String): Boolean {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.patchSelector(appContext, group, name) } },
-            localCall = { local.patchSelector(group, name) },
-            fallbackOnRootFailure = false,
-        )
+    override suspend fun patchTunnelMode(mode: TunnelState.Mode): Boolean {
+        return local.patchTunnelMode(mode)
     }
 
-    override fun closeConnection(id: String): Boolean {
-        return queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.closeConnection(appContext, id) } },
+    override suspend fun patchSelector(group: String, name: String): Boolean {
+        return local.patchSelector(group, name)
+    }
+
+    override suspend fun patchForceSelector(group: String, name: String): Boolean {
+        return local.patchForceSelector(group, name)
+    }
+
+    override suspend fun closeConnection(id: String): Boolean {
+        return queryWithRuntimeSuspend(
+            rootCall = { RootTunController.closeConnection(appContext, id) },
             localCall = { local.closeConnection(id) },
             fallbackOnRootFailure = false,
         )
     }
 
-    override fun closeAllConnections() {
-        queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.closeAllConnections(appContext) } },
+    override suspend fun closeAllConnections() {
+        queryWithRuntimeSuspend(
+            rootCall = { RootTunController.closeAllConnections(appContext) },
             localCall = { local.closeAllConnections() },
             fallbackOnRootFailure = false,
         )
@@ -172,7 +175,7 @@ class RuntimeClashManager(context: Context, private val local: IClashManager) : 
         return queryWithRuntimeSuspend(
             rootCall = {
                 val payload = RootTunController.healthCheckProxy(appContext, group, proxyName)
-                val json = kotlinx.serialization.json.Json.parseToJsonElement(payload)
+                val json = Json.parseToJsonElement(payload)
                 json.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
             },
             localCall = { local.healthCheckProxy(group, proxyName) },
@@ -190,12 +193,19 @@ class RuntimeClashManager(context: Context, private val local: IClashManager) : 
 
     override fun requestStop() {
         queryWithRuntime(
-            rootCall = { runBlocking { RootTunController.requestStop(appContext) } },
+            rootCall = {
+                scope.launch {
+                    runCatching { RootTunController.requestStop(appContext) }
+                        .onFailure { Timber.w(it, "Root runtime requestStop failed") }
+                }
+                Unit
+            },
             localCall = { local.requestStop() },
             fallbackOnRootFailure = false,
         )
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun setLogObserver(observer: ILogObserver?) {
         if (useRootRuntime()) {
             local.setLogObserver(null)
@@ -205,20 +215,30 @@ class RuntimeClashManager(context: Context, private val local: IClashManager) : 
                 return
             }
             rootLogJob = scope.launch {
-                PollingTimers.ticks(PollingTimerSpecs.RuntimeRootLogPolling).collect {
+                PollingTimers.ticks(PollingTimerSpecs.RuntimeRootLogPolling)
+                    .throttleByScene(
+                        screenOn = AppScreenState.screenOn,
+                        appForeground = AppForegroundState.foreground,
+                        backgroundIntervalMs = 5_000L,
+                        screenOffIntervalMs = 10_000L,
+                    )
+                    .collect {
                     runCatching {
-                            val chunk = RootTunController.queryRecentLogs(appContext, rootLogSeq)
-                            if (chunk.items.isNotEmpty()) {
-                                chunk.items.forEach { raw ->
-                                    observer.newItem(
-                                        com.github.yumelira.yumebox.service.root.RootTunJson.Default
-                                            .decodeFromString(LogMessage.serializer(), raw)
-                                    )
-                                }
+                        val chunk = RootTunController.queryRecentLogs(appContext, rootLogSeq)
+                        if (chunk.items.isNotEmpty()) {
+                            chunk.items.forEach { raw ->
+                                observer.newItem(
+                                    com.github.yumelira.yumebox.runtime.api.service.root.RootTunJson.Default.decodeFromString(
+                                        LogMessage.serializer(),
+                                        raw,
+                                    ),
+                                )
                             }
-                            rootLogSeq = chunk.nextSeq
                         }
-                        .onFailure { error -> Timber.d(error, "Root runtime log polling skipped") }
+                        rootLogSeq = chunk.nextSeq
+                    }.onFailure { error ->
+                        Timber.d(error, "Root runtime log polling skipped")
+                    }
                 }
             }
         } else {
@@ -266,13 +286,14 @@ class RuntimeClashManager(context: Context, private val local: IClashManager) : 
     }
 
     private fun handleRootRuntimeFailure(error: Throwable) {
-        if (RootTunRuntimeRecovery.isBinderConnectionFailure(error)) {
+        val recovery = RuntimeContractResolver.rootTunRuntimeRecovery
+        if (recovery.isBinderConnectionFailure(error)) {
             rootLogJob?.cancel()
             rootLogJob = null
             rootLogSeq = 0L
-            RootTunRuntimeRecovery.handleBinderGone(
+            recovery.handleBinderGone(
                 appContext,
-                RootTunRuntimeRecovery.binderFailureReason(error),
+                recovery.binderFailureReason(error),
             )
             Timber.w(error, "Root runtime binder died")
             return

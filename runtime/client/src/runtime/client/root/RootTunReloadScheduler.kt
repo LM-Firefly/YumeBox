@@ -22,13 +22,15 @@ package com.github.yumelira.yumebox.runtime.client.root
 
 import android.content.Context
 import android.content.Intent
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.core.appContextOrSelf
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.root.RootTunOperationResult
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
 import kotlinx.coroutines.*
 import timber.log.Timber
+
+private const val RELOAD_DEBOUNCE_MS = 100L
+private const val MAX_RERUN_COUNT = 2  // Prevent infinite reload loops
 
 object RootTunReloadScheduler {
     enum class Reason {
@@ -44,9 +46,9 @@ object RootTunReloadScheduler {
     private var reloadJob: Job? = null
     private val pendingReasons = linkedSetOf<Reason>()
     private var dirtyWhileRunning = false
-    @Volatile private var suppressNestedSchedule = false
+    private var rerunCount = 0  // Track consecutive reruns
 
-    fun isInternalOverrideSyncInProgress(): Boolean = suppressNestedSchedule
+    fun isInternalOverrideSyncInProgress(): Boolean = synchronized(lock) { reloadJob?.isActive == true }
 
     fun schedule(context: Context, reason: Reason) {
         val appContext = context.appContextOrSelf
@@ -58,7 +60,7 @@ object RootTunReloadScheduler {
             }
             debounceJob?.cancel()
             debounceJob = scope.launch {
-                PollingTimers.awaitTick(PollingTimerSpecs.RootTunReloadDebounce)
+                delay(RELOAD_DEBOUNCE_MS)
                 runReload(appContext)
             }
         }
@@ -79,7 +81,7 @@ object RootTunReloadScheduler {
             return
         }
 
-        val state = RootTunStateStore(context).snapshot()
+        val state = RuntimeContractResolver.rootTunStateStore(context).snapshot()
         if (!state.state.isActive && !state.runtimeReady) {
             return
         }
@@ -93,12 +95,17 @@ object RootTunReloadScheduler {
 
                 val shouldRunAgain =
                     synchronized(lock) {
-                        val rerun = dirtyWhileRunning || pendingReasons.isNotEmpty()
+                        val rerun = (dirtyWhileRunning || pendingReasons.isNotEmpty()) && rerunCount < MAX_RERUN_COUNT
+                        if (rerun) {
+                            rerunCount++
+                        } else {
+                            rerunCount = 0
+                        }
                         dirtyWhileRunning = false
                         rerun
                     }
                 if (shouldRunAgain) {
-                    PollingTimers.awaitTick(PollingTimerSpecs.RootTunReloadDebounce)
+                    delay(RELOAD_DEBOUNCE_MS)
                     runReload(context)
                 }
             }
@@ -108,26 +115,20 @@ object RootTunReloadScheduler {
     private suspend fun syncAndReload(
         context: Context,
         reasons: Set<Reason>,
-    ): com.github.yumelira.yumebox.service.root.RootTunOperationResult {
+    ): RootTunOperationResult {
         Timber.i("RootTun reload: reasons=%s", reasons.joinToString(","))
         return retryReload(context)
     }
 
     private suspend fun retryReload(
         context: Context
-    ): com.github.yumelira.yumebox.service.root.RootTunOperationResult {
+    ): RootTunOperationResult {
         val delays = longArrayOf(0L, 250L, 500L, 1000L)
         var lastResult =
-            com.github.yumelira.yumebox.service.root.RootTunOperationResult(success = true)
+            RootTunOperationResult(success = true)
         for (index in delays.indices) {
             if (delays[index] > 0L) {
-                PollingTimers.awaitTick(
-                    PollingTimerSpecs.dynamic(
-                        name = "root_tun_reload_retry_$index",
-                        intervalMillis = delays[index],
-                        initialDelayMillis = delays[index],
-                    )
-                )
+                delay(delays[index])
             }
             lastResult = RootTunController.reload(context)
             if (lastResult.success) {

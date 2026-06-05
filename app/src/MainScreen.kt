@@ -37,16 +37,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.navigationevent.NavigationEventInfo
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import androidx.navigationevent.NavigationEventInfo
 import com.github.yumelira.yumebox.common.util.openUrl
+import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
+import com.github.yumelira.yumebox.feature.proxy.presentation.screen.ProxyPager
 import com.github.yumelira.yumebox.presentation.component.*
-import com.github.yumelira.yumebox.presentation.screen.ProxyPager
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.screen.acg.AcgHomePage
 import com.github.yumelira.yumebox.screen.acg.calculateHomeVisibility
@@ -65,6 +67,7 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.collect
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -78,21 +81,13 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
     val hazeState = remember { HazeState() }
 
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
-    val featureViewModel = koinViewModel<FeatureViewModel>()
+    val featureStore = koinInject<FeatureStore>()
     val homeViewModel = koinViewModel<HomeViewModel>()
-    val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
-    val bottomBarUseLegacyStyle by
-        appSettingsViewModel.bottomBarUseLegacyStyle.state.collectAsState()
-    val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsState()
-    val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsState()
-    val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsState()
-    val acgWallpaperZoom by appSettingsViewModel.acgWallpaperZoom.state.collectAsState()
-    val acgWallpaperBiasX by appSettingsViewModel.acgWallpaperBiasX.state.collectAsState()
-    val acgWallpaperBiasY by appSettingsViewModel.acgWallpaperBiasY.state.collectAsState()
-    val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
-    val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
+    val mainScreenSettings by appSettingsViewModel.mainScreenSettings.collectAsStateWithLifecycle()
+    val selectedPanelType by featureStore.selectedPanelType.state.collectAsStateWithLifecycle()
+    val panelOpenMode by featureStore.panelOpenMode.state.collectAsStateWithLifecycle()
     val bottomBarScrollBehavior =
-        rememberBottomBarScrollBehavior(autoHideEnabled = bottomBarAutoHideEnabled)
+        rememberBottomBarScrollBehavior(autoHideEnabled = mainScreenSettings.bottomBarAutoHide)
     val pagerFlingBehavior = rememberMainPagerFlingBehavior(mainPagerState.pagerState)
     var settledMainPage by remember { mutableIntStateOf(initialMainPage) }
     val homeVisibility by
@@ -105,9 +100,9 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
             }
         }
     val acgBottomBarVisible by
-        remember(acgMainUiEnabled, settledMainPage, mainPagerState.selectedPage) {
+        remember(mainScreenSettings.acgMainUiEnabled, settledMainPage, mainPagerState.selectedPage) {
             derivedStateOf {
-                if (!acgMainUiEnabled) {
+                if (!mainScreenSettings.acgMainUiEnabled) {
                     true
                 } else if (mainPagerState.selectedPage == 0) {
                     false
@@ -164,15 +159,15 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
         LocalMainPagerState provides mainPagerState,
         LocalHandlePageChange provides handlePageChange,
         LocalBottomBarScrollBehavior provides bottomBarScrollBehavior,
-        LocalBottomBarHazeState provides if (topBarBlurEnabled) hazeState else null,
-        LocalBottomBarHazeStyle provides if (topBarBlurEnabled) bottomBarHazeStyle else null,
-        LocalBottomBarUseLegacyStyle provides bottomBarUseLegacyStyle,
+        LocalBottomBarHazeState provides if (mainScreenSettings.topBarBlurEnabled) hazeState else null,
+        LocalBottomBarHazeStyle provides if (mainScreenSettings.topBarBlurEnabled) bottomBarHazeStyle else null,
+        LocalBottomBarUseLegacyStyle provides mainScreenSettings.bottomBarUseLegacyStyle,
     ) {
         Scaffold { innerPadding ->
             Box(Modifier.fillMaxSize()) {
                 val layoutDirection = LocalLayoutDirection.current
                 val visibleBottomBarReservedHeight =
-                    rememberBottomBarReservedHeight(useLegacyStyle = bottomBarUseLegacyStyle)
+                    rememberBottomBarReservedHeight(useLegacyStyle = mainScreenSettings.bottomBarUseLegacyStyle,)
                 val bottomBarReservedHeight by
                     animateDpAsState(
                         targetValue =
@@ -196,7 +191,7 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                 HorizontalPager(
                     modifier =
                         Modifier.fillMaxSize().let { modifier ->
-                            if (topBarBlurEnabled) {
+                            if (mainScreenSettings.topBarBlurEnabled) {
                                 modifier.hazeSource(state = hazeState)
                             } else {
                                 modifier
@@ -216,11 +211,11 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                     MainRootPageContent(
                         page = page,
                         mainInnerPadding = mainInnerPadding,
-                        acgMainUiEnabled = acgMainUiEnabled,
-                        acgWallpaperUri = acgWallpaperUri,
-                        acgWallpaperZoom = acgWallpaperZoom,
-                        acgWallpaperBiasX = acgWallpaperBiasX,
-                        acgWallpaperBiasY = acgWallpaperBiasY,
+                        acgMainUiEnabled = mainScreenSettings.acgMainUiEnabled,
+                        acgWallpaperUri = mainScreenSettings.acgWallpaperUri,
+                        acgWallpaperZoom = mainScreenSettings.acgWallpaperZoom,
+                        acgWallpaperBiasX = mainScreenSettings.acgWallpaperBiasX,
+                        acgWallpaperBiasY = mainScreenSettings.acgWallpaperBiasY,
                         navigator = navigator,
                         activity = activity,
                         selectedPanelType = selectedPanelType,
@@ -237,7 +232,7 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                 ) {
                     BottomBarContent(
                         isVisible = acgBottomBarVisible,
-                        useLegacyStyle = bottomBarUseLegacyStyle,
+                        useLegacyStyle = mainScreenSettings.bottomBarUseLegacyStyle,
                     )
                 }
             }

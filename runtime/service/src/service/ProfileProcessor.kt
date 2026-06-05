@@ -18,20 +18,28 @@
  *
  */
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.content.Context
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
-import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import com.github.yumelira.yumebox.service.runtime.records.SelectionDao
-import com.github.yumelira.yumebox.service.runtime.util.importedDir
-import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
+import com.github.yumelira.yumebox.core.importedDir
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.entity.Imported
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.runtime.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendProfileChanged
 import com.tencent.mmkv.MMKV
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import okhttp3.ConnectionPool
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
@@ -42,16 +50,12 @@ import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
 
 object ProfileProcessor {
     private const val DEFAULT_USER_AGENT = "ClashMetaForAndroid"
+    private const val HTTP_BUFFER_SIZE = 8192  // 8KB buffer for streaming
+    private const val HTTP_IDLE_TIMEOUT_MINUTES = 5L
+    private const val HTTP_MAX_IDLE_CONNECTIONS = 5
 
     private val profileLock = Mutex()
     private val processLock = Mutex()
@@ -61,6 +65,13 @@ object ProfileProcessor {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .followRedirects(true)
+            .connectionPool(
+                ConnectionPool(
+                    maxIdleConnections = HTTP_MAX_IDLE_CONNECTIONS,
+                    keepAliveDuration = HTTP_IDLE_TIMEOUT_MINUTES,
+                    timeUnit = TimeUnit.MINUTES
+                )
+            )
             .build()
 
     private fun resolveUserAgent(): String {
@@ -114,7 +125,7 @@ object ProfileProcessor {
                     val lastUpdate = AtomicLong(0)
 
                     targetFile.outputStream().use { output ->
-                        val buffer = ByteArray(8192)
+                        val buffer = ByteArray(HTTP_BUFFER_SIZE)
                         var bytesRead: Int
 
                         while (inputStream.read(buffer).also { bytesRead = it } != -1) {

@@ -30,8 +30,8 @@ import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
 import com.github.yumelira.yumebox.presentation.component.TrafficDonutSlice
-import com.github.yumelira.yumebox.presentation.theme.AppColors
 import dev.oom_wg.purejoy.mlang.MLang
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,30 +39,30 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TrafficStatisticsViewModel(private val trafficStatisticsStore: TrafficStatisticsStore) :
     ViewModel() {
     private val selectedTimeRange = MutableStateFlow(StatisticsTimeRange.TODAY)
-    private val appColors = AppColors()
 
     val uiState: StateFlow<TrafficStatisticsUiState> =
         combine(selectedTimeRange, trafficStatisticsStore.dailyAppSummaries) { range, _ ->
+            withContext(Dispatchers.Default) {
                 val topApps = trafficStatisticsStore.getAppUsagesSorted(range)
-                val totalUpload = topApps.sumOf(AppTrafficUsage::totalUpload)
-                val totalDownload = topApps.sumOf(AppTrafficUsage::totalDownload)
-
+                val totals = trafficStatisticsStore.getTotalSummary(range)
                 TrafficStatisticsUiState(
                     selectedTimeRange = range,
                     summary =
                         DailyTrafficSummary(
                             dateMillis = range.days.toLong(),
-                            totalUpload = totalUpload,
-                            totalDownload = totalDownload,
+                            totalUpload = totals.totalUpload,
+                            totalDownload = totals.totalDownload,
                         ),
                     topApps = topApps,
                     donutSlices = buildDonutSlices(topApps),
                 )
             }
+        }
             .distinctUntilChanged()
             .stateIn(
                 viewModelScope,
@@ -81,12 +81,12 @@ class TrafficStatisticsViewModel(private val trafficStatisticsStore: TrafficStat
     private fun buildDonutSlices(apps: List<AppTrafficUsage>): List<TrafficDonutSlice> {
         if (apps.isEmpty()) return emptyList()
 
-        val unknown = apps.firstOrNull { it.appKey == AppIdentityResolver.UNKNOWN_APP_KEY }
+        val unknown = apps.firstOrNull { it.appKey == TrafficStatisticsBuckets.UNKNOWN_APP_KEY }
         val unattributed = apps.firstOrNull {
             it.appKey == TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY
         }
         val regularApps = apps.filterNot {
-            it.appKey == AppIdentityResolver.UNKNOWN_APP_KEY ||
+            it.appKey == TrafficStatisticsBuckets.UNKNOWN_APP_KEY ||
                 it.appKey == TrafficStatisticsBuckets.UNATTRIBUTED_APP_KEY
         }
         val primaryApps = regularApps.take(MAX_DONUT_PRIMARY_APPS)
@@ -111,7 +111,7 @@ class TrafficStatisticsViewModel(private val trafficStatisticsStore: TrafficStat
                         key = OTHER_SLICE_KEY,
                         label = MLang.TrafficStatistics.Donut.Other,
                         value = overflowBytes,
-                        color = appColors.traffic.other,
+                        color = COLOR_TRAFFIC_OTHER,
                     )
                 )
             }
@@ -124,7 +124,7 @@ class TrafficStatisticsViewModel(private val trafficStatisticsStore: TrafficStat
                             key = usage.appKey,
                             label = usage.appName,
                             value = usage.totalBytes,
-                            color = appColors.traffic.unattributed,
+                            color = COLOR_TRAFFIC_UNATTRIBUTED,
                         )
                     )
                 }
@@ -137,7 +137,7 @@ class TrafficStatisticsViewModel(private val trafficStatisticsStore: TrafficStat
                             key = usage.appKey,
                             label = usage.appName,
                             value = usage.totalBytes,
-                            color = appColors.traffic.unknown,
+                            color = COLOR_TRAFFIC_UNKNOWN,
                         )
                     )
                 }
@@ -152,6 +152,9 @@ class TrafficStatisticsViewModel(private val trafficStatisticsStore: TrafficStat
     companion object {
         const val OTHER_SLICE_KEY = "other"
         private const val MAX_DONUT_PRIMARY_APPS = 5
+        private val COLOR_TRAFFIC_OTHER = Color(0xFF94A3B8)
+        private val COLOR_TRAFFIC_UNATTRIBUTED = Color(0xFFD97706)
+        private val COLOR_TRAFFIC_UNKNOWN = Color(0xFF64748B)
     }
 }
 

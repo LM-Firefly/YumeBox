@@ -23,11 +23,17 @@ package com.github.yumelira.yumebox.screen.settings.component
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.unit.dp
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
@@ -166,6 +172,22 @@ internal fun ThemeColorPickerSheet(
     onConfirm: () -> Unit,
     renderInRootScaffold: Boolean = true,
 ) {
+    var fieldValue by remember(show) {
+        mutableStateOf(
+            TextFieldValue(
+                text = editingThemeSeedHex,
+                selection = TextRange(editingThemeSeedHex.length),
+            )
+        )
+    }
+    LaunchedEffect(editingThemeSeedHex, show) {
+        if (show && editingThemeSeedHex != fieldValue.text) {
+            fieldValue = TextFieldValue(
+                text = editingThemeSeedHex,
+                selection = TextRange(editingThemeSeedHex.length),
+            )
+        }
+    }
     AppActionBottomSheet(
         show = show,
         modifier = Modifier,
@@ -184,8 +206,16 @@ internal fun ThemeColorPickerSheet(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 TextField(
-                    value = editingThemeSeedHex,
-                    onValueChange = onEditingThemeSeedHexChange,
+                    value = fieldValue,
+                    onValueChange = { updatedValue ->
+                        val normalizedText = updatedValue.text.uppercase()
+                        val normalizedValue = updatedValue.copy(
+                            text = normalizedText,
+                            selection = TextRange(updatedValue.selection.end.coerceAtMost(normalizedText.length)),
+                        )
+                        fieldValue = normalizedValue
+                        onEditingThemeSeedHexChange(normalizedText)
+                    },
                     label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
                     modifier = Modifier.fillMaxWidth().padding(top = UiDp.dp8),
                 )

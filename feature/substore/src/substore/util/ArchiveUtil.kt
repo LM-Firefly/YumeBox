@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.substore.util
+package com.github.yumelira.yumebox.feature.substore.util
 
 import java.io.File
 import java.io.FileInputStream

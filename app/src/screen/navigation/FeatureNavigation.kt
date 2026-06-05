@@ -24,7 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.openUrl
-import com.github.yumelira.yumebox.presentation.screen.FeatureContent
+import com.github.yumelira.yumebox.feature.substore.presentation.screen.FeatureContent
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -34,6 +34,7 @@ import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 fun FeatureScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     FeatureContent(
+        onNavigateBack = { navigator.navigateUp() },
         onOpenExternalUrl = { url -> openUrl(context, url) },
         onOpenInAppUrl = { url -> WebViewActivity.start(context, url) },
     )
