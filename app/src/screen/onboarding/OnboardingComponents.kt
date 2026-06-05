@@ -35,6 +35,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
@@ -54,25 +57,28 @@ internal fun StartupTypewriterWord(phrases: List<String>, modifier: Modifier = M
     var visibleLength by remember(phrases) { mutableStateOf(0) }
     var deleting by remember(phrases) { mutableStateOf(false) }
 
-    LaunchedEffect(phrases) {
-        while (true) {
-            val currentText = phrases.getOrElse(phraseIndex) { "" }
-            if (!deleting) {
-                if (visibleLength < currentText.length) {
-                    delay(95)
-                    visibleLength += 1
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(phrases, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                val currentText = phrases.getOrElse(phraseIndex) { "" }
+                if (!deleting) {
+                    if (visibleLength < currentText.length) {
+                        delay(95)
+                        visibleLength += 1
+                    } else {
+                        delay(1850)
+                        deleting = true
+                    }
                 } else {
-                    delay(1850)
-                    deleting = true
-                }
-            } else {
-                if (visibleLength > 0) {
-                    delay(65)
-                    visibleLength -= 1
-                } else {
-                    delay(700)
-                    deleting = false
-                    phraseIndex = (phraseIndex + 1) % phrases.size
+                    if (visibleLength > 0) {
+                        delay(65)
+                        visibleLength -= 1
+                    } else {
+                        delay(700)
+                        deleting = false
+                        phraseIndex = (phraseIndex + 1) % phrases.size
+                    }
                 }
             }
         }

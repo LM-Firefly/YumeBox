@@ -25,7 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal val LocalPlatformSystemUiEffect = compositionLocalOf<@Composable () -> Unit> { {} }
@@ -67,6 +67,6 @@ fun YumeTheme(
         LocalOpacity provides opacity,
         LocalAppColors provides appColors,
     ) {
-        MiuixTheme(colors = colorScheme, smoothRounding = smoothCornerEnabled) { content() }
+        MiuixTheme(colors = colorScheme) { content() }
     }
 }

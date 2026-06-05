@@ -20,14 +20,22 @@
 
 package com.github.yumelira.yumebox.screen.profiles
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.data.model.ProfileBinding
@@ -37,8 +45,16 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmA
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.AppTextFieldDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
+import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
+import com.github.yumelira.yumebox.presentation.icon.yume.Copy
+import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.icon.yume.`Scan-eye`
+import com.github.yumelira.yumebox.presentation.icon.yume.Sparkles
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.layout.DialogDefaults
@@ -293,16 +309,122 @@ internal fun ProfileSettingsDialog(
                         maxLines = 2,
                     )
                 }
-
-                TextField(
-                    value = editAgeSecretKey,
-                    onValueChange = { editAgeSecretKey = it },
-                    label = MLang.ProfilesPage.SettingsDialog.AgeSecretKey,
-                    useLabelAsPlaceholder = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-
+                // Age secret key with generate, copy, and visibility toggle
+                val ageKeyContext = LocalContext.current
+                var ageKeyVisible by remember { mutableStateOf(false) }
+                var agePublicKey by remember { mutableStateOf("") }
+                // Age public key (read-only, derived from private key)
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
+                    Text(
+                        text = "age 公钥",
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.outline,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(spacing.space8),
+                    ) {
+                        TextField(
+                            value = agePublicKey,
+                            onValueChange = { agePublicKey = it },
+                            label = "age1...",
+                            useLabelAsPlaceholder = true,
+                            readOnly = true,
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                        )
+                        IconButton(
+                            onClick = {
+                                val result = com.github.yumelira.yumebox.common.util.AgeKeyHelper.deriveRecipient(
+                                    editAgeSecretKey.text
+                                )
+                                result.onSuccess { pubkey ->
+                                    agePublicKey = pubkey
+                                    Toast.makeText(ageKeyContext, "已生成 age 公钥", Toast.LENGTH_SHORT).show()
+                                }.onFailure { e ->
+                                    Toast.makeText(ageKeyContext, e.message ?: "生成失败", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Yume.ArrowRight,
+                                contentDescription = "Derive public key",
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val clipboard = ageKeyContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("age_key", agePublicKey)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(ageKeyContext, "已复制 age 公钥", Toast.LENGTH_SHORT).show()
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Yume.Copy,
+                                contentDescription = "Copy public key",
+                            )
+                        }
+                    }
+                }
+                // Age secret key input
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
+                    Text(
+                        text = MLang.ProfilesPage.SettingsDialog.AgeSecretKey,
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.outline,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(spacing.space8),
+                    ) {
+                        TextField(
+                            value = editAgeSecretKey,
+                            onValueChange = { editAgeSecretKey = it },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                            visualTransformation = if (ageKeyVisible) VisualTransformation.None
+                                else PasswordVisualTransformation(),
+                        )
+                        // Generate key pair button
+                        IconButton(
+                            onClick = {
+                                val secretKey = com.github.yumelira.yumebox.common.util.AgeKeyHelper.generateSecretKey()
+                                editAgeSecretKey = TextFieldValue(secretKey, TextRange(secretKey.length))
+                                Toast.makeText(ageKeyContext, "已生成 age 私钥", Toast.LENGTH_SHORT).show()
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Yume.Sparkles,
+                                contentDescription = "Generate secret key",
+                            )
+                        }
+                        // Copy button
+                        IconButton(
+                            onClick = {
+                                val clipboard = ageKeyContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("age_key", editAgeSecretKey.text)
+                                clipboard.setPrimaryClip(clip)
+                                Toast.makeText(ageKeyContext, "已复制 age 私钥", Toast.LENGTH_SHORT).show()
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Yume.Copy,
+                                contentDescription = "Copy secret key",
+                            )
+                        }
+                        // Visibility toggle button
+                        IconButton(
+                            onClick = { ageKeyVisible = !ageKeyVisible },
+                        ) {
+                            Icon(
+                                imageVector = Yume.`Scan-eye`,
+                                contentDescription = if (ageKeyVisible) "Hide key" else "Show key",
+                            )
+                        }
+                    }
+                }
                 Card {
                     Column {
                         SwitchPreference(

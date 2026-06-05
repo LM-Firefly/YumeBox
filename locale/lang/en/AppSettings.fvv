@@ -105,6 +105,8 @@ AppSettings = {
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
         TrafficNotificationSummary = "Display traffic usage in notification bar"
+        LogLevelTitle = "Log Level"
+        LogLevelSummary = "Set the minimum app runtime log level"
         SingleNodeTestTitle = "Single Node Test"
         SingleNodeTestSummary = "Tap icon on node card to test individual node delay"
         ExitUiWhenBackgroundTitle = "Release UI In Background"
@@ -120,6 +122,8 @@ AppSettings = {
         UpdateChannelStable = "Stable"
         UpdateChannelPre = "Pre-release"
         UpdateChannelSmart = "Smart"
+        AutoCheckAppUpdateTitle = "Auto-check App Updates"
+        AutoCheckAppUpdateSummary = "Check GitHub Release updates automatically every 1 hour in background"
         CustomUserAgentTitle = "Custom User-Agent"
         CustomUserAgentSummaryDefault = "Not set, using default"
     }

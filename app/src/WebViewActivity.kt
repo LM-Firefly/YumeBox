@@ -112,4 +112,10 @@ class WebViewActivity : ComponentActivity() {
 
         setContent { WebViewScreen(initialUrl = initialUrl) }
     }
+
+    override fun onDestroy() {
+        filePathCallback?.onReceiveValue(null)
+        filePathCallback = null
+        super.onDestroy()
+    }
 }

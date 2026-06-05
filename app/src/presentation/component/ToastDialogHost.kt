@@ -31,8 +31,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.util.ToastDialogBridge
 import com.github.yumelira.yumebox.common.util.ToastDialogEvent
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
@@ -61,6 +63,8 @@ fun ToastDialogHost() {
     }
 
     eventSnapshot?.let { snapshot ->
+        val copyButtonShape = RoundedCornerShape(16.dp)
+        val copyButtonBgShape = RoundedCornerShape(radii.radius16)
         WindowDialog(
             show = showDialog.value,
             modifier = Modifier,
@@ -83,12 +87,13 @@ fun ToastDialogHost() {
                 Box(
                     modifier =
                         Modifier.fillMaxWidth()
+                            .clip(copyButtonShape)
                             .background(
                                 color =
                                     MiuixTheme.colorScheme.primary.copy(
                                         alpha = opacity.subtleStrong
                                     ),
-                                shape = RoundedCornerShape(radii.radius16),
+                                shape = copyButtonBgShape,
                             )
                             .clickable {
                                 val clipboardManager =

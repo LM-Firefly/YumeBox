@@ -70,6 +70,12 @@ Component = {
         }
         Message = {
             Available = "检测到可用更新"
+            SelectPackage = "选择下载包"
+            Tag = "标签"
+            PackageUniversal = "通用包"
+            PackageExtension = "扩展合并包"
+            PackageLite = "精简包"
+            PackageStandard = "标准包"
             CoverDesc = "更新封面"
             CurrentVersion = "当前版本"
             RemoteVersion = "推送版本"

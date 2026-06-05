@@ -24,7 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.core.util.YamlCodec
-import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
+import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideApplier
 import com.github.yumelira.yumebox.data.store.OverrideConfigStore
 import com.github.yumelira.yumebox.feature.meta.presentation.util.OverridePresetTemplateSelection
 import com.github.yumelira.yumebox.feature.meta.presentation.util.analyzePresetTemplateContent
@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 
 class CustomRoutingViewModel(
     private val overrideConfigRepository: OverrideConfigStore,
-    private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
+    private val activeProfileOverrideApplier: ActiveProfileOverrideApplier,
 ) : ViewModel() {
 
     private val presetSelectionState = MutableStateFlow(defaultOverridePresetTemplateSelection())
@@ -61,7 +61,7 @@ class CustomRoutingViewModel(
             val generatedYaml = buildPresetTemplateYaml(updatedPresetSelection)
             overrideConfigRepository.saveCustomRoutingContent(generatedYaml)
             applyContentState(generatedYaml)
-            activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
+            activeProfileOverrideApplier.reapplyActiveProfileIfUsingOverride(
                 OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
             )
         }
@@ -74,7 +74,7 @@ class CustomRoutingViewModel(
             }
             overrideConfigRepository.saveCustomRoutingContent(content)
             applyContentState(content.takeIf(String::isNotBlank))
-            activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
+            activeProfileOverrideApplier.reapplyActiveProfileIfUsingOverride(
                 OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
             )
         }

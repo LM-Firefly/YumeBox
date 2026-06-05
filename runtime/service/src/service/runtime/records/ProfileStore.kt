@@ -20,11 +20,11 @@
 
 @file:UseSerializers(UUIDSerializer::class)
 
-package com.github.yumelira.yumebox.service.runtime.records
+package com.github.yumelira.yumebox.runtime.service.runtime.records
 
-import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import com.github.yumelira.yumebox.service.runtime.entity.Selection
-import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
+import com.github.yumelira.yumebox.runtime.service.runtime.entity.Imported
+import com.github.yumelira.yumebox.runtime.service.runtime.entity.Selection
+import com.github.yumelira.yumebox.core.util.UUIDSerializer
 import com.tencent.mmkv.MMKV
 import java.util.*
 import kotlinx.serialization.UseSerializers
@@ -79,6 +79,30 @@ object ProfileStore {
             .allKeys()
             ?.filter { it.startsWith(SELECTION_SCOPE_KEY_PREFIX) }
             ?.forEach(mmkv::removeValueForKey)
+    }
+
+    fun setSelectionScopeValue(scopeKey: String, value: String) {
+        mmkv.encode(SELECTION_SCOPE_KEY_PREFIX + scopeKey, value)
+    }
+
+    fun getSelectionScopeValue(scopeKey: String): String? {
+        return mmkv.decodeString(SELECTION_SCOPE_KEY_PREFIX + scopeKey)
+    }
+
+    fun removeSelectionScopeValue(scopeKey: String) {
+        mmkv.removeValueForKey(SELECTION_SCOPE_KEY_PREFIX + scopeKey)
+    }
+
+    fun querySelectionScopeValues(scopeKeyPrefix: String): Map<String, String> {
+        val prefix = SELECTION_SCOPE_KEY_PREFIX + scopeKeyPrefix
+        val keys = mmkv.allKeys().orEmpty().filter { it.startsWith(prefix) }
+        if (keys.isEmpty()) return emptyMap()
+        return buildMap(keys.size) {
+            keys.forEach { key ->
+                val value = mmkv.decodeString(key) ?: return@forEach
+                put(key.removePrefix(SELECTION_SCOPE_KEY_PREFIX), value)
+            }
+        }
     }
 
     fun migrateLegacySelectionMemoryIfNeeded() {

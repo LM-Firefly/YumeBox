@@ -18,10 +18,10 @@
  *
  */
 
-package com.github.yumelira.yumebox.di
+package com.github.yumelira.yumebox.feature.proxy.di
 
-import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
-import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
+import com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel.ProvidersViewModel
+import com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel.ProxyViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 

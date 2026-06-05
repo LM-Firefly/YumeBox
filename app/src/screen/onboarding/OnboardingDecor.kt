@@ -43,6 +43,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
@@ -51,7 +53,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal val PagePadding = AppConstants.UI.DEFAULT_HORIZONTAL_PADDING
 internal val DetailWidth = UiDp.dp560
-internal val SectionShape = RoundedCornerShape(UiDp.dp36)
+internal val SectionShape: androidx.compose.ui.graphics.Shape
+    @Composable get() = RoundedCornerShape(UiDp.dp36)
 internal const val RevealDurationMs = 420
 internal const val LinkTermsTag = "terms"
 internal const val LinkPolicyTag = "policy"

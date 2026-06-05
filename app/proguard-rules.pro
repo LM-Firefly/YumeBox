@@ -22,6 +22,17 @@
     public final void destroy();
 }
 
+# Reflection bridge: LogRecordGateway.writeRuntimeLog calls this via reflection
+-keep class com.github.yumelira.yumebox.runtime.service.LogRecordService {
+    public static void writeLog(java.lang.String);
+}
+
+# Reflection bridge: createLogRecordGateway() instantiates this implementation by class name
+-keep class com.github.yumelira.yumebox.runtime.service.LogRecordServiceGateway {
+    public <init>();
+    *;
+}
+
 # Parcelable CREATOR
 -keepclassmembers class * implements android.os.Parcelable {
     public static final android.os.Parcelable$Creator *;
@@ -84,14 +95,16 @@
 
 # ========================================
 # Javet / Native JS
+# Keep ALL Javet classes - libjavet-node-android.so accesses them via JNI reflection
+# Partial keeps cause java_class == null crash in JNI_OnLoad GetMethodID calls
 # ========================================
+-keep class com.caoccao.javet.** { *; }
+-keepclassmembers class com.caoccao.javet.** { *; }
+-keepnames class com.caoccao.javet.** { *; }
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
 -keep class com.caoccao.javet.interop.V8Host { *; }
 -keep class com.caoccao.javet.interop.V8Runtime { *; }
 -keep class com.caoccao.javet.interop.NodeRuntime { *; }
--keep class com.caoccao.javet.interop.engine.** { *; }
--keep class com.caoccao.javet.interop.callback.** { *; }
--keep class com.caoccao.javet.interop.converters.** { *; }
--keep class com.caoccao.javet.interfaces.IJavetDirectCallable { *; }
 -keepclassmembers class * {
     @com.caoccao.javet.annotations.V8Function <methods>;
     @com.caoccao.javet.annotations.V8Property <methods>;
@@ -114,6 +127,13 @@
 -dontwarn java.lang.invoke.MethodHandleProxies
 -dontwarn java.lang.reflect.AnnotatedType
 -dontwarn javax.lang.model.element.Modifier
+
+# SnakeYAML on Android may reference JavaBeans introspection classes which are absent on Android.
+-dontwarn java.beans.BeanInfo
+-dontwarn java.beans.FeatureDescriptor
+-dontwarn java.beans.IntrospectionException
+-dontwarn java.beans.Introspector
+-dontwarn java.beans.PropertyDescriptor
 
 -keepclassmembernames class **.R$* { *; }
 -keepclassmembernames class **.R { *; }

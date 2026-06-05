@@ -18,21 +18,21 @@
  *
  */
 
-package com.github.yumelira.yumebox.common.util
+package com.github.yumelira.yumebox.runtime.client.common.util
 
 import android.content.Context
 import android.net.VpnService
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.service.StatusProvider
-import com.github.yumelira.yumebox.service.common.util.AutoStartExecutionGate
-import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.runtime.client.RuntimeContractResolver
+import com.github.yumelira.yumebox.runtime.api.autostart.AutoStartExecutionGate
+import com.github.yumelira.yumebox.runtime.api.autostart.AutoStartUpdatePolicy
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CancellationException
 import timber.log.Timber
@@ -50,6 +50,7 @@ object ProxyAutoStartHelper {
         networkSettingsStorage: NetworkSettingsStore,
         serviceCache: MMKV,
     ) {
+        RuntimeContractResolver.warmUp(context)
         if (AutoStartSessionGate.shouldSkipAutoStart()) {
             Timber.tag(TAG).i("Skip auto start: manual pause gate is active in current session")
             return
@@ -58,24 +59,21 @@ object ProxyAutoStartHelper {
             Timber.tag(TAG).i("Skip auto start: background auto-restart is still executing")
             return
         }
-        if (featureStore.consumePostUpdateColdStartPending()) {
-            Timber.tag(TAG).i("Skip auto start/update: post-update cold-start protection is active")
+        val isPostUpdateColdStart = featureStore.consumePostUpdateColdStartPending()
+
+        val activeProfile = try {
+            profilesRepository.queryActiveProfile()
+        } catch (error: Exception) {
+            if (error is CancellationException) throw error
+            Timber.tag(TAG).e(error, "Failed to load active profile")
             return
         }
-
-        val activeProfile =
-            try {
-                profilesRepository.queryActiveProfile()
-            } catch (error: Exception) {
-                if (error is CancellationException) throw error
-                Timber.tag(TAG).e(error, "Failed to load active profile")
-                return
-            }
 
         tryUpdateActiveProfileOnStart(
             appSettingsStorage = appSettingsStorage,
             profilesRepository = profilesRepository,
             activeProfile = activeProfile,
+            isPostUpdateColdStart = isPostUpdateColdStart,
         )
 
         val automaticRestart = appSettingsStorage.automaticRestart.value
@@ -83,7 +81,7 @@ object ProxyAutoStartHelper {
             return
         }
 
-        if (proxyFacade.runtimeSnapshot.value.running || StatusProvider.serviceRunning) {
+        if (proxyFacade.runtimeSnapshot.value.running || RuntimeContractResolver.localRuntimeStatus.serviceRunning) {
             return
         }
 
@@ -112,18 +110,19 @@ object ProxyAutoStartHelper {
         appSettingsStorage: AppSettingsStore,
         profilesRepository: ProfilesRepository,
         activeProfile: Profile?,
+        isPostUpdateColdStart: Boolean,
     ) {
         when (
             AutoStartUpdatePolicy.decide(
                 autoUpdateEnabled = appSettingsStorage.autoUpdateCurrentProfileOnStart.value,
                 activeProfile = activeProfile,
-                skipForPostUpdateColdStart = false,
+                skipForPostUpdateColdStart = isPostUpdateColdStart,
             )
         ) {
             AutoStartUpdatePolicy.Decision.Proceed -> Unit
             AutoStartUpdatePolicy.Decision.AutoUpdateDisabled -> return
             AutoStartUpdatePolicy.Decision.SkipPostUpdateColdStart -> {
-                Timber.tag(TAG).d("Skip auto update: post-update cold-start marker consumed")
+                Timber.tag(TAG).i("Post-update cold start: skipping profile update, attempting proxy start as fallback")
                 return
             }
             AutoStartUpdatePolicy.Decision.NoActiveProfile -> {

@@ -47,6 +47,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.activity:activity-compose:${gropify.dep.version.activityCompose}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${gropify.dep.version.lifecycle}")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
     implementation("io.insert-koin:koin-android:${gropify.dep.version.koin}")
@@ -54,10 +55,10 @@ dependencies {
     implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
     implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
+    implementation("dev.chrisbanes.haze:haze-blur:${gropify.dep.version.haze}")
     implementation("io.github.panpf.sketch4:sketch-compose:${gropify.dep.version.sketch4}")
     implementation("io.github.panpf.sketch4:sketch-http:${gropify.dep.version.sketch4}")
     implementation("top.yukonga.miuix.kmp:miuix-ui:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-preference:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
 }
-

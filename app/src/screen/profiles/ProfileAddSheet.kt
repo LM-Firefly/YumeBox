@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.screen.profiles
 
 import android.Manifest
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
@@ -37,6 +38,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -47,7 +49,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,9 +62,13 @@ import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.icon.Yume
+import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
+import com.github.yumelira.yumebox.presentation.icon.yume.Copy
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.icon.yume.`Scan-eye`
+import com.github.yumelira.yumebox.presentation.icon.yume.Sparkles
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
 import java.util.*
@@ -84,7 +92,7 @@ internal fun AddProfileSheet(
             fileUri: android.net.Uri?,
             ageSecretKey: String,
         ) -> Unit,
-    onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long) -> Unit,
+    onUpdateProfile: (uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String?) -> Unit,
     onDownloadComplete: () -> Unit,
     profilesViewModel: ProfilesViewModel,
 ) {
@@ -105,11 +113,12 @@ internal fun AddProfileSheet(
     var fileNameTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
     var ageSecretKey by remember { mutableStateOf("") }
     var ageSecretKeyTextFieldValue by remember { mutableStateOf(TextFieldValue()) }
+    var initialAgeSecretKey by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
 
-    val downloadProgress by profilesViewModel.downloadProgress.collectAsState()
-    val uiState by profilesViewModel.uiState.collectAsState()
+    val downloadProgress by profilesViewModel.downloadProgress.collectAsStateWithLifecycle()
+    val uiState by profilesViewModel.uiState.collectAsStateWithLifecycle()
     var hasShownCompleteAnimation by remember { mutableStateOf(false) }
     var stableSheetHeightPx by remember { mutableIntStateOf(0) }
 
@@ -166,6 +175,7 @@ internal fun AddProfileSheet(
         applyFileNameText("")
         ageSecretKey = ""
         ageSecretKeyTextFieldValue = TextFieldValue()
+        initialAgeSecretKey = ""
         error = ""
         isDownloading = false
         hasShownCompleteAnimation = false
@@ -219,6 +229,12 @@ internal fun AddProfileSheet(
             clearAllState()
             if (profileToEdit != null) {
                 applyNameText(profileToEdit.name)
+                ageSecretKey = profileToEdit.ageSecretKey
+                ageSecretKeyTextFieldValue = TextFieldValue(
+                    profileToEdit.ageSecretKey,
+                    TextRange(profileToEdit.ageSecretKey.length),
+                )
+                initialAgeSecretKey = profileToEdit.ageSecretKey
                 if (profileToEdit.type == Profile.Type.Url) {
                     selectedTypeIndex = 0
                     applyUrlText(profileToEdit.source)
@@ -357,38 +373,44 @@ internal fun AddProfileSheet(
 
         if (selectedTypeIndex == 0) {
             if (profileToEdit != null) {
+                val trimmedAgeSecretKey = ageSecretKeyTextFieldValue.text.trim()
                 onUpdateProfile(
                     profileToEdit.uuid,
                     nameTextFieldValue.text,
                     urlTextFieldValue.text,
                     profileToEdit.interval,
+                    if (trimmedAgeSecretKey != initialAgeSecretKey) trimmedAgeSecretKey else null,
                 )
             } else {
+                val trimmedAgeSecretKey = ageSecretKeyTextFieldValue.text.trim()
                 onAddProfile(
                     nameTextFieldValue.text.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                     urlTextFieldValue.text,
                     Profile.Type.Url,
                     0L,
                     null,
-                    ageSecretKey,
+                    trimmedAgeSecretKey,
                 )
             }
         } else {
             if (profileToEdit != null) {
+                val trimmedAgeSecretKey = ageSecretKeyTextFieldValue.text.trim()
                 onUpdateProfile(
                     profileToEdit.uuid,
                     name,
                     profileToEdit.source,
                     profileToEdit.interval,
+                    if (trimmedAgeSecretKey != initialAgeSecretKey) trimmedAgeSecretKey else null,
                 )
             } else {
+                val trimmedAgeSecretKey = ageSecretKeyTextFieldValue.text.trim()
                 onAddProfile(
                     nameTextFieldValue.text.ifBlank { MLang.ProfilesPage.Input.NewProfile },
                     filePath,
                     Profile.Type.File,
                     0L,
                     filePath.toUri(),
-                    ageSecretKey,
+                    trimmedAgeSecretKey,
                 )
             }
         }
@@ -649,9 +671,9 @@ private fun ProfileTypeSelectorCard(
                 title = MLang.ProfilesPage.Type.Title,
                 items =
                     listOf(
-                        SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
-                        SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
-                        SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan),
+                        DropdownItem(MLang.ProfilesPage.Type.Subscription),
+                        DropdownItem(MLang.ProfilesPage.Type.LocalFile),
+                        DropdownItem(MLang.ProfilesPage.Type.QrScan),
                     ),
                 selectedIndex = selectedTypeIndex,
                 onSelectedIndexChange = onTypeSelected,
@@ -711,6 +733,9 @@ private fun ManualProfileContent(
     onAgeSecretKeyChange: (TextFieldValue) -> Unit,
     onPickFile: () -> Unit,
 ) {
+    val context = LocalContext.current
+    var ageKeyVisible by remember { mutableStateOf(false) }
+    var agePublicKey by remember { mutableStateOf("") }
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
@@ -737,8 +762,7 @@ private fun ManualProfileContent(
         } else {
             TextField(
                 value = fileNameTextFieldValue,
-                onValueChange = {},
-                label = MLang.ProfilesPage.Input.SelectFile,
+                onValueChange = { },
                 useLabelAsPlaceholder = true,
                 readOnly = true,
                 enabled = false,
@@ -751,15 +775,109 @@ private fun ManualProfileContent(
                         ),
             )
         }
-
-        TextField(
-            value = ageSecretKeyTextFieldValue,
-            onValueChange = onAgeSecretKeyChange,
-            label = MLang.ProfilesPage.Input.AgeSecretKey,
-            useLabelAsPlaceholder = true,
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Age public key (read-only, derived from private key)
+        Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp4)) {
+            Text(
+                text = "age 公钥",
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.outline,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
+            ) {
+                TextField(
+                    value = agePublicKey,
+                    onValueChange = { agePublicKey = it },
+                    label = "age1...",
+                    useLabelAsPlaceholder = true,
+                    readOnly = true,
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                )
+                IconButton(
+                    onClick = {
+                        val result = com.github.yumelira.yumebox.common.util.AgeKeyHelper.deriveRecipient(
+                            ageSecretKeyTextFieldValue.text
+                        )
+                        result.onSuccess { pubkey ->
+                            agePublicKey = pubkey
+                            context.toast("已生成 age 公钥", Toast.LENGTH_SHORT)
+                        }.onFailure { e ->
+                            context.toast(e.message ?: "生成失败", Toast.LENGTH_SHORT)
+                        }
+                    },
+                ) {
+                    Icon(
+                        imageVector = Yume.ArrowRight,
+                        contentDescription = "Derive public key",
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        copyToClipboard(context, agePublicKey, "已复制 age 公钥")
+                    },
+                ) {
+                    Icon(
+                        imageVector = Yume.Copy,
+                        contentDescription = "Copy public key",
+                    )
+                }
+            }
+        }
+        // Age secret key input with generate, copy, and visibility toggle
+        Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp4)) {
+            Text(
+                text = "age 私钥",
+                style = MiuixTheme.textStyles.body2,
+                color = MiuixTheme.colorScheme.outline,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(UiDp.dp8),
+            ) {
+                TextField(
+                    value = ageSecretKeyTextFieldValue,
+                    onValueChange = onAgeSecretKeyChange,
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    visualTransformation = if (ageKeyVisible) VisualTransformation.None
+                        else PasswordVisualTransformation(),
+                )
+                IconButton(
+                    onClick = {
+                        val secretKey = com.github.yumelira.yumebox.common.util.AgeKeyHelper.generateSecretKey()
+                        onAgeSecretKeyChange(TextFieldValue(secretKey, TextRange(secretKey.length)))
+                        context.toast("已生成 age 私钥", Toast.LENGTH_SHORT)
+                    },
+                ) {
+                    Icon(
+                        imageVector = Yume.Sparkles,
+                        contentDescription = "Generate secret key",
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        copyToClipboard(context, ageSecretKeyTextFieldValue.text, "已复制 age 私钥")
+                    },
+                ) {
+                    Icon(
+                        imageVector = Yume.Copy,
+                        contentDescription = "Copy secret key",
+                    )
+                }
+                IconButton(
+                    onClick = { ageKeyVisible = !ageKeyVisible },
+                ) {
+                    Icon(
+                        imageVector = Yume.`Scan-eye`,
+                        contentDescription = if (ageKeyVisible) "Hide key" else "Show key",
+                    )
+                }
+            }
+        }
         if (error.isNotEmpty()) {
             Text(
                 text = error,
@@ -768,6 +886,13 @@ private fun ManualProfileContent(
             )
         }
     }
+}
+
+private fun copyToClipboard(context: Context, text: String, message: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText("age_key", text)
+    clipboard.setPrimaryClip(clip)
+    context.toast(message, Toast.LENGTH_SHORT)
 }
 
 private fun textFieldValueAtEnd(text: String): TextFieldValue {

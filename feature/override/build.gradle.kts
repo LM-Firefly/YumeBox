@@ -39,7 +39,6 @@ dependencies {
     implementation(project(":locale"))
     implementation(project(":ui"))
     implementation(project(":data"))
-    implementation(project(":feature:editor"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
@@ -48,6 +47,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.activity:activity-compose:${gropify.dep.version.activityCompose}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${gropify.dep.version.lifecycle}")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
     implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
@@ -60,4 +60,3 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("sh.calvin.reorderable:reorderable:${gropify.dep.version.reorderable}")
 }
-

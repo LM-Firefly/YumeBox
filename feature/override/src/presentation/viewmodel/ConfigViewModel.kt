@@ -18,12 +18,12 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.viewmodel
+package com.github.yumelira.yumebox.feature.override.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideReloader
-import com.github.yumelira.yumebox.data.controller.OverrideResolver
+import com.github.yumelira.yumebox.data.controller.ActiveProfileOverrideApplier
+import com.github.yumelira.yumebox.data.controller.OverrideBindingRepository
 import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.data.model.OverrideContentType
 import com.github.yumelira.yumebox.data.model.OverrideMetadata
@@ -39,9 +39,9 @@ import timber.log.Timber
 
 class OverrideConfigViewModel(
     private val configRepo: OverrideConfigStore,
-    private val resolver: OverrideResolver,
+    private val resolver: OverrideBindingRepository,
     private val bindingProvider: ProfileBindingProvider,
-    private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
+    private val activeProfileOverrideApplier: ActiveProfileOverrideApplier,
 ) : ViewModel() {
 
     companion object {
@@ -99,7 +99,7 @@ class OverrideConfigViewModel(
         if (!saved) return false
 
         viewModelScope.launch {
-            activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(configId)
+            activeProfileOverrideApplier.reapplyActiveProfileIfUsingOverride(configId)
             refresh()
         }
         return true
@@ -131,10 +131,10 @@ class OverrideConfigViewModel(
         viewModelScope.launch {
             runCatching {
                     val shouldResyncRuntime =
-                        activeProfileOverrideReloader.isActiveProfileUsingOverride(id)
+                        activeProfileOverrideApplier.isActiveProfileUsingOverride(id)
                     val deleted = configRepo.delete(id)
                     if (deleted && shouldResyncRuntime) {
-                        activeProfileOverrideReloader.reapplyActiveProfileOverride()
+                        activeProfileOverrideApplier.reapplyActiveProfileOverride()
                     }
                     refresh()
                 }

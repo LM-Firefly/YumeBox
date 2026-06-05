@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-
+	"github.com/metacubex/mihomo/component/age"
 	"github.com/metacubex/mihomo/config"
 	"github.com/metacubex/mihomo/hub"
 	"github.com/metacubex/mihomo/log"
@@ -35,6 +35,13 @@ func UnmarshalAndPatch(profilePath string) (*config.RawConfig, error) {
 	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
+	}
+
+	// Attempt age decryption if a secret key is configured
+	if key := GetAgeSecretKey(); key != "" {
+		if decData, decErr := age.DecryptBytes(configData, key); decErr == nil {
+			configData = decData
+		}
 	}
 
 	rawConfig, err := config.UnmarshalRawConfig(configData)

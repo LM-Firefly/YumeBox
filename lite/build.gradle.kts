@@ -20,6 +20,10 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import com.android.build.gradle.tasks.MergeSourceSetFolders
+import java.time.format.DateTimeFormatter
+import java.time.ZonedDateTime
+import java.time.ZoneId
 import java.util.Properties
 
 plugins {
@@ -32,15 +36,49 @@ plugins {
 val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
+val projectApplicationId = providers.gradleProperty("project.applicationId")
+    .orElse(gropify.project.namespace.base)
+    .get()
+val updateRepository = providers.gradleProperty("update.repository").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: "LM-Firefly/YumeBox"
+val updateSource = providers.gradleProperty("update.source").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: "smart"
+val updateUiBuildStamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
+    .format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"))
+val updateUiCommitShort = runCatching {
+    providers.exec {
+        commandLine("git", "rev-parse", "--short=6", "HEAD")
+        workingDir = rootDir
+    }.standardOutput.asText.get().trim().ifBlank { "000000" }
+}.getOrDefault("000000")
+val updateUiBuildId = providers.gradleProperty("update.uiBuildId").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: "${updateUiBuildStamp}-${updateUiCommitShort}"
+val updateMirrorTemplates = providers.gradleProperty("update.mirrorTemplates").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: ""
+
+fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
 android {
-    namespace = "${gropify.project.namespace.base}.lite"
+    namespace = gropify.project.namespace.base
 
     defaultConfig {
-        applicationId = "${gropify.project.namespace.base}.lite"
+        applicationId = "$projectApplicationId.lite"
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
         manifestPlaceholders["appName"] = "${gropify.project.name} Lite"
+        buildConfigField("String", "UPDATE_REPOSITORY", updateRepository.asBuildConfigString())
+        buildConfigField("String", "UPDATE_SOURCE", updateSource.asBuildConfigString())
+        buildConfigField("String", "UI_BUILD_ID", updateUiBuildId.asBuildConfigString())
+        buildConfigField("String", "UPDATE_MIRROR_TEMPLATES", updateMirrorTemplates.asBuildConfigString())
     }
 
     compileOptions {
@@ -174,8 +212,9 @@ android {
                     it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
                 }?.identifier ?: "universal"
                 val buildTypeName = variant.buildType ?: "release"
+                output.versionName.set(gropify.project.version.name)
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
-                    "${gropify.project.name}-lite-${abiName}-${buildTypeName}.apk"
+                    "${gropify.project.name}-lite-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
                 )
             }
         }
@@ -192,8 +231,9 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:proxy"))
+    implementation(project(":feature:update"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
@@ -210,6 +250,7 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-blur-android:${gropify.dep.version.miuix}")
     implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
+    implementation("dev.chrisbanes.haze:haze-blur:${gropify.dep.version.haze}")
 
     val mmkv64 = gropify.dep.version.mmkv64
     val mmkv32 = gropify.dep.version.mmkv32
@@ -222,12 +263,13 @@ dependencies {
     implementation("io.insert-koin:koin-androidx-compose:${gropify.dep.version.koin}")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
+    implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
 
     implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
     ksp("io.github.raamcosta.compose-destinations:ksp:${gropify.dep.version.composeDestinations}")
 
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("org.tukaani:xz:1.12")
+    implementation("org.tukaani:xz:${gropify.dep.version.xz}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${gropify.dep.version.lifecycle}")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
 }

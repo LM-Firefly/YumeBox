@@ -22,19 +22,20 @@ package com.github.yumelira.yumebox.data.controller
 
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
+import com.github.yumelira.yumebox.core.model.Traffic
 import com.github.yumelira.yumebox.data.model.AppTrafficDeltaRecord
 import com.github.yumelira.yumebox.data.model.ConnectionTrafficBaseline
 import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -44,11 +45,11 @@ class AppTrafficStatisticsCollector(
     private val currentProfileId: () -> String?,
     private val trafficStatisticsStore: TrafficStatisticsStore,
     private val appIdentityResolver: AppIdentityResolver,
-    private val queryTrafficTotal: suspend () -> TrafficData,
-    private val queryConnections: suspend () -> ConnectionSnapshot,
+    private val trafficTotalFlow: StateFlow<Traffic>,
+    private val connectionSnapshotFlow: StateFlow<ConnectionSnapshot>,
     private val queryActiveProfileId: suspend () -> String?,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-) {
+) : java.io.Closeable {
     private var collectionJob: Job? = null
     private var monitoringJob: Job? = null
     private val connectionBaselines = linkedMapOf<String, ConnectionTrafficBaseline>()
@@ -80,8 +81,8 @@ class AppTrafficStatisticsCollector(
             lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
             lastProfileId = trafficStatisticsStore.getLastProfileId()
             connectionBaselines.clear()
-            PollingTimers.ticks(PollingTimerSpecs.TrafficStatsCollection).collect {
-                runCatching { collectTrafficData() }
+            trafficTotalFlow.collectLatest { traffic ->
+                runCatching { collectTrafficData(TrafficData.from(traffic)) }
                     .onFailure { error ->
                         if (error is CancellationException) throw error
                         Timber.tag(TAG).e(error, "App traffic collection failed")
@@ -90,49 +91,24 @@ class AppTrafficStatisticsCollector(
         }
     }
 
-    private suspend fun collectTrafficData() {
-        val totalTraffic = queryTrafficTotal()
-        val snapshot = queryConnections()
+    private suspend fun collectTrafficData(totalTraffic: TrafficData) {
+        val snapshot = connectionSnapshotFlow.value
         val timestamp = System.currentTimeMillis()
-        val currentProfileId =
-            currentProfileId() ?: runCatching { queryActiveProfileId() }.getOrNull()
-
-        if (lastTotalUpload < 0L || lastTotalDownload < 0L) {
-            initializeTotals(
-                totalTraffic = totalTraffic,
-                profileId = currentProfileId,
-                forcePersist = true,
-            )
-            bootstrapConnectionBaselines(snapshot.connections)
-            return
-        }
-
-        if (currentProfileId != lastProfileId) {
-            initializeTotals(
-                totalTraffic = totalTraffic,
-                profileId = currentProfileId,
-                forcePersist = true,
-            )
-            bootstrapConnectionBaselines(snapshot.connections)
-            return
-        }
-
-        if (connectionBaselines.isEmpty()) {
-            recordUnattributedDeltaIfNeeded(
-                timestamp = timestamp,
-                currentUpload = totalTraffic.upload,
-                currentDownload = totalTraffic.download,
-            )
-            initializeTotals(
-                totalTraffic = totalTraffic,
-                profileId = currentProfileId,
-                forcePersist = true,
-            )
-            bootstrapConnectionBaselines(snapshot.connections)
-            return
-        }
-
-        if (totalTraffic.upload < lastTotalUpload || totalTraffic.download < lastTotalDownload) {
+        val currentProfileId = currentProfileId()
+            ?: runCatching { queryActiveProfileId() }.getOrNull()
+        val isFirstCall = lastTotalUpload < 0L || lastTotalDownload < 0L
+        val profileChanged = !isFirstCall && currentProfileId != lastProfileId
+        val baselinesEmpty = !isFirstCall && !profileChanged && connectionBaselines.isEmpty()
+        val trafficReset = !isFirstCall && !profileChanged && !baselinesEmpty &&
+            (totalTraffic.upload < lastTotalUpload || totalTraffic.download < lastTotalDownload)
+        if (isFirstCall || profileChanged || baselinesEmpty || trafficReset) {
+            if (baselinesEmpty) {
+                recordUnattributedDeltaIfNeeded(
+                    timestamp = timestamp,
+                    currentUpload = totalTraffic.upload,
+                    currentDownload = totalTraffic.download,
+                )
+            }
             initializeTotals(
                 totalTraffic = totalTraffic,
                 profileId = currentProfileId,
@@ -229,16 +205,15 @@ class AppTrafficStatisticsCollector(
             val routeLabel = resolveRouteLabel(connection, routeKey)
             val trafficKey = buildTrafficBucketKey(identity.appKey, routeKey)
             val current = trafficDeltas[trafficKey]
-            trafficDeltas[trafficKey] =
-                AppTrafficDeltaRecord(
-                    appKey = identity.appKey,
-                    packageName = identity.packageName ?: current?.packageName,
-                    appName = identity.appName.ifBlank { current?.appName.orEmpty() },
-                    uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
-                    downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
-                    routeKey = routeKey ?: current?.routeKey,
-                    routeLabel = routeLabel ?: current?.routeLabel,
-                )
+            trafficDeltas[trafficKey] = AppTrafficDeltaRecord(
+                appKey = identity.appKey,
+                packageName = identity.packageName ?: current?.packageName,
+                appName = identity.appName.ifBlank { current?.appName.orEmpty() },
+                uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
+                downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
+                routeKey = routeKey,
+                routeLabel = routeLabel,
+            )
         }
 
         connectionBaselines[connection.id] = updatedBaseline
@@ -350,7 +325,10 @@ class AppTrafficStatisticsCollector(
         collectionJob?.cancel()
         collectionJob = null
         connectionBaselines.clear()
+        scope.cancel()
     }
+
+    override fun close() = stop()
 
     companion object {
         private const val TAG = "AppTrafficStatsCollector"

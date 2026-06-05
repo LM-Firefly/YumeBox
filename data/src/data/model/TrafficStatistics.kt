@@ -60,6 +60,8 @@ data class AppTrafficDeltaRecord(
 )
 
 object TrafficStatisticsBuckets {
+    const val UNKNOWN_APP_KEY = "unknown"
+    const val UNKNOWN_APP_NAME = "未知应用"
     const val UNATTRIBUTED_APP_KEY = "system:unattributed"
     const val UNATTRIBUTED_APP_NAME = "未归属流量"
     const val UNATTRIBUTED_ROUTE_KEY = "route:unattributed"

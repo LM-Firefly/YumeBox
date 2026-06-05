@@ -20,9 +20,13 @@
 
 package com.github.yumelira.yumebox.data.controller
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -36,9 +40,26 @@ class AppIdentityResolver(context: Context) {
     private val packageManager = appContext.packageManager
     private val packageCache = ConcurrentHashMap<String, AppIdentity>()
     private val labelCache = ConcurrentHashMap<String, String>()
-    private val uidCache = ConcurrentHashMap<Int, String?>()
+    private val uidCache = ConcurrentHashMap<Int, String>()
 
     @Volatile private var installedAppsCache: List<InstalledAppIdentity>? = null
+
+    private val packageChangeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            installedAppsCache = null
+            uidCache.clear()
+        }
+    }
+
+    init {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        appContext.registerReceiver(packageChangeReceiver, filter)
+    }
 
     fun resolve(metadata: JsonObject): AppIdentity {
         val explicitPackageName =
@@ -106,11 +127,12 @@ class AppIdentityResolver(context: Context) {
 
     private fun resolveByUid(uid: Int?): String? {
         if (uid == null || uid <= 0) return null
-        if (uidCache.containsKey(uid)) return uidCache[uid]
+        val cached = uidCache[uid]
+        if (cached != null) return cached.ifEmpty { null }
 
         val packageName =
             packageManager.getPackagesForUid(uid)?.firstNotNullOfOrNull(::findInstalledPackage)
-        uidCache[uid] = packageName
+        uidCache[uid] = packageName ?: ""
         return packageName
     }
 
@@ -193,7 +215,11 @@ class AppIdentityResolver(context: Context) {
     )
 
     companion object {
-        const val UNKNOWN_APP_KEY = "unknown"
-        const val UNKNOWN_APP_NAME = "未知应用"
+        const val UNKNOWN_APP_KEY = TrafficStatisticsBuckets.UNKNOWN_APP_KEY
+        const val UNKNOWN_APP_NAME = TrafficStatisticsBuckets.UNKNOWN_APP_NAME
+    }
+
+    fun close() {
+        runCatching { appContext.unregisterReceiver(packageChangeReceiver) }
     }
 }

@@ -60,11 +60,11 @@
                 <data android:host="install-config" android:scheme="clashmeta"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="com.github.yumelira.yumebox.action.START_CLASH"/>
+                <action android:name="${applicationId}.action.START_CLASH"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="com.github.yumelira.yumebox.action.STOP_CLASH"/>
+                <action android:name="${applicationId}.action.STOP_CLASH"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
@@ -114,7 +114,7 @@
                 android:value="https://play.google.com/store"/>
 
         <provider
-                android:name=".service.StatusProvider"
+                android:name=".runtime.service.StatusProvider"
                 android:authorities="${applicationId}.status"
                 android:enabled="true"
                 android:exported="false"/>

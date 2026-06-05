@@ -32,84 +32,92 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-object Clash {
-    private val CompilerJson = Json {
+object Clash : ClashEngine {
+    private val ClashJson = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
 
-    private val ConnectionJson = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-
-    fun compilePreview(request: CompileRequest): CompileResult {
+    override fun compilePreview(request: CompileRequest): CompileResult {
         val payload =
             Bridge.nativeCompilePreview(
-                CompilerJson.encodeToString(CompileRequest.serializer(), request)
+                ClashJson.encodeToString(CompileRequest.serializer(), request),
             )
-        return CompilerJson.decodeFromString(CompileResult.serializer(), payload)
+        return ClashJson.decodeFromString(CompileResult.serializer(), payload)
     }
 
-    fun compileToFile(request: CompileRequest): CompileResult {
+    override fun compileToFile(request: CompileRequest): CompileResult {
         val payload =
             Bridge.nativeCompileToFile(
-                CompilerJson.encodeToString(CompileRequest.serializer(), request)
+                ClashJson.encodeToString(CompileRequest.serializer(), request),
             )
-        return CompilerJson.decodeFromString(CompileResult.serializer(), payload)
+        return ClashJson.decodeFromString(CompileResult.serializer(), payload)
     }
 
-    fun reset() {
+    override fun reset() {
         Bridge.nativeReset()
     }
 
-    fun forceGc() {
+    override fun forceGc() {
         Bridge.nativeForceGc()
     }
 
-    fun suspendCore(suspended: Boolean) {
+    override fun suspendCore(suspended: Boolean) {
         Bridge.nativeSuspend(suspended)
     }
 
-    fun queryTunnelState(): TunnelState {
+    override fun queryTunnelState(): TunnelState {
         val json = Bridge.nativeQueryTunnelState()
         return Json.decodeFromString(TunnelState.serializer(), json)
     }
 
-    fun queryTrafficNow(): Traffic {
+    override fun queryTrafficNow(): Traffic {
         return Bridge.nativeQueryTrafficNow()
     }
 
-    fun queryTrafficTotal(): Traffic {
+    override fun queryTrafficTotal(): Traffic {
         return Bridge.nativeQueryTrafficTotal()
     }
 
-    fun queryConnections(): ConnectionSnapshot {
-        return ConnectionJson.decodeFromString(
+    override fun queryConnections(): ConnectionSnapshot {
+        val rawJson = Bridge.nativeQueryConnections()
+        val element = ClashJson.parseToJsonElement(rawJson)
+        val normalized = if (element is JsonObject && element["connections"] == JsonNull) {
+            JsonObject(
+                element.toMutableMap().apply {
+                    put("connections", JsonArray(emptyList()))
+                },
+            )
+        } else {
+            element
+        }
+        return ClashJson.decodeFromJsonElement(
             ConnectionSnapshot.serializer(),
-            Bridge.nativeQueryConnections(),
+            normalized,
         )
     }
 
-    fun closeConnection(id: String): Boolean {
+    override fun closeConnection(id: String): Boolean {
         return Bridge.nativeCloseConnection(id)
     }
 
-    fun closeAllConnections() {
+    override fun closeAllConnections() {
         Bridge.nativeCloseAllConnections()
     }
 
-    fun notifyDnsChanged(dns: List<String>) {
+    override fun notifyDnsChanged(dns: List<String>) {
         Bridge.nativeNotifyDnsChanged(dns.toSet().joinToString(separator = ","))
     }
 
-    fun notifyTimeZoneChanged(name: String, offset: Int) {
+    override fun notifyTimeZoneChanged(name: String, offset: Int) {
         Bridge.nativeNotifyTimeZoneChanged(name, offset)
     }
 
-    fun startTun(
+    override fun startTun(
         fd: Int,
         stack: String,
         gateway: String,
@@ -145,27 +153,27 @@ object Clash {
         )
     }
 
-    fun stopTun() {
+    override fun stopTun() {
         Bridge.nativeStopTun()
     }
 
-    fun startRootTun(config: RootTunConfig): String? {
+    override fun startRootTun(config: RootTunConfig): String? {
         return Bridge.nativeStartRootTun(YamlCodec.encode(RootTunConfig.serializer(), config))
     }
 
-    fun stopRootTun() {
+    override fun stopRootTun() {
         Bridge.nativeStopRootTun()
     }
 
-    fun startHttp(listenAt: String): String? {
+    override fun startHttp(listenAt: String): String? {
         return Bridge.nativeStartHttp(listenAt)
     }
 
-    fun stopHttp() {
+    override fun stopHttp() {
         Bridge.nativeStopHttp()
     }
 
-    fun queryGroupNames(excludeNotSelectable: Boolean): List<String> {
+    override fun queryGroupNames(excludeNotSelectable: Boolean): List<String> {
         val names =
             Json.decodeFromString(
                 JsonArray.serializer(),
@@ -178,7 +186,7 @@ object Clash {
         }
     }
 
-    fun inspectCompiledGroups(
+    override fun inspectCompiledGroups(
         yamlText: String,
         profileDir: File,
         excludeNotSelectable: Boolean,
@@ -195,31 +203,57 @@ object Clash {
             }
     }
 
-    fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
+    override fun inspectCompiledGroupNames(yamlText: String, excludeNotSelectable: Boolean): List<String> {
+        val namesJson = Bridge.nativeInspectCompiledGroupNames(yamlText, excludeNotSelectable)
+            ?: return emptyList()
+        return runCatching {
+            val array = Json.decodeFromString(JsonArray.serializer(), namesJson)
+            array.map {
+                require(it.jsonPrimitive.isString)
+                it.jsonPrimitive.content
+            }
+        }.getOrElse { emptyList() }
+    }
+
+    override fun queryGroup(name: String, sort: ProxySort): ProxyGroup {
         return Bridge.nativeQueryGroup(name, sort.name)?.let {
             Json.decodeFromString(ProxyGroup.serializer(), it)
         } ?: ProxyGroup(name = name, type = Proxy.Type.Unknown, proxies = emptyList(), now = "")
     }
 
-    fun healthCheck(name: String): CompletableDeferred<Unit> {
+    override fun healthCheck(name: String): CompletableDeferred<Unit> {
         return CompletableDeferred<Unit>().apply { Bridge.nativeHealthCheck(this, name) }
     }
 
-    fun healthCheckProxy(proxyName: String): CompletableDeferred<String> {
+    override fun healthCheckProxy(proxyName: String): CompletableDeferred<String> {
         return CompletableDeferred<String>().apply {
             Bridge.nativeHealthCheckProxy(this, proxyName)
         }
     }
 
-    fun healthCheckAll() {
+    override fun healthCheckAll() {
         Bridge.nativeHealthCheckAll()
     }
 
-    fun patchSelector(selector: String, name: String): Boolean {
+    override fun patchTunnelMode(mode: TunnelState.Mode): Boolean {
+        val rawMode = when (mode) {
+            TunnelState.Mode.Direct -> "direct"
+            TunnelState.Mode.Global -> "global"
+            TunnelState.Mode.Rule -> "rule"
+            TunnelState.Mode.Script -> return false
+        }
+        return Bridge.nativePatchTunnelMode(rawMode)
+    }
+
+    override fun patchSelector(selector: String, name: String): Boolean {
         return Bridge.nativePatchSelector(selector, name)
     }
 
-    fun fetchAndValid(
+    override fun patchForceSelector(selector: String, name: String): Boolean {
+        return Bridge.nativeForcePatchSelector(selector, name)
+    }
+
+    override fun fetchAndValid(
         path: File,
         url: String,
         force: Boolean,
@@ -244,17 +278,17 @@ object Clash {
         }
     }
 
-    fun load(path: File): CompletableDeferred<Unit> {
+    override fun load(path: File): CompletableDeferred<Unit> {
         return CompletableDeferred<Unit>().apply { Bridge.nativeLoad(this, path.absolutePath) }
     }
 
-    fun loadCompiledConfig(path: File): CompletableDeferred<Unit> {
+    override fun loadCompiledConfig(path: File): CompletableDeferred<Unit> {
         return CompletableDeferred<Unit>().apply {
             Bridge.nativeLoadCompiledConfig(this, path.absolutePath)
         }
     }
 
-    fun queryProviders(): List<Provider> {
+    override fun queryProviders(): List<Provider> {
         val providers = Json.decodeFromString(JsonArray.serializer(), Bridge.nativeQueryProviders())
 
         return List(providers.size) {
@@ -262,20 +296,20 @@ object Clash {
         }
     }
 
-    fun updateProvider(type: Provider.Type, name: String): CompletableDeferred<Unit> {
+    override fun updateProvider(type: Provider.Type, name: String): CompletableDeferred<Unit> {
         return CompletableDeferred<Unit>().apply {
             Bridge.nativeUpdateProvider(this, type.toString(), name)
         }
     }
 
-    fun queryConfiguration(): UiConfiguration {
+    override fun queryConfiguration(): UiConfiguration {
         return Json.decodeFromString(
             UiConfiguration.serializer(),
             Bridge.nativeQueryConfiguration(),
         )
     }
 
-    fun subscribeLogcat(): ReceiveChannel<LogMessage> {
+    override fun subscribeLogcat(): ReceiveChannel<LogMessage> {
         return Channel<LogMessage>(32).apply {
             Bridge.nativeSubscribeLogcat(
                 object : LogcatInterface {
@@ -287,11 +321,11 @@ object Clash {
         }
     }
 
-    fun setCustomUserAgent(userAgent: String) {
+    override fun setCustomUserAgent(userAgent: String) {
         Bridge.nativeSetCustomUserAgent(userAgent)
     }
 
-    fun setAgeSecretKey(key: String) {
+    override fun setAgeSecretKey(key: String) {
         Bridge.nativeSetAgeSecretKey(key)
     }
 }

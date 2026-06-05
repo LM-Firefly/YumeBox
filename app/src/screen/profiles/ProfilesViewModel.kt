@@ -31,8 +31,11 @@ import com.github.yumelira.yumebox.data.store.Preference
 import com.github.yumelira.yumebox.data.store.ProfileLink
 import com.github.yumelira.yumebox.data.store.ProfileLinksStore
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
-import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.data.controller.OverrideApplicator
+import com.github.yumelira.yumebox.data.model.ProfileBinding
+import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
+import com.github.yumelira.yumebox.runtime.api.service.remote.IFetchObserver
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
 import java.util.*
@@ -49,6 +52,8 @@ class ProfilesViewModel(
     application: Application,
     private val profilesRepository: ProfilesRepository,
     profileLinksStorage: ProfileLinksStore,
+    private val bindingProvider: ProfileBindingProvider,
+    private val overrideApplicator: OverrideApplicator,
 ) :
     AndroidContractStateViewModel<ProfilesUiState, ProfilesViewModel.ProfilesUiEffect>(
         application,
@@ -325,6 +330,23 @@ class ProfilesViewModel(
 
     fun clearMessage() {
         clearMessageState()
+    }
+
+    suspend fun getBinding(profileId: String): ProfileBinding? =
+        bindingProvider.getBinding(profileId)
+
+    suspend fun saveOverrideBinding(
+        profileId: String,
+        overrideIds: List<String>,
+        applyNow: Boolean,
+    ): ProfileBinding? {
+        val normalizedIds = overrideIds.distinct()
+        val current = bindingProvider.getBinding(profileId)
+        val updated = current?.copy(overrideIds = normalizedIds)
+            ?: ProfileBinding(profileId = profileId, overrideIds = normalizedIds)
+        bindingProvider.setBinding(updated)
+        if (applyNow) overrideApplicator.applyOverride(profileId)
+        return bindingProvider.getBinding(profileId)
     }
 
     private fun applyLoading(loading: Boolean) {

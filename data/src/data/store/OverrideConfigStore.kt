@@ -315,12 +315,46 @@ class OverrideConfigStore(
                         MetadataIndex()
                     }
             }
-        val sanitizedIndex = sanitizeMetadataIndex(metadataIndex)
+        val recoveredIndex = recoverMetadataIndexIfNeeded(metadataIndex)
+        val sanitizedIndex = sanitizeMetadataIndex(recoveredIndex)
         val normalizedIndex = sanitizedIndex.normalizeUserSortOrders()
         if (normalizedIndex != metadataIndex) {
             saveMetadataIndex(normalizedIndex)
         }
         return normalizedIndex
+    }
+
+    private fun recoverMetadataIndexIfNeeded(index: MetadataIndex): MetadataIndex {
+        if (index.configs.isNotEmpty()) return index
+        if (!configsDir.exists()) return index
+        val recoveredConfigs =
+            configsDir.listFiles()
+                ?.asSequence()
+                ?.filter(File::isFile)
+                ?.mapNotNull { file ->
+                    val extension = file.extension.lowercase()
+                    val contentType = OverrideContentType.fromExtension(extension) ?: return@mapNotNull null
+                    val id = file.nameWithoutExtension.takeIf(String::isNotBlank) ?: return@mapNotNull null
+                    val timestamp = file.lastModified().takeIf { it > 0L } ?: System.currentTimeMillis()
+                    id to
+                        OverrideMetadata(
+                            id = id,
+                            name = id,
+                            description = null,
+                            contentType = contentType,
+                            createdAt = timestamp,
+                            updatedAt = timestamp,
+                            sortOrder = 0L,
+                        )
+                }
+                ?.toMap()
+                ?: emptyMap()
+        if (recoveredConfigs.isEmpty()) return index
+        Timber.i(
+            "Recovered override metadata index from config files: %d entries",
+            recoveredConfigs.size,
+        )
+        return index.copy(configs = recoveredConfigs)
     }
 
     private fun saveMetadataIndex(index: MetadataIndex) {

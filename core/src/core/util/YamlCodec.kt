@@ -31,8 +31,10 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
-import org.yaml.snakeyaml.DumperOptions
-import org.yaml.snakeyaml.Yaml
+import org.snakeyaml.engine.v2.api.Dump
+import org.snakeyaml.engine.v2.api.DumpSettings
+import org.snakeyaml.engine.v2.api.Load
+import org.snakeyaml.engine.v2.api.LoadSettings
 
 object YamlCodec {
     private val json = Json {
@@ -42,18 +44,8 @@ object YamlCodec {
         prettyPrint = true
     }
 
-    private val yaml =
-        Yaml(
-            DumperOptions().apply {
-                defaultFlowStyle = DumperOptions.FlowStyle.BLOCK
-                defaultScalarStyle = DumperOptions.ScalarStyle.PLAIN
-                isPrettyFlow = true
-                indent = 2
-                indicatorIndent = 0
-                width = 160
-                splitLines = false
-            }
-        )
+    private val loader = Load(LoadSettings.builder().build())
+    private val dumper = Dump(DumpSettings.builder().build())
 
     fun <T> encode(serializer: KSerializer<T>, value: T): String {
         val element = json.encodeToJsonElement(serializer, value)
@@ -78,16 +70,16 @@ object YamlCodec {
     }
 
     fun dumpValue(value: Any?): String {
-        return yaml.dump(normalizeYamlValue(value))
+        return dumper.dumpToString(normalizeYamlValue(value))
     }
 
     fun loadValue(content: String): Any? {
-        return normalizeYamlValue(yaml.load(content))
+        return normalizeYamlValue(loader.loadFromString(content))
     }
 
     fun validate(content: String) {
         if (content.isBlank()) return
-        yaml.load(content)
+        loader.loadFromString(content)
     }
 
     private fun toYamlNode(element: JsonElement): Any? {

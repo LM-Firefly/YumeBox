@@ -20,6 +20,7 @@
 
 package com.github.yumelira.yumebox.core.presentation
 
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -58,7 +59,7 @@ import kotlinx.coroutines.flow.update
  * }
  * ```
  */
-abstract class BaseViewModel<State>(initialState: State) {
+abstract class BaseViewModel<State>(initialState: State) : ViewModel() {
 
     protected val _uiState = MutableStateFlow(initialState)
     val uiState: StateFlow<State> = _uiState.asStateFlow()

@@ -34,17 +34,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.BuildConfig
-import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.*
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
-import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
 import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.FeatureScreenDestination
@@ -53,7 +51,6 @@ import com.ramcosta.composedestinations.generated.destinations.MetaFeatureScreen
 import com.ramcosta.composedestinations.generated.destinations.NetworkSettingsScreenDestination
 import com.ramcosta.composedestinations.generated.destinations.OverrideScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
-import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -120,27 +117,10 @@ private fun CircularIcon(
 @SuppressLint("LocalContextResourcesRead")
 @Composable
 fun SettingPager(mainInnerPadding: PaddingValues) {
-    val viewModel = koinViewModel<SettingViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
     val navigator = LocalNavigator.current
-    val context = LocalContext.current
 
     val versionInfo = BuildConfig.VERSION_NAME
-
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is SettingEvent.OpenWebView -> {
-                    runCatching { WebViewActivity.start(context, event.url) }
-                        .getOrElse { throwable ->
-                            context.toast(
-                                MLang.Settings.Error.WebviewFailed.format(throwable.message)
-                            )
-                        }
-                }
-            }
-        }
-    }
 
     Scaffold(topBar = { TopBar(title = MLang.Settings.Title, scrollBehavior = scrollBehavior) }) {
         innerPadding ->

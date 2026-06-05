@@ -20,9 +20,10 @@
 
 package com.github.yumelira.yumebox.data.store
 
-import com.github.yumelira.yumebox.data.model.AppColorTheme
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import android.util.Log
+import com.github.yumelira.yumebox.core.model.AppColorTheme
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.tencent.mmkv.MMKV
 
 class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
@@ -57,6 +58,23 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val singleNodeTest by boolFlow(true)
     val screenshotProtectionEnabled by boolFlow(false)
     val biometricUnlockEnabled by boolFlow(false)
+    val logLevel by intFlow(Log.INFO)
+    val autoCheckAppUpdate by boolFlow(false)
+    val updateSourceKey by strFlow("")
 
     val customUserAgent by strFlow("")
+
+    val webDavUrl by strFlow("")
+    val webDavAccount by strFlow("")
+    val webDavPassword by strFlow("")
+    val webDavDir by strFlow("yumebox")
 }
+
+class AppStateManager(
+    val appSettingsStore: AppSettingsStore,
+    val networkSettingsStore: NetworkSettingsStore,
+    val featureStore: FeatureStore,
+    val profileLinksStore: ProfileLinksStore,
+    val proxyDisplaySettingsStore: ProxyDisplaySettingsStore,
+    val trafficStatisticsStore: TrafficStatisticsStore,
+)

@@ -20,6 +20,9 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import java.time.format.DateTimeFormatter
+import java.time.ZonedDateTime
+import java.time.ZoneId
 import java.util.Properties
 
 plugins {
@@ -36,16 +39,57 @@ val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
 val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
+val extensionAbiList =
+    gropify.abi.extension.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+val withExtensionTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.equals("assembleReleaseWithExtension", ignoreCase = true) ||
+        taskName.endsWith(":assembleReleaseWithExtension", ignoreCase = true)
+}
+val withExtension = project.hasProperty("withExtension") || withExtensionTaskRequested
+val packagingAbiList = if (withExtension) extensionAbiList else appAbiList
+val projectApplicationId = providers.gradleProperty("project.applicationId")
+    .orElse(gropify.project.namespace.base)
+    .get()
+val updateRepository = providers.gradleProperty("update.repository").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: "LM-Firefly/YumeBox"
+val updateSource = providers.gradleProperty("update.source").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: "smart"
+val updateUiBuildStamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
+    .format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"))
+val updateUiCommitShort = runCatching {
+    providers.exec {
+        commandLine("git", "rev-parse", "--short=6", "HEAD")
+        workingDir = rootDir
+    }.standardOutput.asText.get().trim().ifBlank { "000000" }
+}.getOrDefault("000000")
+val updateUiBuildId = providers.gradleProperty("update.uiBuildId").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: "${updateUiBuildStamp}-${updateUiCommitShort}"
+val updateMirrorTemplates = providers.gradleProperty("update.mirrorTemplates").orNull
+    ?.trim()
+    ?.ifEmpty { null }
+    ?: ""
+
+fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 android {
     namespace = gropify.project.namespace.base
 
     defaultConfig {
-        applicationId = gropify.project.namespace.base
+        applicationId = projectApplicationId
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
         manifestPlaceholders["appName"] = gropify.project.name
+        buildConfigField("String", "UPDATE_REPOSITORY", updateRepository.asBuildConfigString())
+        buildConfigField("String", "UPDATE_SOURCE", updateSource.asBuildConfigString())
+        buildConfigField("String", "UI_BUILD_ID", updateUiBuildId.asBuildConfigString())
+        buildConfigField("String", "UPDATE_MIRROR_TEMPLATES", updateMirrorTemplates.asBuildConfigString())
     }
 
     compileOptions {
@@ -126,14 +170,16 @@ android {
             //noinspection WrongGradleMethod
             isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
-            include(*appAbiList.toTypedArray())
+            include(*packagingAbiList.toTypedArray())
             isUniversalApk = true
         }
     }
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (!withExtension) {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
     }
@@ -170,7 +216,11 @@ android {
                 val buildTypeName = variant.buildType ?: "release"
                 output.versionName.set(gropify.project.version.name)
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
-                    "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    if (withExtension) {
+                        "${gropify.project.name}_Extension-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
+                    } else {
+                        "${gropify.project.name}-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
+                    }
                 )
             }
         }
@@ -187,12 +237,13 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:substore"))
     implementation(project(":feature:proxy"))
     implementation(project(":feature:override"))
     implementation(project(":feature:editor"))
     implementation(project(":feature:meta"))
+    implementation(project(":feature:update"))
 
     val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
     implementation(composeBom)
@@ -209,7 +260,10 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-blur-android:${gropify.dep.version.miuix}")
     implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
+    implementation("dev.chrisbanes.haze:haze-blur:${gropify.dep.version.haze}")
     implementation("androidx.navigationevent:navigationevent-compose:${gropify.dep.version.navigationevent}")
+
+    implementation("org.bouncycastle:bcprov-jdk18on:${gropify.dep.version.bcprov}")
 
     val mmkv64 = gropify.dep.version.mmkv64
     val mmkv32 = gropify.dep.version.mmkv32
@@ -228,7 +282,7 @@ dependencies {
     ksp("io.github.raamcosta.compose-destinations:ksp:${gropify.dep.version.composeDestinations}")
 
     implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("org.tukaani:xz:1.12")
+    implementation("org.tukaani:xz:${gropify.dep.version.xz}")
 
     implementation("com.google.mlkit:barcode-scanning:${gropify.dep.version.mlkitBarcodeScanning}")
 

@@ -68,4 +68,8 @@ class LogViewModel(private val repository: LogStore) : ViewModel() {
                 false
             }
         }
+
+    suspend fun exportRecentLogsToUri(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
+        repository.exportRecentLogsToUri(targetUri)
+    }
 }
