@@ -20,7 +20,7 @@
 
 package com.github.yumelira.yumebox.service.runtime.state
 
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import kotlinx.serialization.Serializable
 
 @Serializable

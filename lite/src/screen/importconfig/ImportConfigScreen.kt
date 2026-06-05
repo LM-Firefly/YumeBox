@@ -24,6 +24,7 @@ import android.content.Intent
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,7 +36,7 @@ import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
@@ -51,9 +52,9 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 fun ImportConfigScreen(navigator: DestinationsNavigator, prefillUrl: String = "") {
     navigator
     val viewModel = koinViewModel<ImportConfigViewModel>()
-    val profiles by viewModel.profiles.collectAsState()
-    val isRunning by viewModel.isRunning.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val profiles by viewModel.profiles.collectAsStateWithLifecycle()
+    val isRunning by viewModel.isRunning.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val filesDir = remember(context) { context.filesDir }
 
@@ -68,7 +69,7 @@ fun ImportConfigScreen(navigator: DestinationsNavigator, prefillUrl: String = ""
     var isDownloading by remember { mutableStateOf(false) }
     var importUrlFromScheme by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val pendingImportUrl by MainActivity.pendingImportUrl.collectAsState()
+    val pendingImportUrl by MainActivity.pendingImportUrl.collectAsStateWithLifecycle()
     val urlProfiles = remember(profiles) { profiles.filter { it.type == Profile.Type.Url } }
     val scrollBehavior = MiuixScrollBehavior()
 

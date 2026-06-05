@@ -60,3 +60,10 @@ func setCustomUserAgent(userAgent C.c_string) {
 	config.SetCustomUserAgent(ua)
 	log.Infoln("[APP] custom User-Agent set:", ua)
 }
+
+//export setAgeSecretKey
+func setAgeSecretKey(key C.c_string) {
+	k := C.GoString(key)
+	config.SetAgeSecretKey(k)
+	log.Infoln("[APP] Age secret key set")
+}

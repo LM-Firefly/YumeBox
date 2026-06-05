@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeLira 2025 - Present
  *
  */
 
@@ -29,11 +29,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.BuildConfig
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.core.bridge.Bridge
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -48,6 +50,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.preference.ArrowPreference
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -66,7 +69,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                 }
         }
 
-    Scaffold(topBar = { TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior) }) {
+    Scaffold(topBar = { TopBar(title = MLang.About.Title, scrollBehavior = scrollBehavior, navigationIconPadding = 0.dp, navigationIcon = { NavigationBackIcon(navigator = navigator) }) }) {
         innerPadding ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -83,7 +86,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     Icon(
                         painter = painterResource(id = R.drawable.yume),
                         contentDescription = "App Icon",
-                        modifier = Modifier.size(UiDp.dp120).clip(RoundedCornerShape(UiDp.dp24)),
+                        modifier = Modifier.size(UiDp.dp120).clip(miuixShape(UiDp.dp24)),
                         tint = Color.Unspecified,
                     )
 
@@ -113,7 +116,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                 Card {
                     AboutLinkItem(
                         title = "YumeBox",
-                        url = "https://github.com/YumeRiMoe/YumeBox",
+                        url = "https://github.com/LM-Firefly/YumeBox",
                         onOpenUrl = { url -> openUrl(context, url) },
                         showArrow = false,
                     )
@@ -122,22 +125,6 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                         url = "https://github.com/MetaCubeX/mihomo",
                         onOpenUrl = { url -> openUrl(context, url) },
                         showArrow = false,
-                    )
-                }
-
-                Title(MLang.About.Section.More)
-                Card {
-                    AboutLinkItem(
-                        title = MLang.About.Link.TelegramGroup,
-                        url = "https://t.me/OOM_Group",
-                        onOpenUrl = { url -> openUrl(context, url) },
-                        showArrow = true,
-                    )
-                    AboutLinkItem(
-                        title = MLang.About.Link.TelegramChannel,
-                        url = "https://t.me/YumeRiMoe",
-                        onOpenUrl = { url -> openUrl(context, url) },
-                        showArrow = true,
                     )
                 }
 

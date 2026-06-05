@@ -36,12 +36,23 @@ val appAbiList =
     gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
 val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
+val extensionAbiList =
+    gropify.abi.extension.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+val withExtensionTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.equals("assembleReleaseWithExtension", ignoreCase = true) ||
+        taskName.endsWith(":assembleReleaseWithExtension", ignoreCase = true)
+}
+val withExtension = project.hasProperty("withExtension") || withExtensionTaskRequested
+val packagingAbiList = if (withExtension) extensionAbiList else appAbiList
+val projectApplicationId = providers.gradleProperty("project.applicationId")
+    .orElse(gropify.project.namespace.base)
+    .get()
 
 android {
     namespace = gropify.project.namespace.base
 
     defaultConfig {
-        applicationId = gropify.project.namespace.base
+        applicationId = projectApplicationId
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
         versionName = gropify.project.version.name
@@ -126,14 +137,16 @@ android {
             //noinspection WrongGradleMethod
             isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
-            include(*appAbiList.toTypedArray())
+            include(*packagingAbiList.toTypedArray())
             isUniversalApk = true
         }
     }
 
     packaging {
         jniLibs {
-            excludes += listOf("lib/**/libjavet*.so")
+            if (!withExtension) {
+                excludes += listOf("lib/**/libjavet*.so")
+            }
             useLegacyPackaging = true
         }
     }
@@ -170,7 +183,11 @@ android {
                 val buildTypeName = variant.buildType ?: "release"
                 output.versionName.set(gropify.project.version.name)
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
-                    "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    if (withExtension) {
+                        "${gropify.project.name}_Extension-${abiName}-${buildTypeName}.apk"
+                    } else {
+                        "${gropify.project.name}-${abiName}-${buildTypeName}.apk"
+                    }
                 )
             }
         }
@@ -187,7 +204,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":runtime:api"))
     implementation(project(":runtime:client"))
-    implementation(project(":runtime:service"))
+    runtimeOnly(project(":runtime:service"))
     implementation(project(":feature:substore"))
     implementation(project(":feature:proxy"))
     implementation(project(":feature:override"))

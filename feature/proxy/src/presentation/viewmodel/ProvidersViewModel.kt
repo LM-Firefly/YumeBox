@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.viewmodel
+package com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel
 
 import android.content.Context
 import android.net.Uri
