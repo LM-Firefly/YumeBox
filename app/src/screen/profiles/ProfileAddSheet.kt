@@ -37,6 +37,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -60,7 +61,7 @@ import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmA
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
 import java.util.*
@@ -68,6 +69,7 @@ import kotlin.math.max
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.*
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -108,8 +110,8 @@ internal fun AddProfileSheet(
     var error by remember { mutableStateOf("") }
     var isDownloading by remember { mutableStateOf(false) }
 
-    val downloadProgress by profilesViewModel.downloadProgress.collectAsState()
-    val uiState by profilesViewModel.uiState.collectAsState()
+    val downloadProgress by profilesViewModel.downloadProgress.collectAsStateWithLifecycle()
+    val uiState by profilesViewModel.uiState.collectAsStateWithLifecycle()
     var hasShownCompleteAnimation by remember { mutableStateOf(false) }
     var stableSheetHeightPx by remember { mutableIntStateOf(0) }
 
@@ -542,7 +544,7 @@ private fun DownloadProgressContent(
                     tint = MiuixTheme.colorScheme.onPrimary,
                     modifier =
                         Modifier.fillMaxSize()
-                            .clip(RoundedCornerShape(UiDp.dp16))
+                            .clip(miuixShape(UiDp.dp16))
                             .background(MiuixTheme.colorScheme.primary)
                             .padding(UiDp.dp10),
                 )
@@ -675,7 +677,7 @@ private fun QrScannerContent(
             modifier =
                 Modifier.fillMaxWidth()
                     .height(UiDp.dp200)
-                    .clip(RoundedCornerShape(UiDp.dp12))
+                    .clip(miuixShape(UiDp.dp12))
                     .background(MiuixTheme.colorScheme.surfaceVariant),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,

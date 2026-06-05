@@ -48,7 +48,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,7 +73,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
 import com.github.yumelira.yumebox.presentation.icon.yume.Play
 import com.github.yumelira.yumebox.presentation.icon.yume.Tun
-import com.github.yumelira.yumebox.util.formatBytesPerSecond
+import com.github.yumelira.yumebox.common.util.formatSpeed
 import com.github.yumelira.yumebox.util.showToast
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
@@ -115,10 +115,10 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
 
-    val currentProfile by viewModel.currentProfile.collectAsState()
-    val controlState by viewModel.controlState.collectAsState()
-    val selectedServerName by viewModel.selectedServerName.collectAsState()
-    val trafficData by viewModel.trafficData.collectAsState()
+    val currentProfile by viewModel.currentProfile.collectAsStateWithLifecycle()
+    val controlState by viewModel.controlState.collectAsStateWithLifecycle()
+    val selectedServerName by viewModel.selectedServerName.collectAsStateWithLifecycle()
+    val trafficData by viewModel.trafficData.collectAsStateWithLifecycle()
 
     val vpnPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -141,7 +141,7 @@ fun HomeScreen(navigator: DestinationsNavigator) {
     val trafficText =
         when (controlState) {
             HomeControlState.Running -> {
-                "下行 ${formatBytesPerSecond(trafficData.download)} · 上行 ${formatBytesPerSecond(trafficData.upload)}"
+                "下行 ${formatSpeed(trafficData.download)} · 上行 ${formatSpeed(trafficData.upload)}"
             }
 
             HomeControlState.Connecting -> "正在建立 VPN 通道"

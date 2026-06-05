@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.domain.model
+package com.github.yumelira.yumebox.core.domain.model
 
 import com.github.yumelira.yumebox.core.model.Proxy
 import kotlinx.serialization.Serializable
@@ -31,4 +31,6 @@ data class ProxyGroupInfo(
     val now: String,
     val icon: String? = null,
     val hidden: Boolean = false,
+    val fixed: String = "",
+    val chainPath: List<String> = emptyList(),
 )

@@ -16,6 +16,7 @@ import (
 	"cfa/native/app"
 
 	clashHttp "github.com/metacubex/mihomo/component/http"
+	"github.com/metacubex/mihomo/component/profile/cachefile"
 )
 
 type Status struct {
@@ -28,12 +29,26 @@ type Status struct {
 var (
 	customUserAgent string
 	userAgentMutex  sync.RWMutex
+	ageSecretKey    string
+	ageKeyMutex     sync.RWMutex
 )
 
 func SetCustomUserAgent(ua string) {
 	userAgentMutex.Lock()
 	defer userAgentMutex.Unlock()
 	customUserAgent = ua
+}
+
+func SetAgeSecretKey(key string) {
+	ageKeyMutex.Lock()
+	defer ageKeyMutex.Unlock()
+	ageSecretKey = key
+}
+
+func GetAgeSecretKey() string {
+	ageKeyMutex.RLock()
+	defer ageKeyMutex.RUnlock()
+	return ageSecretKey
 }
 
 func GetCustomUserAgent() string {
@@ -95,6 +110,33 @@ func fetch(url *U.URL, file string) error {
 		_ = os.Remove(file)
 	}
 
+	return err
+}
+
+func fetchProxyProvider(url *U.URL, file string, name string) error {
+	if url.Scheme != "http" && url.Scheme != "https" {
+		return fetch(url, file)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	response, err := clashHttp.HttpRequest(ctx, url.String(), http.MethodGet, http.Header{"User-Agent": {GetCustomUserAgent()}}, nil)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+	if subInfo := response.Header.Get("subscription-userinfo"); subInfo != "" {
+		cachefile.Cache().SetSubscriptionInfo(name, subInfo)
+	}
+	_ = os.MkdirAll(P.Dir(file), 0700)
+	f, err := os.OpenFile(file, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = io.Copy(f, response.Body)
+	if err != nil {
+		_ = os.Remove(file)
+	}
 	return err
 }
 
@@ -166,7 +208,11 @@ func FetchAndValid(
 			return
 		}
 
-		_ = fetch(url, ps)
+		if prefix == PROXIES {
+			_ = fetchProxyProvider(url, ps, name)
+		} else {
+			_ = fetch(url, ps)
+		}
 	})
 
 	bytes, _ := json.Marshal(&Status{

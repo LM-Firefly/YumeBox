@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.app.*
 import android.content.Context
@@ -28,8 +28,8 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.runtime.service.R
-import com.github.yumelira.yumebox.service.common.constants.Components
-import com.github.yumelira.yumebox.service.remote.ILogObserver
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -45,6 +45,8 @@ class LogRecordService : Service() {
         private const val NOTIFICATION_ID = 2001
         private const val CHANNEL_ID = "log_record_channel"
         private const val CHANNEL_NAME = "日志记录"
+        private const val LOG_FLUSH_INTERVAL_MS = 350L
+        private const val LOG_BUFFER_FLUSH_THRESHOLD_CHARS = 8 * 1024
 
         private const val ACTION_START = "com.github.yumelira.yumebox.LOG_START"
         private const val ACTION_STOP = "com.github.yumelira.yumebox.LOG_STOP"
@@ -60,6 +62,9 @@ class LogRecordService : Service() {
         @Volatile
         var currentLogFileName: String? = null
             private set
+
+        @Volatile
+        private var instance: LogRecordService? = null
 
         fun start(context: Context) {
             val intent =
@@ -80,19 +85,28 @@ class LogRecordService : Service() {
         fun getLogDir(context: Context): File {
             return File(context.filesDir, LOG_DIR).apply { mkdirs() }
         }
+
+        @JvmStatic
+        fun writeLog(logLine: String) {
+            instance?.writeLogInternal(logLine)
+        }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var logWriter: BufferedWriter? = null
     private var logCollectJob: Job? = null
+    private var flushJob: Job? = null
     private var logFile: File? = null
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    private val writerLock = Any()
+    private val pendingLogBuffer = StringBuilder()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         createNotificationChannel()
     }
 
@@ -105,11 +119,22 @@ class LogRecordService : Service() {
     }
 
     override fun onDestroy() {
+        flushJob?.cancel()
         closeLogWriter()
         serviceScope.cancel()
         isRecording = false
         currentLogFileName = null
+        instance = null
         super.onDestroy()
+    }
+
+    private fun writeLogInternal(logLine: String) {
+        if (!isRecording) return
+        runCatching {
+            appendLogLine(logLine + "\n")
+        }.onFailure { e ->
+            Timber.tag(TAG).e(e, "Runtime app log write failed")
+        }
     }
 
     private fun startRecording() {
@@ -125,6 +150,7 @@ class LogRecordService : Service() {
 
                 currentLogFileName = fileName
                 isRecording = true
+                startFlushLoop()
 
                 startForeground(NOTIFICATION_ID, createNotification())
 
@@ -137,8 +163,7 @@ class LogRecordService : Service() {
                                         runCatching {
                                                 val line =
                                                     "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
-                                                logWriter?.write(line)
-                                                logWriter?.flush()
+                                                appendLogLine(line)
                                             }
                                             .onFailure { error ->
                                                 Timber.tag(TAG).e(error, "Log write failed")
@@ -170,6 +195,8 @@ class LogRecordService : Service() {
     private fun stopRecording() {
         logCollectJob?.cancel()
         logCollectJob = null
+        flushJob?.cancel()
+        flushJob = null
         closeLogWriter()
 
         isRecording = false
@@ -181,12 +208,47 @@ class LogRecordService : Service() {
 
     private fun closeLogWriter() {
         runCatching {
+                flushPendingBuffer()
                 logWriter?.flush()
                 logWriter?.close()
                 logWriter = null
                 logFile = null
             }
             .onFailure { error -> Timber.tag(TAG).e(error, "Log writer close failed") }
+        }
+
+    private fun startFlushLoop() {
+        flushJob?.cancel()
+        flushJob = serviceScope.launch {
+            while (isActive) {
+                delay(LOG_FLUSH_INTERVAL_MS)
+                flushPendingBuffer()
+            }
+        }
+    }
+
+    private fun appendLogLine(line: String) {
+        synchronized(writerLock) {
+            pendingLogBuffer.append(line)
+            if (pendingLogBuffer.length >= LOG_BUFFER_FLUSH_THRESHOLD_CHARS) {
+                flushPendingBufferLocked()
+            }
+        }
+    }
+
+    private fun flushPendingBuffer() {
+        synchronized(writerLock) {
+            flushPendingBufferLocked()
+        }
+    }
+
+    private fun flushPendingBufferLocked() {
+        if (pendingLogBuffer.isEmpty()) return
+        logWriter?.apply {
+            write(pendingLogBuffer.toString())
+            flush()
+        }
+        pendingLogBuffer.setLength(0)
     }
 
     private fun createNotificationChannel() {

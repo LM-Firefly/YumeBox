@@ -18,11 +18,12 @@
  *
  */
 
-package com.github.yumelira.yumebox.common.util
+package com.github.yumelira.yumebox.runtime.client.common.util
 
 import android.content.Intent
 import com.github.yumelira.yumebox.core.util.AutoStartSessionGate
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import kotlinx.coroutines.CoroutineScope
@@ -31,12 +32,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import timber.log.Timber
 
-class IntentController(private val scope: CoroutineScope) : KoinComponent {
-
-    companion object {
-        private const val ACTION_START_CLASH = "com.github.yumelira.yumebox.action.START_CLASH"
-        private const val ACTION_STOP_CLASH = "com.github.yumelira.yumebox.action.STOP_CLASH"
-    }
+class IntentController(private val scope: CoroutineScope, private val packageName: String) : KoinComponent {
 
     private val proxyFacade: ProxyFacade by inject()
     private val profilesRepository: ProfilesRepository by inject()
@@ -45,9 +41,10 @@ class IntentController(private val scope: CoroutineScope) : KoinComponent {
     fun handleIntent(intent: Intent?) {
         intent?.let { safeIntent ->
             when (safeIntent.action) {
-                ACTION_START_CLASH -> handleStartClash()
-                ACTION_STOP_CLASH -> handleStopClash()
-                else -> {}
+                Intents.actionStartClash(packageName) -> handleStartClash()
+                Intents.actionStopClash(packageName) -> handleStopClash()
+                else -> {
+                }
             }
         }
     }

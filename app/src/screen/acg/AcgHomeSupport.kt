@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,7 +43,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.Opacity
 import com.github.yumelira.yumebox.presentation.theme.Radii
 import com.github.yumelira.yumebox.presentation.theme.Sizes
@@ -52,6 +54,8 @@ import dev.oom_wg.purejoy.mlang.MLang
 import kotlin.math.abs
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixCapsuleShape
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val acgSpacing = Spacing()
@@ -61,8 +65,10 @@ private val acgOpacity = Opacity()
 
 internal object AcgUi {
     object Shape {
-        val hero = RoundedCornerShape(acgSpacing.space28)
-        val launchButton = RoundedCornerShape(acgRadii.full)
+        val hero: androidx.compose.ui.graphics.Shape
+            @Composable get() = miuixShape(acgSpacing.space28)
+        val launchButton: androidx.compose.ui.graphics.Shape
+            @Composable get() = miuixCapsuleShape()
     }
 
     object Sidebar {

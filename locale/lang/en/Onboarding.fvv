@@ -57,7 +57,7 @@ Onboarding = {
     Project = {
         Github = {
             Title = "GitHub Repo"
-            Summary = "github.com/YumeLira/YumeBox"
+            Summary = "github.com/LM-Firefly/YumeBox"
         }
         Community = {
             Title = "Community"

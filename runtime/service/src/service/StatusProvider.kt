@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
@@ -27,22 +27,20 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
-import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.common.util.Global
-import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
+import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimePhase
+import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimeStatusContract
+import com.github.yumelira.yumebox.runtime.api.service.RuntimeServiceContractRegistry
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeTargetMode
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.toProxyMode
+import com.github.yumelira.yumebox.runtime.service.root.RootAccessSupport
+import com.github.yumelira.yumebox.runtime.service.root.RootPackageShell
+import com.github.yumelira.yumebox.runtime.service.root.RootTunRuntimeRecovery
+import com.github.yumelira.yumebox.runtime.service.root.RootTunStateStoreFactory
+import com.github.yumelira.yumebox.runtime.service.runtime.session.RuntimeServiceLauncher
 import com.tencent.mmkv.MMKV
 import kotlin.enums.enumEntries
-
-enum class LocalRuntimePhase {
-    Idle,
-    Starting,
-    Running,
-    Stopping,
-    Failed;
-
-    val isActive: Boolean
-        get() = this != Idle
-}
 
 @Suppress("DEPRECATION")
 class StatusProvider : ContentProvider() {
@@ -90,16 +88,24 @@ class StatusProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         runCatching {
             val app = context?.applicationContext as? android.app.Application ?: return@runCatching
-            initializeServiceGlobal(app)
+            Global.init(app)
             // MMKV 必须在使用前初始化，ContentProvider 在 Application.onCreate 之前执行
+            MMKV.disableProcessModeChecker()
             MMKV.initialize(app)
             clearTunStarting()
             syncCachedRuntimeState()
+            RuntimeServiceContractRegistry.localRuntimeService = RuntimeServiceLauncher
+            RuntimeServiceContractRegistry.localRuntimeStatus = Companion
+            RuntimeServiceContractRegistry.rootAccessSupport = RootAccessSupport
+            RuntimeServiceContractRegistry.rootTunRuntimeRecovery = RootTunRuntimeRecovery
+            RuntimeServiceContractRegistry.rootTunForegroundService = RootTunService
+            RuntimeServiceContractRegistry.rootTunStateStoreFactory = RootTunStateStoreFactory
+            RuntimeServiceContractRegistry.rootPackageQuery = RootPackageShell
         }
         return true
     }
 
-    companion object {
+    companion object : LocalRuntimeStatusContract {
         const val METHOD_CURRENT_PROFILE = "currentProfile"
 
         private val legacyRuntimeFiles =
@@ -111,7 +117,7 @@ class StatusProvider : ContentProvider() {
         private const val KEY_RUNTIME_STARTED_AT = "local_runtime_started_at"
 
         @Volatile
-        var serviceRunning: Boolean = false
+        override var serviceRunning: Boolean = false
             private set
 
         @Volatile
@@ -171,7 +177,7 @@ class StatusProvider : ContentProvider() {
             return startedAt.takeIf { persistedMode == mode && persistedPhase.isActive }
         }
 
-        fun reconcilePersistedRuntimeState() {
+        override fun reconcilePersistedRuntimeState() {
             val (persistedMode, persistedPhase) = readPersistedRuntimeState()
             if (persistedMode == null || !persistedPhase.isActive) {
                 updateInMemoryRuntimeState(persistedMode, persistedPhase)
@@ -194,6 +200,15 @@ class StatusProvider : ContentProvider() {
             updateInMemoryRuntimeState(mode = null, phase = LocalRuntimePhase.Idle)
             currentProfile = null
         }
+        override fun isRuntimeActive(mode: RuntimeTargetMode): Boolean {
+            return isRuntimeActive(mode.toProxyMode())
+        }
+        override fun queryRuntimePhase(mode: RuntimeTargetMode): LocalRuntimePhase {
+            return queryRuntimePhase(mode.toProxyMode())
+        }
+        override fun queryRuntimeStartedAt(mode: RuntimeTargetMode): Long? {
+            return queryRuntimeStartedAt(mode.toProxyMode())
+        }
 
         fun isLocalRuntimeServiceAlive(mode: ProxyMode): Boolean {
             if (mode == ProxyMode.RootTun) return false
@@ -214,6 +229,9 @@ class StatusProvider : ContentProvider() {
                 }
                 .getOrDefault(false)
         }
+        override fun isLocalRuntimeServiceAlive(mode: RuntimeTargetMode): Boolean {
+            return isLocalRuntimeServiceAlive(mode.toProxyMode())
+        }
 
         fun markTunStarting() {
             serviceCache().encode(KEY_TUN_STARTING, true)
@@ -227,10 +245,11 @@ class StatusProvider : ContentProvider() {
             return serviceCache().decodeBool(KEY_TUN_STARTING, false)
         }
 
-        fun clearLegacyStateFiles() {
+        override fun clearLegacyStateFiles() {
             val filesDir = Global.application.filesDir
             legacyRuntimeFiles.forEach { name -> runCatching { filesDir.resolve(name).delete() } }
         }
+        override fun markRuntimeIdle(mode: RuntimeTargetMode) { markRuntimeIdle(mode.toProxyMode()) }
 
         private fun serviceCache(): MMKV {
             return MMKV.mmkvWithID(SERVICE_CACHE_ID, MMKV.MULTI_PROCESS_MODE)
@@ -312,6 +331,7 @@ class StatusProvider : ContentProvider() {
         }
 
         @SuppressLint("Deprecated")
+        @Suppress("DEPRECATION")
         private fun queryRunningServiceClassNames(activityManager: ActivityManager): List<String> {
             return activityManager.getRunningServices(Int.MAX_VALUE).mapNotNull { service ->
                 service.service

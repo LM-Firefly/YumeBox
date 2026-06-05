@@ -35,6 +35,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
@@ -43,6 +46,8 @@ import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixCapsuleShape
+import top.yukonga.miuix.kmp.theme.miuixShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -54,25 +59,28 @@ internal fun StartupTypewriterWord(phrases: List<String>, modifier: Modifier = M
     var visibleLength by remember(phrases) { mutableStateOf(0) }
     var deleting by remember(phrases) { mutableStateOf(false) }
 
-    LaunchedEffect(phrases) {
-        while (true) {
-            val currentText = phrases.getOrElse(phraseIndex) { "" }
-            if (!deleting) {
-                if (visibleLength < currentText.length) {
-                    delay(95)
-                    visibleLength += 1
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(phrases, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                val currentText = phrases.getOrElse(phraseIndex) { "" }
+                if (!deleting) {
+                    if (visibleLength < currentText.length) {
+                        delay(95)
+                        visibleLength += 1
+                    } else {
+                        delay(1850)
+                        deleting = true
+                    }
                 } else {
-                    delay(1850)
-                    deleting = true
-                }
-            } else {
-                if (visibleLength > 0) {
-                    delay(65)
-                    visibleLength -= 1
-                } else {
-                    delay(700)
-                    deleting = false
-                    phraseIndex = (phraseIndex + 1) % phrases.size
+                    if (visibleLength > 0) {
+                        delay(65)
+                        visibleLength -= 1
+                    } else {
+                        delay(700)
+                        deleting = false
+                        phraseIndex = (phraseIndex + 1) % phrases.size
+                    }
                 }
             }
         }
@@ -110,7 +118,7 @@ internal fun StartupTypewriterWord(phrases: List<String>, modifier: Modifier = M
                         .height(UiDp.dp46)
                         .background(
                             color = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.high),
-                            shape = RoundedCornerShape(50),
+                            shape = miuixCapsuleShape(),
                         )
             )
         }
@@ -230,7 +238,7 @@ internal fun PermissionRow(
         Box(
             modifier =
                 Modifier.size(componentSizes.iconBadgeMedium)
-                    .clip(RoundedCornerShape(radii.radius18))
+                    .clip(miuixShape(radii.radius18))
                     .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle)),
             contentAlignment = Alignment.Center,
         ) {
@@ -339,7 +347,7 @@ internal fun PrimaryFooterAction(
     Box(
         modifier =
             modifier
-                .clip(RoundedCornerShape(radii.radius24))
+                .clip(miuixShape(radii.radius24))
                 .background(MiuixTheme.colorScheme.primary)
                 .graphicsLayer(alpha = if (enabled) 1f else opacity.disabledStrong)
                 .clickable(enabled = enabled, onClick = onClick)
@@ -367,7 +375,7 @@ internal fun SecondaryFooterAction(
     Box(
         modifier =
             modifier
-                .clip(RoundedCornerShape(radii.radius24))
+                .clip(miuixShape(radii.radius24))
                 .background(
                     MiuixTheme.colorScheme.surfaceVariant.copy(alpha = opacity.surfaceVariantStrong)
                 )
@@ -390,7 +398,7 @@ internal fun SecondaryLinkAction(text: String, onClick: () -> Unit) {
 
     Box(
         modifier =
-            Modifier.clip(RoundedCornerShape(radii.radius18))
+            Modifier.clip(miuixShape(radii.radius18))
                 .clickable(onClick = onClick)
                 .padding(horizontal = spacing.space10, vertical = spacing.space6),
         contentAlignment = Alignment.Center,

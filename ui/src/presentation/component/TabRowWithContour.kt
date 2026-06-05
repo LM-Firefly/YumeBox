@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.feature.meta.presentation.component
+package com.github.yumelira.yumebox.presentation.component
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -28,7 +28,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -39,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.miuixCapsuleShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -50,7 +50,7 @@ fun TabRowWithContour(
 ) {
     if (tabs.isEmpty()) return
 
-    val shape = RoundedCornerShape(100.dp)
+    val shape = miuixCapsuleShape()
     val backgroundColor = MiuixTheme.colorScheme.surfaceVariant
     val selectedColor = MiuixTheme.colorScheme.primary
     val indicatorInset = 4.dp

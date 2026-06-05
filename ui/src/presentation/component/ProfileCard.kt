@@ -38,7 +38,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Edit
 import com.github.yumelira.yumebox.presentation.icon.yume.Share
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.util.*
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
 import java.io.File
 import top.yukonga.miuix.kmp.basic.*

@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.component
+package com.github.yumelira.yumebox.feature.override.presentation.component
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.LinearEasing
@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import top.yukonga.miuix.kmp.basic.FloatingActionButton

@@ -30,11 +30,15 @@ dependencies {
     implementation("com.caoccao.javet:javet-node-android:${gropify.dep.version.javetNodeAndroid}")
 }
 
+val projectApplicationId = providers.gradleProperty("project.applicationId")
+    .orElse(gropify.project.namespace.base)
+    .get()
+
 android {
     namespace = gropify.project.namespace.extension
 
     defaultConfig {
-        applicationId = gropify.project.namespace.extension
+        applicationId = "$projectApplicationId.extension"
         minSdk = gropify.android.minSdk
         targetSdk = gropify.android.targetSdk
         versionCode = gropify.project.version.code
@@ -91,5 +95,3 @@ android {
         }
     }
 }
-
-

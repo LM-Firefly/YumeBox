@@ -50,6 +50,7 @@ dependencies {
     implementation("io.insert-koin:koin-android:${gropify.dep.version.koin}")
     implementation("io.insert-koin:koin-androidx-compose:${gropify.dep.version.koin}")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${gropify.dep.version.lifecycle}")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
     implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
     implementation("org.apache.commons:commons-compress:${gropify.dep.version.commonsCompress}")
     implementation("com.caoccao.javet:javet-node-android:${gropify.dep.version.javetNodeAndroid}")
@@ -57,4 +58,3 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-ui:${gropify.dep.version.miuix}")
     implementation("top.yukonga.miuix.kmp:miuix-preference:${gropify.dep.version.miuix}")
 }
-

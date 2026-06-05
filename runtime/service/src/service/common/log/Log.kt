@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.common.log
+package com.github.yumelira.yumebox.runtime.service.common.log
 
 import timber.log.Timber
 

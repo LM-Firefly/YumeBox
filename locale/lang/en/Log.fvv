@@ -5,7 +5,11 @@ Log = {
     Action = {
         StopRecording = "Stop Recording"
         StartRecording = "Start Recording"
+        SaveRecentLogs = "Save Recent Logs"
+        ClearLogs = "Clear Logs"
+        Pause = "Pause Recording"
         Save = "Save"
+        Delete = "Delete"
     }
 
     Empty = {
@@ -13,8 +17,24 @@ Log = {
         StartRecordingHint = "Click the bottom-right button to start recording logs"
     }
 
+    Message = {
+        SaveFailed = "Save file failed: %s"
+        ShareFailed = "Create share intent failed: %s"
+        Saved = "Saved: %s"
+        RecentLogSaved = "Recent logs saved"
+    }
+
+    Status = {
+        Recording = "Recording"
+    }
+
     Detail = {
+        RealTimeLog = "Real-time Log"
+        Loading = "Loading..."
         WaitingLog = "Waiting for logs..."
+        LogEmpty = "Log is empty"
         WillShowWhenGenerated = "Logs will appear when generated"
+        NoLogContent = "This file has no log content"
+        Done = "Done"
     }
 }

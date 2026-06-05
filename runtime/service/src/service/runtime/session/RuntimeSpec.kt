@@ -18,11 +18,11 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.runtime.session
+package com.github.yumelira.yumebox.runtime.service.runtime.session
 
 import com.github.yumelira.yumebox.core.model.OverrideSpec
 import com.github.yumelira.yumebox.core.model.RootTunConfig
-import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
+import com.github.yumelira.yumebox.runtime.api.service.runtime.entity.RuntimeOwner
 import kotlinx.serialization.Serializable
 
 @Serializable
