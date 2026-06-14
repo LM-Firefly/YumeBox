@@ -165,6 +165,7 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
             }
             _dailyRouteSummaries.update { it + (dayKey to routeDaySnapshot) }
         }
+        trimOldDataIfNeeded()
         markDailyDataDirty(routeChanges = routeChanges)
     }
 
@@ -357,6 +358,31 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         return calendar.timeInMillis
+    }
+
+    /**
+     * Prunes in-memory day-buckets and StateFlow maps when they exceed [MAX_APP_DAYS_TO_KEEP].
+     * Called after each batch write to bound growth between cold-start cleans.
+     */
+    private fun trimOldDataIfNeeded() {
+        if (dailyAppData.size <= MAX_APP_DAYS_TO_KEEP &&
+            dailyRouteData.size <= MAX_APP_DAYS_TO_KEEP
+        ) return
+        val cutoffTime = System.currentTimeMillis() - (MAX_APP_DAYS_TO_KEEP * DAY_MS)
+        synchronized(lock) {
+            if (dailyAppData.size > MAX_APP_DAYS_TO_KEEP) {
+                dailyAppData.keys.removeAll { it < cutoffTime }
+            }
+            if (dailyRouteData.size > MAX_APP_DAYS_TO_KEEP) {
+                dailyRouteData.keys.removeAll { it < cutoffTime }
+            }
+        }
+        if (_dailyAppSummaries.value.size > MAX_APP_DAYS_TO_KEEP) {
+            _dailyAppSummaries.update { current -> current.filterKeys { it >= cutoffTime } }
+        }
+        if (_dailyRouteSummaries.value.size > MAX_APP_DAYS_TO_KEEP) {
+            _dailyRouteSummaries.update { current -> current.filterKeys { it >= cutoffTime } }
+        }
     }
 
     private fun cleanOldDailyAppData(

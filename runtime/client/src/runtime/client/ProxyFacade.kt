@@ -34,10 +34,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.throttleByScene
 import com.github.yumelira.yumebox.core.util.throttleWhenScreenOff
-import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
-import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
-import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
 import com.github.yumelira.yumebox.data.util.ProxyChainResolver
 import com.github.yumelira.yumebox.runtime.api.remote.VpnPermissionRequired
 import com.github.yumelira.yumebox.runtime.api.service.LocalRuntimePhase
@@ -1427,25 +1424,3 @@ class ProxyFacade(private val context: Context, private val networkSettingsStora
             ?: "profile-${profile.updatedAt}"
     }
 }
-
-fun buildAppTrafficStatisticsCollector(
-    proxyFacade: ProxyFacade,
-    trafficStatisticsStore: TrafficStatisticsStore,
-    appIdentityResolver: AppIdentityResolver,
-): AppTrafficStatisticsCollector = AppTrafficStatisticsCollector(
-    isRunningFlow = proxyFacade.isRunning,
-    currentProfileId = { proxyFacade.currentProfile.value?.uuid?.toString() },
-    trafficStatisticsStore = trafficStatisticsStore,
-    appIdentityResolver = appIdentityResolver,
-    queryTrafficTotal = {
-        if (proxyFacade.runtimeSnapshot.value.running)
-            TrafficData.from(proxyFacade.trafficTotal.value)
-        else TrafficData.ZERO
-    },
-    connectionSnapshotFlow = proxyFacade.connectionSnapshot,
-    queryActiveProfileId = {
-        proxyFacade.refreshCurrentProfile()
-        proxyFacade.currentProfile.value?.uuid?.toString()
-    },
-    screenOn = proxyFacade.screenOn,
-)

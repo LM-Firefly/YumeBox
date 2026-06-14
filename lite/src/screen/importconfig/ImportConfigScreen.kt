@@ -50,7 +50,6 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 @Destination<RootGraph>
 @Composable
 fun ImportConfigScreen(navigator: DestinationsNavigator, prefillUrl: String = "") {
-    navigator
     val viewModel = koinViewModel<ImportConfigViewModel>()
     val profiles by viewModel.profiles.collectAsStateWithLifecycle()
     val isRunning by viewModel.isRunning.collectAsStateWithLifecycle()

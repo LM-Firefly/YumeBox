@@ -28,6 +28,7 @@ import com.github.yumelira.yumebox.data.controller.AccessControlCommandExecutor
 import com.github.yumelira.yumebox.data.controller.AccessControlController
 import com.github.yumelira.yumebox.data.controller.AppIdentityResolver
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
+import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsCommandExecutor
 import com.github.yumelira.yumebox.data.controller.NetworkSettingsController
 import com.github.yumelira.yumebox.data.controller.ProvidersController
@@ -48,7 +49,6 @@ import com.github.yumelira.yumebox.data.store.ProfileLinksStore
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
 import com.github.yumelira.yumebox.lite.config.TunProfileSync
-import com.github.yumelira.yumebox.runtime.client.buildAppTrafficStatisticsCollector
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
@@ -173,10 +173,23 @@ private val appDataRuntimeModule = module {
     single { AppIdentityResolver(androidContext()) }
     single { ProfilesRepository(androidContext()) }
     single {
-        buildAppTrafficStatisticsCollector(
-            proxyFacade = get(),
+        val facade = get<ProxyFacade>()
+        AppTrafficStatisticsCollector(
+            isRunningFlow = facade.isRunning,
+            currentProfileId = { facade.currentProfile.value?.uuid?.toString() },
             trafficStatisticsStore = get(),
             appIdentityResolver = get(),
+            queryTrafficTotal = {
+                if (facade.runtimeSnapshot.value.running)
+                    TrafficData.from(facade.trafficTotal.value)
+                else TrafficData.ZERO
+            },
+            connectionSnapshotFlow = facade.connectionSnapshot,
+            queryActiveProfileId = {
+                facade.refreshCurrentProfile()
+                facade.currentProfile.value?.uuid?.toString()
+            },
+            screenOn = facade.screenOn,
         )
     }
 }

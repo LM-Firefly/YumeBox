@@ -28,7 +28,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 fun CoroutineScope.cancelAndJoinBlocking() {
     val job = coroutineContext.job
     job.cancel()
-    runBlocking { withTimeoutOrNull(CANCEL_JOIN_TIMEOUT_MS) { job.join() } }
+    Thread {
+        runBlocking { withTimeoutOrNull(CANCEL_JOIN_TIMEOUT_MS) { job.join() } }
+    }.apply { isDaemon = true }.start()
 }
 
 private const val CANCEL_JOIN_TIMEOUT_MS = 1_500L
