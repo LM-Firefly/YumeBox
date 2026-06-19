@@ -14,23 +14,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
-@file:UseSerializers(UUIDSerializer::class)
+package com.github.yumelira.yumebox.core.model
 
-package com.github.yumelira.yumebox.service.runtime.entity
-
-import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
-import java.util.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
 
 @Serializable
-data class Selection(
-    val uuid: UUID,
-    val proxy: String,
-    val selected: String,
-    val updatedAt: Long = 0L,
+data class AgeKeyPair(
+    val secretKey: String,
+    val publicKey: String,
 )

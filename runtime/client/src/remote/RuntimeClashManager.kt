@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -82,6 +82,10 @@ class RuntimeClashManager(context: Context, private val local: IClashManager) : 
 
     override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         return local.queryProfileProxyGroups(excludeNotSelectable)
+    }
+
+    override fun queryActiveProfileTunRouteExcludeAddress(): List<String> {
+        return local.queryActiveProfileTunRouteExcludeAddress()
     }
 
     override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {

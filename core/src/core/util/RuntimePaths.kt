@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -28,9 +28,21 @@ const val LEGACY_RUNTIME_HOME_DIR_NAME = "clash"
 const val PROFILE_PROVIDERS_DIR_NAME = "providers"
 const val RULE_PROVIDER_SCOPE = "rules"
 const val PROXY_PROVIDER_SCOPE = "proxies"
+const val ACG_ASSETS_DIR_NAME = "acg"
+const val ACG_WALLPAPER_FILE_NAME = "wallpaper.dat"
 
 val Context.runtimeHomeDir: File
     get() = filesDir.resolve(RUNTIME_HOME_DIR_NAME)
+
+val Context.acgAssetsDir: File
+    get() = filesDir.resolve(ACG_ASSETS_DIR_NAME)
+
+/**
+ * Stable app-private slot for the locally copied ACG wallpaper. The directory is created on access so
+ * callers can stream-copy into the returned file directly.
+ */
+fun Context.acgWallpaperFile(): File =
+    acgAssetsDir.apply { mkdirs() }.resolve(ACG_WALLPAPER_FILE_NAME)
 
 val Context.legacyRuntimeHomeDir: File
     get() = filesDir.resolve(LEGACY_RUNTIME_HOME_DIR_NAME)

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -47,6 +47,7 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val smoothCornerEnabled by boolFlow(true)
     val acgMainUiEnabled by boolFlow(false)
     val acgWallpaperUri by strFlow("")
+    val acgWallpaperSourceUri by strFlow("")
     val acgWallpaperZoom by floatFlow(1.0f)
     val acgWallpaperBiasX by floatFlow(0.0f)
     val acgWallpaperBiasY by floatFlow(0.0f)

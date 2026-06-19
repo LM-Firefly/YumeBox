@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -210,13 +210,14 @@ fun AcgWallpaperCropScreen(
                         .clip(RoundedCornerShape(UiDp.dp12)),
                 colors = ButtonDefaults.buttonColorsPrimary(),
                 onClick = {
-                    viewModel.onAcgWallpaperUriChange(wallpaperUri)
                     viewModel.onAcgWallpaperCropChange(
                         zoom = 1f,
                         biasX = viewportLayout.biasX,
                         biasY = viewportLayout.biasY,
                     )
-                    navigator.popBackStack()
+                    viewModel.applyAcgWallpaper(sourceUri = wallpaperUri) {
+                        navigator.popBackStack()
+                    }
                 },
             ) {
                 Text(

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -34,6 +34,8 @@ interface IClashManager {
     fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String>
 
     fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup>
+
+    fun queryActiveProfileTunRouteExcludeAddress(): List<String>
 
     fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup>
 

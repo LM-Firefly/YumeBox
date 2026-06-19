@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -32,6 +32,7 @@ data class CompileRequest(
     val profilePath: String,
     val overrides: List<OverrideSpec> = emptyList(),
     val outputPath: String,
+    val ageSecretKey: String? = null,
 )
 
 @Serializable
@@ -39,6 +40,21 @@ data class CompileResult(
     val success: Boolean,
     val fingerprint: String = "",
     val finalYaml: String = "",
+    val warnings: List<String> = emptyList(),
+    val error: String? = null,
+)
+
+@Serializable
+data class NativeInspectResult(
+    val success: Boolean,
+    val payload: String = "",
+    val error: String? = null,
+)
+
+@Serializable
+data class CompileRawSummary(
+    val success: Boolean,
+    val fingerprint: String = "",
     val warnings: List<String> = emptyList(),
     val error: String? = null,
 )

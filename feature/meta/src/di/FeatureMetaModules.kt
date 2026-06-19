@@ -14,13 +14,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
 package com.github.yumelira.yumebox.di
 
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
+import com.github.yumelira.yumebox.feature.meta.presentation.util.CustomRoutingBootstrapper
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.ConnectionViewModel
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.CustomRoutingViewModel
 import com.github.yumelira.yumebox.feature.meta.presentation.viewmodel.TrafficStatisticsViewModel
@@ -28,9 +29,10 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val featureMetaViewModelModule = module {
+    single { CustomRoutingBootstrapper(get()) }
     viewModel { ConnectionViewModel() }
     viewModel { TrafficStatisticsViewModel(get<TrafficStatisticsStore>()) }
-    viewModel { CustomRoutingViewModel(get(), get()) }
+    viewModel { CustomRoutingViewModel(get(), get(), get()) }
 }
 
 val featureMetaModules = listOf(featureMetaViewModelModule)

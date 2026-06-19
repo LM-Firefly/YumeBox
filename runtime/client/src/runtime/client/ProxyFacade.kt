@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -80,7 +80,6 @@ class ProxyFacade(private val context: Context) {
     }
     private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
     private val runtimeControl = ProxyRuntimeControl(appContext) { actionClashRequestStop }
-    private val previewCache = ProxyGroupPreviewCache()
     private val _rootTunStatus = MutableStateFlow(RootTunStatus())
     val rootTunStatus: StateFlow<RootTunStatus> = _rootTunStatus.asStateFlow()
     private val _runtimeSnapshot =
@@ -378,6 +377,17 @@ class ProxyFacade(private val context: Context) {
                 ServiceClient.clash().patchSelector(group, proxyName)
             }
         if (ok) {
+            // Optimistically reflect the user's pick immediately. For a Selector group the user's
+            // choice IS authoritative, so set the group's `now` right away instead of waiting for
+            // the core to commit it (a slow URLTest can delay `now` past the refresh window, which
+            // would otherwise keep the highlight stale until the next periodic sync). The changed
+            // `now` makes the summary differ so publishProxyGroups actually republishes. Only do
+            // this when the group is already cached; otherwise rely on the refresh below.
+            val cachedGroup = _proxyGroups.value.find { it.name == group }
+            if (cachedGroup != null && cachedGroup.now != proxyName) {
+                val optimisticGroups = updateCachedProxyGroup(cachedGroup.copy(now = proxyName))
+                publishProxyGroups(optimisticGroups)
+            }
             PollingTimers.awaitTick(
                 PollingTimerSpecs.dynamic(
                     name = "proxy_select_refresh",
@@ -551,13 +561,9 @@ class ProxyFacade(private val context: Context) {
                 }
 
             if (groups != null) {
-                publishProxyGroups(groups, cacheForPreview = true)
+                publishProxyGroups(groups)
             } else if (missingLocalRuntime) {
                 handleMissingLocalRuntime(snapshot, "runtime backend unavailable")
-            } else if (!snapshot.running) {
-                fallbackPreviewGroups(snapshot)?.let { cached ->
-                    publishProxyGroups(cached, cacheForPreview = false)
-                }
             }
         }
     }
@@ -595,7 +601,7 @@ class ProxyFacade(private val context: Context) {
                 } ?: return
 
             val updatedGroups = updateCachedProxyGroup(updatedGroup)
-            publishProxyGroups(updatedGroups, cacheForPreview = true)
+            publishProxyGroups(updatedGroups)
         }
     }
 
@@ -1156,7 +1162,7 @@ class ProxyFacade(private val context: Context) {
         )
         stopTrafficPolling()
         runCatching { queryPreviewProxyGroups() }
-            .onSuccess { groups -> publishProxyGroups(groups, cacheForPreview = true) }
+            .onSuccess { groups -> publishProxyGroups(groups) }
             .onFailure { error ->
                 Timber.d(error, "Fallback preview refresh skipped after stale runtime reset")
             }
@@ -1217,27 +1223,7 @@ class ProxyFacade(private val context: Context) {
         return groups
     }
 
-    private fun backfillPreviewCache(groups: List<ProxyGroupInfo>) {
-        val profile = _currentProfile.value ?: return
-        previewCache.store(
-            profile = profile,
-            excludeNotSelectable = false,
-            overrideSignature = previewOverrideSignature(profile),
-            groups = groups,
-        )
-    }
-
-    private fun fallbackPreviewGroups(snapshot: RuntimeSnapshot): List<ProxyGroupInfo>? {
-        val profile = _currentProfile.value
-        return previewCache.fallback(
-            phase = snapshot.phase,
-            profile = profile,
-            excludeNotSelectable = false,
-            overrideSignature = profile?.let(::previewOverrideSignature).orEmpty(),
-        )
-    }
-
-    private fun publishProxyGroups(groups: List<ProxyGroupInfo>, cacheForPreview: Boolean) {
+    private fun publishProxyGroups(groups: List<ProxyGroupInfo>) {
         val summary = summarizeProxyGroups(groups)
         if (summary != lastProxyGroupsSummary) {
             _proxyGroups.value = groups
@@ -1245,9 +1231,6 @@ class ProxyFacade(private val context: Context) {
         }
         updateGroupsReady(groups.isNotEmpty())
         updateResolvedPrimaryNode(groups)
-        if (cacheForPreview) {
-            backfillPreviewCache(groups)
-        }
     }
 
     private fun toProxyGroupInfo(group: ProxyGroup): ProxyGroupInfo {
@@ -1288,6 +1271,8 @@ class ProxyFacade(private val context: Context) {
                     append(':')
                     append(proxy.type.name)
                     append(':')
+                    append(proxy.isGroup)
+                    append(':')
                     append(proxy.delay)
                 }
             }
@@ -1325,7 +1310,7 @@ class ProxyFacade(private val context: Context) {
 
         groups.forEach { proxyGroup ->
             val proxy = proxyGroup.proxies.firstOrNull { it.name == nodeName } ?: return@forEach
-            if (proxy.type.group) {
+            if (proxy.isProxyGroup) {
                 val nextGroup = groups.firstOrNull { it.name == proxy.name } ?: return null
                 val nextNode = nextGroup.now.trim()
                 return nextNode
@@ -1369,9 +1354,4 @@ class ProxyFacade(private val context: Context) {
         }
     }
 
-    private fun previewOverrideSignature(profile: Profile): String {
-        return _runtimeSnapshot.value.effectiveFingerprint?.takeIf { it.isNotBlank() }
-            ?: _rootTunStatus.value.overrideFingerprint?.takeIf { it.isNotBlank() }
-            ?: "profile-${profile.updatedAt}"
-    }
 }

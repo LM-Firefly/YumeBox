@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -27,7 +27,7 @@ plugins {
 }
 
 dependencies {
-    implementation("com.caoccao.javet:javet-node-android:${gropify.dep.version.javetNodeAndroid}")
+    implementation(libs.javet.node.android)
 }
 
 android {

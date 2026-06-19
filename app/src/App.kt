@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -32,7 +32,9 @@ import com.github.yumelira.yumebox.data.controller.AppTrafficStatisticsCollector
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
+import com.github.yumelira.yumebox.feature.meta.presentation.util.CustomRoutingBootstrapper
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
+import com.github.yumelira.yumebox.screen.settings.AcgWallpaperImporter
 import com.github.yumelira.yumebox.substore.util.AppUtil
 import com.tencent.mmkv.MMKV
 import java.io.File
@@ -76,7 +78,7 @@ class App : Application() {
         extractGeoFiles()
         val featureStore: FeatureStore = koinApp.koin.get()
         featureStore.syncAppVersion(BuildConfig.VERSION_CODE)
-        scheduleDeferredStartupTasks(koinApp.koin, featureStore)
+        scheduleDeferredStartupTasks(koinApp.koin, featureStore, appSettingsStorage)
 
         PlatformIdentifier.getPlatformIdentifier()
     }
@@ -100,6 +102,26 @@ class App : Application() {
         assets.open(name).use { it.copyTo(target.outputStream()) }
     }
 
+    /**
+     * Best-effort self-heal for the ACG wallpaper: if the persisted [AppSettingsStore.acgWallpaperUri]
+     * points at a local file:// copy that no longer exists, but the original source is still recorded
+     * and readable, re-import it so the home screen keeps rendering the user's choice after a cache or
+     * data wipe. Silent no-op otherwise; the render path falls back to the bundled asset.
+     */
+    private suspend fun ensureAcgWallpaperLocalCopy(appSettings: AppSettingsStore) {
+        val stored = appSettings.acgWallpaperUri.value
+        if (!stored.startsWith("file://")) return
+        val localPath = stored.removePrefix("file://")
+        if (localPath.startsWith("/android_asset/")) return
+        if (File(localPath).exists()) return
+        val source = appSettings.acgWallpaperSourceUri.value
+        if (source.isBlank()) return
+        val reimported = AcgWallpaperImporter.importToLocal(this, source)
+        if (reimported != null) {
+            appSettings.acgWallpaperUri.set(reimported)
+        }
+    }
+
     private fun extractXzAsset(assetName: String, target: File): Unit? =
         runCatching {
                 assets.open(assetName).use { input ->
@@ -111,8 +133,16 @@ class App : Application() {
             }
             .getOrNull()
 
-    private fun scheduleDeferredStartupTasks(koin: Koin, featureStore: FeatureStore) {
+    private fun scheduleDeferredStartupTasks(
+        koin: Koin,
+        featureStore: FeatureStore,
+        appSettings: AppSettingsStore,
+    ) {
         StartupTaskCoordinator.startRuntimeWarmup(startupScope) {
+            runCatching { koin.get<CustomRoutingBootstrapper>().ensureDefaultContent() }
+                .onFailure { Timber.e(it, "Failed to bootstrap custom routing default content") }
+            runCatching { ensureAcgWallpaperLocalCopy(appSettings) }
+                .onFailure { Timber.e(it, "Failed to ensure ACG wallpaper local copy") }
             runCatching { koin.get<AppTrafficStatisticsCollector>() }
             runCatching { koin.get<ProxyFacade>().awaitProxyGroupWarmUp() }
 

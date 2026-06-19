@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -33,10 +33,12 @@ import androidx.core.content.FileProvider
 import com.github.yumelira.yumebox.App
 import com.github.yumelira.yumebox.MainActivity
 import com.github.yumelira.yumebox.common.util.toast
+import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.data.controller.OverrideService
 import com.github.yumelira.yumebox.data.model.ProfileBinding
 import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
+import com.github.yumelira.yumebox.feature.meta.presentation.util.CustomRoutingBootstrapper
 import com.github.yumelira.yumebox.presentation.component.*
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
@@ -52,6 +54,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import timber.log.Timber
 import top.yukonga.miuix.kmp.basic.*
 
 @SuppressLint("UseKtx")
@@ -66,6 +69,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
     val overrideConfigViewModel = koinViewModel<OverrideConfigViewModel>()
     val bindingProvider: ProfileBindingProvider = koinInject()
     val overrideService: OverrideService = koinInject()
+    val customRoutingBootstrapper: CustomRoutingBootstrapper = koinInject()
     val userConfigs by overrideConfigViewModel.userConfigs.collectAsState()
     val context = LocalContext.current
 
@@ -262,14 +266,15 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 profileToEdit = null
                 profileBinding = null
             },
-            onSaveProfileMeta = { newName, newSource, ageSecretKey ->
-                if (newName.isNotBlank() && newSource.isNotBlank()) {
+            onSaveProfileMeta = { update ->
+                if (update.name.isNotBlank() && update.source.isNotBlank()) {
                     profilesViewModel.patchProfile(
-                        currentProfileToEdit.uuid,
-                        newName,
-                        newSource,
-                        currentProfileToEdit.interval,
-                        ageSecretKey,
+                        uuid = currentProfileToEdit.uuid,
+                        name = update.name,
+                        source = update.source,
+                        interval = currentProfileToEdit.interval,
+                        updateAgeSecretKey = update.updateAgeSecretKey,
+                        ageSecretKey = update.ageSecretKey,
                     )
                 }
             },
@@ -277,6 +282,10 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 scope.launch {
                     val profileId = currentProfileToEdit.uuid.toString()
                     val normalizedOverrideIds = selectedOverrideIds.distinct()
+
+                    // Persist the binding FIRST so the user's toggle is never lost, even when
+                    // custom-routing content generation fails. Generation runs afterwards and
+                    // its failure is surfaced (log + toast) instead of silently aborting the save.
                     val currentBinding = profileBinding ?: bindingProvider.getBinding(profileId)
                     val updatedBinding =
                         currentBinding?.copy(overrideIds = normalizedOverrideIds)
@@ -287,6 +296,23 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
                     bindingProvider.setBinding(updatedBinding)
                     profileBinding = bindingProvider.getBinding(profileId)
+
+                    if (
+                        OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID in normalizedOverrideIds
+                    ) {
+                        runCatching { customRoutingBootstrapper.ensureDefaultContent() }
+                            .onFailure { error ->
+                                Timber.e(
+                                    error,
+                                    "Failed to generate custom routing content for profile %s",
+                                    profileId,
+                                )
+                                context.toast(
+                                    error.message
+                                        ?: MLang.ProfilesPage.SettingsDialog.CustomRouting
+                                )
+                            }
+                    }
 
                     if (isRunning && homeViewModel.isCurrentProfile(currentProfileToEdit.uuid)) {
                         overrideService.applyOverride(profileId)

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -33,6 +33,17 @@ object Bridge {
     external fun nativeCompilePreview(requestJson: String): String
 
     external fun nativeCompileToFile(requestJson: String): String
+
+    external fun nativeCompileAndLoadConfig(completable: CompletableDeferred<Unit>, requestJson: String)
+
+    external fun nativeCompileAndLoadConfigSummary(
+        completable: CompletableDeferred<Unit>,
+        requestJson: String,
+    ): String
+
+    external fun nativeCompileAndInspectGroups(requestJson: String, profileDir: String, excludeNotSelectable: Boolean): String?
+
+    external fun nativeCompileAndInspectTunRouteExcludeAddress(requestJson: String): String?
 
     external fun nativeReset()
 
@@ -120,7 +131,15 @@ object Bridge {
 
     external fun nativeSetCustomUserAgent(userAgent: String)
 
-    external fun nativeSetAgeSecretKey(key: String)
+    external fun nativeSetAgeSecretKey(key: String?)
+
+    external fun nativeGenX25519KeyPair(): String?
+
+    external fun nativeVerifySecretKeys(secretKeys: String): Boolean
+
+    external fun nativeToPublicKeys(secretKeys: String): String?
+
+    external fun nativeVerifyPublicKeys(publicKeys: String): Boolean
 
     private external fun nativeInit(home: String, versionName: String, sdkVersion: Int)
 

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -32,6 +32,7 @@ data class RuntimeSpec(
     val profileName: String,
     val profileDir: String,
     val runtimeConfigPath: String = "",
+    val ageSecretKey: String? = null,
     val overrideSpecs: List<OverrideSpec> = emptyList(),
     val rootTunConfig: RootTunConfig? = null,
     val staticPlanFingerprint: String = "",

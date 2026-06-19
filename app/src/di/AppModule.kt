@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -36,7 +36,7 @@ import org.koin.dsl.module
 val appIntegrationModule = module { single<LogRecordGateway> { LogRecordServiceGateway() } }
 
 val appViewModelModule = module {
-    viewModel { AppSettingsViewModel(get(), get(), get()) }
+    viewModel { AppSettingsViewModel(androidApplication(), get(), get(), get()) }
     viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get()) }
     viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
     viewModel { NetworkSettingsViewModel(androidApplication(), get(), get(), get()) }
@@ -51,3 +51,5 @@ val appModule: List<Module> =
         featureProxyModules +
         featureOverrideModules +
         featureMetaModules
+
+

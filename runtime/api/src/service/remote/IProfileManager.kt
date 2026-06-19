@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -24,13 +24,20 @@ import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import java.util.*
 
 interface IProfileManager {
-    suspend fun create(type: Profile.Type, name: String, source: String = "", ageSecretKey: String = ""): UUID
+    suspend fun create(type: Profile.Type, name: String, source: String = "", ageSecretKey: String? = null): UUID
 
     suspend fun clone(uuid: UUID): UUID
 
     suspend fun delete(uuid: UUID)
 
-    suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String? = null)
+    suspend fun patch(
+        uuid: UUID,
+        name: String,
+        source: String,
+        interval: Long,
+        updateAgeSecretKey: Boolean = false,
+        ageSecretKey: String? = null,
+    )
 
     suspend fun update(uuid: UUID, callback: IFetchObserver? = null)
 

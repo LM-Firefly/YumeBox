@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira & YumeRiMoe 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -154,11 +154,7 @@ private fun bigIntegerToAddressString(value: BigInteger, bitSize: Int): String {
 }
 
 private fun rootRouteAddress(bitSize: Int): String {
-    return if (bitSize == IPV4_BITS) {
-        "0.0.0.0"
-    } else {
-        "::"
-    }
+    return "0.0.0.0".takeIf { bitSize == IPV4_BITS } ?: "::"
 }
 
 private const val IPV4_BITS = 32

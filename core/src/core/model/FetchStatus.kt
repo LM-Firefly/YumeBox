@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -31,10 +31,18 @@ data class FetchStatus(
     val args: List<String>,
     val progress: Int,
     val max: Int,
+    val subUpload: Long? = null,
+    val subDownload: Long? = null,
+    val subTotal: Long? = null,
+    val subExpire: Long? = null,
+    val subUpdateInterval: Long? = null,
+    val subTitle: String? = null,
+    val subFilename: String? = null,
 ) : Parcelable {
     enum class Action {
         FetchConfiguration,
         FetchProviders,
+        SubscriptionInfo,
         Verifying,
     }
 
