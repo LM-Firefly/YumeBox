@@ -46,7 +46,7 @@
     "links": [
       {
         "label": "Support",
-        "href": "https://github.com/YumeRiMoe/YumeBox/issues"
+        "href": "https://github.com/YumeYucca/YumeBox/issues"
       }
     ],
     "primary": {
@@ -80,7 +80,7 @@
       "rating": "general",
       "revisit-after": "7 days",
       "language": "en-US",
-      "copyright": "YumeRiMoe",
+      "copyright": "YumeYucca",
       "distribution": "global",
       "HandheldFriendly": "True",
       "MobileOptimized": "320",
@@ -90,10 +90,11 @@
       "application-name": "YumeBox",
       "msapplication-TileColor": "#f56c6c",
       "og:type": "website",
-      "og:image": "https://repository-images.githubusercontent.com/1031102671/5fb1c2b1-94a3-468b-845c-5bc04ae537d4",
+      "og:image": "/logo/Yume.webp",
       "og:site_name": "YumeBox",
       "og:locale": "en_US"
-    }
+    },
+    "indexing": "all"
   },
   "metadata": {
     "timestamp": true
@@ -109,6 +110,11 @@
       "redirect": true,
       "title": "Page not found",
       "description": "The page you requested does not exist."
+    }
+  },
+  "fonts": {
+    "heading": {
+      "family": "Inter"
     }
   }
 }
