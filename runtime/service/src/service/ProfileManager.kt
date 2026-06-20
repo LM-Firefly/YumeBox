@@ -152,10 +152,7 @@ class ProfileManager(private val context: Context) :
 
         return uuids
             .mapNotNull { resolveProfile(it) }
-            .sortedWith(
-                compareBy<Profile> { orderIndex[it.uuid] ?: Int.MAX_VALUE }
-                    .thenByDescending { it.updatedAt }
-            )
+            .sortedBy { orderIndex[it.uuid] ?: Int.MAX_VALUE }
     }
 
     override suspend fun queryActive(): Profile? {
