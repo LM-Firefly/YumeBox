@@ -253,7 +253,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.hiddenapibypass)
 
-    implementation(libs.okhttp)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.core.ktx)
 }

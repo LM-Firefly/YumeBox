@@ -23,6 +23,17 @@ package com.github.yumelira.yumebox.substore.util
 import android.app.Application
 import com.github.yumelira.yumebox.common.util.ByteFormatter.formatSpeed
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.request.header
+import io.ktor.client.request.prepareGet
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.contentLength
+import io.ktor.http.isSuccess
+import io.ktor.utils.io.jvm.javaio.toInputStream
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
@@ -30,14 +41,8 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Calendar
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Headers
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okio.buffer
-import okio.sink
 import timber.log.Timber
 
 data class DownloadProgress(
@@ -66,12 +71,14 @@ class SubStoreDownloadClient(
         private const val UPDATE_INTERVAL_MS = 500L
     }
 
-    private val client: OkHttpClient by lazy {
-        OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .followRedirects(true)
-            .build()
+    private val client: HttpClient by lazy {
+        HttpClient(Android) {
+            install(HttpTimeout) {
+                connectTimeoutMillis = 15_000
+                socketTimeoutMillis = 60_000
+            }
+            followRedirects = true
+        }
     }
 
     suspend fun download(
@@ -94,62 +101,60 @@ class SubStoreDownloadClient(
                 targetFile.parentFile?.mkdirs()
                 if (targetFile.exists()) targetFile.delete()
 
-                val request =
-                    Request.Builder().url(url).header("User-Agent", resolveUserAgent()).build()
-
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        return@withContext Pair(false, null)
-                    }
-
-                    val subscriptionInfo = parseSubscriptionInfo(response.headers)
-                    val body = response.body
-                    val contentLength = body.contentLength()
-                    val inputStream = body.byteStream()
-
-                    var lastUpdateTime = 0L
-                    var lastBytesRead = 0L
-                    var totalBytesRead = 0L
-
-                    targetFile.sink().buffer().use { output ->
-                        val buffer = ByteArray(8192)
-                        var bytesRead: Int
-
-                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
-                            totalBytesRead += bytesRead
-
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastUpdateTime >= UPDATE_INTERVAL_MS) {
-                                val timeDiff = (currentTime - lastUpdateTime) / 1000.0
-                                val bytesDiff = totalBytesRead - lastBytesRead
-                                val speed =
-                                    if (timeDiff > 0) (bytesDiff / timeDiff).toLong() else 0L
-                                val progress =
-                                    if (contentLength > 0) {
-                                        ((totalBytesRead * 100) / contentLength).toInt()
-                                    } else {
-                                        0
-                                    }
-
-                                onProgress?.invoke(
-                                    DownloadProgress(
-                                        progress = progress,
-                                        currentSize = totalBytesRead,
-                                        totalSize = contentLength,
-                                        speed = formatSpeed(speed),
-                                    )
-                                )
-
-                                lastUpdateTime = currentTime
-                                lastBytesRead = totalBytesRead
-                            }
+                client
+                    .prepareGet(url) { header(HttpHeaders.UserAgent, resolveUserAgent()) }
+                    .execute { response ->
+                        if (!response.status.isSuccess()) {
+                            return@execute Pair(false, null)
                         }
-                        output.flush()
-                    }
 
-                    Pair(true, subscriptionInfo)
-                }
+                        val subscriptionInfo = parseSubscriptionInfo(response.headers)
+                        val contentLength = response.contentLength() ?: -1L
+                        val inputStream = response.bodyAsChannel().toInputStream()
+
+                        var lastUpdateTime = 0L
+                        var lastBytesRead = 0L
+                        var totalBytesRead = 0L
+
+                        targetFile.outputStream().buffered().use { output ->
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Int
+
+                            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                                output.write(buffer, 0, bytesRead)
+                                totalBytesRead += bytesRead
+
+                                val currentTime = System.currentTimeMillis()
+                                if (currentTime - lastUpdateTime >= UPDATE_INTERVAL_MS) {
+                                    val timeDiff = (currentTime - lastUpdateTime) / 1000.0
+                                    val bytesDiff = totalBytesRead - lastBytesRead
+                                    val speed =
+                                        if (timeDiff > 0) (bytesDiff / timeDiff).toLong() else 0L
+                                    val progress =
+                                        if (contentLength > 0) {
+                                            ((totalBytesRead * 100) / contentLength).toInt()
+                                        } else {
+                                            0
+                                        }
+
+                                    onProgress?.invoke(
+                                        DownloadProgress(
+                                            progress = progress,
+                                            currentSize = totalBytesRead,
+                                            totalSize = contentLength,
+                                            speed = formatSpeed(speed),
+                                        )
+                                    )
+
+                                    lastUpdateTime = currentTime
+                                    lastBytesRead = totalBytesRead
+                                }
+                            }
+                            output.flush()
+                        }
+
+                        Pair(true, subscriptionInfo)
+                    }
             } catch (error: Exception) {
                 Timber.e(error, "Download failed: %s", url)
                 if (targetFile.exists()) targetFile.delete()
