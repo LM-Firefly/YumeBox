@@ -1258,7 +1258,7 @@ class ProxyFacade(private val context: Context) {
             buildString {
                 append(group.name)
                 append('|')
-                append(group.type.name)
+                append(group.type)
                 append('|')
                 append(group.now)
                 append('|')
@@ -1269,7 +1269,7 @@ class ProxyFacade(private val context: Context) {
                     append('|')
                     append(proxy.name)
                     append(':')
-                    append(proxy.type.name)
+                    append(proxy.type)
                     append(':')
                     append(proxy.isGroup)
                     append(':')

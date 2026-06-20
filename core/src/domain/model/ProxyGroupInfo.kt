@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProxyGroupInfo(
     val name: String,
-    val type: Proxy.Type,
+    val type: String,
     val proxies: List<Proxy>,
     val now: String,
     val icon: String? = null,
@@ -38,4 +38,4 @@ val ProxyGroupInfo.isSelectable: Boolean
     get() = type.isManuallySelectable
 
 val ProxyGroupInfo.isProxyGroup: Boolean
-    get() = type.group || now.isNotBlank() || proxies.isNotEmpty()
+    get() = type in Proxy.Type.GROUP_TYPES || now.isNotBlank() || proxies.isNotEmpty()

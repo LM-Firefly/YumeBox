@@ -70,47 +70,22 @@ internal fun nodeLatencyLabel(delay: Int?): Pair<String, Color>? =
         else -> null
     }
 
-internal fun Proxy.Type.displayName(): String =
-    when (this) {
-        Proxy.Type.Direct -> "Direct"
-        Proxy.Type.Reject -> "Reject"
-        Proxy.Type.RejectDrop -> "RejectDrop"
-        Proxy.Type.Compatible -> "Compatible"
-        Proxy.Type.Pass -> "Pass"
-        Proxy.Type.PassRule -> "PassRule"
-        Proxy.Type.Relay -> "Relay"
-        Proxy.Type.Selector -> "Selector"
-        Proxy.Type.Fallback -> "Fallback"
-        Proxy.Type.URLTest -> "URLTest"
-        Proxy.Type.LoadBalance -> "LoadBalance"
-        Proxy.Type.Smart -> "Smart"
-        Proxy.Type.Unknown -> "Unknown"
+internal fun displayName(type: String): String =
+    when (type) {
         Proxy.Type.Shadowsocks -> "SS"
         Proxy.Type.ShadowsocksR -> "SSR"
-        Proxy.Type.Snell -> "Snell"
         Proxy.Type.Socks5 -> "SOCKS5"
         Proxy.Type.Http -> "HTTP"
         Proxy.Type.Vmess -> "VMess"
         Proxy.Type.Vless -> "VLESS"
-        Proxy.Type.Trojan -> "Trojan"
-        Proxy.Type.Hysteria -> "Hysteria"
-        Proxy.Type.Hysteria2 -> "Hysteria2"
         Proxy.Type.Tuic -> "TUIC"
-        Proxy.Type.WireGuard -> "WireGuard"
         Proxy.Type.Dns -> "DNS"
         Proxy.Type.Ssh -> "SSH"
-        Proxy.Type.Mieru -> "Mieru"
-        Proxy.Type.AnyTLS -> "AnyTLS"
-        Proxy.Type.Sudoku -> "Sudoku"
-        Proxy.Type.Masque -> "Masque"
-        Proxy.Type.TrustTunnel -> "TrustTunnel"
-        Proxy.Type.OpenVPN -> "OpenVPN"
-        Proxy.Type.Tailscale -> "Tailscale"
-        Proxy.Type.GostRelay -> "GostRelay"
+        else -> type
     }
 
-internal fun Proxy.Type.iconLabel(): String =
-    when (this) {
+internal fun iconLabel(type: String): String =
+    when (type) {
         Proxy.Type.Direct -> "DI"
         Proxy.Type.Reject -> "RJ"
         Proxy.Type.RejectDrop -> "RD"
@@ -146,6 +121,7 @@ internal fun Proxy.Type.iconLabel(): String =
         Proxy.Type.OpenVPN -> "OP"
         Proxy.Type.Tailscale -> "Tl"
         Proxy.Type.GostRelay -> "GR"
+        else -> type.take(2).uppercase()
     }
 
 @Composable
@@ -268,8 +244,8 @@ internal fun NodeCard(
             }
         val tags = remember(proxy.name) { extractNodeTags(proxy.name) }
         val delayLabel = nodeLatencyLabel(proxy.delay)
-        val typeLabel = remember(proxy.type) { proxy.type.displayName() }
-        val iconLabel = remember(proxy.type) { proxy.type.iconLabel() }
+        val typeLabel = remember(proxy.type) { displayName(proxy.type) }
+        val iconLabel = remember(proxy.type) { iconLabel(proxy.type) }
 
         Row(
             modifier = Modifier.fillMaxWidth(),

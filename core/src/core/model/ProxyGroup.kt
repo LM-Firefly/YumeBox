@@ -29,7 +29,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProxyGroup(
     val name: String = "",
-    val type: Proxy.Type,
+    val type: String,
     val proxies: List<Proxy>,
     val now: String,
     val icon: String? = null,
@@ -60,7 +60,7 @@ data class ProxyGroup(
     constructor(
         parcel: Parcel
     ) : this(
-        type = Proxy.Type.entries[parcel.readInt()],
+        type = parcel.readString().orEmpty(),
         proxies = SliceProxyList(parcel),
         now = parcel.readString().orEmpty(),
         icon = parcel.readString(),
@@ -69,7 +69,7 @@ data class ProxyGroup(
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeInt(type.ordinal)
+        parcel.writeString(type)
         SliceProxyList(proxies).writeToParcel(parcel, 0)
         parcel.writeString(now)
         parcel.writeString(icon)
@@ -96,4 +96,4 @@ val ProxyGroup.isSelectable: Boolean
     get() = type.isManuallySelectable
 
 val ProxyGroup.isProxyGroup: Boolean
-    get() = type.group || now.isNotBlank() || proxies.isNotEmpty()
+    get() = type in Proxy.Type.GROUP_TYPES || now.isNotBlank() || proxies.isNotEmpty()

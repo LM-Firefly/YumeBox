@@ -30,47 +30,50 @@ data class Proxy(
     val name: String,
     val title: String,
     val subtitle: String,
-    val type: Type,
+    val type: String,
     val delay: Int,
-    val isGroup: Boolean = type.group,
+    val isGroup: Boolean = type in Type.GROUP_TYPES,
 ) : Parcelable {
     @Suppress("unused")
-    enum class Type(val group: Boolean) {
-        Direct(false),
-        Reject(false),
-        RejectDrop(false),
-        Compatible(false),
-        Pass(false),
-        Shadowsocks(false),
-        ShadowsocksR(false),
-        Snell(false),
-        Socks5(false),
-        Http(false),
-        Vmess(false),
-        Vless(false),
-        Trojan(false),
-        Hysteria(false),
-        Hysteria2(false),
-        Tuic(false),
-        WireGuard(false),
-        Dns(false),
-        Ssh(false),
-        Mieru(false),
-        AnyTLS(false),
-        Sudoku(false),
-        Masque(false),
-        TrustTunnel(false),
-        OpenVPN(false),
-        Tailscale(false),
-        GostRelay(false),
-        Relay(true),
-        Selector(true),
-        Fallback(true),
-        URLTest(true),
-        LoadBalance(true),
-        Smart(true),
-        PassRule(false),
-        Unknown(false),
+    object Type {
+        const val Direct = "Direct"
+        const val Reject = "Reject"
+        const val RejectDrop = "RejectDrop"
+        const val Compatible = "Compatible"
+        const val Pass = "Pass"
+        const val Shadowsocks = "Shadowsocks"
+        const val ShadowsocksR = "ShadowsocksR"
+        const val Snell = "Snell"
+        const val Socks5 = "Socks5"
+        const val Http = "Http"
+        const val Vmess = "Vmess"
+        const val Vless = "Vless"
+        const val Trojan = "Trojan"
+        const val Hysteria = "Hysteria"
+        const val Hysteria2 = "Hysteria2"
+        const val Tuic = "Tuic"
+        const val WireGuard = "WireGuard"
+        const val Dns = "Dns"
+        const val Ssh = "Ssh"
+        const val Mieru = "Mieru"
+        const val AnyTLS = "AnyTLS"
+        const val Sudoku = "Sudoku"
+        const val Masque = "Masque"
+        const val TrustTunnel = "TrustTunnel"
+        const val OpenVPN = "OpenVPN"
+        const val Tailscale = "Tailscale"
+        const val GostRelay = "GostRelay"
+        const val Relay = "Relay"
+        const val Selector = "Selector"
+        const val Fallback = "Fallback"
+        const val URLTest = "URLTest"
+        const val LoadBalance = "LoadBalance"
+        const val Smart = "Smart"
+        const val PassRule = "PassRule"
+        const val Unknown = "Unknown"
+
+        val GROUP_TYPES = setOf(Relay, Selector, Fallback, URLTest, LoadBalance, Smart)
+        val MANUALLY_SELECTABLE = setOf(Selector, URLTest, Fallback)
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -93,7 +96,7 @@ data class Proxy(
 }
 
 val Proxy.isProxyGroup: Boolean
-    get() = isGroup || type.group
+    get() = isGroup || type in Proxy.Type.GROUP_TYPES
 
-val Proxy.Type.isManuallySelectable: Boolean
-    get() = this == Proxy.Type.Selector || this == Proxy.Type.URLTest || this == Proxy.Type.Fallback
+internal val String.isManuallySelectable: Boolean
+    get() = this in Proxy.Type.MANUALLY_SELECTABLE

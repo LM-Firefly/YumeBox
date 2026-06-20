@@ -59,7 +59,7 @@ import top.yukonga.miuix.kmp.utils.pressable
 
 private data class GroupBadge(val label: String)
 
-private fun groupBadge(type: Proxy.Type): GroupBadge = GroupBadge(type.name)
+private fun groupBadge(type: String): GroupBadge = GroupBadge(type)
 
 internal fun LazyListScope.nodeGroupItems(
     groups: List<ProxyGroupInfo>,
@@ -69,7 +69,7 @@ internal fun LazyListScope.nodeGroupItems(
 ) {
     items(
         items = groups,
-        key = { group -> "${group.type.name}:${group.name}" },
+        key = { group -> "${group.type}:${group.name}" },
         contentType = { "NodeGroupCard" },
     ) { group ->
         NodeGroupCard(
