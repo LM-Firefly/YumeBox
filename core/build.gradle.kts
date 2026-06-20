@@ -25,7 +25,7 @@ plugins {
 
 
 android {
-    namespace = gropify.project.namespace.core
+    namespace = providers.gradleProperty("project.namespace.core").get()
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
@@ -33,11 +33,11 @@ android {
 }
 
 dependencies {
-    implementation("androidx.lifecycle:lifecycle-viewmodel:${gropify.dep.version.lifecycle}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:${gropify.dep.version.coroutines}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
-    implementation("org.snakeyaml:snakeyaml-engine:${gropify.dep.version.snakeyamlEngine}")
-    implementation("androidx.annotation:annotation-jvm:${gropify.dep.version.annotationJvm}")
-    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
+    implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.snakeyaml.engine)
+    implementation(libs.androidx.annotation.jvm)
+    implementation(libs.timber)
 }

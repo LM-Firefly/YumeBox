@@ -36,11 +36,11 @@ plugins {
 
 
 val appAbiList =
-    gropify.abi.app.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    providers.gradleProperty("abi.app.list").get().split(',').map { it.trim() }.filter { it.isNotEmpty() }
 
 val geoFilesAssetsDir = rootProject.layout.buildDirectory.dir("generated/assets/geo")
 val extensionAbiList =
-    gropify.abi.extension.list.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    providers.gradleProperty("abi.extension.list").get().split(',').map { it.trim() }.filter { it.isNotEmpty() }
 val withExtensionTaskRequested = gradle.startParameter.taskNames.any { taskName ->
     taskName.equals("assembleReleaseWithExtension", ignoreCase = true) ||
         taskName.endsWith(":assembleReleaseWithExtension", ignoreCase = true)
@@ -48,7 +48,7 @@ val withExtensionTaskRequested = gradle.startParameter.taskNames.any { taskName 
 val withExtension = project.hasProperty("withExtension") || withExtensionTaskRequested
 val packagingAbiList = if (withExtension) extensionAbiList else appAbiList
 val projectApplicationId = providers.gradleProperty("project.applicationId")
-    .orElse(gropify.project.namespace.base)
+    .orElse(providers.gradleProperty("project.namespace.base"))
     .get()
 val updateRepository = providers.gradleProperty("update.repository").orNull
     ?.trim()
@@ -78,14 +78,14 @@ val updateMirrorTemplates = providers.gradleProperty("update.mirrorTemplates").o
 fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 android {
-    namespace = gropify.project.namespace.base
+    namespace = providers.gradleProperty("project.namespace.base").get()
 
     defaultConfig {
         applicationId = projectApplicationId
-        targetSdk = gropify.android.targetSdk
-        versionCode = gropify.project.version.code
-        versionName = gropify.project.version.name
-        manifestPlaceholders["appName"] = gropify.project.name
+        targetSdk = providers.gradleProperty("android.targetSdk").get().toInt()
+        versionCode = providers.gradleProperty("project.version.code").get().toInt()
+        versionName = providers.gradleProperty("project.version.name").get()
+        manifestPlaceholders["appName"] = providers.gradleProperty("project.name").get()
         buildConfigField("String", "UPDATE_REPOSITORY", updateRepository.asBuildConfigString())
         buildConfigField("String", "UPDATE_SOURCE", updateSource.asBuildConfigString())
         buildConfigField("String", "UI_BUILD_ID", updateUiBuildId.asBuildConfigString())
@@ -93,7 +93,7 @@ android {
     }
 
     compileOptions {
-        val javaVer = gropify.android.jvm
+        val javaVer = providers.gradleProperty("android.jvm").get()
         sourceCompatibility = JavaVersion.toVersion(javaVer)
         targetCompatibility = JavaVersion.toVersion(javaVer)
         isCoreLibraryDesugaringEnabled = true
@@ -214,12 +214,12 @@ android {
                     it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
                 }?.identifier ?: "universal"
                 val buildTypeName = variant.buildType ?: "release"
-                output.versionName.set(gropify.project.version.name)
+                output.versionName.set(providers.gradleProperty("project.version.name").get())
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
                     if (withExtension) {
-                        "${gropify.project.name}_Extension-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
+                        "${providers.gradleProperty("project.name").get()}_Extension-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
                     } else {
-                        "${gropify.project.name}-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
+                        "${providers.gradleProperty("project.name").get()}-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
                     }
                 )
             }
@@ -228,7 +228,7 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:${gropify.dep.version.desugarJdkLibs}")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(project(":core"))
     implementation(project(":platform"))
@@ -245,70 +245,70 @@ dependencies {
     implementation(project(":feature:meta"))
     implementation(project(":feature:update"))
 
-    val composeBom = platform("androidx.compose:compose-bom:${gropify.dep.version.composeBom}")
+    val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     implementation("androidx.compose.runtime:runtime")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.activity:activity-compose:${gropify.dep.version.activityCompose}")
+    implementation(libs.androidx.activity.compose)
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-    implementation("top.yukonga.miuix.kmp:miuix-ui:${gropify.dep.version.miuix}")
-    implementation("top.yukonga.miuix.kmp:miuix-preference:${gropify.dep.version.miuix}")
-    implementation("top.yukonga.miuix.kmp:miuix-icons:${gropify.dep.version.miuix}")
-    implementation("top.yukonga.miuix.kmp:miuix-blur-android:${gropify.dep.version.miuix}")
-    implementation("dev.chrisbanes.haze:haze:${gropify.dep.version.haze}")
-    implementation("dev.chrisbanes.haze:haze-blur:${gropify.dep.version.haze}")
-    implementation("androidx.navigationevent:navigationevent-compose:${gropify.dep.version.navigationevent}")
+    implementation(libs.miuix.ui)
+    implementation(libs.miuix.preference)
+    implementation(libs.miuix.icons)
+    implementation(libs.miuix.blur.android)
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
+    implementation(libs.androidx.navigationevent.compose)
 
-    implementation("org.bouncycastle:bcprov-jdk18on:${gropify.dep.version.bcprov}")
+    implementation(libs.bcprov.jdk18on)
 
-    val mmkv64 = gropify.dep.version.mmkv64
-    val mmkv32 = gropify.dep.version.mmkv32
+    val mmkv64 = libs.versions.mmkv64.get()
+    val mmkv32 = libs.versions.mmkv32.get()
     val injectedAbi = findProperty("android.injected.build.abi") as? String
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     //noinspection NewerVersionAvailable
     implementation("com.tencent:mmkv:$mmkvVersion")
 
-    implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
-    implementation("io.insert-koin:koin-android:${gropify.dep.version.koin}")
-    implementation("io.insert-koin:koin-androidx-compose:${gropify.dep.version.koin}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
 
-    implementation("io.github.raamcosta.compose-destinations:core:${gropify.dep.version.composeDestinations}")
-    ksp("io.github.raamcosta.compose-destinations:ksp:${gropify.dep.version.composeDestinations}")
+    implementation(libs.compose.destinations.core)
+    ksp(libs.compose.destinations.ksp)
 
-    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("org.tukaani:xz:${gropify.dep.version.xz}")
+    implementation(libs.timber)
+    implementation(libs.xz)
 
-    implementation("com.google.mlkit:barcode-scanning:${gropify.dep.version.mlkitBarcodeScanning}")
+    implementation(libs.mlkit.barcode.scanning)
 
-    implementation("androidx.camera:camera-camera2:${gropify.dep.version.camera}")
-    implementation("androidx.camera:camera-lifecycle:${gropify.dep.version.camera}")
-    implementation("androidx.camera:camera-view:${gropify.dep.version.camera}")
-    implementation("androidx.camera:camera-core:${gropify.dep.version.camera}")
-    implementation("androidx.camera:camera-video:${gropify.dep.version.camera}")
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.video)
 
-    implementation("io.github.panpf.sketch4:sketch-compose:${gropify.dep.version.sketch4}")
-    implementation("io.github.panpf.sketch4:sketch-http:${gropify.dep.version.sketch4}")
-    implementation("io.github.panpf.sketch4:sketch-animated-gif:${gropify.dep.version.sketch4}")
-    implementation("io.github.panpf.sketch4:sketch-animated-heif:${gropify.dep.version.sketch4}")
-    implementation("io.github.panpf.sketch4:sketch-animated-webp:${gropify.dep.version.sketch4}")
-    implementation("io.github.panpf.sketch4:sketch-animated-gif-koral:${gropify.dep.version.sketch4}")
+    implementation(libs.sketch.compose)
+    implementation(libs.sketch.http)
+    implementation(libs.sketch.animated.gif)
+    implementation(libs.sketch.animated.heif)
+    implementation(libs.sketch.animated.webp)
+    implementation(libs.sketch.animated.gif.koral)
 
-    implementation("sh.calvin.reorderable:reorderable:${gropify.dep.version.reorderable}")
-    implementation("com.mikepenz:aboutlibraries-core:${gropify.dep.version.aboutLibraries}")
-    implementation("com.mikepenz:aboutlibraries-compose:${gropify.dep.version.aboutLibraries}")
+    implementation(libs.reorderable)
+    implementation(libs.aboutlibraries.core)
+    implementation(libs.aboutlibraries.compose)
 
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${gropify.dep.version.lifecycle}")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:${gropify.dep.version.lifecycle}")
-    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:${gropify.dep.version.hiddenApiBypass}")
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.hiddenapibypass)
 
-    implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
-    implementation("androidx.biometric:biometric:${gropify.dep.version.biometric}")
+    implementation(libs.okhttp)
+    implementation(libs.androidx.biometric)
 }
 
 ksp {

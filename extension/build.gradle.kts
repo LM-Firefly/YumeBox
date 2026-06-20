@@ -31,11 +31,11 @@ plugins {
 }
 
 dependencies {
-    implementation("com.caoccao.javet:javet-node-android:${gropify.dep.version.javetNodeAndroid}")
+    implementation(libs.javet.node.android)
 }
 
 val projectApplicationId = providers.gradleProperty("project.applicationId")
-    .orElse(gropify.project.namespace.base)
+    .orElse(providers.gradleProperty("project.namespace.base"))
     .get()
 val updateUiBuildStamp = ZonedDateTime.now(ZoneId.of("Asia/Shanghai"))
     .format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"))
@@ -51,14 +51,14 @@ val updateUiBuildId = providers.gradleProperty("update.uiBuildId").orNull
     ?: "${updateUiBuildStamp}-${updateUiCommitShort}"
 
 android {
-    namespace = gropify.project.namespace.extension
+    namespace = providers.gradleProperty("project.namespace.extension").get()
 
     defaultConfig {
         applicationId = "$projectApplicationId.extension"
-        minSdk = gropify.android.minSdk
-        targetSdk = gropify.android.targetSdk
-        versionCode = gropify.project.version.code
-        versionName = gropify.project.version.name
+        minSdk = providers.gradleProperty("android.minSdk").get().toInt()
+        targetSdk = providers.gradleProperty("android.targetSdk").get().toInt()
+        versionCode = providers.gradleProperty("project.version.code").get().toInt()
+        versionName = providers.gradleProperty("project.version.name").get()
     }
 
     sourceSets {
@@ -104,7 +104,7 @@ android {
         abi {
             isEnable = true
             reset()
-            val abiList = (gropify.abi.extension.list ?: "arm64-v8a,x86_64")
+            val abiList = providers.gradleProperty("abi.extension.list").getOrElse("arm64-v8a,x86_64")
                 .split(',').map { it.trim() }.filter { it.isNotEmpty() }
             include(*abiList.toTypedArray())
             isUniversalApk = false
@@ -137,7 +137,7 @@ android {
                     it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
                 }?.identifier ?: "universal"
                 val buildTypeName = variant.buildType ?: "release"
-                output.versionName.set(gropify.project.version.name)
+                output.versionName.set(providers.gradleProperty("project.version.name").get())
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
                     "extension-${abiName}-${buildTypeName}-${updateUiBuildId}.apk"
                 )

@@ -34,24 +34,24 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":locale"))
 
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${gropify.dep.version.coroutines}")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
-    implementation("org.snakeyaml:snakeyaml-engine:${gropify.dep.version.snakeyamlEngine}")
-    implementation("io.ktor:ktor-client-core:${gropify.dep.version.ktor}")
-    implementation("io.ktor:ktor-client-android:${gropify.dep.version.ktor}")
-    implementation("io.ktor:ktor-client-content-negotiation:${gropify.dep.version.ktor}")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:${gropify.dep.version.ktor}")
-    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("io.insert-koin:koin-core:${gropify.dep.version.koin}")
+    api(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.snakeyaml.engine)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.timber)
+    implementation(libs.koin.core)
 
-    val mmkv64 = gropify.dep.version.mmkv64
-    val mmkv32 = gropify.dep.version.mmkv32
+    val mmkv64 = libs.versions.mmkv64.get()
+    val mmkv32 = libs.versions.mmkv32.get()
     val injectedAbi = findProperty("android.injected.build.abi") as? String
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     implementation("com.tencent:mmkv:$mmkvVersion")
 
-    testImplementation("junit:junit:${gropify.dep.version.junit4}")
-    testImplementation("androidx.test:core:${gropify.dep.version.androidxTestCore}")
-    testImplementation("org.robolectric:robolectric:${gropify.dep.version.robolectric}")
+    testImplementation(libs.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
 }

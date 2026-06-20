@@ -15,10 +15,10 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":locale"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:${gropify.dep.version.coroutines}")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:${gropify.dep.version.serializationJson}")
-    implementation("androidx.lifecycle:lifecycle-viewmodel:${gropify.dep.version.lifecycle}")
-    implementation("com.squareup.okhttp3:okhttp:${gropify.dep.version.okhttp}")
-    implementation("com.jakewharton.timber:timber:${gropify.dep.version.timber}")
-    implementation("androidx.core:core-ktx:${gropify.dep.version.coreKtx}")
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.okhttp)
+    implementation(libs.timber)
+    implementation(libs.androidx.core.ktx)
 }
