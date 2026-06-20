@@ -2,7 +2,7 @@
 soraEditor = "0.24.6"
 composeBom = "2026.06.00"
 desugarJdkLibs = "2.1.5"
-apksig = "9.1.1"
+apksig = "9.2.1"
 coroutines = "1.11.0"
 serializationJson = "1.11.0"
 annotationJvm = "1.10.0"
