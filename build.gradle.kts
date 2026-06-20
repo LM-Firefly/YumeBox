@@ -32,7 +32,7 @@ plugins {
   kotlin("plugin.compose") version "2.4.0" apply false
   id("org.jetbrains.compose") version "1.11.1" apply false
   id("com.google.devtools.ksp") version "2.3.9" apply false
-  id("com.mikepenz.aboutlibraries.plugin.android") version "14.0.1" apply false
+  id("com.mikepenz.aboutlibraries.plugin.android") version "14.2.1" apply false
 }
 
 val androidCompileSdk = providers.gradleProperty("android.compileSdk").map(String::toInt).get()
