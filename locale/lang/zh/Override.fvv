@@ -5,13 +5,13 @@ Override = {
     Action = {
         Create = "创建配置"
         New = "新建配置"
-        Import = "导入 JSON"
+        Import = "导入配置文件"
         ImportFile = "导入配置文件"
     }
 
     Empty = {
         Title = "暂无覆写配置"
-        Hint = "点击下方按钮创建新配置，或导入 JSON"
+        Hint = "点击下方按钮创建新配置，或导入配置文件"
     }
 
     Status = {
@@ -47,7 +47,7 @@ Override = {
             Title = "添加配置"
             Name = "配置名称"
             Description = "配置描述"
-            ImportHint = "选择 JSON 文件导入覆写配置"
+            ImportHint = "选择配置文件导入覆写配置"
         }
         Delete = {
             Title = "删除配置"

@@ -5,13 +5,13 @@ Override = {
     Action = {
         Create = "Create Config"
         New = "New Config"
-        Import = "Import JSON"
+        Import = "Import Config File"
         ImportFile = "Import Config File"
     }
 
     Empty = {
         Title = "No override configs"
-        Hint = "Click the button below to create a new config, or import JSON"
+        Hint = "Click the button below to create a new config, or import a config file"
     }
 
     Status = {
@@ -47,7 +47,7 @@ Override = {
             Title = "Add Config"
             Name = "Config Name"
             Description = "Config Description"
-            ImportHint = "Select a JSON file to import override config"
+            ImportHint = "Select a config file to import override config"
         }
         Delete = {
             Title = "Delete Config"
