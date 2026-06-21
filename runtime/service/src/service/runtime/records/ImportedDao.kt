@@ -21,17 +21,12 @@
 package com.github.yumelira.yumebox.service.runtime.records
 
 import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import java.util.*
+import java.util.UUID
 
 object ImportedDao {
+    fun queryAll(): List<Imported> = ProfileStore.loadImported()
 
-    fun queryAll(): List<Imported> {
-        return ProfileStore.loadImported()
-    }
-
-    fun queryByUUID(uuid: UUID): Imported? {
-        return ProfileStore.loadImported().find { it.uuid == uuid }
-    }
+    fun queryByUUID(uuid: UUID): Imported? = ProfileStore.loadImported().find { it.uuid == uuid }
 
     fun insert(imported: Imported): Long {
         val list = ProfileStore.loadImported().toMutableList()
@@ -61,11 +56,7 @@ object ImportedDao {
         ProfileStore.saveImported(list)
     }
 
-    fun exists(uuid: UUID): Boolean {
-        return ProfileStore.loadImported().any { it.uuid == uuid }
-    }
+    fun exists(uuid: UUID): Boolean = ProfileStore.loadImported().any { it.uuid == uuid }
 
-    fun queryAllUUIDs(): List<UUID> {
-        return ProfileStore.loadImported().map { it.uuid }
-    }
+    fun queryAllUUIDs(): List<UUID> = ProfileStore.loadImported().map { it.uuid }
 }

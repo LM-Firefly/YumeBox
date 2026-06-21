@@ -27,7 +27,6 @@ import com.github.yumelira.yumebox.data.model.MetadataIndex
 import com.github.yumelira.yumebox.data.model.OverrideConfig
 import com.github.yumelira.yumebox.data.model.OverrideContentType
 import com.github.yumelira.yumebox.data.model.OverrideMetadata
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +35,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
 
 class OverrideConfigStore(
     private val context: Context,
@@ -328,9 +328,8 @@ class OverrideConfigStore(
         metadataFile.writeText(YamlCodec.encode(MetadataIndex.serializer(), index))
     }
 
-    private fun resolveConfigFile(id: String, contentType: OverrideContentType): File {
-        return configsDir.resolve("$id.${contentType.extension}")
-    }
+    private fun resolveConfigFile(id: String, contentType: OverrideContentType): File =
+        configsDir.resolve("$id.${contentType.extension}")
 
     private fun findConfigFile(metadata: OverrideMetadata): File? {
         val expectedFile = resolveConfigFile(metadata.id, metadata.contentType)
@@ -367,12 +366,11 @@ class OverrideConfigStore(
         }
     }
 
-    private fun isLegacySystemPresetId(id: String): Boolean {
-        return id.startsWith(OverrideMetadata.LEGACY_SYSTEM_PREFIX)
-    }
+    private fun isLegacySystemPresetId(id: String): Boolean =
+        id.startsWith(OverrideMetadata.LEGACY_SYSTEM_PREFIX)
 
-    private fun OverrideConfig.toMetadata(): OverrideMetadata {
-        return OverrideMetadata(
+    private fun OverrideConfig.toMetadata(): OverrideMetadata =
+        OverrideMetadata(
             id = id,
             name = name,
             description = description,
@@ -380,5 +378,4 @@ class OverrideConfigStore(
             createdAt = createdAt,
             updatedAt = updatedAt,
         )
-    }
 }

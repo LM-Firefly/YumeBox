@@ -20,10 +20,20 @@
 
 package com.github.yumelira.yumebox.screen.profiles
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.TextRange
@@ -41,7 +51,14 @@ import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.HorizontalDivider
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.layout.DialogDefaults
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -359,7 +376,9 @@ internal fun ProfileSettingsDialog(
                                             },
                                         )
                                     },
-                                    onClick = { toggleUserOverrideSelection(config.id, isSelected) },
+                                    onClick = {
+                                        toggleUserOverrideSelection(config.id, isSelected)
+                                    },
                                 )
                                 if (index < userConfigs.lastIndex) {
                                     HorizontalDivider(
@@ -384,13 +403,12 @@ private fun toggleOverrideIdSelection(
     selectedOverrideIds: List<String>,
     overrideId: String,
     isSelected: Boolean,
-): List<String> {
-    return if (isSelected) {
+): List<String> =
+    if (isSelected) {
         selectedOverrideIds - overrideId
     } else {
         (selectedOverrideIds + overrideId).distinct()
     }
-}
 
 private fun buildFinalOverrideIds(
     selectedOverrideIds: List<String>,

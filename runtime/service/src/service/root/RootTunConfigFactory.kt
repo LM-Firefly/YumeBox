@@ -28,7 +28,7 @@ import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import java.io.File
-import java.util.*
+import java.util.UUID
 
 class RootTunConfigFactory(
     private val context: Context,
@@ -212,8 +212,8 @@ class RootTunConfigFactory(
         return plan
     }
 
-    private fun buildStaticPlanFingerprint(): String {
-        return buildString {
+    private fun buildStaticPlanFingerprint(): String =
+        buildString {
                 append(store.accessControlMode.name)
                 append('|')
                 append(store.accessControlPackages.sorted().joinToString(","))
@@ -248,10 +248,9 @@ class RootTunConfigFactory(
             }
             .hashCode()
             .toString()
-    }
 
-    private fun buildTransportFingerprint(config: RootTunConfig): String {
-        return listOf(
+    private fun buildTransportFingerprint(config: RootTunConfig): String =
+        listOf(
                 config.ifName,
                 config.mtu.toString(),
                 config.stack,
@@ -272,11 +271,9 @@ class RootTunConfigFactory(
             .joinToString("|")
             .hashCode()
             .toString()
-    }
 
-    private fun buildProfileFingerprint(profileUuid: UUID, updatedAt: Long): String {
-        return "$profileUuid|$updatedAt"
-    }
+    private fun buildProfileFingerprint(profileUuid: UUID, updatedAt: Long): String =
+        "$profileUuid|$updatedAt"
 
     private fun resolveDnsHijack(): List<String> {
         if (!store.dnsHijacking) return emptyList()
@@ -304,9 +301,8 @@ class RootTunConfigFactory(
         return values.map(String::trim).filter(String::isNotEmpty)
     }
 
-    private fun firstNonBlank(vararg values: String?): String? {
-        return values.firstOrNull { !it.isNullOrBlank() }?.trim()
-    }
+    private fun firstNonBlank(vararg values: String?): String? =
+        values.firstOrNull { !it.isNullOrBlank() }?.trim()
 
     private fun resolveFakeIpRange(
         dnsMode: RootTunDnsMode,

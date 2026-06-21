@@ -25,13 +25,12 @@ import com.github.yumelira.yumebox.data.model.OverrideMetadata
 import com.github.yumelira.yumebox.data.model.ProfileBinding
 import com.github.yumelira.yumebox.data.store.OverrideConfigStore
 import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
-import java.util.*
+import java.util.UUID
 
 class OverrideResolver(
     private val configStore: OverrideConfigStore,
     private val bindingProvider: ProfileBindingProvider,
 ) {
-
     suspend fun resolveIds(profileId: UUID): List<String> {
         val binding = bindingProvider.getBinding(profileId.toString())
         return resolveBindingIds(binding)
@@ -42,21 +41,17 @@ class OverrideResolver(
         return resolveBindingIds(binding)
     }
 
-    suspend fun resolveSpecs(overrideIds: List<String>): List<OverrideSpec> {
-        return resolveOrderedSpecs(overrideIds)
-    }
+    suspend fun resolveSpecs(overrideIds: List<String>): List<OverrideSpec> =
+        resolveOrderedSpecs(overrideIds)
 
-    suspend fun getProfilesUsingOverride(overrideId: String): List<String> {
-        return bindingProvider.getProfilesUsingOverride(overrideId)
-    }
+    suspend fun getProfilesUsingOverride(overrideId: String): List<String> =
+        bindingProvider.getProfilesUsingOverride(overrideId)
 
-    suspend fun isOverrideInUse(overrideId: String): Boolean {
-        return bindingProvider.isOverrideInUse(overrideId)
-    }
+    suspend fun isOverrideInUse(overrideId: String): Boolean =
+        bindingProvider.isOverrideInUse(overrideId)
 
-    suspend fun getOverrideUsageCount(overrideId: String): Int {
-        return bindingProvider.getOverrideUsageCount(overrideId)
-    }
+    suspend fun getOverrideUsageCount(overrideId: String): Int =
+        bindingProvider.getOverrideUsageCount(overrideId)
 
     suspend fun getBinding(profileId: String) = bindingProvider.getBinding(profileId)
 
@@ -105,7 +100,6 @@ class OverrideResolver(
         }
     }
 
-    private fun isLegacyPresetOverrideId(overrideId: String): Boolean {
-        return overrideId.startsWith(OverrideMetadata.LEGACY_SYSTEM_PREFIX)
-    }
+    private fun isLegacyPresetOverrideId(overrideId: String): Boolean =
+        overrideId.startsWith(OverrideMetadata.LEGACY_SYSTEM_PREFIX)
 }

@@ -33,22 +33,21 @@ internal object ProxyRuntimeOwnership {
     fun detectOwner(
         rootStatus: RootTunStatus,
         isLocalSessionActive: (ProxyMode) -> Boolean,
-    ): RuntimeOwner {
-        return when {
+    ): RuntimeOwner =
+        when {
             rootStatus.state.isActive || rootStatus.runtimeReady -> RuntimeOwner.RootTun
             isLocalSessionActive(ProxyMode.Tun) -> RuntimeOwner.LocalTun
             isLocalSessionActive(ProxyMode.Http) -> RuntimeOwner.LocalHttp
             else -> RuntimeOwner.None
         }
-    }
 
     fun startingSnapshot(
         owner: RuntimeOwner,
         targetMode: ProxyMode,
         profile: Profile,
         generation: Long,
-    ): RuntimeSnapshot {
-        return RuntimeSnapshot(
+    ): RuntimeSnapshot =
+        RuntimeSnapshot(
             owner = owner,
             phase = RuntimePhase.Starting,
             targetMode = targetMode,
@@ -58,7 +57,6 @@ internal object ProxyRuntimeOwnership {
             startedAt = System.currentTimeMillis(),
             generation = generation,
         )
-    }
 
     fun activeSnapshot(
         owner: RuntimeOwner,
@@ -66,8 +64,8 @@ internal object ProxyRuntimeOwnership {
         rootStatus: RootTunStatus,
         localPhase: LocalRuntimePhase = LocalRuntimePhase.Idle,
         localStartedAt: Long? = null,
-    ): RuntimeSnapshot {
-        return RuntimeSnapshot(
+    ): RuntimeSnapshot =
+        RuntimeSnapshot(
             owner = owner,
             phase =
                 when (owner) {
@@ -89,55 +87,49 @@ internal object ProxyRuntimeOwnership {
                     RuntimeOwner.None -> null
                 },
         )
-    }
 
     fun startedSnapshot(
         current: RuntimeSnapshot,
         owner: RuntimeOwner,
         configuredMode: ProxyMode,
-    ): RuntimeSnapshot {
-        return current.copy(
+    ): RuntimeSnapshot =
+        current.copy(
             owner = owner,
             phase = RuntimePhase.Running,
             targetMode = modeForOwner(owner, configuredMode),
             lastError = null,
         )
-    }
 
-    fun ownerForMode(mode: ProxyMode): RuntimeOwner {
-        return when (mode) {
+    fun ownerForMode(mode: ProxyMode): RuntimeOwner =
+        when (mode) {
             ProxyMode.Tun -> RuntimeOwner.LocalTun
             ProxyMode.Http -> RuntimeOwner.LocalHttp
             ProxyMode.RootTun -> RuntimeOwner.RootTun
         }
-    }
 
-    fun modeForOwner(owner: RuntimeOwner, configuredMode: ProxyMode): ProxyMode {
-        return when (owner) {
+    fun modeForOwner(owner: RuntimeOwner, configuredMode: ProxyMode): ProxyMode =
+        when (owner) {
             RuntimeOwner.LocalTun -> ProxyMode.Tun
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun -> ProxyMode.RootTun
             RuntimeOwner.None -> configuredMode
         }
-    }
 
-    private fun rootPhase(status: RootTunStatus): RuntimePhase {
-        return when (status.state) {
+    private fun rootPhase(status: RootTunStatus): RuntimePhase =
+        when (status.state) {
             RootTunState.Idle -> RuntimePhase.Idle
             RootTunState.Starting -> RuntimePhase.Starting
             RootTunState.Running -> RuntimePhase.Running
             RootTunState.Stopping -> RuntimePhase.Stopping
             RootTunState.Failed -> RuntimePhase.Failed
         }
-    }
 
-    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase {
-        return when (this) {
+    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase =
+        when (this) {
             LocalRuntimePhase.Idle -> RuntimePhase.Idle
             LocalRuntimePhase.Starting -> RuntimePhase.Starting
             LocalRuntimePhase.Running -> RuntimePhase.Running
             LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
             LocalRuntimePhase.Failed -> RuntimePhase.Failed
         }
-    }
 }

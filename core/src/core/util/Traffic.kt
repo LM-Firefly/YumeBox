@@ -24,8 +24,8 @@ import android.annotation.SuppressLint
 import com.github.yumelira.yumebox.core.model.Traffic
 
 @SuppressLint("DefaultLocale")
-private fun trafficString(scaled: Long): String {
-    return when {
+private fun trafficString(scaled: Long): String =
+    when {
         scaled >= 1024L * 1024L * 1024L -> {
             String.format("%.2f GiB", scaled.toDouble() / (1024.0 * 1024.0 * 1024.0))
         }
@@ -42,7 +42,6 @@ private fun trafficString(scaled: Long): String {
             "$scaled Bytes"
         }
     }
-}
 
 fun decodeTrafficValue(value: Long): Long {
     val type = (value ushr 30) and 0x3
@@ -59,13 +58,9 @@ fun decodeTrafficValue(value: Long): Long {
 
 private fun scaleTraffic(value: Long): Long = decodeTrafficValue(value)
 
-fun Traffic.trafficUpload(): String {
-    return trafficString(scaleTraffic(this ushr 32))
-}
+fun Traffic.trafficUpload(): String = trafficString(scaleTraffic(this ushr 32))
 
-fun Traffic.trafficDownload(): String {
-    return trafficString(scaleTraffic(this and 0xFFFFFFFFL))
-}
+fun Traffic.trafficDownload(): String = trafficString(scaleTraffic(this and 0xFFFFFFFFL))
 
 fun Traffic.trafficTotal(): String {
     val upload = scaleTraffic(this ushr 32)

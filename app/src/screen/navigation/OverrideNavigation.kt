@@ -67,9 +67,8 @@ fun OverrideConfigPreviewRoute(navigator: DestinationsNavigator) {
     )
 }
 
-private fun OverrideContentType.toLanguageScope(): LanguageScope {
-    return when (this) {
+private fun OverrideContentType.toLanguageScope(): LanguageScope =
+    when (this) {
         OverrideContentType.Yaml -> LanguageScope.Yaml
         OverrideContentType.JavaScript -> LanguageScope.JavaScript
     }
-}

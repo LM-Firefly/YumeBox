@@ -30,11 +30,11 @@ import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
-import java.io.File
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import java.io.File
 
 internal fun openProfileConfigPreview(
     targetFile: File,
@@ -106,10 +106,8 @@ internal fun ProfileEditOptionsDialog(
     }
 }
 
-internal fun importedProfileDir(profile: Profile): File {
-    return App.instance.filesDir.resolve("imported").resolve(profile.uuid.toString())
-}
+internal fun importedProfileDir(profile: Profile): File =
+    App.instance.filesDir.resolve("imported").resolve(profile.uuid.toString())
 
-internal fun importedConfigFile(profile: Profile): File {
-    return importedProfileDir(profile).resolve("config.yaml")
-}
+internal fun importedConfigFile(profile: Profile): File =
+    importedProfileDir(profile).resolve("config.yaml")

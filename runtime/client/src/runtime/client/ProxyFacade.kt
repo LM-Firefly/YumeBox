@@ -28,7 +28,13 @@ import android.content.IntentFilter
 import android.net.VpnService
 import android.os.Build
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.Traffic
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.isProxyGroup
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
@@ -50,12 +56,23 @@ import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
 import com.tencent.mmkv.MMKV
-import java.util.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.UUID
 
 enum class ProxyGroupSyncPriority {
     OFF,
@@ -271,11 +288,9 @@ class ProxyFacade(private val context: Context) {
         }
     }
 
-    private fun launchPreviewWarmup(): Job {
-        return scope.launch {
-            runCatching { refreshProxyGroups() }
-                .onFailure { error -> Timber.d(error, "Warm up proxy groups skipped") }
-        }
+    private fun launchPreviewWarmup(): Job = scope.launch {
+        runCatching { refreshProxyGroups() }
+            .onFailure { error -> Timber.d(error, "Warm up proxy groups skipped") }
     }
 
     suspend fun startProxy(mode: ProxyMode = networkSettingsStorage.proxyMode.value) {
@@ -502,22 +517,20 @@ class ProxyFacade(private val context: Context) {
         return traffic
     }
 
-    suspend fun reloadCurrentProfile(): Result<Unit> {
-        return runCatching {
-            val profileManager = ServiceClient.profile()
-            val currentProfile = profileManager.queryActive()
-            if (currentProfile != null) {
-                profileManager.setActive(currentProfile)
-                _currentProfile.value = currentProfile
-                PollingTimers.awaitTick(
-                    PollingTimerSpecs.dynamic(
-                        name = "runtime_profile_reload_refresh",
-                        intervalMillis = 600L,
-                        initialDelayMillis = 600L,
-                    )
+    suspend fun reloadCurrentProfile(): Result<Unit> = runCatching {
+        val profileManager = ServiceClient.profile()
+        val currentProfile = profileManager.queryActive()
+        if (currentProfile != null) {
+            profileManager.setActive(currentProfile)
+            _currentProfile.value = currentProfile
+            PollingTimers.awaitTick(
+                PollingTimerSpecs.dynamic(
+                    name = "runtime_profile_reload_refresh",
+                    intervalMillis = 600L,
+                    initialDelayMillis = 600L,
                 )
-                refreshAll()
-            }
+            )
+            refreshAll()
         }
     }
 
@@ -835,13 +848,10 @@ class ProxyFacade(private val context: Context) {
 
     private fun shouldBootstrapRootTunRuntime(
         status: RootTunStatus = rootTunStateStore.snapshot()
-    ): Boolean {
-        return shouldAttachRootTunForegroundService(status)
-    }
+    ): Boolean = shouldAttachRootTunForegroundService(status)
 
-    private fun shouldAttachRootTunForegroundService(status: RootTunStatus): Boolean {
-        return status.state.isActive || status.runtimeReady
-    }
+    private fun shouldAttachRootTunForegroundService(status: RootTunStatus): Boolean =
+        status.state.isActive || status.runtimeReady
 
     private fun isRootSessionActive(): Boolean {
         val status = _rootTunStatus.value
@@ -864,14 +874,13 @@ class ProxyFacade(private val context: Context) {
             ?: _runtimeSnapshot.value.startedAt?.takeIf { _runtimeSnapshot.value.owner == owner }
     }
 
-    private fun localModeForOwner(owner: RuntimeOwner): ProxyMode? {
-        return when (owner) {
+    private fun localModeForOwner(owner: RuntimeOwner): ProxyMode? =
+        when (owner) {
             RuntimeOwner.LocalTun -> ProxyMode.Tun
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun,
             RuntimeOwner.None -> null
         }
-    }
 
     private suspend fun handleRuntimeStarted(forceOwner: RuntimeOwner? = null) {
         val currentSnapshot = _runtimeSnapshot.value
@@ -979,8 +988,11 @@ class ProxyFacade(private val context: Context) {
             return ProxyGroupSyncPriority.OFF
         }
         val requested = requests.values.maxByOrNull { it.ordinal } ?: ProxyGroupSyncPriority.OFF
-        return if (requested.ordinal > ProxyGroupSyncPriority.SLOW.ordinal) requested
-        else ProxyGroupSyncPriority.SLOW
+        return if (requested.ordinal > ProxyGroupSyncPriority.SLOW.ordinal) {
+            requested
+        } else {
+            ProxyGroupSyncPriority.SLOW
+        }
     }
 
     private fun restartProxyGroupSyncLoop(priority: ProxyGroupSyncPriority) {
@@ -1043,10 +1055,9 @@ class ProxyFacade(private val context: Context) {
         )
     }
 
-    private suspend fun currentRootTunStatus(): RootTunStatus {
-        return runCatching { RootTunController.queryStatus(appContext) }
+    private suspend fun currentRootTunStatus(): RootTunStatus =
+        runCatching { RootTunController.queryStatus(appContext) }
             .getOrElse { rootTunStateStore.snapshot() }
-    }
 
     private suspend fun reconcileRootTunRuntimeStateSafely() {
         runCatching {
@@ -1233,8 +1244,8 @@ class ProxyFacade(private val context: Context) {
         updateResolvedPrimaryNode(groups)
     }
 
-    private fun toProxyGroupInfo(group: ProxyGroup): ProxyGroupInfo {
-        return ProxyGroupInfo(
+    private fun toProxyGroupInfo(group: ProxyGroup): ProxyGroupInfo =
+        ProxyGroupInfo(
             name = group.name,
             type = group.type,
             proxies = group.proxies,
@@ -1242,7 +1253,6 @@ class ProxyFacade(private val context: Context) {
             icon = group.icon,
             hidden = group.hidden,
         )
-    }
 
     private fun updateCachedProxyGroup(updated: ProxyGroupInfo): List<ProxyGroupInfo> {
         val currentGroups = _proxyGroups.value
@@ -1253,8 +1263,8 @@ class ProxyFacade(private val context: Context) {
         return currentGroups.map { group -> if (group.name == updated.name) updated else group }
     }
 
-    private fun summarizeProxyGroups(groups: List<ProxyGroupInfo>): String {
-        return groups.joinToString(separator = "\n") { group ->
+    private fun summarizeProxyGroups(groups: List<ProxyGroupInfo>): String =
+        groups.joinToString(separator = "\n") { group ->
             buildString {
                 append(group.name)
                 append('|')
@@ -1277,7 +1287,6 @@ class ProxyFacade(private val context: Context) {
                 }
             }
         }
-    }
 
     private fun updateResolvedPrimaryNode(groups: List<ProxyGroupInfo>) {
         if (_runtimeSnapshot.value.phase != RuntimePhase.Running || groups.isEmpty()) {
@@ -1353,5 +1362,4 @@ class ProxyFacade(private val context: Context) {
             publishRuntimeSnapshot(_runtimeSnapshot.value.copy(trafficReady = true))
         }
     }
-
 }

@@ -26,7 +26,6 @@ import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 
 object EditorColorSynchronizer {
-
     fun createColorScheme(isDark: Boolean, appColors: AppColors = AppColors()): EditorColorScheme {
         val editorColors = appColors.editor
         return object : EditorColorScheme(isDark) {
@@ -35,8 +34,11 @@ object EditorColorSynchronizer {
 
                 setColor(
                     WHOLE_BACKGROUND,
-                    if (isDark) editorColors.darkBackground.toArgb()
-                    else editorColors.lightBackground.toArgb(),
+                    if (isDark) {
+                        editorColors.darkBackground.toArgb()
+                    } else {
+                        editorColors.lightBackground.toArgb()
+                    },
                 )
                 setColor(
                     TEXT_NORMAL,
@@ -44,43 +46,64 @@ object EditorColorSynchronizer {
                 )
                 setColor(
                     LINE_NUMBER,
-                    if (isDark) editorColors.darkLineNumber.toArgb()
-                    else editorColors.lightLineNumber.toArgb(),
+                    if (isDark) {
+                        editorColors.darkLineNumber.toArgb()
+                    } else {
+                        editorColors.lightLineNumber.toArgb()
+                    },
                 )
                 setColor(
                     LINE_NUMBER_BACKGROUND,
-                    if (isDark) editorColors.darkLineNumberBackground.toArgb()
-                    else editorColors.lightLineNumberBackground.toArgb(),
+                    if (isDark) {
+                        editorColors.darkLineNumberBackground.toArgb()
+                    } else {
+                        editorColors.lightLineNumberBackground.toArgb()
+                    },
                 )
                 setColor(
                     CURRENT_LINE,
-                    if (isDark) editorColors.darkCurrentLine.toArgb()
-                    else editorColors.lightCurrentLine.toArgb(),
+                    if (isDark) {
+                        editorColors.darkCurrentLine.toArgb()
+                    } else {
+                        editorColors.lightCurrentLine.toArgb()
+                    },
                 )
 
                 setColor(SELECTION_INSERT, editorColors.accent.toArgb())
                 setColor(SELECTION_HANDLE, editorColors.accent.toArgb())
                 setColor(
                     SELECTED_TEXT_BACKGROUND,
-                    if (isDark) editorColors.darkSelectionBackground.toArgb()
-                    else editorColors.lightSelectionBackground.toArgb(),
+                    if (isDark) {
+                        editorColors.darkSelectionBackground.toArgb()
+                    } else {
+                        editorColors.lightSelectionBackground.toArgb()
+                    },
                 )
 
                 setColor(
                     TEXT_ACTION_WINDOW_BACKGROUND,
-                    if (isDark) editorColors.darkTextActionBackground.toArgb()
-                    else editorColors.lightTextActionBackground.toArgb(),
+                    if (isDark) {
+                        editorColors.darkTextActionBackground.toArgb()
+                    } else {
+                        editorColors.lightTextActionBackground.toArgb()
+                    },
                 )
                 setColor(
                     TEXT_ACTION_WINDOW_ICON_COLOR,
-                    if (isDark) editorColors.darkTextActionIcon.toArgb()
-                    else editorColors.lightTextActionIcon.toArgb(),
+                    if (isDark) {
+                        editorColors.darkTextActionIcon.toArgb()
+                    } else {
+                        editorColors.lightTextActionIcon.toArgb()
+                    },
                 )
 
                 setColor(
                     HIGHLIGHTED_DELIMITERS_FOREGROUND,
-                    if (isDark) editorColors.delimiterDark.toArgb()
-                    else editorColors.delimiterLight.toArgb(),
+                    if (isDark) {
+                        editorColors.delimiterDark.toArgb()
+                    } else {
+                        editorColors.delimiterLight.toArgb()
+                    },
                 )
             }
         }
@@ -94,25 +117,37 @@ object EditorColorSynchronizer {
         scheme.setColor(EditorColorScheme.SELECTION_HANDLE, editorColors.accent.toArgb())
         scheme.setColor(
             EditorColorScheme.SELECTED_TEXT_BACKGROUND,
-            if (isDark) editorColors.darkSelectionBackground.toArgb()
-            else editorColors.lightSelectionBackground.toArgb(),
+            if (isDark) {
+                editorColors.darkSelectionBackground.toArgb()
+            } else {
+                editorColors.lightSelectionBackground.toArgb()
+            },
         )
 
         scheme.setColor(
             EditorColorScheme.TEXT_ACTION_WINDOW_BACKGROUND,
-            if (isDark) editorColors.darkTextActionBackground.toArgb()
-            else editorColors.lightTextActionBackground.toArgb(),
+            if (isDark) {
+                editorColors.darkTextActionBackground.toArgb()
+            } else {
+                editorColors.lightTextActionBackground.toArgb()
+            },
         )
         scheme.setColor(
             EditorColorScheme.TEXT_ACTION_WINDOW_ICON_COLOR,
-            if (isDark) editorColors.darkTextActionIcon.toArgb()
-            else editorColors.lightTextActionIcon.toArgb(),
+            if (isDark) {
+                editorColors.darkTextActionIcon.toArgb()
+            } else {
+                editorColors.lightTextActionIcon.toArgb()
+            },
         )
 
         scheme.setColor(
             EditorColorScheme.HIGHLIGHTED_DELIMITERS_FOREGROUND,
-            if (isDark) editorColors.delimiterDark.toArgb()
-            else editorColors.delimiterLight.toArgb(),
+            if (isDark) {
+                editorColors.delimiterDark.toArgb()
+            } else {
+                editorColors.delimiterLight.toArgb()
+            },
         )
         scheme.setColor(
             EditorColorScheme.HIGHLIGHTED_DELIMITERS_BACKGROUND,

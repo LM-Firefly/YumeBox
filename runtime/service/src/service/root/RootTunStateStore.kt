@@ -25,7 +25,9 @@ import com.tencent.mmkv.MMKV
 
 class RootTunStateStore(context: Context) {
     private val store = MMKV.mmkvWithID(STORE_ID, MMKV.MULTI_PROCESS_MODE)
+
     @Volatile private var cachedEncoded: String? = null
+
     @Volatile private var cachedStatus: RootTunStatus? = null
 
     fun snapshot(): RootTunStatus {

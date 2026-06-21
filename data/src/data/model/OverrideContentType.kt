@@ -29,17 +29,15 @@ enum class OverrideContentType(val extension: String) {
     @SerialName("js") JavaScript("js");
 
     companion object {
-        fun fromExtension(extension: String?): OverrideContentType? {
-            return when (extension?.lowercase()?.removePrefix(".")) {
+        fun fromExtension(extension: String?): OverrideContentType? =
+            when (extension?.lowercase()?.removePrefix(".")) {
                 "yaml",
                 "yml" -> Yaml
                 "js" -> JavaScript
                 else -> null
             }
-        }
 
-        fun fromFileName(fileName: String?): OverrideContentType? {
-            return fromExtension(fileName?.substringAfterLast('.', missingDelimiterValue = ""))
-        }
+        fun fromFileName(fileName: String?): OverrideContentType? =
+            fromExtension(fileName?.substringAfterLast('.', missingDelimiterValue = ""))
     }
 }

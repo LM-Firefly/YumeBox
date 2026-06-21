@@ -28,7 +28,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -131,7 +137,9 @@ fun ScreenLazyColumn(
                 .let { mod ->
                     if (enableGlobalScroll && bottomBarScrollBehavior != null) {
                         mod.nestedScroll(bottomBarScrollBehavior.nestedScrollConnection)
-                    } else mod
+                    } else {
+                        mod
+                    }
                 },
         contentPadding = resolvedContentPadding,
         overscrollEffect = null,
@@ -140,8 +148,8 @@ fun ScreenLazyColumn(
 }
 
 @Composable
-fun combinePaddingValues(localPadding: PaddingValues, mainPadding: PaddingValues): PaddingValues {
-    return PaddingValues(
+fun combinePaddingValues(localPadding: PaddingValues, mainPadding: PaddingValues): PaddingValues =
+    PaddingValues(
         top = localPadding.calculateTopPadding(),
         bottom =
             localPadding.calculateBottomPadding() +
@@ -150,7 +158,6 @@ fun combinePaddingValues(localPadding: PaddingValues, mainPadding: PaddingValues
         start = localPadding.calculateStartPadding(LayoutDirection.Ltr),
         end = localPadding.calculateEndPadding(LayoutDirection.Ltr),
     )
-}
 
 @Composable
 fun rememberStandalonePageMainPadding(reservedBottomBarHeight: Dp? = null): PaddingValues {

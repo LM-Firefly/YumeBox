@@ -21,7 +21,6 @@
 package com.github.yumelira.yumebox.core.util
 
 import android.os.SystemClock
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,6 +33,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
+import java.util.concurrent.ConcurrentHashMap
 
 data class PollingTimerSpec(
     val name: String,
@@ -71,13 +71,12 @@ object PollingTimerSpecs {
         name: String,
         intervalMillis: Long,
         initialDelayMillis: Long = intervalMillis,
-    ): PollingTimerSpec {
-        return PollingTimerSpec(
+    ): PollingTimerSpec =
+        PollingTimerSpec(
             name = "dynamic_$name",
             intervalMillis = intervalMillis,
             initialDelayMillis = initialDelayMillis,
         )
-    }
 }
 
 object PollingTimers {
@@ -88,8 +87,8 @@ object PollingTimers {
         CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
     private val tickerCache = ConcurrentHashMap<PollingTimerSpec, SharedFlow<Long>>()
 
-    fun ticks(spec: PollingTimerSpec): Flow<Long> {
-        return tickerCache.getOrPut(spec) {
+    fun ticks(spec: PollingTimerSpec): Flow<Long> =
+        tickerCache.getOrPut(spec) {
             flow {
                     if (spec.initialDelayMillis > 0L) {
                         delay(spec.initialDelayMillis)
@@ -106,7 +105,6 @@ object PollingTimers {
                     replay = 0,
                 )
         }
-    }
 
     suspend fun awaitTick(spec: PollingTimerSpec) {
         ticks(spec).first()

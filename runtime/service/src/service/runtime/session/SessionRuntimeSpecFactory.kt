@@ -39,13 +39,9 @@ class SessionRuntimeSpecFactory(
     private val context: Context = context.appContextOrSelf
     private val compiledConfigPipeline = CompiledConfigPipeline(this.context)
 
-    fun createTunSpec(): RuntimeSpec {
-        return createLocalSpec(RuntimeOwner.LocalTun)
-    }
+    fun createTunSpec(): RuntimeSpec = createLocalSpec(RuntimeOwner.LocalTun)
 
-    fun createHttpSpec(): RuntimeSpec {
-        return createLocalSpec(RuntimeOwner.LocalHttp)
-    }
+    fun createHttpSpec(): RuntimeSpec = createLocalSpec(RuntimeOwner.LocalHttp)
 
     private fun createLocalSpec(owner: RuntimeOwner): RuntimeSpec {
         val profile = requireActiveProfile()
@@ -151,9 +147,8 @@ class SessionRuntimeSpecFactory(
         update(file.readBytes())
     }
 
-    private fun normalizeAgeSecretKey(value: String?): String? {
-        return value?.trim()?.takeIf { it.isNotEmpty() }
-    }
+    private fun normalizeAgeSecretKey(value: String?): String? =
+        value?.trim()?.takeIf { it.isNotEmpty() }
 
     private fun sha256String(value: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray())

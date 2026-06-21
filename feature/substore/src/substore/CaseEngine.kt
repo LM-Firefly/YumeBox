@@ -25,11 +25,15 @@ import com.caoccao.javet.interception.logging.JavetStandardConsoleInterceptor
 import com.caoccao.javet.interop.NodeRuntime
 import com.caoccao.javet.interop.V8Host
 import com.caoccao.javet.interop.options.NodeRuntimeOptions
+import timber.log.Timber
 import java.io.Closeable
 import java.io.File
-import timber.log.Timber
 
-class CaseEngine(backendPort: Int, frontendPort: Int, allowLan: Boolean) : Closeable {
+class CaseEngine(
+    backendPort: Int,
+    frontendPort: Int,
+    allowLan: Boolean,
+) : Closeable {
     val host = if (allowLan) "0.0.0.0" else "127.0.0.1"
 
     private var nodeRuntime: NodeRuntime? = null

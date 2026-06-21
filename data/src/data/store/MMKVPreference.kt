@@ -21,12 +21,12 @@
 package com.github.yumelira.yumebox.data.store
 
 import com.tencent.mmkv.MMKV
-import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 /**
  * Base class for MMKV-based preference storage with process-local reactive StateFlow support.
@@ -149,7 +149,10 @@ import kotlinx.serialization.json.Json
  * @param mmkvID Optional MMKV instance ID (null = default)
  * @param externalMmkv Optional external MMKV instance (overrides mmkvID)
  */
-abstract class MMKVPreference(mmkvID: String? = null, externalMmkv: MMKV? = null) {
+abstract class MMKVPreference(
+    mmkvID: String? = null,
+    externalMmkv: MMKV? = null,
+) {
     @PublishedApi
     internal val mmkv: MMKV =
         externalMmkv
@@ -354,9 +357,8 @@ abstract class MMKVPreference(mmkvID: String? = null, externalMmkv: MMKV? = null
         private val setter: (key: String, value: T) -> Unit,
         private val skipEqualityCheck: Boolean = false,
     ) : ReadOnlyProperty<Any?, T> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>): T {
-            return getter(property.name, default)
-        }
+        override fun getValue(thisRef: Any?, property: KProperty<*>): T =
+            getter(property.name, default)
 
         operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
             if (!skipEqualityCheck && value == getter(property.name, default)) return
@@ -372,8 +374,8 @@ abstract class MMKVPreference(mmkvID: String? = null, externalMmkv: MMKV? = null
     ) : ReadOnlyProperty<Any?, Preference<T>> {
         private var cached: Preference<T>? = null
 
-        override fun getValue(thisRef: Any?, property: KProperty<*>): Preference<T> {
-            return cached
+        override fun getValue(thisRef: Any?, property: KProperty<*>): Preference<T> =
+            cached
                 ?: run {
                     val key = property.name
                     val initialValue = getter(key, default)
@@ -396,7 +398,6 @@ abstract class MMKVPreference(mmkvID: String? = null, externalMmkv: MMKV? = null
                         )
                         .also { cached = it }
                 }
-        }
     }
 }
 

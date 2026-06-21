@@ -20,24 +20,25 @@
 
 package com.github.yumelira.yumebox.presentation.util
 
-data class FlaggedName(val countryCode: String?, val displayName: String)
+data class FlaggedName(
+    val countryCode: String?,
+    val displayName: String,
+)
 
 private const val REGIONAL_INDICATOR_BASE = 0x1F1E6
 private const val REGIONAL_INDICATOR_END = 0x1F1FF
 
-private fun isRegionalIndicator(codePoint: Int): Boolean {
-    return codePoint in REGIONAL_INDICATOR_BASE..REGIONAL_INDICATOR_END
-}
+private fun isRegionalIndicator(codePoint: Int): Boolean =
+    codePoint in REGIONAL_INDICATOR_BASE..REGIONAL_INDICATOR_END
 
-private fun Char.isNameSeparator(): Boolean {
-    return this.isWhitespace() ||
+private fun Char.isNameSeparator(): Boolean =
+    this.isWhitespace() ||
         this == '-' ||
         this == '|' ||
         this == '·' ||
         this == '•' ||
         this == '—' ||
         this == ':'
-}
 
 private val COUNTRY_NAME_TO_CODE =
     mapOf(

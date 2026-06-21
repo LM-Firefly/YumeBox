@@ -27,18 +27,35 @@ import android.content.ServiceConnection
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.service.RootTunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.*
+import com.github.yumelira.yumebox.service.root.IRootTunService
+import com.github.yumelira.yumebox.service.root.RootTunJson
+import com.github.yumelira.yumebox.service.root.RootTunLogChunk
+import com.github.yumelira.yumebox.service.root.RootTunOperationResult
+import com.github.yumelira.yumebox.service.root.RootTunRootService
+import com.github.yumelira.yumebox.service.root.RootTunRuntimeRecovery
+import com.github.yumelira.yumebox.service.root.RootTunStartRequest
+import com.github.yumelira.yumebox.service.root.RootTunStartupLogStore
+import com.github.yumelira.yumebox.service.root.RootTunState
+import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.service.root.RootTunStatus
 import com.topjohnwu.superuser.ipc.RootService
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 object RootTunController {
     private val mutex = Mutex()
@@ -261,97 +278,85 @@ object RootTunController {
         disconnect()
     }
 
-    suspend fun queryStatus(context: Context): RootTunStatus {
-        return remoteCall(context) { service ->
+    suspend fun queryStatus(context: Context): RootTunStatus =
+        remoteCall(context) { service ->
             val statusJson = service.queryStatus()
             RootTunJson.Default.decodeFromString(RootTunStatus.serializer(), statusJson)
         }
-    }
 
-    suspend fun queryTunnelState(context: Context): TunnelState {
-        return remoteCall(context) { service ->
+    suspend fun queryTunnelState(context: Context): TunnelState =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 TunnelState.serializer(),
                 service.queryTunnelStateJson(),
             )
         }
-    }
 
-    suspend fun queryTrafficNow(context: Context): Long {
-        return remoteCall(context) { service -> service.queryTrafficNow() }
-    }
+    suspend fun queryTrafficNow(context: Context): Long =
+        remoteCall(context) { service -> service.queryTrafficNow() }
 
-    suspend fun queryTrafficTotal(context: Context): Long {
-        return remoteCall(context) { service -> service.queryTrafficTotal() }
-    }
+    suspend fun queryTrafficTotal(context: Context): Long =
+        remoteCall(context) { service -> service.queryTrafficTotal() }
 
-    suspend fun queryConnections(context: Context): ConnectionSnapshot {
-        return remoteCall(context) { service ->
+    suspend fun queryConnections(context: Context): ConnectionSnapshot =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 ConnectionSnapshot.serializer(),
                 service.queryConnectionsJson(),
             )
         }
-    }
 
     suspend fun queryProxyGroupNames(
         context: Context,
         excludeNotSelectable: Boolean,
-    ): List<String> {
-        return remoteCall(context) { service ->
+    ): List<String> =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 ListSerializer(String.serializer()),
                 service.queryProxyGroupNamesJson(excludeNotSelectable),
             )
         }
-    }
 
     suspend fun queryAllProxyGroups(
         context: Context,
         excludeNotSelectable: Boolean,
-    ): List<ProxyGroup> {
-        return remoteCall(context) { service ->
+    ): List<ProxyGroup> =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 ListSerializer(ProxyGroup.serializer()),
                 service.queryAllProxyGroupsJson(excludeNotSelectable),
             )
         }
-    }
 
-    suspend fun queryProxyGroup(context: Context, name: String, sort: ProxySort): ProxyGroup {
-        return remoteCall(context) { service ->
+    suspend fun queryProxyGroup(context: Context, name: String, sort: ProxySort): ProxyGroup =
+        remoteCall(context) { service ->
             val raw =
                 service.queryProxyGroupJson(name, sort.name)
                     ?: error("proxy group not found: $name")
             RootTunJson.Default.decodeFromString(ProxyGroup.serializer(), raw)
         }
-    }
 
-    suspend fun queryConfiguration(context: Context): UiConfiguration {
-        return remoteCall(context) { service ->
+    suspend fun queryConfiguration(context: Context): UiConfiguration =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 UiConfiguration.serializer(),
                 service.queryConfigurationJson(),
             )
         }
-    }
 
-    suspend fun queryProviders(context: Context): List<Provider> {
-        return remoteCall(context) { service ->
+    suspend fun queryProviders(context: Context): List<Provider> =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 ListSerializer(Provider.serializer()),
                 service.queryProvidersJson(),
             )
         }
-    }
 
-    suspend fun patchSelector(context: Context, group: String, name: String): Boolean {
-        return remoteCall(context) { service -> service.patchSelector(group, name) }
-    }
+    suspend fun patchSelector(context: Context, group: String, name: String): Boolean =
+        remoteCall(context) { service -> service.patchSelector(group, name) }
 
-    suspend fun closeConnection(context: Context, id: String): Boolean {
-        return remoteCall(context) { service -> service.closeConnection(id) }
-    }
+    suspend fun closeConnection(context: Context, id: String): Boolean =
+        remoteCall(context) { service -> service.closeConnection(id) }
 
     suspend fun closeAllConnections(context: Context) {
         remoteCall(context) { service -> service.closeAllConnections() }
@@ -364,9 +369,8 @@ object RootTunController {
         }
     }
 
-    suspend fun healthCheckProxy(context: Context, group: String, proxyName: String): String {
-        return remoteCall(context) { service -> service.healthCheckProxy(group, proxyName) }
-    }
+    suspend fun healthCheckProxy(context: Context, group: String, proxyName: String): String =
+        remoteCall(context) { service -> service.healthCheckProxy(group, proxyName) }
 
     suspend fun updateProvider(context: Context, type: Provider.Type, name: String) {
         val error = remoteCall(context) { service -> service.updateProvider(type.name, name) }
@@ -375,12 +379,11 @@ object RootTunController {
         }
     }
 
-    suspend fun queryRecentLogs(context: Context, sinceSeq: Long): RootTunLogChunk {
-        return remoteCall(context) { service ->
+    suspend fun queryRecentLogs(context: Context, sinceSeq: Long): RootTunLogChunk =
+        remoteCall(context) { service ->
             val raw = service.queryRecentLogsJson(sinceSeq)
             RootTunJson.Default.decodeFromString(RootTunLogChunk.serializer(), raw)
         }
-    }
 
     private suspend fun disconnect() {
         mutex.withLock {
@@ -501,9 +504,8 @@ object RootTunController {
         RootTunRuntimeRecovery.handleBinderGone(context, reason)
     }
 
-    private fun createIntent(context: Context): Intent {
-        return Intent(context, RootTunRootService::class.java)
-    }
+    private fun createIntent(context: Context): Intent =
+        Intent(context, RootTunRootService::class.java)
 
     private suspend fun rollbackFailedStart(
         context: Context,

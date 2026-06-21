@@ -25,7 +25,6 @@ import android.content.Context
 import android.content.Intent
 
 internal object OnboardingLauncher {
-
     private const val EXTRA_PREVIEW_MODE = "com.github.yumelira.yumebox.onboarding.preview_mode"
     private const val EXTRA_RESET_PRIVACY = "com.github.yumelira.yumebox.onboarding.reset_privacy"
 
@@ -41,19 +40,16 @@ internal object OnboardingLauncher {
         context: Context,
         previewMode: Boolean,
         resetPrivacy: Boolean = false,
-    ): Intent {
-        return Intent(context, OnboardingActivity::class.java)
+    ): Intent =
+        Intent(context, OnboardingActivity::class.java)
             .putExtra(EXTRA_PREVIEW_MODE, previewMode)
             .putExtra(EXTRA_RESET_PRIVACY, resetPrivacy)
-    }
 
-    fun isPreviewMode(intent: Intent?): Boolean {
-        return intent?.getBooleanExtra(EXTRA_PREVIEW_MODE, false) ?: false
-    }
+    fun isPreviewMode(intent: Intent?): Boolean =
+        intent?.getBooleanExtra(EXTRA_PREVIEW_MODE, false) ?: false
 
-    fun shouldResetPrivacy(intent: Intent?): Boolean {
-        return intent?.getBooleanExtra(EXTRA_RESET_PRIVACY, false) ?: false
-    }
+    fun shouldResetPrivacy(intent: Intent?): Boolean =
+        intent?.getBooleanExtra(EXTRA_RESET_PRIVACY, false) ?: false
 
     fun consumeResetPrivacy(intent: Intent?): Boolean {
         val shouldReset = shouldResetPrivacy(intent)

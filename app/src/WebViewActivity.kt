@@ -38,7 +38,6 @@ import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.presentation.webview.WebViewScreen
 
 class WebViewActivity : ComponentActivity() {
-
     companion object {
         private const val EXTRA_INITIAL_URL = "initial_url"
 
@@ -96,9 +95,11 @@ class WebViewActivity : ComponentActivity() {
         val useLightNavigationBarIcons = !isDarkMode
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.setSystemBarsAppearance(
-                if (useLightNavigationBarIcons)
+                if (useLightNavigationBarIcons) {
                     WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                else 0,
+                } else {
+                    0
+                },
                 WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
             )
         } else {
@@ -108,7 +109,7 @@ class WebViewActivity : ComponentActivity() {
         }
 
         val initialUrl =
-            intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://${filesDir}/frontend/index.html"
+            intent.getStringExtra(EXTRA_INITIAL_URL) ?: "file://$filesDir/frontend/index.html"
 
         setContent { WebViewScreen(initialUrl = initialUrl) }
     }

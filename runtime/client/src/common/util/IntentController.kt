@@ -32,7 +32,6 @@ import org.koin.core.component.inject
 import timber.log.Timber
 
 class IntentController(private val scope: CoroutineScope) : KoinComponent {
-
     companion object {
         private const val ACTION_START_CLASH = "com.github.yumelira.yumebox.action.START_CLASH"
         private const val ACTION_STOP_CLASH = "com.github.yumelira.yumebox.action.STOP_CLASH"

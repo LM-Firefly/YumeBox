@@ -46,19 +46,17 @@ enum class LocalRuntimePhase {
 
 @Suppress("DEPRECATION")
 class StatusProvider : ContentProvider() {
-    override fun call(method: String, arg: String?, extras: Bundle?): Bundle? {
-        return when (method) {
+    override fun call(method: String, arg: String?, extras: Bundle?): Bundle? =
+        when (method) {
             METHOD_CURRENT_PROFILE -> {
                 syncCachedRuntimeState()
                 if (serviceRunning) Bundle().apply { putString("name", currentProfile) } else null
             }
             else -> super.call(method, arg, extras)
         }
-    }
 
-    override fun insert(uri: Uri, values: ContentValues?): Uri? {
+    override fun insert(uri: Uri, values: ContentValues?): Uri? =
         throw IllegalArgumentException("Stub!")
-    }
 
     override fun query(
         uri: Uri,
@@ -66,26 +64,19 @@ class StatusProvider : ContentProvider() {
         selection: String?,
         selectionArgs: Array<out String>?,
         sortOrder: String?,
-    ): Cursor? {
-        throw IllegalArgumentException("Stub!")
-    }
+    ): Cursor? = throw IllegalArgumentException("Stub!")
 
     override fun update(
         uri: Uri,
         values: ContentValues?,
         selection: String?,
         selectionArgs: Array<out String>?,
-    ): Int {
-        throw IllegalArgumentException("Stub!")
-    }
+    ): Int = throw IllegalArgumentException("Stub!")
 
-    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
+    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int =
         throw IllegalArgumentException("Stub!")
-    }
 
-    override fun getType(uri: Uri): String? {
-        throw IllegalArgumentException("Stub!")
-    }
+    override fun getType(uri: Uri): String? = throw IllegalArgumentException("Stub!")
 
     override fun onCreate(): Boolean {
         runCatching {
@@ -144,9 +135,7 @@ class StatusProvider : ContentProvider() {
             markRuntimePhase(mode, LocalRuntimePhase.Idle)
         }
 
-        fun isRuntimeActive(mode: ProxyMode): Boolean {
-            return queryRuntimePhase(mode).isActive
-        }
+        fun isRuntimeActive(mode: ProxyMode): Boolean = queryRuntimePhase(mode).isActive
 
         fun queryRuntimePhase(mode: ProxyMode): LocalRuntimePhase {
             reconcilePersistedRuntimeState()
@@ -223,18 +212,15 @@ class StatusProvider : ContentProvider() {
             serviceCache().removeValueForKey(KEY_TUN_STARTING)
         }
 
-        fun isTunStarting(): Boolean {
-            return serviceCache().decodeBool(KEY_TUN_STARTING, false)
-        }
+        fun isTunStarting(): Boolean = serviceCache().decodeBool(KEY_TUN_STARTING, false)
 
         fun clearLegacyStateFiles() {
             val filesDir = Global.application.filesDir
             legacyRuntimeFiles.forEach { name -> runCatching { filesDir.resolve(name).delete() } }
         }
 
-        private fun serviceCache(): MMKV {
-            return MMKV.mmkvWithID(SERVICE_CACHE_ID, MMKV.MULTI_PROCESS_MODE)
-        }
+        private fun serviceCache(): MMKV =
+            MMKV.mmkvWithID(SERVICE_CACHE_ID, MMKV.MULTI_PROCESS_MODE)
 
         private fun markRuntimePhase(mode: ProxyMode, phase: LocalRuntimePhase) {
             if (mode == ProxyMode.Tun && phase != LocalRuntimePhase.Starting) {
@@ -281,9 +267,10 @@ class StatusProvider : ContentProvider() {
             return mode to phase
         }
 
-        private fun readPersistedRuntimeStartedAt(): Long? {
-            return serviceCache().decodeLong(KEY_RUNTIME_STARTED_AT, 0L).takeIf { it > 0L }
-        }
+        private fun readPersistedRuntimeStartedAt(): Long? =
+            serviceCache().decodeLong(KEY_RUNTIME_STARTED_AT, 0L).takeIf {
+                it > 0L
+            }
 
         private fun resolveRuntimeStartedAt(mode: ProxyMode?, phase: LocalRuntimePhase): Long? {
             if (!phase.isActive || mode == null) {
@@ -312,12 +299,11 @@ class StatusProvider : ContentProvider() {
         }
 
         @SuppressLint("Deprecated")
-        private fun queryRunningServiceClassNames(activityManager: ActivityManager): List<String> {
-            return activityManager.getRunningServices(Int.MAX_VALUE).mapNotNull { service ->
+        private fun queryRunningServiceClassNames(activityManager: ActivityManager): List<String> =
+            activityManager.getRunningServices(Int.MAX_VALUE).mapNotNull { service ->
                 service.service
                     ?.takeIf { it.packageName == Global.application.packageName }
                     ?.className
             }
-        }
     }
 }

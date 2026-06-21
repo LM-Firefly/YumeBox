@@ -21,10 +21,15 @@
 package com.github.yumelira.yumebox.service.remote
 
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import java.util.*
+import java.util.UUID
 
 interface IProfileManager {
-    suspend fun create(type: Profile.Type, name: String, source: String = "", ageSecretKey: String? = null): UUID
+    suspend fun create(
+        type: Profile.Type,
+        name: String,
+        source: String = "",
+        ageSecretKey: String? = null,
+    ): UUID
 
     suspend fun clone(uuid: UUID): UUID
 

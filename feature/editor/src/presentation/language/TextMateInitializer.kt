@@ -32,7 +32,6 @@ import org.eclipse.tm4e.core.registry.IThemeSource
 import timber.log.Timber
 
 object TextMateInitializer {
-
     private const val TAG = "TextMateInitializer"
 
     private const val THEME_DARK = "dark-high-contrast"

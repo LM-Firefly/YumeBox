@@ -48,14 +48,13 @@ internal object NotificationPresentationFactory {
         )
     }
 
-    fun createStatus(profileName: String, status: String): NotificationPresentation {
-        return NotificationPresentation(
+    fun createStatus(profileName: String, status: String): NotificationPresentation =
+        NotificationPresentation(
             title = profileName,
             content = status,
             expandedText = status,
             subText = null,
         )
-    }
 
     fun resolveNodeName(
         queryGroup: (String) -> ProxyGroup?,
@@ -69,7 +68,10 @@ internal object NotificationPresentationFactory {
                     .firstOrNull(::isSelectableGroup)
                 ?: return null
 
-        val seed = startGroup.now.ifBlank { startGroup.proxies.firstOrNull()?.name.orEmpty() }
+        val seed =
+            startGroup.now.ifBlank {
+                startGroup.proxies.firstOrNull()?.name.orEmpty()
+            }
         return resolveSelection(seed, queryGroup, mutableSetOf())
     }
 
@@ -93,7 +95,10 @@ internal object NotificationPresentationFactory {
                 matched
             } ?: return null
 
-        val seed = startGroup.now.ifBlank { startGroup.proxies.firstOrNull()?.name.orEmpty() }
+        val seed =
+            startGroup.now.ifBlank {
+                startGroup.proxies.firstOrNull()?.name.orEmpty()
+            }
         return resolveSelectionSuspend(seed, queryGroup, mutableSetOf())
     }
 
@@ -108,7 +113,10 @@ internal object NotificationPresentationFactory {
 
         val group = queryGroup(normalized)
         if (group != null && isSelectableGroup(group)) {
-            val next = group.now.ifBlank { group.proxies.firstOrNull()?.name.orEmpty() }
+            val next =
+                group.now.ifBlank {
+                    group.proxies.firstOrNull()?.name.orEmpty()
+                }
             return resolveSelection(next, queryGroup, visited) ?: normalized
         }
 
@@ -126,7 +134,10 @@ internal object NotificationPresentationFactory {
 
         val group = queryGroup(normalized)
         if (group != null && isSelectableGroup(group)) {
-            val next = group.now.ifBlank { group.proxies.firstOrNull()?.name.orEmpty() }
+            val next =
+                group.now.ifBlank {
+                    group.proxies.firstOrNull()?.name.orEmpty()
+                }
             return resolveSelectionSuspend(next, queryGroup, visited) ?: normalized
         }
 
@@ -145,9 +156,7 @@ internal object NotificationPresentationFactory {
         return "总流量 ${formatBytes(upTotal + downTotal)}"
     }
 
-    private fun isSelectableGroup(group: ProxyGroup): Boolean {
-        return group.isProxyGroup
-    }
+    private fun isSelectableGroup(group: ProxyGroup): Boolean = group.isProxyGroup
 
     private fun decodeTrafficHalf(encoded: Long): Long {
         val type = (encoded ushr 30) and 0x3L

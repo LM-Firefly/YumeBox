@@ -50,7 +50,6 @@ class AccessControlViewModel(
         AccessControlViewModel.UiState,
         AccessControlViewModel.AccessControlUiEffect,
     >(application, UiState()) {
-
     data class AppInfo(
         val packageName: String,
         val label: String,
@@ -251,8 +250,11 @@ class AccessControlViewModel(
                 SortMode.UPDATE_TIME -> compareBy { it.updateTime }
             }
         val sorted =
-            if (descending) filtered.sortedWith(comparator.reversed())
-            else filtered.sortedWith(comparator)
+            if (descending) {
+                filtered.sortedWith(comparator.reversed())
+            } else {
+                filtered.sortedWith(comparator)
+            }
         return if (selectedFirst) {
             sorted.sortedByDescending { selectedPackages.contains(it.packageName) }
         } else {
@@ -320,13 +322,11 @@ class AccessControlViewModel(
         persistSelectionAndApply()
     }
 
-    fun selectChinaAppsInCurrentList(): Int {
-        return applyRegionalSelectionInCurrentList(selectChina = true)
-    }
+    fun selectChinaAppsInCurrentList(): Int =
+        applyRegionalSelectionInCurrentList(selectChina = true)
 
-    fun selectNonChinaAppsInCurrentList(): Int {
-        return applyRegionalSelectionInCurrentList(selectChina = false)
-    }
+    fun selectNonChinaAppsInCurrentList(): Int =
+        applyRegionalSelectionInCurrentList(selectChina = false)
 
     private fun applyRegionalSelectionInCurrentList(selectChina: Boolean): Int {
         val currentFiltered = filteredApps.value
@@ -348,9 +348,7 @@ class AccessControlViewModel(
         return selectedCount
     }
 
-    fun exportPackages(): String {
-        return _uiState.value.selectedPackages.joinToString("\n")
-    }
+    fun exportPackages(): String = _uiState.value.selectedPackages.joinToString("\n")
 
     fun importPackages(text: String): Int {
         val packages = text.lines().map { it.trim() }.filter { it.isNotEmpty() }.toSet()

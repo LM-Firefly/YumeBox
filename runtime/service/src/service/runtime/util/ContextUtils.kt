@@ -24,7 +24,7 @@ import android.content.Context
 import android.content.Intent
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import java.io.File
-import java.util.*
+import java.util.UUID
 
 val Context.importedDir: File
     get() = filesDir.resolve("imported")
@@ -46,15 +46,13 @@ fun Context.sendProfileChanged(uuid: UUID) {
 }
 
 fun Context.sendProfileLoaded(uuid: UUID) {
-    val intent = Intent(Intents.ACTION_PROFILE_LOADED).putExtra(Intents.EXTRA_UUID, uuid.toString())
-
-    sendBroadcastSelf(intent)
+    sendBroadcastSelf(
+        Intent(Intents.ACTION_PROFILE_LOADED).putExtra(Intents.EXTRA_UUID, uuid.toString())
+    )
 }
 
 fun Context.sendOverrideChanged() {
-    val intent = Intent(Intents.ACTION_OVERRIDE_CHANGED)
-
-    sendBroadcastSelf(intent)
+    sendBroadcastSelf(Intent(Intents.ACTION_OVERRIDE_CHANGED))
 }
 
 fun Context.sendServiceRecreated() {

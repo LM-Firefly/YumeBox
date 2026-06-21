@@ -51,7 +51,11 @@ enum class RootTunState {
 
 @Serializable data class RootTunStartRequest(val source: String = "")
 
-@Serializable data class RootTunOperationResult(val success: Boolean, val error: String? = null)
+@Serializable
+data class RootTunOperationResult(
+    val success: Boolean,
+    val error: String? = null,
+)
 
 @Serializable
 data class RootTunStatus(
@@ -85,10 +89,12 @@ data class RootTunRuntimeSnapshot(
 )
 
 @Serializable
-data class RootTunLogChunk(val nextSeq: Long = 0L, val items: List<String> = emptyList()) {
+data class RootTunLogChunk(
+    val nextSeq: Long = 0L,
+    val items: List<String> = emptyList(),
+) {
     companion object {
-        fun from(value: RuntimeLogChunk): RootTunLogChunk {
-            return RootTunLogChunk(nextSeq = value.nextSeq, items = value.items)
-        }
+        fun from(value: RuntimeLogChunk): RootTunLogChunk =
+            RootTunLogChunk(nextSeq = value.nextSeq, items = value.items)
     }
 }

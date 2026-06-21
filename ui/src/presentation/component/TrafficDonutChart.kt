@@ -51,7 +51,12 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-data class TrafficDonutSlice(val key: String, val label: String, val value: Long, val color: Color)
+data class TrafficDonutSlice(
+    val key: String,
+    val label: String,
+    val value: Long,
+    val color: Color,
+)
 
 @Composable
 fun TrafficDonutChart(
@@ -72,8 +77,11 @@ fun TrafficDonutChart(
     val safeTotal = total.coerceAtLeast(0L)
     val interactiveSlices =
         remember(slices, safeTotal) {
-            if (safeTotal <= 0L) emptyList()
-            else buildInteractiveSlices(slices, safeTotal, segmentGapAngle)
+            if (safeTotal <= 0L) {
+                emptyList()
+            } else {
+                buildInteractiveSlices(slices, safeTotal, segmentGapAngle)
+            }
         }
     val animationProgress = remember { Animatable(0f) }
     var lastAnimationKey by remember { mutableStateOf(animationKey) }

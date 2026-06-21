@@ -26,7 +26,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class ConfigEditorViewModel : ViewModel() {
-
     private val _session = MutableStateFlow(EditorSession())
     val session: StateFlow<EditorSession> = _session.asStateFlow()
 

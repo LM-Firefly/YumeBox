@@ -155,7 +155,9 @@ val appDataRuntimeModule = module {
         val proxyFacade = get<ProxyFacade>()
         AppTrafficStatisticsCollector(
             isRunningFlow = proxyFacade.isRunning,
-            currentProfileId = { proxyFacade.currentProfile.value?.uuid?.toString() },
+            currentProfileId = {
+                proxyFacade.currentProfile.value?.uuid?.toString()
+            },
             trafficStatisticsStore = get(),
             appIdentityResolver = get(),
             queryTrafficTotal = { TrafficData.from(proxyFacade.queryTrafficTotal()) },

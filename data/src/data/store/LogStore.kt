@@ -25,11 +25,11 @@ import android.net.Uri
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import kotlin.enums.enumEntries
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class LogStore(
     private val application: Application,
@@ -52,13 +52,10 @@ class LogStore(
         logRecordGateway.stop(application)
     }
 
-    fun isRecording(): Boolean {
-        return logRecordGateway.isRecording
-    }
+    fun isRecording(): Boolean = logRecordGateway.isRecording
 
-    fun isCurrentRecordingFile(fileName: String): Boolean {
-        return isRecording() && logRecordGateway.currentLogFileName == fileName
-    }
+    fun isCurrentRecordingFile(fileName: String): Boolean =
+        isRecording() && logRecordGateway.currentLogFileName == fileName
 
     fun listLogFiles(): List<LogFileInfo> {
         val currentlyRecording = isRecording()
@@ -196,8 +193,9 @@ class LogStore(
 
     private fun isSafeLogFileName(fileName: String): Boolean {
         if (fileName.isBlank()) return false
-        if (fileName.contains('/') || fileName.contains('\\') || fileName.contains(".."))
+        if (fileName.contains('/') || fileName.contains('\\') || fileName.contains("..")) {
             return false
+        }
         if (!fileName.endsWith(logRecordGateway.logSuffix)) return false
         val prefix = logRecordGateway.logPrefix
         return prefix.isBlank() || fileName.startsWith(prefix)
@@ -210,5 +208,9 @@ class LogStore(
         val isRecording: Boolean,
     )
 
-    data class LogEntry(val time: String, val level: LogMessage.Level, val message: String)
+    data class LogEntry(
+        val time: String,
+        val level: LogMessage.Level,
+        val message: String,
+    )
 }

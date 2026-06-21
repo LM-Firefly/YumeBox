@@ -954,9 +954,8 @@ private val ruleOrder =
     )
 private val templateRules = orderedItems.flatMap(OverridePresetItem::detectionRules).toSet()
 
-fun defaultEnabledPresetItems(): Set<OverridePresetItem> {
-    return defaultEnabledItemIds.mapNotNull(itemById::get).toCollection(linkedSetOf())
-}
+fun defaultEnabledPresetItems(): Set<OverridePresetItem> =
+    defaultEnabledItemIds.mapNotNull(itemById::get).toCollection(linkedSetOf())
 
 fun orderedPresetRegions(): List<OverridePresetRegion> = orderedRegions
 
@@ -964,13 +963,12 @@ fun orderedBasePresetItems(): List<OverridePresetItem> = orderedBaseItems
 
 fun orderedServicePresetItems(): List<OverridePresetItem> = orderedServiceItems
 
-fun presetGroupTypeIconUrl(type: String): String? {
-    return when (type) {
+fun presetGroupTypeIconUrl(type: String): String? =
+    when (type) {
         "urltest" -> officialMrsCatalogIconUrl("Urltest")
         "fallback" -> officialMrsCatalogIconUrl("Available")
         else -> null
     }
-}
 
 fun sortPresetRegions(regions: Collection<OverridePresetRegion>): List<OverridePresetRegion> {
     val selectedIds = regions.map(OverridePresetRegion::specId).toSet()
@@ -982,13 +980,12 @@ fun sortPresetItems(items: Collection<OverridePresetItem>): List<OverridePresetI
     return orderedItems.filter { it.id in selectedIds }
 }
 
-fun defaultOverridePresetTemplateSelection(): OverridePresetTemplateSelection {
-    return OverridePresetTemplateSelection(
+fun defaultOverridePresetTemplateSelection(): OverridePresetTemplateSelection =
+    OverridePresetTemplateSelection(
         enabledItems = defaultEnabledPresetItems(),
         enableUrlTestGroup = true,
         enableFallbackGroup = false,
     )
-}
 
 fun analyzePresetTemplateContent(content: String?): OverridePresetTemplateContentAnalysis {
     if (content.isNullOrBlank()) {
@@ -1030,9 +1027,8 @@ fun analyzePresetTemplateContent(content: String?): OverridePresetTemplateConten
     )
 }
 
-fun inferPresetTemplateSelection(content: String?): OverridePresetTemplateSelection {
-    return analyzePresetTemplateContent(content).selection
-}
+fun inferPresetTemplateSelection(content: String?): OverridePresetTemplateSelection =
+    analyzePresetTemplateContent(content).selection
 
 private fun inferPresetTemplateSelection(
     document: Map<String, Any?>
@@ -1124,14 +1120,15 @@ fun buildPresetTemplateYaml(selection: OverridePresetTemplateSelection): String 
     return yamlContent
 }
 
-private fun normalizeEnabledItems(items: Set<OverridePresetItem>): Set<OverridePresetItem> {
-    return items.ifEmpty { linkedSetOf(OverridePresetItem.Match) }
-}
+private fun normalizeEnabledItems(items: Set<OverridePresetItem>): Set<OverridePresetItem> =
+    items.ifEmpty {
+        linkedSetOf(OverridePresetItem.Match)
+    }
 
 private fun buildRuleProviders(
     enabledItems: Set<OverridePresetItem>
-): Map<String, Map<String, Any?>> {
-    return linkedMapOf<String, Map<String, Any?>>().apply {
+): Map<String, Map<String, Any?>> =
+    linkedMapOf<String, Map<String, Any?>>().apply {
         orderedItems
             .filter { item -> item in enabledItems && item != OverridePresetItem.Match }
             .flatMap(OverridePresetItem::providers)
@@ -1149,7 +1146,6 @@ private fun buildRuleProviders(
                 )
             }
     }
-}
 
 private fun buildProxyGroups(
     selectedUrlTestRegions: List<OverridePresetRegion>,
@@ -1259,8 +1255,8 @@ private fun buildHealthCheckGroup(
             OfficialMrsHealthCheckGroupType.Fallback ->
                 officialMrsCatalogIconUrl("Available").orEmpty()
         },
-): Map<String, Any?> {
-    return linkedMapOf<String, Any?>().apply {
+): Map<String, Any?> =
+    linkedMapOf<String, Any?>().apply {
         put("name", name)
         put("type", type.wireName)
         put("icon", icon)
@@ -1270,14 +1266,13 @@ private fun buildHealthCheckGroup(
         put("exclude-filter", combineOfficialMrsExcludeFilters(excludeFilter))
         filter?.let { put("filter", it) }
     }
-}
 
 private fun buildProxySelectGroup(
     regionNames: List<String>,
     enableUrlTestGroup: Boolean,
     enableFallbackGroup: Boolean,
-): Map<String, Any?> {
-    return linkedMapOf(
+): Map<String, Any?> =
+    linkedMapOf(
         "name" to "Proxy",
         "type" to "select",
         "icon" to OverridePresetItem.Proxy.icon.orEmpty(),
@@ -1289,7 +1284,6 @@ private fun buildProxySelectGroup(
             ),
         "include-all" to true,
     )
-}
 
 private fun buildServiceSelectGroup(
     item: OverridePresetItem,
@@ -1324,8 +1318,8 @@ private fun buildSelectableGroupNames(
     regionNames: List<String>,
     enableUrlTestGroup: Boolean,
     enableFallbackGroup: Boolean,
-): List<String> {
-    return buildList {
+): List<String> =
+    buildList {
             if (enableUrlTestGroup) {
                 add(OFFICIAL_MRS_AUTO_GROUP_NAME)
             }
@@ -1335,18 +1329,15 @@ private fun buildSelectableGroupNames(
             addAll(regionNames)
         }
         .distinct()
-}
 
-private fun combineOfficialMrsExcludeFilters(extraExcludeFilter: String?): String {
-    return listOf(OFFICIAL_MRS_EXCLUDE_FILTER, extraExcludeFilter).filterNotNull().joinToString("|")
-}
+private fun combineOfficialMrsExcludeFilters(extraExcludeFilter: String?): String =
+    listOf(OFFICIAL_MRS_EXCLUDE_FILTER, extraExcludeFilter).filterNotNull().joinToString("|")
 
-private fun OfficialMrsProviderSpec.urlTemplate(): String {
-    return when (behavior) {
+private fun OfficialMrsProviderSpec.urlTemplate(): String =
+    when (behavior) {
         OfficialMrsRuleBehavior.Domain -> OFFICIAL_MRS_GEOSITE_URL
         OfficialMrsRuleBehavior.IpCidr -> OFFICIAL_MRS_GEOIP_URL
     }
-}
 
 private fun isOfficialMrsItemEnabledInConfig(
     item: OverridePresetItem,
@@ -1370,25 +1361,23 @@ private fun isOfficialMrsTemplateRule(rule: String): Boolean {
         templateProviderIds.any { providerId -> normalizedRule.contains(providerId) }
 }
 
-private fun Map<String, Any?>.stringKeyedMap(key: String): Map<String, Any?> {
-    return (this[key] as? Map<*, *>)
+private fun Map<String, Any?>.stringKeyedMap(key: String): Map<String, Any?> =
+    (this[key] as? Map<*, *>)
         ?.entries
         ?.associate { entry -> entry.key.toString() to entry.value }
         .orEmpty()
-}
 
-private fun Map<String, Any?>.listOfMaps(key: String): List<Map<String, Any?>> {
-    return (this[key] as? List<*>)
+private fun Map<String, Any?>.listOfMaps(key: String): List<Map<String, Any?>> =
+    (this[key] as? List<*>)
         ?.mapNotNull { element ->
             (element as? Map<*, *>)?.entries?.associate { entry ->
                 entry.key.toString() to entry.value
             }
         }
         .orEmpty()
-}
 
-private fun Map<String, Any?>.stringList(key: String): List<String> {
-    return (this[key] as? List<*>)
+private fun Map<String, Any?>.stringList(key: String): List<String> =
+    (this[key] as? List<*>)
         ?.mapNotNull { value ->
             when (value) {
                 null -> null
@@ -1397,11 +1386,9 @@ private fun Map<String, Any?>.stringList(key: String): List<String> {
             }
         }
         .orEmpty()
-}
 
-private fun Any?.asStringKeyedMap(): Map<String, Any?>? {
-    return (this as? Map<*, *>)?.entries?.associate { entry -> entry.key.toString() to entry.value }
-}
+private fun Any?.asStringKeyedMap(): Map<String, Any?>? =
+    (this as? Map<*, *>)?.entries?.associate { entry -> entry.key.toString() to entry.value }
 
 private fun officialMrsCatalogIconUrl(iconName: String?): String? {
     val normalizedIconName = iconName?.trim()?.takeIf(String::isNotBlank) ?: return null
@@ -1413,6 +1400,5 @@ private fun officialMrsAppIconUrl(iconName: String?): String? {
     return "$OFFICIAL_MRS_ICON_APP_BASE_URL/${encodePathSegment(normalizedIconName)}"
 }
 
-private fun encodePathSegment(value: String): String {
-    return URLEncoder.encode(value, StandardCharsets.UTF_8.toString()).replace("+", "%20")
-}
+private fun encodePathSegment(value: String): String =
+    URLEncoder.encode(value, StandardCharsets.UTF_8.toString()).replace("+", "%20")

@@ -29,8 +29,7 @@ fun rememberConfiguredCodeEditorState(
     initialContent: String,
     language: LanguageScope,
     readOnly: Boolean = false,
-): CodeEditorState {
-    return remember(initialContent, language, readOnly) {
+): CodeEditorState =
+    remember(initialContent, language, readOnly) {
         CodeEditorState(initialContent = initialContent, language = language, readOnly = readOnly)
     }
-}

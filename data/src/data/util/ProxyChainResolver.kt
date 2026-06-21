@@ -30,9 +30,8 @@ class ProxyChainResolver {
         private const val TAG = "ProxyChainResolver"
     }
 
-    fun resolveEndNode(startNodeName: String, groups: List<ProxyGroupInfo>): Proxy? {
-        return resolveProxyChain(startNodeName, groups, mutableSetOf())
-    }
+    fun resolveEndNode(startNodeName: String, groups: List<ProxyGroupInfo>): Proxy? =
+        resolveProxyChain(startNodeName, groups, mutableSetOf())
 
     private fun resolveProxyChain(
         proxyName: String,

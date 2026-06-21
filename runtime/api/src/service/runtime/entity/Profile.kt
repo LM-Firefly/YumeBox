@@ -27,9 +27,9 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.github.yumelira.yumebox.core.util.Parcelizer
 import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
-import java.util.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import java.util.UUID
 
 @SuppressLint("UnsafeOptInUsageError")
 @Serializable
@@ -57,17 +57,12 @@ data class Profile(
         Parcelizer.encodeToParcel(serializer(), parcel, this)
     }
 
-    override fun describeContents(): Int {
-        return 0
-    }
+    override fun describeContents(): Int = 0
 
     companion object CREATOR : Parcelable.Creator<Profile> {
-        override fun createFromParcel(parcel: Parcel): Profile {
-            return Parcelizer.decodeFromParcel(serializer(), parcel)
-        }
+        override fun createFromParcel(parcel: Parcel): Profile =
+            Parcelizer.decodeFromParcel(serializer(), parcel)
 
-        override fun newArray(size: Int): Array<Profile?> {
-            return arrayOfNulls(size)
-        }
+        override fun newArray(size: Int): Array<Profile?> = arrayOfNulls(size)
     }
 }

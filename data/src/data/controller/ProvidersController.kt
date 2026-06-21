@@ -24,26 +24,23 @@ import android.content.Context
 import android.net.Uri
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.model.Provider
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class ProvidersController(
     private val context: Context,
     private val queryProvidersAction: suspend () -> List<Provider>,
 ) {
-
-    suspend fun queryProviders(): Result<List<Provider>> {
-        return try {
+    suspend fun queryProviders(): Result<List<Provider>> =
+        try {
             Result.success(queryProvidersAction())
         } catch (error: Exception) {
             Result.failure(error)
         }
-    }
 
-    suspend fun updateProvider(provider: Provider): Result<Unit> {
-        return updateProviderInternal(provider.type, provider.name)
-    }
+    suspend fun updateProvider(provider: Provider): Result<Unit> =
+        updateProviderInternal(provider.type, provider.name)
 
     suspend fun updateAllProviders(providers: List<Provider>): Result<UpdateProvidersResult> {
         if (providers.isEmpty()) return Result.success(UpdateProvidersResult(emptyList()))
@@ -89,14 +86,13 @@ class ProvidersController(
         }
     }
 
-    private suspend fun updateProviderInternal(type: Provider.Type, name: String): Result<Unit> {
-        return try {
+    private suspend fun updateProviderInternal(type: Provider.Type, name: String): Result<Unit> =
+        try {
             Clash.updateProvider(type, name).await()
             Result.success(Unit)
         } catch (error: Exception) {
             Result.failure(error)
         }
-    }
 
     private fun buildTargetFile(provider: Provider): File {
         if (provider.path.isBlank()) {

@@ -24,7 +24,12 @@ import com.tencent.mmkv.MMKV
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-@Serializable data class ProfileLink(val id: String, val name: String, val url: String)
+@Serializable
+data class ProfileLink(
+    val id: String,
+    val name: String,
+    val url: String,
+)
 
 enum class LinkOpenMode {
     IN_APP,
@@ -32,7 +37,6 @@ enum class LinkOpenMode {
 }
 
 class ProfileLinksStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
-
     private val json = Json { ignoreUnknownKeys = true }
 
     val linkOpenMode by enumFlow(LinkOpenMode.IN_APP)

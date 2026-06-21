@@ -34,17 +34,22 @@ import com.github.yumelira.yumebox.service.common.util.CoreRuntimeConfig
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.notification.ServiceNotificationManager
-import com.github.yumelira.yumebox.service.runtime.session.*
+import com.github.yumelira.yumebox.service.runtime.session.RuntimeHost
+import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
+import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
+import com.github.yumelira.yumebox.service.runtime.session.SessionRuntime
+import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.service.runtime.session.VpnTunTransport
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
 import com.github.yumelira.yumebox.service.runtime.util.cancelAndJoinBlocking
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
-import java.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class TunService : VpnService(), CoroutineScope by CoroutineScope(Dispatchers.Default) {
     private var reason: String? = null

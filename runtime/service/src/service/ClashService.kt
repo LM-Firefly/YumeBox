@@ -44,9 +44,9 @@ import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
-import java.util.UUID
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class ClashService : BaseService() {
     private var reason: String? = null
@@ -178,9 +178,7 @@ class ClashService : BaseService() {
         return START_STICKY
     }
 
-    override fun onBind(intent: Intent?): IBinder {
-        return Binder()
-    }
+    override fun onBind(intent: Intent?): IBinder = Binder()
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(runtimeEventsReceiver) }

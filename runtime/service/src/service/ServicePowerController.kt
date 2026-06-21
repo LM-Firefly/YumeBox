@@ -67,17 +67,14 @@ class ServicePowerController(private val context: Context) {
         _deviceIdle.value = isDeviceIdle()
     }
 
-    private fun isScreenOn(): Boolean {
-        return powerManager?.isInteractive != false
-    }
+    private fun isScreenOn(): Boolean = powerManager?.isInteractive != false
 
-    private fun isDeviceIdle(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    private fun isDeviceIdle(): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             powerManager?.isDeviceIdleMode == true
         } else {
             false
         }
-    }
 
     private fun register() {
         val filter =

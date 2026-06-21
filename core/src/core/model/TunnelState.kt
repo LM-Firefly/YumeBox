@@ -40,17 +40,12 @@ data class TunnelState(val mode: Mode) : Parcelable {
         Parcelizer.encodeToParcel(serializer(), parcel, this)
     }
 
-    override fun describeContents(): Int {
-        return 0
-    }
+    override fun describeContents(): Int = 0
 
     companion object CREATOR : Parcelable.Creator<TunnelState> {
-        override fun createFromParcel(parcel: Parcel): TunnelState {
-            return Parcelizer.decodeFromParcel(serializer(), parcel)
-        }
+        override fun createFromParcel(parcel: Parcel): TunnelState =
+            Parcelizer.decodeFromParcel(serializer(), parcel)
 
-        override fun newArray(size: Int): Array<TunnelState?> {
-            return arrayOfNulls(size)
-        }
+        override fun newArray(size: Int): Array<TunnelState?> = arrayOfNulls(size)
     }
 }

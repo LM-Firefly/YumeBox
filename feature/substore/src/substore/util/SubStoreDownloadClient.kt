@@ -34,6 +34,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.jvm.javaio.toInputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
@@ -41,9 +44,6 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Calendar
 import java.util.Locale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import timber.log.Timber
 
 data class DownloadProgress(
     val progress: Int,

@@ -25,8 +25,8 @@ import android.os.ParcelFileDescriptor
 import androidx.annotation.Keep
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
-import java.io.File
 import kotlinx.coroutines.CompletableDeferred
+import java.io.File
 
 @Keep
 object Bridge {
@@ -34,14 +34,21 @@ object Bridge {
 
     external fun nativeCompileToFile(requestJson: String): String
 
-    external fun nativeCompileAndLoadConfig(completable: CompletableDeferred<Unit>, requestJson: String)
+    external fun nativeCompileAndLoadConfig(
+        completable: CompletableDeferred<Unit>,
+        requestJson: String,
+    )
 
     external fun nativeCompileAndLoadConfigSummary(
         completable: CompletableDeferred<Unit>,
         requestJson: String,
     ): String
 
-    external fun nativeCompileAndInspectGroups(requestJson: String, profileDir: String, excludeNotSelectable: Boolean): String?
+    external fun nativeCompileAndInspectGroups(
+        requestJson: String,
+        profileDir: String,
+        excludeNotSelectable: Boolean,
+    ): String?
 
     external fun nativeCompileAndInspectTunRouteExcludeAddress(requestJson: String): String?
 

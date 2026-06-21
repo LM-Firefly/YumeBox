@@ -31,13 +31,12 @@ import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
-import java.io.File
-import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 object ProfileProcessor {
     private val profileLock = Mutex()
@@ -53,7 +52,10 @@ object ProfileProcessor {
         val updateInterval: Long? = null,
     )
 
-    private data class UpdateSnapshot(val imported: Imported, val hasCommittedConfig: Boolean)
+    private data class UpdateSnapshot(
+        val imported: Imported,
+        val hasCommittedConfig: Boolean,
+    )
 
     private fun FetchStatus.toSubscriptionInfo(): SubscriptionInfo? {
         if (action != FetchStatus.Action.SubscriptionInfo) return null
@@ -148,7 +150,9 @@ object ProfileProcessor {
                                         snapshot.imported.source,
                                         subInfo,
                                     )
-                                } else snapshot.imported.name
+                                } else {
+                                    snapshot.imported.name
+                                }
 
                             val updated =
                                 Imported(
@@ -182,10 +186,13 @@ object ProfileProcessor {
                     }
                     // Provide a more user-friendly error message for age decryption failures
                     val errorMessage = error.message ?: ""
-                    if (errorMessage.contains("no identities specified") || errorMessage.contains("decrypt config error")) {
+                    if (
+                        errorMessage.contains("no identities specified") ||
+                            errorMessage.contains("decrypt config error")
+                    ) {
                         throw IllegalArgumentException(
                             "This config is encrypted with age. Please provide the age secret key when importing the config.",
-                            error
+                            error,
                         )
                     } else {
                         throw error

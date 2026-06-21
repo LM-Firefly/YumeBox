@@ -44,7 +44,6 @@ class AppSettingsViewModel(
     private val featureStore: FeatureStore,
     private val controller: AppSettingsController,
 ) : ViewModel() {
-
     val initialSetupCompleted: Preference<Boolean> = settings.initialSetupCompleted
     val privacyPolicyAccepted: Preference<Boolean> = settings.privacyPolicyAccepted
 
@@ -110,8 +109,8 @@ class AppSettingsViewModel(
     /**
      * Persists the selected ACG wallpaper by copying [sourceUri] into the app-private files dir and
      * storing the resulting `file://` path as [acgWallpaperUri], while remembering the original
-     * source in [acgWallpaperSourceUri] for lazy re-import. If the copy fails the original source URI
-     * is persisted directly (degraded but working) and a toast is shown.
+     * source in [acgWallpaperSourceUri] for lazy re-import. If the copy fails the original source
+     * URI is persisted directly (degraded but working) and a toast is shown.
      */
     fun applyAcgWallpaper(sourceUri: String, onApplied: () -> Unit) {
         viewModelScope.launch {

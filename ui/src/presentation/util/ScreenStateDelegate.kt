@@ -21,10 +21,8 @@
 package com.github.yumelira.yumebox.presentation.util
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 /**
  * Utility for consolidating multiple scattered state variables into a single UiState data class.
@@ -71,9 +69,10 @@ import androidx.compose.runtime.setValue
  * - Cleaner code
  */
 @Composable
-fun <T> rememberScreenState(initializer: () -> T): androidx.compose.runtime.MutableState<T> {
-    return remember { mutableStateOf(initializer()) }
-}
+fun <T> rememberScreenState(initializer: () -> T): androidx.compose.runtime.MutableState<T> =
+    remember {
+        mutableStateOf(initializer())
+    }
 
 /**
  * Extension function to update state immutably.

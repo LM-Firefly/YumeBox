@@ -41,7 +41,14 @@ data class RuntimeSpec(
     val profileFingerprint: String = "",
 )
 
-@Serializable data class RuntimeOperationResult(val success: Boolean, val error: String? = null)
+@Serializable
+data class RuntimeOperationResult(
+    val success: Boolean,
+    val error: String? = null,
+)
 
 @Serializable
-data class RuntimeLogChunk(val nextSeq: Long = 0L, val items: List<String> = emptyList())
+data class RuntimeLogChunk(
+    val nextSeq: Long = 0L,
+    val items: List<String> = emptyList(),
+)

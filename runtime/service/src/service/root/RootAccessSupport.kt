@@ -29,9 +29,7 @@ data class RootAccessStatus(val rootAccessGranted: Boolean) {
     val canStartRootTun: Boolean
         get() = rootAccessGranted
 
-    fun rootTunBlockedMessage(): String {
-        return MLang.NetworkSettings.Error.RootRequired
-    }
+    fun rootTunBlockedMessage(): String = MLang.NetworkSettings.Error.RootRequired
 }
 
 object RootAccessSupport {
@@ -43,9 +41,8 @@ object RootAccessSupport {
     suspend fun evaluateAsync(context: Context): RootAccessStatus =
         withContext(Dispatchers.IO) { evaluate(context) }
 
-    suspend fun requireRootTunAccess(context: Context): RootAccessStatus {
-        return evaluateAsync(context).also { status ->
+    suspend fun requireRootTunAccess(context: Context): RootAccessStatus =
+        evaluateAsync(context).also { status ->
             check(status.canStartRootTun) { status.rootTunBlockedMessage() }
         }
-    }
 }

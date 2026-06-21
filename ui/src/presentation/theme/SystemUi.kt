@@ -50,7 +50,9 @@ private val AndroidSystemUiEffect: @Composable () -> Unit = {
                     if (!isDarkMode) {
                         WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
                             WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                    } else 0
+                    } else {
+                        0
+                    }
                 window.insetsController?.setSystemBarsAppearance(
                     appearance,
                     WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or

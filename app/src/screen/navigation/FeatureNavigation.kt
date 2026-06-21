@@ -41,8 +41,11 @@ fun FeatureScreen(navigator: DestinationsNavigator) {
         onOpenInAppUrl = { url -> WebViewActivity.start(context, url) },
         onCreatePanelShortcut = { url, label ->
             scope.launch {
-                com.github.yumelira.yumebox.common.util.DashboardShortcutHelper
-                    .createPanelShortcut(context, url, label)
+                com.github.yumelira.yumebox.common.util.DashboardShortcutHelper.createPanelShortcut(
+                    context,
+                    url,
+                    label,
+                )
             }
         },
     )

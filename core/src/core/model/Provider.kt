@@ -49,21 +49,15 @@ data class Provider(
         Parcelizer.encodeToParcel(serializer(), parcel, this)
     }
 
-    override fun describeContents(): Int {
-        return 0
-    }
+    override fun describeContents(): Int = 0
 
-    override fun compareTo(other: Provider): Int {
-        return compareValuesBy(this, other, Provider::type, Provider::name)
-    }
+    override fun compareTo(other: Provider): Int =
+        compareValuesBy(this, other, Provider::type, Provider::name)
 
     companion object CREATOR : Parcelable.Creator<Provider> {
-        override fun createFromParcel(parcel: Parcel): Provider {
-            return Parcelizer.decodeFromParcel(serializer(), parcel)
-        }
+        override fun createFromParcel(parcel: Parcel): Provider =
+            Parcelizer.decodeFromParcel(serializer(), parcel)
 
-        override fun newArray(size: Int): Array<Provider?> {
-            return arrayOfNulls(size)
-        }
+        override fun newArray(size: Int): Array<Provider?> = arrayOfNulls(size)
     }
 }

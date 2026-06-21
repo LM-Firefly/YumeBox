@@ -109,10 +109,7 @@ class DialogState<T>(
  *
  * @return A remembered DialogState instance
  */
-@Composable
-fun rememberDialogVisibilityState(): DialogState<Unit> {
-    return remember { DialogState() }
-}
+@Composable fun rememberDialogVisibilityState(): DialogState<Unit> = remember { DialogState() }
 
 /**
  * Creates and remembers a [DialogState] with associated payload type.
@@ -120,10 +117,7 @@ fun rememberDialogVisibilityState(): DialogState<Unit> {
  * @param T The type of payload associated with the dialog
  * @return A remembered DialogState instance
  */
-@Composable
-fun <T> rememberDialogState(): DialogState<T> {
-    return remember { DialogState() }
-}
+@Composable fun <T> rememberDialogState(): DialogState<T> = remember { DialogState() }
 
 /**
  * Specialized dialog state for common confirm/delete scenarios.
@@ -178,6 +172,4 @@ class ConfirmDialogState<T>(
 
 /** Creates and remembers a [ConfirmDialogState] for confirm dialogs. */
 @Composable
-fun <T> rememberConfirmDialogState(): ConfirmDialogState<T> {
-    return remember { ConfirmDialogState() }
-}
+fun <T> rememberConfirmDialogState(): ConfirmDialogState<T> = remember { ConfirmDialogState() }

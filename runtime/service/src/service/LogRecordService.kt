@@ -20,7 +20,11 @@
 
 package com.github.yumelira.yumebox.service
 
-import android.app.*
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -30,16 +34,22 @@ import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.remote.ILogObserver
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.text.SimpleDateFormat
-import java.util.*
-import kotlinx.coroutines.*
-import timber.log.Timber
+import java.util.Date
+import java.util.Locale
 
 class LogRecordService : Service() {
-
     companion object {
         private const val TAG = "LogRecordService"
         private const val NOTIFICATION_ID = 2001
@@ -77,9 +87,7 @@ class LogRecordService : Service() {
             context.startService(intent)
         }
 
-        fun getLogDir(context: Context): File {
-            return File(context.filesDir, LOG_DIR).apply { mkdirs() }
-        }
+        fun getLogDir(context: Context): File = File(context.filesDir, LOG_DIR).apply { mkdirs() }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -136,7 +144,9 @@ class LogRecordService : Service() {
                                     if (isRecording) {
                                         runCatching {
                                                 val line =
-                                                    "[${dateFormat.format(log.time)}] [${log.level.name}] ${log.message}\n"
+                                                    "[${dateFormat.format(
+                                                    log.time
+                                                )}] [${log.level.name}] ${log.message}\n"
                                                 logWriter?.write(line)
                                                 logWriter?.flush()
                                             }

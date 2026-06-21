@@ -41,9 +41,28 @@ import com.github.yumelira.yumebox.service.root.RootAccessSupport
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 enum class HomeProxyControlState {
@@ -340,13 +359,13 @@ class HomeViewModel(
         }
     }
 
-    fun isCurrentProfile(profileId: java.util.UUID): Boolean {
-        return currentProfile.value?.uuid == profileId
-    }
+    fun isCurrentProfile(profileId: java.util.UUID): Boolean =
+        currentProfile.value?.uuid == profileId
 
     fun startProxy(profileId: String, mode: ProxyMode? = null) {
-        if (!controlState.value.canInteract || controlState.value != HomeProxyControlState.Idle)
+        if (!controlState.value.canInteract || controlState.value != HomeProxyControlState.Idle) {
             return
+        }
 
         val request =
             PendingStartRequest(
@@ -375,8 +394,11 @@ class HomeViewModel(
     }
 
     suspend fun stopProxy() {
-        if (!controlState.value.canInteract || controlState.value != HomeProxyControlState.Running)
+        if (
+            !controlState.value.canInteract || controlState.value != HomeProxyControlState.Running
+        ) {
             return
+        }
 
         _pendingTransition.value = PendingTransition.Stopping
 
@@ -505,7 +527,10 @@ class HomeViewModel(
         }
     }
 
-    private data class PendingStartRequest(val profileId: String, val mode: ProxyMode)
+    private data class PendingStartRequest(
+        val profileId: String,
+        val mode: ProxyMode,
+    )
 
     data class HomeUiState(
         override val isLoading: Boolean = false,

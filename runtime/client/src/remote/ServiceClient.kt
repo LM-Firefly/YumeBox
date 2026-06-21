@@ -81,13 +81,11 @@ object ServiceClient {
         initialized = false
     }
 
-    suspend fun clash(): IClashManager {
-        return clashManager ?: throw IllegalStateException("ServiceClient not connected")
-    }
+    suspend fun clash(): IClashManager =
+        clashManager ?: throw IllegalStateException("ServiceClient not connected")
 
-    suspend fun profile(): IProfileManager {
-        return profileManager ?: throw IllegalStateException("ServiceClient not connected")
-    }
+    suspend fun profile(): IProfileManager =
+        profileManager ?: throw IllegalStateException("ServiceClient not connected")
 
     fun isConnected(): Boolean = initialized && clashManager != null && profileManager != null
 }

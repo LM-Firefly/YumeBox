@@ -27,7 +27,6 @@ import com.github.yumelira.yumebox.service.common.constants.Components
 import timber.log.Timber
 
 class DialerReceiver : BroadcastReceiver() {
-
     companion object {
         private const val SECRET_CODE = "*#*#0721#*#*"
         private const val ACTION_NEW_OUTGOING_CALL = "android.intent.action.NEW_OUTGOING_CALL"

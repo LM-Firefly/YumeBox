@@ -37,7 +37,6 @@ import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.screen.settings.AcgWallpaperImporter
 import com.github.yumelira.yumebox.substore.util.AppUtil
 import com.tencent.mmkv.MMKV
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,6 +46,7 @@ import org.koin.core.Koin
 import org.koin.core.context.startKoin
 import org.tukaani.xz.XZInputStream
 import timber.log.Timber
+import java.io.File
 
 class App : Application() {
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -103,10 +103,11 @@ class App : Application() {
     }
 
     /**
-     * Best-effort self-heal for the ACG wallpaper: if the persisted [AppSettingsStore.acgWallpaperUri]
-     * points at a local file:// copy that no longer exists, but the original source is still recorded
-     * and readable, re-import it so the home screen keeps rendering the user's choice after a cache or
-     * data wipe. Silent no-op otherwise; the render path falls back to the bundled asset.
+     * Best-effort self-heal for the ACG wallpaper: if the persisted
+     * [AppSettingsStore.acgWallpaperUri] points at a local file:// copy that no longer exists, but
+     * the original source is still recorded and readable, re-import it so the home screen keeps
+     * rendering the user's choice after a cache or data wipe. Silent no-op otherwise; the render
+     * path falls back to the bundled asset.
      */
     private suspend fun ensureAcgWallpaperLocalCopy(appSettings: AppSettingsStore) {
         val stored = appSettings.acgWallpaperUri.value
@@ -138,7 +139,7 @@ class App : Application() {
         featureStore: FeatureStore,
         appSettings: AppSettingsStore,
     ) {
-        StartupTaskCoordinator.startRuntimeWarmup(startupScope) {
+        StartupTaskCoordinator.startWarmup(startupScope) {
             runCatching { koin.get<CustomRoutingBootstrapper>().ensureDefaultContent() }
                 .onFailure { Timber.e(it, "Failed to bootstrap custom routing default content") }
             runCatching { ensureAcgWallpaperLocalCopy(appSettings) }

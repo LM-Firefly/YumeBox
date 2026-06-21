@@ -28,17 +28,15 @@ import kotlinx.coroutines.async
 import timber.log.Timber
 
 object StartupTaskCoordinator {
-    private val runtimeWarmupFallback = CompletableDeferred(Unit)
+    private val fallback = CompletableDeferred(Unit)
 
-    @Volatile private var runtimeWarmup: Deferred<Unit>? = null
+    @Volatile private var warmup: Deferred<Unit>? = null
 
-    @Volatile private var backgroundWarmup: Deferred<Unit>? = null
-
-    fun startRuntimeWarmup(scope: CoroutineScope, block: suspend () -> Unit) {
-        if (runtimeWarmup != null) return
+    fun startWarmup(scope: CoroutineScope, block: suspend () -> Unit) {
+        if (warmup != null) return
         synchronized(this) {
-            if (runtimeWarmup != null) return
-            runtimeWarmup = scope.async {
+            if (warmup != null) return
+            warmup = scope.async {
                 try {
                     block()
                 } catch (error: Throwable) {
@@ -50,22 +48,7 @@ object StartupTaskCoordinator {
         }
     }
 
-    fun startBackgroundWarmup(scope: CoroutineScope, block: suspend () -> Unit) {
-        if (backgroundWarmup != null) return
-        synchronized(this) {
-            if (backgroundWarmup != null) return
-            backgroundWarmup = scope.async {
-                try {
-                    block()
-                } catch (error: Throwable) {
-                    if (error is CancellationException) throw error
-                    Timber.e(error, "Background warmup failed")
-                }
-            }
-        }
-    }
-
-    suspend fun awaitRuntimeWarmup() {
-        (runtimeWarmup ?: runtimeWarmupFallback).await()
+    suspend fun awaitWarmup() {
+        (warmup ?: fallback).await()
     }
 }

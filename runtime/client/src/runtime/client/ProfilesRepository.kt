@@ -30,10 +30,10 @@ import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
 import com.github.yumelira.yumebox.service.root.RootTunStateStore
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.UUID
 
 /**
  * Repository for managing Profile CRUD operations.
@@ -45,7 +45,12 @@ class ProfilesRepository(private val context: Context) {
     private val appContext = context.appContextOrSelf
     private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
 
-    suspend fun createProfile(type: Profile.Type, name: String, source: String = "", ageSecretKey: String? = null): UUID =
+    suspend fun createProfile(
+        type: Profile.Type,
+        name: String,
+        source: String = "",
+        ageSecretKey: String? = null,
+    ): UUID =
         safeApiCall(TAG, "createProfile") {
                 Timber.d("Creating profile: type=$type, name=$name")
                 ServiceClient.connect(context)

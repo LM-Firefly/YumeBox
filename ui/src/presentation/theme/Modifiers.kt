@@ -62,14 +62,10 @@ fun Modifier.sectionHPadding(start: Boolean = true, end: Boolean = true): Modifi
 }
 
 @Composable
-fun Modifier.topPadding(amount: Dp = AppTheme.spacing.space8): Modifier {
-    return this.padding(top = amount)
-}
+fun Modifier.topPadding(amount: Dp = AppTheme.spacing.space8): Modifier = this.padding(top = amount)
 
 @Composable
 fun Modifier.horizontalPadding(
     left: Dp = AppTheme.spacing.screenHorizontal,
     right: Dp = AppTheme.spacing.screenHorizontal,
-): Modifier {
-    return this.padding(start = left, end = right)
-}
+): Modifier = this.padding(start = left, end = right)

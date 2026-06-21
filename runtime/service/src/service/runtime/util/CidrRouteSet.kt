@@ -26,7 +26,10 @@ import java.math.BigInteger
 import java.net.InetAddress
 import kotlin.math.max
 
-data class IncludedRouteSet(val ipv4: List<IPNet>, val ipv6: List<IPNet>)
+data class IncludedRouteSet(
+    val ipv4: List<IPNet>,
+    val ipv6: List<IPNet>,
+)
 
 fun buildIncludedRoutesFromExcludedCidrs(
     cidrs: List<String>,
@@ -39,12 +42,18 @@ fun buildIncludedRoutesFromExcludedCidrs(
     )
 }
 
-private data class ParsedCidr(val address: InetAddress, val prefix: Int) {
+private data class ParsedCidr(
+    val address: InetAddress,
+    val prefix: Int,
+) {
     val bitSize: Int
         get() = address.address.size * 8
 }
 
-private data class AddressRange(val start: BigInteger, val endInclusive: BigInteger)
+private data class AddressRange(
+    val start: BigInteger,
+    val endInclusive: BigInteger,
+)
 
 private fun parseIpCidrOrNull(raw: String): ParsedCidr? {
     val parts = raw.split("/", limit = 2)
@@ -153,9 +162,8 @@ private fun bigIntegerToAddressString(value: BigInteger, bitSize: Int): String {
     return InetAddress.getByAddress(normalized).hostAddress
 }
 
-private fun rootRouteAddress(bitSize: Int): String {
-    return "0.0.0.0".takeIf { bitSize == IPV4_BITS } ?: "::"
-}
+private fun rootRouteAddress(bitSize: Int): String =
+    "0.0.0.0".takeIf { bitSize == IPV4_BITS } ?: "::"
 
 private const val IPV4_BITS = 32
 private const val IPV6_BITS = 128

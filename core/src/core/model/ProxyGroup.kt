@@ -38,22 +38,16 @@ data class ProxyGroup(
     class SliceProxyList(proxies: List<Proxy>) : List<Proxy> by proxies, Parcelable {
         constructor(parcel: Parcel) : this(Proxy.createListFromParcelSlice(parcel, 0, 50))
 
-        override fun describeContents(): Int {
-            return 0
-        }
+        override fun describeContents(): Int = 0
 
         override fun writeToParcel(dest: Parcel, flags: Int) {
             writeToParcelSlice(dest, flags)
         }
 
         companion object CREATOR : Parcelable.Creator<SliceProxyList> {
-            override fun createFromParcel(parcel: Parcel): SliceProxyList {
-                return SliceProxyList(parcel)
-            }
+            override fun createFromParcel(parcel: Parcel): SliceProxyList = SliceProxyList(parcel)
 
-            override fun newArray(size: Int): Array<SliceProxyList?> {
-                return arrayOfNulls(size)
-            }
+            override fun newArray(size: Int): Array<SliceProxyList?> = arrayOfNulls(size)
         }
     }
 
@@ -77,18 +71,12 @@ data class ProxyGroup(
         parcel.writeByte(if (hidden) 1.toByte() else 0.toByte())
     }
 
-    override fun describeContents(): Int {
-        return 0
-    }
+    override fun describeContents(): Int = 0
 
     companion object CREATOR : Parcelable.Creator<ProxyGroup> {
-        override fun createFromParcel(parcel: Parcel): ProxyGroup {
-            return ProxyGroup(parcel)
-        }
+        override fun createFromParcel(parcel: Parcel): ProxyGroup = ProxyGroup(parcel)
 
-        override fun newArray(size: Int): Array<ProxyGroup?> {
-            return arrayOfNulls(size)
-        }
+        override fun newArray(size: Int): Array<ProxyGroup?> = arrayOfNulls(size)
     }
 }
 

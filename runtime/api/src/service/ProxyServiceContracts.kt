@@ -66,11 +66,10 @@ object ProxyServiceContracts {
 
     const val EXTRA_HEALTH_CHECK_GROUP = Intents.EXTRA_HEALTH_CHECK_GROUP
 
-    fun intentSelf(action: String, packageName: String? = null): android.content.Intent {
-        return android.content.Intent(action).apply {
+    fun intentSelf(action: String, packageName: String? = null): android.content.Intent =
+        android.content.Intent(action).apply {
             if (!packageName.isNullOrBlank()) {
                 setPackage(packageName)
             }
         }
-    }
 }

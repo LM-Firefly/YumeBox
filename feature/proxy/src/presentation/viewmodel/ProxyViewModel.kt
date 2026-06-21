@@ -34,7 +34,14 @@ import com.github.yumelira.yumebox.runtime.client.ProxyFacade
 import com.github.yumelira.yumebox.runtime.client.ProxyGroupSyncPriority
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProxyViewModel(
@@ -177,7 +184,9 @@ class ProxyViewModel(
                         showError(MLang.Proxy.Selection.Failed)
                     }
                 }
-                .onFailure { error -> showError(MLang.Proxy.Selection.Error.format(error.message)) }
+                .onFailure { error ->
+                    showError(MLang.Proxy.Selection.Error.format(error.message))
+                }
         }
     }
 

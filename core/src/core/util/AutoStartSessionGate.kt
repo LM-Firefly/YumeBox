@@ -29,31 +29,27 @@ import java.util.concurrent.atomic.AtomicBoolean
  * also run at most once per process lifetime. After process restart, state resets naturally.
  */
 object AutoStartSessionGate {
-    private val manualPaused = AtomicBoolean(false)
-    private val foregroundAutoActionsInFlight = AtomicBoolean(false)
-    private val foregroundAutoActionsHandled = AtomicBoolean(false)
+    private val paused = AtomicBoolean(false)
+    private val autoInFlight = AtomicBoolean(false)
+    private val autoHandled = AtomicBoolean(false)
 
     fun markManualPaused() {
-        manualPaused.set(true)
+        paused.set(true)
     }
 
     fun clearManualPaused() {
-        manualPaused.set(false)
+        paused.set(false)
     }
 
-    fun shouldSkipAutoStart(): Boolean = manualPaused.get()
+    fun shouldSkipAutoStart(): Boolean = paused.get()
 
-    fun tryBeginForegroundAutoActions(): Boolean {
-        if (foregroundAutoActionsHandled.get()) {
-            return false
-        }
-        return foregroundAutoActionsInFlight.compareAndSet(false, true)
+    fun tryBeginAutoActions(): Boolean {
+        if (autoHandled.get()) return false
+        return autoInFlight.compareAndSet(false, true)
     }
 
-    fun finishForegroundAutoActions(markHandled: Boolean) {
-        foregroundAutoActionsInFlight.set(false)
-        if (markHandled) {
-            foregroundAutoActionsHandled.set(true)
-        }
+    fun finishAutoActions(markHandled: Boolean) {
+        autoInFlight.set(false)
+        if (markHandled) autoHandled.set(true)
     }
 }

@@ -38,8 +38,8 @@ val Context.acgAssetsDir: File
     get() = filesDir.resolve(ACG_ASSETS_DIR_NAME)
 
 /**
- * Stable app-private slot for the locally copied ACG wallpaper. The directory is created on access so
- * callers can stream-copy into the returned file directly.
+ * Stable app-private slot for the locally copied ACG wallpaper. The directory is created on access
+ * so callers can stream-copy into the returned file directly.
  */
 fun Context.acgWallpaperFile(): File =
     acgAssetsDir.apply { mkdirs() }.resolve(ACG_WALLPAPER_FILE_NAME)
@@ -47,10 +47,7 @@ fun Context.acgWallpaperFile(): File =
 val Context.legacyRuntimeHomeDir: File
     get() = filesDir.resolve(LEGACY_RUNTIME_HOME_DIR_NAME)
 
-fun profileProvidersRoot(profileDir: File): File {
-    return profileDir.resolve(PROFILE_PROVIDERS_DIR_NAME)
-}
+fun profileProvidersRoot(profileDir: File): File = profileDir.resolve(PROFILE_PROVIDERS_DIR_NAME)
 
-fun profileProviderScopeDir(profileDir: File, scope: String): File {
-    return profileProvidersRoot(profileDir).resolve(scope)
-}
+fun profileProviderScopeDir(profileDir: File, scope: String): File =
+    profileProvidersRoot(profileDir).resolve(scope)

@@ -41,8 +41,8 @@ object RootTunRuntimeRecovery {
         return remote.isBinderAlive && remote.pingBinder()
     }
 
-    fun isBinderConnectionFailure(error: Throwable): Boolean {
-        return generateSequence(error) { it.cause }
+    fun isBinderConnectionFailure(error: Throwable): Boolean =
+        generateSequence(error) { it.cause }
             .any { cause ->
                 cause is DeadObjectException ||
                     cause is RemoteException ||
@@ -51,13 +51,11 @@ object RootTunRuntimeRecovery {
                             cause.message?.contains(marker, ignoreCase = true) == true
                         })
             }
-    }
 
-    fun binderFailureReason(error: Throwable): String {
-        return generateSequence(error) { it.cause }
+    fun binderFailureReason(error: Throwable): String =
+        generateSequence(error) { it.cause }
             .mapNotNull { cause -> cause.message?.trim()?.takeIf(String::isNotEmpty) }
             .firstOrNull() ?: "RootTun IPC disconnected"
-    }
 
     fun handleBinderGone(context: Context, reason: String?) {
         val appContext = context.appContextOrSelf

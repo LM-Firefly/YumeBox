@@ -74,19 +74,17 @@ class AppTrafficStatisticsCollector(
         }
     }
 
-    private fun startTrafficMonitoring(parentScope: CoroutineScope): Job {
-        return parentScope.launch {
-            lastTotalUpload = trafficStatisticsStore.getLastTrafficUpload()
-            lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
-            lastProfileId = trafficStatisticsStore.getLastProfileId()
-            connectionBaselines.clear()
-            PollingTimers.ticks(PollingTimerSpecs.TrafficStatsCollection).collect {
-                runCatching { collectTrafficData() }
-                    .onFailure { error ->
-                        if (error is CancellationException) throw error
-                        Timber.tag(TAG).e(error, "App traffic collection failed")
-                    }
-            }
+    private fun startTrafficMonitoring(parentScope: CoroutineScope): Job = parentScope.launch {
+        lastTotalUpload = trafficStatisticsStore.getLastTrafficUpload()
+        lastTotalDownload = trafficStatisticsStore.getLastTrafficDownload()
+        lastProfileId = trafficStatisticsStore.getLastProfileId()
+        connectionBaselines.clear()
+        PollingTimers.ticks(PollingTimerSpecs.TrafficStatsCollection).collect {
+            runCatching { collectTrafficData() }
+                .onFailure { error ->
+                    if (error is CancellationException) throw error
+                    Timber.tag(TAG).e(error, "App traffic collection failed")
+                }
         }
     }
 
@@ -236,8 +234,8 @@ class AppTrafficStatisticsCollector(
                     appName = identity.appName.ifBlank { current?.appName.orEmpty() },
                     uploadDelta = (current?.uploadDelta ?: 0L) + uploadDelta,
                     downloadDelta = (current?.downloadDelta ?: 0L) + downloadDelta,
-                    routeKey = routeKey ?: current?.routeKey,
-                    routeLabel = routeLabel ?: current?.routeLabel,
+                    routeKey = routeKey,
+                    routeLabel = routeLabel,
                 )
         }
 
@@ -324,24 +322,21 @@ class AppTrafficStatisticsCollector(
         lastProfileId = null
     }
 
-    private fun buildTrafficBucketKey(appKey: String, routeKey: String?): String {
-        return if (routeKey.isNullOrBlank()) appKey else "$appKey::$routeKey"
-    }
+    private fun buildTrafficBucketKey(appKey: String, routeKey: String?): String =
+        if (routeKey.isNullOrBlank()) appKey else "$appKey::$routeKey"
 
-    private fun resolveRouteKey(connection: ConnectionInfo): String {
-        return connection.chains.lastOrNull()?.takeIf(String::isNotBlank)
+    private fun resolveRouteKey(connection: ConnectionInfo): String =
+        connection.chains.lastOrNull()?.takeIf(String::isNotBlank)
             ?: connection.providerChains.lastOrNull()?.takeIf(String::isNotBlank)
             ?: connection.rulePayload.takeIf(String::isNotBlank)
             ?: connection.rule.takeIf(String::isNotBlank)
             ?: TrafficStatisticsBuckets.UNATTRIBUTED_ROUTE_KEY
-    }
 
-    private fun resolveRouteLabel(connection: ConnectionInfo, routeKey: String?): String {
-        return connection.chains.lastOrNull()?.takeIf(String::isNotBlank)
+    private fun resolveRouteLabel(connection: ConnectionInfo, routeKey: String?): String =
+        connection.chains.lastOrNull()?.takeIf(String::isNotBlank)
             ?: connection.providerChains.lastOrNull()?.takeIf(String::isNotBlank)
             ?: routeKey
             ?: TrafficStatisticsBuckets.UNATTRIBUTED_ROUTE_NAME
-    }
 
     fun stop() {
         trafficStatisticsStore.flushNow()

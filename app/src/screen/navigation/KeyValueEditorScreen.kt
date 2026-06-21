@@ -57,7 +57,6 @@ import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
-import java.util.UUID
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Switch
@@ -67,6 +66,7 @@ import top.yukonga.miuix.kmp.icon.extended.AddCircle
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Reset
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
+import java.util.UUID
 
 object EditorDataHolder {
     var listEditorTitle: String = ""
@@ -122,9 +122,16 @@ object EditorDataHolder {
     }
 }
 
-private data class TextDraftItem(val id: String, val value: String)
+private data class TextDraftItem(
+    val id: String,
+    val value: String,
+)
 
-private data class KeyValueDraftItem(val id: String, val key: String, val value: String)
+private data class KeyValueDraftItem(
+    val id: String,
+    val key: String,
+    val value: String,
+)
 
 private sealed interface StringListDialogState {
     data object None : StringListDialogState
@@ -224,7 +231,9 @@ fun StringListEditorScreen(navigator: DestinationsNavigator) {
                 innerPadding = combinedInnerPadding,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item { Title(MLang.Component.Editor.CountItems.format(items.size)) }
+                item {
+                    Title(MLang.Component.Editor.CountItems.format(items.size))
+                }
                 items(items = items, key = { it.id }) { item ->
                     val index =
                         remember(items, item.id) { items.indexOfFirst { it.id == item.id } + 1 }
@@ -372,7 +381,9 @@ fun KeyValueEditorScreen(navigator: DestinationsNavigator) {
                 innerPadding = combinedInnerPadding,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                item { Title(MLang.Component.Editor.CountItems.format(items.size)) }
+                item {
+                    Title(MLang.Component.Editor.CountItems.format(items.size))
+                }
                 items(items = items, key = { it.id }) { item ->
                     val index =
                         remember(items, item.id) { items.indexOfFirst { it.id == item.id } + 1 }

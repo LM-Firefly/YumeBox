@@ -43,7 +43,10 @@ private val NODE_KEYWORDS =
 private val MULTIPLIER_REGEX =
     Regex("""(?<![.\d])[xX×✕](\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)[xX×✕](?![.\d])""")
 
-data class NodeTags(val keywords: List<String>, val multiplier: Float?)
+data class NodeTags(
+    val keywords: List<String>,
+    val multiplier: Float?,
+)
 
 fun extractNodeTags(name: String): NodeTags {
     val upperName = name.uppercase()

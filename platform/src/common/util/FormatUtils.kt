@@ -21,7 +21,6 @@
 package com.github.yumelira.yumebox.common.util
 
 object ByteFormatter {
-
     private const val KB = 1024L
     private const val MB = KB * 1024
     private const val GB = MB * 1024
@@ -64,23 +63,18 @@ object ByteFormatter {
         val suffix = if (isSpeed) "/s" else ""
         return when {
             value < KB -> Pair("$value", "B$suffix")
-            value < MB -> {
-                val num = value / KB_D
-                Pair(if (num < 10) "%.1f".format(num) else "%.0f".format(num), "KB$suffix")
-            }
-
-            value < GB -> {
-                val num = value / MB_D
-                Pair(if (num < 10) "%.1f".format(num) else "%.0f".format(num), "MB$suffix")
-            }
-
+            value < MB -> Pair(adaptive(value / KB_D), "KB$suffix")
+            value < GB -> Pair(adaptive(value / MB_D), "MB$suffix")
             else -> Pair("%.2f".format(value / GB_D), "GB$suffix")
         }
     }
 
-    private fun formatValue(value: Double, unit: String, decimals: Int): String {
-        return "%.${decimals}f $unit".format(value)
-    }
+    /** One decimal below 10, none above — keeps the displayed number short. */
+    private fun adaptive(num: Double): String =
+        if (num < 10) "%.1f".format(num) else "%.0f".format(num)
+
+    private fun formatValue(value: Double, unit: String, decimals: Int): String =
+        "%.${decimals}f $unit".format(value)
 }
 
 fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)

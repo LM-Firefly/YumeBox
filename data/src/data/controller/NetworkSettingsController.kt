@@ -51,10 +51,6 @@ class NetworkSettingsController(
         scheduleRestart()
     }
 
-    fun <T> commitDraftAndRestart(preference: Preference<T>, value: T) {
-        setAndRestartIfNeeded(preference, value)
-    }
-
     suspend fun startService(mode: ProxyMode): Result<Unit> = runCatching {
         store.proxyMode.set(mode)
         beforeRestart(mode)

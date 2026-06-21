@@ -28,7 +28,12 @@ enum class GeoFileType {
     Model,
 }
 
-data class GeoXItem(val type: GeoFileType, val title: String, val url: String, val fileName: String)
+data class GeoXItem(
+    val type: GeoFileType,
+    val title: String,
+    val url: String,
+    val fileName: String,
+)
 
 val geoXItems =
     listOf(

@@ -24,7 +24,6 @@ import com.github.yumelira.yumebox.data.model.OverrideConfig
 import kotlinx.coroutines.flow.Flow
 
 interface OverrideConfigProvider {
-
     suspend fun getAll(): List<OverrideConfig>
 
     fun getAllFlow(): Flow<List<OverrideConfig>>

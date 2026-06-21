@@ -20,10 +20,16 @@
 
 package com.github.yumelira.yumebox.presentation.theme
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 
 object AnimationSpecs {
-
     val EmphasizedDecelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1.0f)
     val EmphasizedAccelerate = CubicBezierEasing(0.3f, 0.0f, 0.8f, 0.15f)
     val Legacy = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
@@ -39,7 +45,6 @@ object AnimationSpecs {
     val IconTransition: AnimationSpec<Float> = tween(320, easing = Legacy)
 
     object Proxy {
-
         const val VisibilityDuration = 180
         const val VisibilityFadeDuration = 140
         const val VisibilityInitialScale = 0.8f

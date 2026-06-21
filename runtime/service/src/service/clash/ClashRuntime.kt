@@ -22,9 +22,14 @@ package com.github.yumelira.yumebox.service.clash
 
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.service.clash.module.Module
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 private val globalLock = Mutex()
 

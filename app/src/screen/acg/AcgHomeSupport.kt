@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.times
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.presentation.theme.Opacity
 import com.github.yumelira.yumebox.presentation.theme.Radii
@@ -49,10 +48,10 @@ import com.github.yumelira.yumebox.presentation.theme.Sizes
 import com.github.yumelira.yumebox.presentation.theme.Spacing
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlin.math.abs
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.abs
 
 private val acgSpacing = Spacing()
 private val acgRadii = Radii()
@@ -270,9 +269,15 @@ internal fun calculateHomeVisibility(currentPage: Int, currentPageOffsetFraction
     return 1f - offset.coerceIn(0f, 1f)
 }
 
-internal data class AcgSidebarIconItem(val icon: ImageVector, val onClick: () -> Unit)
+internal data class AcgSidebarIconItem(
+    val icon: ImageVector,
+    val onClick: () -> Unit,
+)
 
-internal data class AcgQuote(val text: String, val author: String)
+internal data class AcgQuote(
+    val text: String,
+    val author: String,
+)
 
 internal fun ProxyMode.toAcgDisplayName(): String =
     when (this) {
@@ -281,7 +286,10 @@ internal fun ProxyMode.toAcgDisplayName(): String =
         ProxyMode.Http -> MLang.Home.ProxyMode.Http
     }
 
-internal data class AcgDurationPair(val top: String = "00", val bottom: String = "00")
+internal data class AcgDurationPair(
+    val top: String = "00",
+    val bottom: String = "00",
+)
 
 internal fun formatAcgDuration(elapsedMillis: Long): AcgDurationPair {
     val totalSeconds = (elapsedMillis / 1000L).coerceAtLeast(0L)

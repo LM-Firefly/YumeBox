@@ -34,9 +34,7 @@ const val PROFILE_IMPORT_TYPE_QR = 2
 private val SUBSCRIPTION_URL_PATTERN =
     Regex(pattern = "^https?://\\S+$", options = setOf(RegexOption.IGNORE_CASE))
 
-fun isSubscriptionUrl(value: String): Boolean {
-    return SUBSCRIPTION_URL_PATTERN.matches(value.trim())
-}
+fun isSubscriptionUrl(value: String): Boolean = SUBSCRIPTION_URL_PATTERN.matches(value.trim())
 
 fun readClipboardSubscriptionUrl(context: Context): String? {
     return runCatching {
@@ -49,20 +47,20 @@ fun readClipboardSubscriptionUrl(context: Context): String? {
         ?.takeIf { it.isNotBlank() && isSubscriptionUrl(it) }
 }
 
-fun isYamlConfigFileName(fileName: String): Boolean {
-    return when (fileName.substringAfterLast(".", "").lowercase()) {
+fun isYamlConfigFileName(fileName: String): Boolean =
+    when (fileName.substringAfterLast(".", "").lowercase()) {
         "yaml",
         "yml" -> true
         else -> false
     }
-}
 
-fun profileNameFromConfigFileName(fileName: String, fallback: String): String {
-    return fileName.substringBeforeLast(".").ifBlank { fallback }
-}
+fun profileNameFromConfigFileName(fileName: String, fallback: String): String =
+    fileName.substringBeforeLast(".").ifBlank {
+        fallback
+    }
 
-fun readDisplayName(context: Context, uri: Uri, fallback: String): String {
-    return context.contentResolver
+fun readDisplayName(context: Context, uri: Uri, fallback: String): String =
+    context.contentResolver
         .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
         ?.use { cursor ->
             val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
@@ -72,16 +70,13 @@ fun readDisplayName(context: Context, uri: Uri, fallback: String): String {
                 cursor.getString(nameIndex)
             }
         } ?: fallback
-}
 
-fun importTypeIndexFor(profileType: Profile.Type): Int {
-    return when (profileType) {
+fun importTypeIndexFor(profileType: Profile.Type): Int =
+    when (profileType) {
         Profile.Type.Url -> PROFILE_IMPORT_TYPE_URL
         Profile.Type.File,
         Profile.Type.External -> PROFILE_IMPORT_TYPE_FILE
     }
-}
 
-fun sourceFileName(source: String): String {
-    return source.takeIf(String::isNotEmpty)?.let { File(it).name }.orEmpty()
-}
+fun sourceFileName(source: String): String =
+    source.takeIf(String::isNotEmpty)?.let { File(it).name }.orEmpty()

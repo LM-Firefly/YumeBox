@@ -26,8 +26,14 @@ import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import java.io.File
 import java.nio.charset.StandardCharsets
 
-class RuntimeStartupLogStore(context: Context, private val scope: Scope) {
-    enum class Scope(val fileName: String, val tag: String) {
+class RuntimeStartupLogStore(
+    context: Context,
+    private val scope: Scope,
+) {
+    enum class Scope(
+        val fileName: String,
+        val tag: String,
+    ) {
         LOCAL_TUN("local_tun_startup.log", "LOCAL_TUN"),
         LOCAL_HTTP("local_http_startup.log", "LOCAL_HTTP"),
         ROOT_TUN("root_tun_startup.log", "ROOT_TUN"),
@@ -52,8 +58,8 @@ class RuntimeStartupLogStore(context: Context, private val scope: Scope) {
         }
     }
 
-    fun snapshot(): String {
-        return synchronized(lock) {
+    fun snapshot(): String =
+        synchronized(lock) {
             runCatching {
                     if (file.exists()) {
                         file.readText(StandardCharsets.UTF_8)
@@ -63,17 +69,15 @@ class RuntimeStartupLogStore(context: Context, private val scope: Scope) {
                 }
                 .getOrDefault("")
         }
-    }
 
     companion object {
         private val lock = Any()
 
-        fun scopeForMode(mode: ProxyMode): Scope {
-            return when (mode) {
+        fun scopeForMode(mode: ProxyMode): Scope =
+            when (mode) {
                 ProxyMode.Tun -> Scope.LOCAL_TUN
                 ProxyMode.Http -> Scope.LOCAL_HTTP
                 ProxyMode.RootTun -> Scope.ROOT_TUN
             }
-        }
     }
 }

@@ -60,15 +60,14 @@ data class OverrideMetadata(
         name: String = this.name,
         description: String? = this.description,
         contentType: OverrideContentType = this.contentType,
-    ): OverrideMetadata {
-        return copy(
+    ): OverrideMetadata =
+        copy(
             name = name,
             description = description,
             contentType = contentType,
             updatedAt = System.currentTimeMillis(),
             sortOrder = sortOrder,
         )
-    }
 
     fun duplicateAsUser(): OverrideMetadata {
         val now = System.currentTimeMillis()
@@ -91,42 +90,35 @@ data class MetadataIndex(
 ) {
     fun getById(id: String): OverrideMetadata? = configs[id]
 
-    fun upsert(metadata: OverrideMetadata): MetadataIndex {
-        return copy(configs = configs + (metadata.id to metadata))
-    }
+    fun upsert(metadata: OverrideMetadata): MetadataIndex =
+        copy(configs = configs + (metadata.id to metadata))
 
-    fun remove(id: String): MetadataIndex {
-        return copy(configs = configs - id)
-    }
+    fun remove(id: String): MetadataIndex = copy(configs = configs - id)
 
-    fun removeOverrideFromProfileChains(overrideId: String): MetadataIndex {
-        return copy(
+    fun removeOverrideFromProfileChains(overrideId: String): MetadataIndex =
+        copy(
             profileChains =
                 profileChains.mapValues { (_, binding) -> binding.removeOverride(overrideId) }
         )
-    }
 
-    fun sanitizeProfileChains(predicate: (String) -> Boolean): MetadataIndex {
-        return copy(
+    fun sanitizeProfileChains(predicate: (String) -> Boolean): MetadataIndex =
+        copy(
             profileChains =
                 profileChains.mapValues { (_, binding) ->
                     binding.copy(overrideIds = binding.overrideIds.filter(predicate))
                 }
         )
-    }
 
-    fun sortedUserMetadata(): List<OverrideMetadata> {
-        return configs.values.sortedWith(
+    fun sortedUserMetadata(): List<OverrideMetadata> =
+        configs.values.sortedWith(
             compareBy<OverrideMetadata> { if (it.sortOrder > 0L) 0 else 1 }
                 .thenBy { if (it.sortOrder > 0L) it.sortOrder else Long.MAX_VALUE }
                 .thenByDescending(OverrideMetadata::updatedAt)
                 .thenBy(OverrideMetadata::createdAt)
         )
-    }
 
-    fun nextUserSortOrder(): Long {
-        return sortedUserMetadata().maxOfOrNull(OverrideMetadata::sortOrder)?.plus(1L) ?: 1L
-    }
+    fun nextUserSortOrder(): Long =
+        sortedUserMetadata().maxOfOrNull(OverrideMetadata::sortOrder)?.plus(1L) ?: 1L
 
     fun normalizeUserSortOrders(): MetadataIndex {
         val updatedConfigs = configs.toMutableMap()
@@ -149,11 +141,9 @@ data class MetadataIndex(
 
     fun getProfileChain(profileId: String): ProfileBinding? = profileChains[profileId]
 
-    fun upsertProfileChain(binding: ProfileBinding): MetadataIndex {
-        return copy(profileChains = profileChains + (binding.profileId to binding))
-    }
+    fun upsertProfileChain(binding: ProfileBinding): MetadataIndex =
+        copy(profileChains = profileChains + (binding.profileId to binding))
 
-    fun removeProfileChain(profileId: String): MetadataIndex {
-        return copy(profileChains = profileChains - profileId)
-    }
+    fun removeProfileChain(profileId: String): MetadataIndex =
+        copy(profileChains = profileChains - profileId)
 }

@@ -38,7 +38,6 @@ import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 
 object ProxyAutoStartHelper {
-
     private const val TAG = "ProxyAutoStartHelper"
 
     suspend fun checkAndAutoStart(

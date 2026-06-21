@@ -28,9 +28,9 @@ import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileLoaded
-import java.util.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
+import java.util.UUID
 
 class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadException>(service) {
     data class LoadException(val message: String)
@@ -53,9 +53,11 @@ class ConfigurationModule(service: Service) : Module<ConfigurationModule.LoadExc
         while (true) {
             val changed: UUID? = select {
                 broadcasts.onReceive {
-                    if (it.action == Intents.ACTION_PROFILE_CHANGED)
+                    if (it.action == Intents.ACTION_PROFILE_CHANGED) {
                         UUID.fromString(it.getStringExtra(Intents.EXTRA_UUID))
-                    else null
+                    } else {
+                        null
+                    }
                 }
                 reload.onReceive { null }
             }

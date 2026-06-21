@@ -24,7 +24,10 @@ import android.os.Binder
 import android.os.Parcel
 import android.os.Parcelable
 
-private class SliceParcelableListBpBinder(val items: List<Parcelable>, val flags: Int) : Binder() {
+private class SliceParcelableListBpBinder(
+    val items: List<Parcelable>,
+    val flags: Int,
+) : Binder() {
     override fun onTransact(
         code: Int,
         request: Parcel,

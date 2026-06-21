@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class SettingViewModel(private val store: FeatureStore) : ViewModel() {
-
     val backendPort = store.backendPort
     val frontendPort = store.frontendPort
 

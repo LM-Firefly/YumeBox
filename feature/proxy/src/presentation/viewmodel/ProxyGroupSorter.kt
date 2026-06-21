@@ -151,8 +151,11 @@ internal class ProxyGroupSorter {
                         originalOrder = originalOrder,
                     )
                 val result =
-                    if (sortedProxies === group.proxies) group
-                    else group.copy(proxies = sortedProxies)
+                    if (sortedProxies === group.proxies) {
+                        group
+                    } else {
+                        group.copy(proxies = sortedProxies)
+                    }
                 SortedGroupCacheEntry(
                         sourceGroup = group,
                         sortMode = mode,

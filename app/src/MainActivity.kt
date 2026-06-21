@@ -76,7 +76,6 @@ import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 class MainActivity : FragmentActivity() {
-
     companion object {
         private const val REQUEST_NOTIFICATION_PERMISSION = 1001
         private const val EXTRA_EXIT_UI_WHEN_BACKGROUND = "exit_ui_when_background"
@@ -235,12 +234,12 @@ class MainActivity : FragmentActivity() {
         }
 
         applicationScope.launch {
-            if (!AutoStartSessionGate.tryBeginForegroundAutoActions()) {
+            if (!AutoStartSessionGate.tryBeginAutoActions()) {
                 return@launch
             }
             var handled = false
             try {
-                StartupTaskCoordinator.awaitRuntimeWarmup()
+                StartupTaskCoordinator.awaitWarmup()
                 ProxyAutoStartHelper.checkAndAutoStart(
                     context = this@MainActivity,
                     featureStore = featureStore,
@@ -252,7 +251,7 @@ class MainActivity : FragmentActivity() {
                 )
                 handled = true
             } finally {
-                AutoStartSessionGate.finishForegroundAutoActions(markHandled = handled)
+                AutoStartSessionGate.finishAutoActions(markHandled = handled)
             }
         }
     }
@@ -308,7 +307,6 @@ class MainActivity : FragmentActivity() {
 
     @Suppress("DEPRECATION")
     private fun applyExcludeFromRecents(exclude: Boolean) {
-
         runCatching {
             val am = getSystemService(ActivityManager::class.java) ?: return@runCatching
             val currentTaskId = taskId

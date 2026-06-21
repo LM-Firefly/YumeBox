@@ -111,9 +111,7 @@ fun Profile.getInfoText(): String =
 
 fun Profile.shouldShowUpdateButton(): Boolean = type == Profile.Type.Url
 
-fun Profile.isConfigSaved(workDir: File): Boolean {
-    return File(workDir, "${uuid}/config.yaml").exists()
-}
+fun Profile.isConfigSaved(workDir: File): Boolean = File(workDir, "$uuid/config.yaml").exists()
 
 private fun getRelativeTimeString(timestamp: Long): String {
     val now = System.currentTimeMillis()

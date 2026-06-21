@@ -35,7 +35,6 @@ class CodeEditorState(
     val showLineNumbers: Boolean = true,
     val wordWrap: Boolean = false,
 ) {
-
     var editor: CodeEditor? by mutableStateOf(null)
         internal set
 
@@ -110,9 +109,7 @@ class CodeEditorState(
         }
     }
 
-    fun validate(): Boolean {
-        return CodeFormatter.validate(content, language)
-    }
+    fun validate(): Boolean = CodeFormatter.validate(content, language)
 
     fun updateDiagnostics() {
         val editor = editor ?: return
@@ -124,7 +121,6 @@ class CodeEditorState(
             LanguageScope.Yaml,
             LanguageScope.JavaScript,
             LanguageScope.Text -> {
-
                 editor.diagnostics = null
             }
         }

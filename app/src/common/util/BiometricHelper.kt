@@ -80,10 +80,9 @@ object BiometricHelper {
         }
     }
 
-    fun shouldCloseAfterError(errorCode: Int): Boolean {
-        return errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+    fun shouldCloseAfterError(errorCode: Int): Boolean =
+        errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
             errorCode == BiometricPrompt.ERROR_USER_CANCELED
-    }
 
     /**
      * 启动生物识别验证
@@ -161,11 +160,10 @@ object BiometricHelper {
         return keyguardManager?.isDeviceSecure == true
     }
 
-    private tailrec fun Context.findFragmentActivityOrNull(): FragmentActivity? {
-        return when (this) {
+    private tailrec fun Context.findFragmentActivityOrNull(): FragmentActivity? =
+        when (this) {
             is FragmentActivity -> this
             is ContextWrapper -> baseContext.findFragmentActivityOrNull()
             else -> null
         }
-    }
 }

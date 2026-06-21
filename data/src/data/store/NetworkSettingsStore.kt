@@ -27,7 +27,6 @@ import com.github.yumelira.yumebox.data.model.TunStack
 import com.tencent.mmkv.MMKV
 
 class NetworkSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
-
     val proxyMode by enumFlow(ProxyMode.Tun)
 
     val bypassPrivateNetwork by boolFlow(true)

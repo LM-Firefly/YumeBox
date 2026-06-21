@@ -28,7 +28,5 @@ object WebViewUtils {
             "https://yacd.haishan.me",
         )
 
-    fun getPanelUrl(panelType: Int): String {
-        return ONLINE_PANEL_URLS.getOrElse(panelType) { "" }
-    }
+    fun getPanelUrl(panelType: Int): String = ONLINE_PANEL_URLS.getOrElse(panelType) { "" }
 }

@@ -25,10 +25,10 @@ package com.github.yumelira.yumebox.service.runtime.records
 import com.github.yumelira.yumebox.service.runtime.entity.Imported
 import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
 import com.tencent.mmkv.MMKV
-import java.util.*
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import java.util.UUID
 
 object ProfileStore {
     private const val IMPORTED_KEY = "imported"

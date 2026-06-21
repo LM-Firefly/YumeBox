@@ -20,18 +20,15 @@
 
 package com.github.yumelira.yumebox.substore.util
 
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 
 object ArchiveUtil {
-
     fun unzipZip(zipFile: File, destination: File): Boolean {
         if (!zipFile.exists() || !zipFile.isFile) return false
 
@@ -53,30 +50,6 @@ object ArchiveUtil {
                 true
             }
             .getOrDefault(false)
-    }
-
-    private fun addToZip(
-        file: File,
-        path: String,
-        zos: ZipOutputStream,
-        onProgress: ((String, Long) -> Unit)? = null,
-    ) {
-        runCatching {
-            if (file.isDirectory) {
-                file.listFiles()?.forEach { child ->
-                    addToZip(child, "$path/${child.name}", zos, onProgress)
-                }
-            } else {
-                val entry = ZipEntry(path)
-                entry.time = file.lastModified()
-                zos.putNextEntry(entry)
-
-                FileInputStream(file).use { fis -> fis.copyTo(zos) }
-
-                zos.closeEntry()
-                onProgress?.invoke(path, file.length())
-            }
-        }
     }
 
     fun untar(tarFile: File, destination: File): Boolean {
@@ -135,11 +108,13 @@ object ArchiveUtil {
 
     private fun prepareDestination(destination: File) {
         if (!destination.exists()) {
-            if (!destination.mkdirs())
+            if (!destination.mkdirs()) {
                 throw IllegalStateException("无法创建目录: ${destination.absolutePath}")
+            }
         }
-        if (!destination.isDirectory)
+        if (!destination.isDirectory) {
             throw IllegalStateException("目标不是目录: ${destination.absolutePath}")
+        }
     }
 
     private fun resolveEntryTarget(destination: File, entryName: String): File {
@@ -167,8 +142,9 @@ object ArchiveUtil {
 
     private fun ensureDirectory(directory: File) {
         if (directory.exists()) {
-            if (!directory.isDirectory)
+            if (!directory.isDirectory) {
                 throw IllegalStateException("路径已存在但不是目录: ${directory.absolutePath}")
+            }
         } else if (!directory.mkdirs()) {
             throw IllegalStateException("无法创建目录: ${directory.absolutePath}")
         }

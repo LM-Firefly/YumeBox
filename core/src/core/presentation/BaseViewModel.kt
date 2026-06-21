@@ -59,7 +59,6 @@ import kotlinx.coroutines.flow.update
  * ```
  */
 abstract class BaseViewModel<State>(initialState: State) {
-
     protected val _uiState = MutableStateFlow(initialState)
     val uiState: StateFlow<State> = _uiState.asStateFlow()
 
@@ -114,7 +113,6 @@ abstract class BaseViewModel<State>(initialState: State) {
  */
 abstract class BaseLoadableViewModel<State : LoadableState<State>>(initialState: State) :
     BaseViewModel<State>(initialState) {
-
     /** Sets the loading state. */
     protected fun setLoading(loading: Boolean) {
         updateState { it.withLoading(loading) }

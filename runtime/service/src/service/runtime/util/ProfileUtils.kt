@@ -21,7 +21,7 @@
 package com.github.yumelira.yumebox.service.runtime.util
 
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import java.util.*
+import java.util.UUID
 
 suspend fun generateProfileUUID(): UUID {
     var result = UUID.randomUUID()

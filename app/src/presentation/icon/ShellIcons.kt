@@ -21,7 +21,14 @@
 package com.github.yumelira.yumebox.presentation.icon
 
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.github.yumelira.yumebox.presentation.icon.yume.*
+import com.github.yumelira.yumebox.presentation.icon.yume.`Arrow-down-up`
+import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
+import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
+import com.github.yumelira.yumebox.presentation.icon.yume.Bolt
+import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
+import com.github.yumelira.yumebox.presentation.icon.yume.`Package-check`
+import com.github.yumelira.yumebox.presentation.icon.yume.Play
+import com.github.yumelira.yumebox.presentation.icon.yume.Square
 
 object ShellIcons {
     val NavigateForward: ImageVector = Yume.ArrowRight

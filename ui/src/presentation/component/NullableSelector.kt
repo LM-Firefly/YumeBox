@@ -86,7 +86,6 @@ fun <T> NullableEnumSelector(
 }
 
 enum class ListMergeStrategy {
-
     None,
     Replace,
     Start,
@@ -94,7 +93,6 @@ enum class ListMergeStrategy {
 }
 
 enum class MapMergeStrategy {
-
     None,
     Replace,
     Merge,

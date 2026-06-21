@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.dropUnlessResumed
+import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.AppTheme.spacing
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import top.yukonga.miuix.kmp.basic.Icon
@@ -54,8 +55,7 @@ fun NavigationBackIcon(
     val scale by
         animateFloatAsState(
             targetValue = if (pressed) 0.92f else 1f,
-            animationSpec =
-                com.github.yumelira.yumebox.presentation.theme.AnimationSpecs.ButtonPress,
+            animationSpec = AnimationSpecs.ButtonPress,
             label = "back_icon_scale",
         )
 

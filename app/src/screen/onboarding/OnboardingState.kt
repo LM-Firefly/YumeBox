@@ -165,14 +165,13 @@ internal fun openAppDetailsSettings(context: Context) {
     context.startActivity(intent)
 }
 
-internal fun isMiuiGetInstalledAppsDynamicSupported(context: Context): Boolean {
-    return runCatching {
+internal fun isMiuiGetInstalledAppsDynamicSupported(context: Context): Boolean =
+    runCatching {
             val permissionInfo =
                 context.packageManager.getPermissionInfo(MIUI_GET_INSTALLED_APPS_PERMISSION, 0)
             permissionInfo.packageName == "com.lbe.security.miui"
         }
         .getOrDefault(false)
-}
 
 internal fun isAppListPermissionGranted(context: Context, miuiDynamicSupported: Boolean): Boolean {
     if (miuiDynamicSupported) {

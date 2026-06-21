@@ -133,11 +133,10 @@ class BottomBarScrollBehavior {
 }
 
 @Composable
-fun rememberBottomBarScrollBehavior(autoHideEnabled: Boolean = true): BottomBarScrollBehavior {
-    return remember(autoHideEnabled) {
+fun rememberBottomBarScrollBehavior(autoHideEnabled: Boolean = true): BottomBarScrollBehavior =
+    remember(autoHideEnabled) {
         BottomBarScrollBehavior().apply { isAutoHideEnabled = autoHideEnabled }
     }
-}
 
 @Composable
 fun BottomBarScrollBehavior.withLazyListState(listState: LazyListState): BottomBarScrollBehavior {

@@ -24,7 +24,6 @@ import com.github.yumelira.yumebox.data.model.ProfileBinding
 import kotlinx.coroutines.flow.Flow
 
 interface ProfileBindingProvider {
-
     suspend fun getBinding(profileId: String): ProfileBinding?
 
     fun getBindingFlow(profileId: String): Flow<ProfileBinding?>

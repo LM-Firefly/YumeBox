@@ -34,7 +34,6 @@ import kotlinx.coroutines.selects.SelectClause1
 import kotlinx.coroutines.withContext
 
 abstract class Module<E>(val service: Service) {
-
     private val events: Channel<E> = Channel(Channel.CONFLATED)
     private val receivers: MutableList<Pair<Context, BroadcastReceiver>> = mutableListOf()
 

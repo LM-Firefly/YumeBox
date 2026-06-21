@@ -52,7 +52,6 @@ class NetworkSettingsViewModel(
     private val controller: NetworkSettingsController,
     private val proxyFacade: ProxyFacade,
 ) : AndroidViewModel(application) {
-
     val proxyMode: Preference<ProxyMode> = settings.proxyMode
     val bypassPrivateNetwork: Preference<Boolean> = settings.bypassPrivateNetwork
     val dnsHijack: Preference<Boolean> = settings.dnsHijack
@@ -297,7 +296,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunIfName() {
         val normalized = _rootTunIfNameDraft.value.trim().ifBlank { DEFAULT_ROOT_TUN_IF_NAME }
         _rootTunIfNameDraft.value = normalized
-        controller.commitDraftAndRestart(rootTunIfName, normalized)
+        controller.setAndRestartIfNeeded(rootTunIfName, normalized)
     }
 
     fun onRootTunMtuDraftChange(value: String) {
@@ -307,7 +306,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunMtu() {
         val parsed = _rootTunMtuDraft.value.trim().toIntOrNull()?.takeIf { it > 0 } ?: return
         _rootTunMtuDraft.value = parsed.toString()
-        controller.commitDraftAndRestart(rootTunMtu, parsed)
+        controller.setAndRestartIfNeeded(rootTunMtu, parsed)
     }
 
     fun onRootTunFakeIpRangeDraftChange(value: String) {
@@ -317,7 +316,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunFakeIpRange() {
         val normalized = _rootTunFakeIpRangeDraft.value.trim().ifBlank { DEFAULT_FAKE_IP_RANGE }
         _rootTunFakeIpRangeDraft.value = normalized
-        controller.commitDraftAndRestart(rootTunFakeIpRange, normalized)
+        controller.setAndRestartIfNeeded(rootTunFakeIpRange, normalized)
     }
 
     fun onRootTunFakeIpRange6DraftChange(value: String) {
@@ -327,7 +326,7 @@ class NetworkSettingsViewModel(
     fun commitRootTunFakeIpRange6() {
         val normalized = _rootTunFakeIpRange6Draft.value.trim().ifBlank { DEFAULT_FAKE_IP_RANGE6 }
         _rootTunFakeIpRange6Draft.value = normalized
-        controller.commitDraftAndRestart(rootTunFakeIpRange6, normalized)
+        controller.setAndRestartIfNeeded(rootTunFakeIpRange6, normalized)
     }
 
     fun startService(mode: ProxyMode) {
@@ -417,14 +416,13 @@ enum class ServiceState {
     Failed;
 
     companion object {
-        fun fromPhase(phase: RuntimePhase): ServiceState {
-            return when (phase) {
+        fun fromPhase(phase: RuntimePhase): ServiceState =
+            when (phase) {
                 RuntimePhase.Idle -> Idle
                 RuntimePhase.Starting -> Starting
                 RuntimePhase.Running -> Running
                 RuntimePhase.Stopping -> Stopping
                 RuntimePhase.Failed -> Failed
             }
-        }
     }
 }

@@ -30,7 +30,6 @@ import io.github.rosemoe.sora.widget.CodeEditor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 object EditorThemeManager {
-
     @Composable
     fun rememberEditorTheme(): EditorThemeState {
         val isDark = MiuixTheme.colorScheme.surface.luminance() < 0.5f
@@ -48,7 +47,6 @@ object EditorThemeManager {
             val themeRegistry = ThemeRegistry.getInstance()
             editor.colorScheme = TextMateColorScheme.create(themeRegistry)
         } catch (error: Exception) {
-
             editor.colorScheme = EditorColorSynchronizer.createColorScheme(false)
         }
     }
@@ -59,10 +57,12 @@ object EditorThemeManager {
 
             editor.colorScheme = TextMateColorScheme.create(ThemeRegistry.getInstance())
         } catch (error: Exception) {
-
             editor.colorScheme = EditorColorSynchronizer.createColorScheme(isDark)
         }
     }
 }
 
-data class EditorThemeState(val isDark: Boolean, val themeName: String)
+data class EditorThemeState(
+    val isDark: Boolean,
+    val themeName: String,
+)

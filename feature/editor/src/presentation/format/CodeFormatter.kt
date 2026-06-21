@@ -25,27 +25,24 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object CodeFormatter {
-
-    fun format(content: String, language: LanguageScope): String? {
-        return when (language) {
+    fun format(content: String, language: LanguageScope): String? =
+        when (language) {
             LanguageScope.Json -> formatJson(content)
             LanguageScope.Yaml -> formatYaml(content)
             LanguageScope.JavaScript,
             LanguageScope.Text -> content
         }
-    }
 
-    fun validate(content: String, language: LanguageScope): Boolean {
-        return when (language) {
+    fun validate(content: String, language: LanguageScope): Boolean =
+        when (language) {
             LanguageScope.Json -> validateJson(content)
             LanguageScope.Yaml -> true
             LanguageScope.JavaScript -> true
             LanguageScope.Text -> true
         }
-    }
 
-    private fun formatJson(content: String): String? {
-        return try {
+    private fun formatJson(content: String): String? =
+        try {
             val trimmed = content.trim()
             when {
                 trimmed.startsWith("{") -> JSONObject(trimmed).toString(2)
@@ -55,7 +52,6 @@ object CodeFormatter {
         } catch (error: Exception) {
             null
         }
-    }
 
     private fun validateJson(content: String): Boolean {
         return try {
@@ -71,11 +67,10 @@ object CodeFormatter {
         }
     }
 
-    private fun formatYaml(content: String): String? {
-        return try {
+    private fun formatYaml(content: String): String? =
+        try {
             content.lines().map { it.trimEnd() }.joinToString("\n").replace(Regex("\n{3,}"), "\n\n")
         } catch (error: Exception) {
             null
         }
-    }
 }

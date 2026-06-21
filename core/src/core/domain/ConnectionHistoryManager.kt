@@ -23,7 +23,6 @@ package com.github.yumelira.yumebox.core.domain
 import com.github.yumelira.yumebox.core.model.ConnectionInfo
 
 object ConnectionHistoryManager {
-
     private const val MAX_SIZE = 100
 
     private val _closedConnections = mutableListOf<ConnectionInfo>()

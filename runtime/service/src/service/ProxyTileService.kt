@@ -52,7 +52,6 @@ import timber.log.Timber
 
 @SuppressLint("NewApi")
 class ProxyTileService : TileService() {
-
     private val profileManager by lazy { ProfileManager(applicationContext) }
     private val clashManager by lazy { ClashManager(applicationContext) }
     private val networkSettingsStorage by lazy {
@@ -231,17 +230,16 @@ class ProxyTileService : TileService() {
         }
     }
 
-    private fun modeForOwner(owner: RuntimeOwner): ProxyMode? {
-        return when (owner) {
+    private fun modeForOwner(owner: RuntimeOwner): ProxyMode? =
+        when (owner) {
             RuntimeOwner.LocalTun -> ProxyMode.Tun
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun -> ProxyMode.RootTun
             RuntimeOwner.None -> null
         }
-    }
 
-    private fun effectiveMode(snapshot: RuntimeSnapshot): ProxyMode {
-        return when {
+    private fun effectiveMode(snapshot: RuntimeSnapshot): ProxyMode =
+        when {
             snapshot.running ->
                 when (snapshot.owner) {
                     RuntimeOwner.LocalTun -> ProxyMode.Tun
@@ -252,17 +250,15 @@ class ProxyTileService : TileService() {
 
             else -> snapshot.targetMode
         }
-    }
 
-    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase {
-        return when (this) {
+    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase =
+        when (this) {
             LocalRuntimePhase.Idle -> RuntimePhase.Idle
             LocalRuntimePhase.Starting -> RuntimePhase.Starting
             LocalRuntimePhase.Running -> RuntimePhase.Running
             LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
             LocalRuntimePhase.Failed -> RuntimePhase.Failed
         }
-    }
 
     private fun updateTileState(isRunning: Boolean) {
         val tile = qsTile ?: return

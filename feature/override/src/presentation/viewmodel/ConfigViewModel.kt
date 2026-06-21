@@ -43,7 +43,6 @@ class OverrideConfigViewModel(
     private val bindingProvider: ProfileBindingProvider,
     private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
 ) : ViewModel() {
-
     companion object {
         private const val TAG = "OverrideConfigViewModel"
     }
@@ -86,13 +85,9 @@ class OverrideConfigViewModel(
         }
     }
 
-    fun getConfigById(id: String): OverrideConfig? {
-        return _configs.value.find { it.id == id }
-    }
+    fun getConfigById(id: String): OverrideConfig? = _configs.value.find { it.id == id }
 
-    fun getConfigContent(configId: String): String? {
-        return configRepo.getConfigContent(configId)
-    }
+    fun getConfigContent(configId: String): String? = configRepo.getConfigContent(configId)
 
     fun saveConfigContent(configId: String, content: String): Boolean {
         val saved = configRepo.saveConfigContent(configId, content)
@@ -210,9 +205,7 @@ class OverrideConfigViewModel(
         return Result.success(config)
     }
 
-    suspend fun isConfigInUse(id: String): Boolean {
-        return resolver.isOverrideInUse(id)
-    }
+    suspend fun isConfigInUse(id: String): Boolean = resolver.isOverrideInUse(id)
 
     fun consumePendingRevealConfig(configId: String) {
         if (_pendingRevealConfigId.value == configId) {

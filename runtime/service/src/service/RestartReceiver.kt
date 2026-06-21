@@ -27,7 +27,6 @@ import android.os.Build
 import timber.log.Timber
 
 class RestartReceiver : BroadcastReceiver() {
-
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED,

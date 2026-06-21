@@ -23,10 +23,10 @@ package com.github.yumelira.yumebox.substore.engine
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
-import timber.log.Timber
 
 @SuppressLint("StaticFieldLeak")
 object NativeLibraryManager {

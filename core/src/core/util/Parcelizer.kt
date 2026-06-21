@@ -52,9 +52,7 @@ object Parcelizer {
             decodeBoolean()
 
         @ExperimentalSerializationApi
-        override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder {
-            return this
-        }
+        override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder = this
 
         override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) = decodeInt()
 
@@ -81,69 +79,38 @@ object Parcelizer {
 
         override fun endStructure(descriptor: SerialDescriptor) {}
 
-        override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
-            return this
-        }
+        override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder = this
 
-        override fun decodeCollectionSize(descriptor: SerialDescriptor): Int {
-            return decodeInt()
-        }
+        override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = decodeInt()
 
-        override fun decodeBoolean(): Boolean {
-            return decodeByte() != (0.toByte())
-        }
+        override fun decodeBoolean(): Boolean = decodeByte() != (0.toByte())
 
-        override fun decodeByte(): Byte {
-            return parcel.readByte()
-        }
+        override fun decodeByte(): Byte = parcel.readByte()
 
-        override fun decodeChar(): Char {
-            return decodeInt().toChar()
-        }
+        override fun decodeChar(): Char = decodeInt().toChar()
 
-        override fun decodeDouble(): Double {
-            return parcel.readDouble()
-        }
+        override fun decodeDouble(): Double = parcel.readDouble()
 
-        override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-            return decodeInt()
-        }
+        override fun decodeEnum(enumDescriptor: SerialDescriptor): Int = decodeInt()
 
-        override fun decodeFloat(): Float {
-            return parcel.readFloat()
-        }
+        override fun decodeFloat(): Float = parcel.readFloat()
 
         @ExperimentalSerializationApi
-        override fun decodeInline(descriptor: SerialDescriptor): Decoder {
-            return this
-        }
+        override fun decodeInline(descriptor: SerialDescriptor): Decoder = this
 
-        override fun decodeInt(): Int {
-            return parcel.readInt()
-        }
+        override fun decodeInt(): Int = parcel.readInt()
 
-        override fun decodeLong(): Long {
-            return parcel.readLong()
-        }
+        override fun decodeLong(): Long = parcel.readLong()
 
-        @ExperimentalSerializationApi
-        override fun decodeNotNullMark(): Boolean {
-            return decodeBoolean()
-        }
+        @ExperimentalSerializationApi override fun decodeNotNullMark(): Boolean = decodeBoolean()
 
-        @ExperimentalSerializationApi
-        override fun decodeNull(): Nothing? {
-            return null
-        }
+        @ExperimentalSerializationApi override fun decodeNull(): Nothing? = null
 
-        override fun decodeShort(): Short {
-            return decodeInt().toShort()
-        }
+        override fun decodeShort(): Short = decodeInt().toShort()
 
-        override fun decodeString(): String {
-            return parcel.readString()
+        override fun decodeString(): String =
+            parcel.readString()
                 ?: throw SerializationException("Expected non-null String in Parcel")
-        }
     }
 
     private class ParcelEncoder(private val parcel: Parcel) : Encoder, CompositeEncoder {
@@ -168,9 +135,7 @@ object Parcelizer {
             encodeFloat(value)
 
         @ExperimentalSerializationApi
-        override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder {
-            return this
-        }
+        override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder = this
 
         override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) =
             encodeInt(value)
@@ -201,9 +166,7 @@ object Parcelizer {
 
         override fun endStructure(descriptor: SerialDescriptor) {}
 
-        override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-            return this
-        }
+        override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder = this
 
         override fun beginCollection(
             descriptor: SerialDescriptor,
@@ -239,9 +202,7 @@ object Parcelizer {
         }
 
         @ExperimentalSerializationApi
-        override fun encodeInline(descriptor: SerialDescriptor): Encoder {
-            return this
-        }
+        override fun encodeInline(descriptor: SerialDescriptor): Encoder = this
 
         override fun encodeInt(value: Int) {
             parcel.writeInt(value)
@@ -270,9 +231,8 @@ object Parcelizer {
         }
     }
 
-    fun <T> decodeFromParcel(deserializer: DeserializationStrategy<T>, parcel: Parcel): T {
-        return deserializer.deserialize(ParcelDecoder(parcel))
-    }
+    fun <T> decodeFromParcel(deserializer: DeserializationStrategy<T>, parcel: Parcel): T =
+        deserializer.deserialize(ParcelDecoder(parcel))
 
     fun <T> encodeToParcel(serializer: SerializationStrategy<T>, parcel: Parcel, value: T) {
         serializer.serialize(ParcelEncoder(parcel), value)

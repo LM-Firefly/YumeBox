@@ -23,20 +23,19 @@ package com.github.yumelira.yumebox.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ProfileBinding(val profileId: String, val overrideIds: List<String> = emptyList()) {
+data class ProfileBinding(
+    val profileId: String,
+    val overrideIds: List<String> = emptyList(),
+) {
     companion object {
+        fun disabled(profileId: String): ProfileBinding =
+            ProfileBinding(profileId = profileId, overrideIds = emptyList())
 
-        fun disabled(profileId: String): ProfileBinding {
-            return ProfileBinding(profileId = profileId, overrideIds = emptyList())
-        }
+        fun withOverrides(profileId: String, overrideIds: List<String>): ProfileBinding =
+            ProfileBinding(profileId = profileId, overrideIds = overrideIds)
 
-        fun withOverrides(profileId: String, overrideIds: List<String>): ProfileBinding {
-            return ProfileBinding(profileId = profileId, overrideIds = overrideIds)
-        }
-
-        fun withOverride(profileId: String, overrideId: String): ProfileBinding {
-            return ProfileBinding(profileId = profileId, overrideIds = listOf(overrideId))
-        }
+        fun withOverride(profileId: String, overrideId: String): ProfileBinding =
+            ProfileBinding(profileId = profileId, overrideIds = listOf(overrideId))
     }
 
     fun addOverride(overrideId: String, index: Int? = null): ProfileBinding {
@@ -52,9 +51,8 @@ data class ProfileBinding(val profileId: String, val overrideIds: List<String> =
         return copy(overrideIds = newList)
     }
 
-    fun removeOverride(overrideId: String): ProfileBinding {
-        return copy(overrideIds = overrideIds - overrideId)
-    }
+    fun removeOverride(overrideId: String): ProfileBinding =
+        copy(overrideIds = overrideIds - overrideId)
 
     fun moveOverride(fromIndex: Int, toIndex: Int): ProfileBinding {
         if (fromIndex !in overrideIds.indices || toIndex !in overrideIds.indices) return this
@@ -67,11 +65,7 @@ data class ProfileBinding(val profileId: String, val overrideIds: List<String> =
         return copy(overrideIds = newList)
     }
 
-    fun setOverrides(overrideIds: List<String>): ProfileBinding {
-        return copy(overrideIds = overrideIds)
-    }
+    fun setOverrides(overrideIds: List<String>): ProfileBinding = copy(overrideIds = overrideIds)
 
-    fun clearOverrides(): ProfileBinding {
-        return copy(overrideIds = emptyList())
-    }
+    fun clearOverrides(): ProfileBinding = copy(overrideIds = emptyList())
 }

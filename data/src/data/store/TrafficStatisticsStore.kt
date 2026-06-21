@@ -31,7 +31,6 @@ import com.github.yumelira.yumebox.data.model.DailyTrafficSummary
 import com.github.yumelira.yumebox.data.model.StatisticsTimeRange
 import com.github.yumelira.yumebox.data.model.TrafficStatisticsBuckets
 import com.tencent.mmkv.MMKV
-import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.util.Calendar
 
 class TrafficStatisticsStore(private val mmkv: MMKV) {
     private val json = Json {
@@ -306,8 +306,11 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
                         existing.copy(
                             packageName = existing.packageName ?: usage.packageName,
                             appName =
-                                if (existing.appName.isNotBlank()) existing.appName
-                                else usage.appName,
+                                if (existing.appName.isNotBlank()) {
+                                    existing.appName
+                                } else {
+                                    usage.appName
+                                },
                             totalUpload = existing.totalUpload + usage.totalUpload,
                             totalDownload = existing.totalDownload + usage.totalDownload,
                             lastActiveAt = maxOf(existing.lastActiveAt, usage.lastActiveAt),
@@ -332,12 +335,11 @@ class TrafficStatisticsStore(private val mmkv: MMKV) {
         )
     }
 
-    private fun rangeDayKeys(days: Int): List<Long> {
-        return List(days) { offset ->
+    private fun rangeDayKeys(days: Int): List<Long> =
+        List(days) { offset ->
             val calendar = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -offset) }
             getDayKey(calendar.timeInMillis)
         }
-    }
 
     private fun getDayKey(timestamp: Long): Long {
         val calendar = Calendar.getInstance().apply { timeInMillis = timestamp }

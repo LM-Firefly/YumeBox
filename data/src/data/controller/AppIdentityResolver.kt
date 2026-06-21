@@ -23,13 +23,17 @@ package com.github.yumelira.yumebox.data.controller
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import java.util.concurrent.ConcurrentHashMap
 
-data class AppIdentity(val appKey: String, val packageName: String? = null, val appName: String)
+data class AppIdentity(
+    val appKey: String,
+    val packageName: String? = null,
+    val appName: String,
+)
 
 class AppIdentityResolver(context: Context) {
     private val appContext = context.applicationContext
@@ -172,19 +176,14 @@ class AppIdentityResolver(context: Context) {
             .getOrNull()
     }
 
-    private fun resolveLabel(packageName: String): String {
-        labelCache[packageName]?.let {
-            return it
-        }
-        val label =
+    private fun resolveLabel(packageName: String): String =
+        labelCache.getOrPut(packageName) {
             runCatching {
                     val info = packageManager.getApplicationInfo(packageName, 0)
                     packageManager.getApplicationLabel(info).toString().trim()
                 }
                 .getOrDefault(packageName)
-        labelCache[packageName] = label
-        return label
-    }
+        }
 
     private data class InstalledAppIdentity(
         val packageName: String,

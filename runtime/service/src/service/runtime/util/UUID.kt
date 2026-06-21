@@ -22,19 +22,17 @@ package com.github.yumelira.yumebox.service.runtime.util
 
 import android.content.Intent
 import android.os.Bundle
-import java.util.*
+import java.util.UUID
 
-fun Bundle.getUUID(key: String): UUID? {
-    return getString(key)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-}
+fun Bundle.getUUID(key: String): UUID? =
+    getString(key)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
 fun Bundle.putUUID(key: String, uuid: UUID) {
     putString(key, uuid.toString())
 }
 
-fun Intent.getUUID(key: String): UUID? {
-    return getStringExtra(key)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
-}
+fun Intent.getUUID(key: String): UUID? =
+    getStringExtra(key)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
 
 fun Intent.putUUID(key: String, uuid: UUID): Intent {
     putExtra(key, uuid.toString())

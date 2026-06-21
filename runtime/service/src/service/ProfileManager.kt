@@ -32,12 +32,12 @@ import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
 import com.github.yumelira.yumebox.service.runtime.util.generateProfileUUID
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import com.github.yumelira.yumebox.service.runtime.util.sendProfileChanged
-import java.io.FileNotFoundException
-import java.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.FileNotFoundException
+import java.util.UUID
 
 class ProfileManager(private val context: Context) :
     IProfileManager, CoroutineScope by CoroutineScope(Dispatchers.IO) {
@@ -47,7 +47,12 @@ class ProfileManager(private val context: Context) :
         launch { context.importedDir.mkdirs() }
     }
 
-    override suspend fun create(type: Profile.Type, name: String, source: String, ageSecretKey: String?): UUID {
+    override suspend fun create(
+        type: Profile.Type,
+        name: String,
+        source: String,
+        ageSecretKey: String?,
+    ): UUID {
         val uuid = generateProfileUUID()
         val normalizedName = name.trim().ifBlank { "New Profile" }
         val now = System.currentTimeMillis()
@@ -124,8 +129,11 @@ class ProfileManager(private val context: Context) :
                 source = source,
                 interval = interval,
                 ageSecretKey =
-                    if (updateAgeSecretKey) normalizeAgeSecretKey(ageSecretKey)
-                    else imported.ageSecretKey,
+                    if (updateAgeSecretKey) {
+                        normalizeAgeSecretKey(ageSecretKey)
+                    } else {
+                        imported.ageSecretKey
+                    },
             )
 
         ImportedDao.update(updated)
@@ -140,9 +148,7 @@ class ProfileManager(private val context: Context) :
         ProfileProcessor.delete(context, uuid)
     }
 
-    override suspend fun queryByUUID(uuid: UUID): Profile? {
-        return resolveProfile(uuid)
-    }
+    override suspend fun queryByUUID(uuid: UUID): Profile? = resolveProfile(uuid)
 
     override suspend fun queryAll(): List<Profile> {
         val uuids = withContext(Dispatchers.IO) { ImportedDao.queryAllUUIDs() }
@@ -212,11 +218,9 @@ class ProfileManager(private val context: Context) :
         )
     }
 
-    private fun resolveUpdatedAt(uuid: UUID): Long {
-        return context.importedDir.resolve(uuid.toString()).directoryLastModified ?: -1
-    }
+    private fun resolveUpdatedAt(uuid: UUID): Long =
+        context.importedDir.resolve(uuid.toString()).directoryLastModified ?: -1
 
-    private fun normalizeAgeSecretKey(value: String?): String? {
-        return value?.trim()?.takeIf { it.isNotEmpty() }
-    }
+    private fun normalizeAgeSecretKey(value: String?): String? =
+        value?.trim()?.takeIf { it.isNotEmpty() }
 }

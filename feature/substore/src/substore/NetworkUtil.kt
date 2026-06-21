@@ -24,11 +24,10 @@ import java.io.IOException
 import java.net.ServerSocket
 
 object NetworkUtil {
-    fun isPortInUse(port: Int): Boolean {
-        return try {
+    fun isPortInUse(port: Int): Boolean =
+        try {
             ServerSocket(port).use { false }
         } catch (_: IOException) {
             true
         }
-    }
 }

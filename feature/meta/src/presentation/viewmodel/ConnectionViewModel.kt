@@ -68,7 +68,6 @@ data class ConnectionState(
 }
 
 class ConnectionViewModel : ViewModel() {
-
     private val _state = MutableStateFlow(ConnectionState())
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
@@ -123,8 +122,8 @@ class ConnectionViewModel : ViewModel() {
         _state.update { it.copy(error = null) }
     }
 
-    suspend fun closeConnection(id: String): Boolean {
-        return withContext(Dispatchers.IO) {
+    suspend fun closeConnection(id: String): Boolean =
+        withContext(Dispatchers.IO) {
                 runCatching { ServiceClient.clash().closeConnection(id) }
                     .onFailure { error ->
                         Timber.w(error, "Failed to close connection: %s", id)
@@ -133,7 +132,6 @@ class ConnectionViewModel : ViewModel() {
                     .getOrDefault(false)
             }
             .also { refreshConnections(showRefreshing = true) }
-    }
 
     private suspend fun refreshConnections(showRefreshing: Boolean) {
         if (showRefreshing) {

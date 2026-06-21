@@ -117,8 +117,8 @@ class FeatureViewModel(
         }
     }
 
-    private fun checkSubStoreReadiness(): Boolean {
-        return when {
+    private fun checkSubStoreReadiness(): Boolean =
+        when {
             !_isExtensionInstalled.value -> {
                 showToast(MLang.Feature.SubStore.InstallExtension)
                 false
@@ -136,7 +136,6 @@ class FeatureViewModel(
 
             else -> true
         }
-    }
 
     fun stopService() {
         viewModelScope.launch {
@@ -180,7 +179,9 @@ class FeatureViewModel(
         _isJavetLoaded.value =
             if (!NativeLibraryManager.isLibraryAvailable(JAVET_LIB_NAME)) {
                 NativeLibraryManager.extractAllLibraries()[JAVET_LIB_NAME] == true
-            } else true
+            } else {
+                true
+            }
     }
 
     fun refreshExtensionStatus() {
@@ -232,8 +233,9 @@ class FeatureViewModel(
 
     fun downloadSubStoreAll() {
         viewModelScope.launch {
-            if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value)
+            if (_isDownloadingSubStoreFrontend.value || _isDownloadingSubStoreBackend.value) {
                 return@launch
+            }
             downloadSubStoreFrontend()
             while (_isDownloadingSubStoreFrontend.value) {
                 PollingTimers.awaitTick(

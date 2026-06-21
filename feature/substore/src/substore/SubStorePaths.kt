@@ -24,7 +24,6 @@ import com.github.yumelira.yumebox.core.Global
 import java.io.File
 
 object SubStorePaths {
-
     private const val BASE_DIR = "Sub-Store"
     private const val FRONTEND_DIR = "frontend"
     private const val BACKEND_DIR = "backend"
@@ -59,11 +58,10 @@ object SubStorePaths {
 
     fun isBackendReady(): Boolean = backendBundle.exists()
 
-    fun isFrontendReady(): Boolean {
-        return frontendDir.exists() &&
+    fun isFrontendReady(): Boolean =
+        frontendDir.exists() &&
             frontendDir.isDirectory &&
             (frontendDir.listFiles()?.isNotEmpty() == true)
-    }
 
     fun isResourcesReady(): Boolean = isBackendReady() && isFrontendReady()
 }

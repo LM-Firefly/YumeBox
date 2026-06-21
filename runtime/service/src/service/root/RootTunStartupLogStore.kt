@@ -37,9 +37,7 @@ class RootTunStartupLogStore(context: Context) {
         delegate.append(line)
     }
 
-    fun snapshot(): String {
-        return delegate.snapshot()
-    }
+    fun snapshot(): String = delegate.snapshot()
 
     fun formatProfilesStoreLine(): String {
         val keyCount = runCatching { ProfileStore.countStoredKeys() }.getOrDefault(0)

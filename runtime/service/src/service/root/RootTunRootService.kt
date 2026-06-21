@@ -111,54 +111,48 @@ class RootTunRootService : RootService() {
                 return encodeResult(result)
             }
 
-            override fun queryStatus(): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryStatus(): String =
+                RootTunJson.Default.encodeToString(
                     RootTunStatus.serializer(),
                     stateStore.snapshot(),
                 )
-            }
 
-            override fun queryTunnelStateJson(): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryTunnelStateJson(): String =
+                RootTunJson.Default.encodeToString(
                     com.github.yumelira.yumebox.core.model.TunnelState.serializer(),
                     runtime.queryTunnelState(),
                 )
-            }
 
             override fun queryTrafficNow(): Long = runtime.queryTrafficNow()
 
             override fun queryTrafficTotal(): Long = runtime.queryTrafficTotal()
 
-            override fun queryConnectionsJson(): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryConnectionsJson(): String =
+                RootTunJson.Default.encodeToString(
                     com.github.yumelira.yumebox.core.model.ConnectionSnapshot.serializer(),
                     runtime.queryConnections(),
                 )
-            }
 
-            override fun queryAllProxyGroupsJson(excludeNotSelectable: Boolean): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryAllProxyGroupsJson(excludeNotSelectable: Boolean): String =
+                RootTunJson.Default.encodeToString(
                     ListSerializer(com.github.yumelira.yumebox.core.model.ProxyGroup.serializer()),
                     runtime.queryAllProxyGroups(excludeNotSelectable),
                 )
-            }
 
-            override fun queryProxyGroupNamesJson(excludeNotSelectable: Boolean): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryProxyGroupNamesJson(excludeNotSelectable: Boolean): String =
+                RootTunJson.Default.encodeToString(
                     ListSerializer(String.serializer()),
                     runtime.queryProxyGroupNames(excludeNotSelectable),
                 )
-            }
 
-            override fun queryProxyGroupJson(name: String, sort: String): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryProxyGroupJson(name: String, sort: String): String =
+                RootTunJson.Default.encodeToString(
                     com.github.yumelira.yumebox.core.model.ProxyGroup.serializer(),
                     runtime.queryProxyGroup(
                         name,
                         com.github.yumelira.yumebox.core.model.ProxySort.valueOf(sort),
                     ),
                 )
-            }
 
             override fun queryConfigurationJson(): String =
                 RootTunJson.Default.encodeToString(
@@ -172,13 +166,10 @@ class RootTunRootService : RootService() {
                     runtime.queryProviders(),
                 )
 
-            override fun patchSelector(group: String, name: String): Boolean {
-                return runtime.patchSelector(group, name)
-            }
+            override fun patchSelector(group: String, name: String): Boolean =
+                runtime.patchSelector(group, name)
 
-            override fun closeConnection(id: String): Boolean {
-                return runtime.closeConnection(id)
-            }
+            override fun closeConnection(id: String): Boolean = runtime.closeConnection(id)
 
             override fun closeAllConnections() {
                 runtime.closeAllConnections()
@@ -202,12 +193,11 @@ class RootTunRootService : RootService() {
                 stopSelf()
             }
 
-            override fun queryRecentLogsJson(sinceSeq: Long): String {
-                return RootTunJson.Default.encodeToString(
+            override fun queryRecentLogsJson(sinceSeq: Long): String =
+                RootTunJson.Default.encodeToString(
                     RootTunLogChunk.serializer(),
                     RootTunLogChunk.from(runtime.queryRecentLogsJson(sinceSeq)),
                 )
-            }
         }
 
     override fun onCreate() {
@@ -223,13 +213,9 @@ class RootTunRootService : RootService() {
         runtime = SessionRuntime(host = runtimeHost, transport = RootTunTransport())
     }
 
-    override fun onBind(intent: Intent): IBinder {
-        return binder
-    }
+    override fun onBind(intent: Intent): IBinder = binder
 
-    override fun onUnbind(intent: Intent): Boolean {
-        return false
-    }
+    override fun onUnbind(intent: Intent): Boolean = false
 
     override fun onDestroy() {
         if (this::runtime.isInitialized && runtime.snapshot().phase.running) {
@@ -239,9 +225,8 @@ class RootTunRootService : RootService() {
         super.onDestroy()
     }
 
-    private fun decodeRequest(requestJson: String): RootTunStartRequest {
-        return RootTunJson.Default.decodeFromString(RootTunStartRequest.serializer(), requestJson)
-    }
+    private fun decodeRequest(requestJson: String): RootTunStartRequest =
+        RootTunJson.Default.decodeFromString(RootTunStartRequest.serializer(), requestJson)
 
     private fun createSpec(action: String): RuntimeSpec {
         startupLogStore.append("ROOT_TUN root-service: spec create begin action=$action")
@@ -254,10 +239,9 @@ class RootTunRootService : RootService() {
 
     private fun encodeResult(
         result: com.github.yumelira.yumebox.service.runtime.session.RuntimeOperationResult
-    ): String {
-        return RootTunJson.Default.encodeToString(
+    ): String =
+        RootTunJson.Default.encodeToString(
             RootTunOperationResult.serializer(),
             RootTunOperationResult(success = result.success, error = result.error),
         )
-    }
 }

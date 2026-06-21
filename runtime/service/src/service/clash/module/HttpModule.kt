@@ -25,7 +25,6 @@ import com.github.yumelira.yumebox.core.Clash
 import java.security.SecureRandom
 
 class HttpModule(service: Service) : Module<Unit>(service) {
-
     private val random = SecureRandom()
 
     fun start(): String? {

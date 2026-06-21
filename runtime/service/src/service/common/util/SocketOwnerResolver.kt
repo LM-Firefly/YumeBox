@@ -44,18 +44,15 @@ class SocketOwnerResolver(context: Context) {
         return encode(uid, resolvePackageName(uid))
     }
 
-    private fun encode(uid: Int, packageName: String): String {
-        return "$uid\t$packageName"
-    }
+    private fun encode(uid: Int, packageName: String): String = "$uid\t$packageName"
 
     private fun resolveUid(
         protocol: Int,
         source: InetSocketAddress,
         target: InetSocketAddress,
-    ): Int {
-        return runCatching { connectivity?.getConnectionOwnerUid(protocol, source, target) ?: -1 }
+    ): Int =
+        runCatching { connectivity?.getConnectionOwnerUid(protocol, source, target) ?: -1 }
             .getOrDefault(-1)
-    }
 
     private fun resolvePackageName(uid: Int): String {
         packageCache[uid]?.let {

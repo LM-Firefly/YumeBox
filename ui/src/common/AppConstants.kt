@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 
 object AppConstants {
-
     object UI {
         val TRAFFIC_FONT_SIZE = 96.sp
         val TRAFFIC_LETTER_SPACING = (-3).sp

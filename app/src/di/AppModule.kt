@@ -51,5 +51,3 @@ val appModule: List<Module> =
         featureProxyModules +
         featureOverrideModules +
         featureMetaModules
-
-

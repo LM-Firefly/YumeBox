@@ -25,12 +25,11 @@ import android.graphics.Typeface
 import timber.log.Timber
 
 object EditorFontManager {
-
     private const val FONT_PATH = "fonts/JetBrainsMono-Regular.ttf"
     private var cachedFont: Typeface? = null
 
-    fun getEditorTypeface(context: Context): Typeface {
-        return cachedFont
+    fun getEditorTypeface(context: Context): Typeface =
+        cachedFont
             ?: try {
                 Typeface.createFromAsset(context.assets, FONT_PATH).also {
                     cachedFont = it
@@ -40,9 +39,4 @@ object EditorFontManager {
                 Timber.w(error, "Failed to load JetBrainsMono font, falling back to MONOSPACE")
                 Typeface.MONOSPACE
             }
-    }
-
-    fun clearCache() {
-        cachedFont = null
-    }
 }

@@ -27,7 +27,11 @@ import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.root.RootTunStateStore
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 object RootTunReloadScheduler {
@@ -44,6 +48,7 @@ object RootTunReloadScheduler {
     private var reloadJob: Job? = null
     private val pendingReasons = linkedSetOf<Reason>()
     private var dirtyWhileRunning = false
+
     @Volatile private var suppressNestedSchedule = false
 
     fun isInternalOverrideSyncInProgress(): Boolean = suppressNestedSchedule

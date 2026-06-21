@@ -45,7 +45,10 @@ private data class ThemeColors(
     val onBackgroundVariant: Color,
 )
 
-private data class ThemePalette(val light: ThemeColors, val dark: ThemeColors)
+private data class ThemePalette(
+    val light: ThemeColors,
+    val dark: ThemeColors,
+)
 
 const val DEFAULT_THEME_SEED_ARGB: Long = 0xFFFFFFFFL
 const val DEFAULT_CUSTOM_THEME_SEED_ARGB: Long = 0xFF138A74L
@@ -236,8 +239,8 @@ fun colorFromArgb(argb: Long): Color = Color(argb.toInt())
 
 fun colorToArgbLong(color: Color): Long = color.toArgb().toLong()
 
-private fun derivePaletteFromSeed(seed: Color, invertOnPrimaryColors: Boolean): ThemePalette {
-    return ThemePalette(
+private fun derivePaletteFromSeed(seed: Color, invertOnPrimaryColors: Boolean): ThemePalette =
+    ThemePalette(
         light =
             deriveThemeColors(
                 base = basePalette.light,
@@ -253,7 +256,6 @@ private fun derivePaletteFromSeed(seed: Color, invertOnPrimaryColors: Boolean): 
                 invertOnPrimaryColors = invertOnPrimaryColors,
             ),
     )
-}
 
 private fun deriveThemeColors(
     base: ThemeColors,

@@ -41,10 +41,6 @@ abstract class ContractViewModel<Effect : Any> : ViewModel() {
         )
     val effect: SharedFlow<Effect> = _effect.asSharedFlow()
 
-    protected suspend fun emitEffect(effect: Effect) {
-        _effect.emit(effect)
-    }
-
     protected fun tryEmitEffect(effect: Effect) {
         _effect.tryEmit(effect)
     }
@@ -99,10 +95,6 @@ abstract class AndroidContractStateViewModel<State : LoadableState<State>, Effec
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
     val effect: SharedFlow<Effect> = _effect.asSharedFlow()
-
-    protected suspend fun emitEffect(effect: Effect) {
-        _effect.emit(effect)
-    }
 
     protected fun tryEmitEffect(effect: Effect) {
         _effect.tryEmit(effect)

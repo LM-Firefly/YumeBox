@@ -20,15 +20,20 @@
 
 package com.github.yumelira.yumebox.presentation.theme
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.navigation.NavBackStackEntry
 import com.ramcosta.composedestinations.animations.NavHostAnimatedDestinationStyle
 
 object NavigationTransitions {
-
     private const val DURATION = 340
     private const val FADE_DURATION = 140
 
@@ -37,7 +42,6 @@ object NavigationTransitions {
 
     val defaultStyle =
         object : NavHostAnimatedDestinationStyle() {
-
             override val enterTransition:
                 AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
                 {

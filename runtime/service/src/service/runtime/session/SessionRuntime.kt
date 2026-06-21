@@ -21,7 +21,13 @@
 package com.github.yumelira.yumebox.service.runtime.session
 
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.ServiceNetworkObserver
@@ -29,11 +35,16 @@ import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
-import java.util.TimeZone
-import kotlin.math.min
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.serializer
 import timber.log.Timber
+import java.util.TimeZone
+import kotlin.math.min
 
 class SessionRuntime(
     private val host: RuntimeHost,
@@ -43,6 +54,7 @@ class SessionRuntime(
     private val compiledConfigPipeline = CompiledConfigPipeline(host.context.appContextOrSelf)
     private val proxyGroupResolver = RuntimeProxyGroupResolver(compiledConfigPipeline)
     private val lock = Any()
+
     @Volatile private var interruptReason: String? = null
     private var currentSpec: RuntimeSpec? = null
     private var currentSnapshot: RuntimeSnapshot = RuntimeSnapshot(targetMode = host.mode)
@@ -53,8 +65,8 @@ class SessionRuntime(
             publishSnapshot(currentSnapshot.copy(logReady = ready))
         }
 
-    fun start(spec: RuntimeSpec): RuntimeOperationResult {
-        return synchronized(lock) {
+    fun start(spec: RuntimeSpec): RuntimeOperationResult =
+        synchronized(lock) {
             clearInterruptRequest()
             runCatching {
                     stopInternal(reason = null, notifyHost = false)
@@ -75,10 +87,9 @@ class SessionRuntime(
                     }
                 }
         }
-    }
 
-    fun reload(spec: RuntimeSpec): RuntimeOperationResult {
-        return synchronized(lock) {
+    fun reload(spec: RuntimeSpec): RuntimeOperationResult =
+        synchronized(lock) {
             clearInterruptRequest()
             runCatching {
                     startupLog(spec, "session: reload begin")
@@ -98,10 +109,9 @@ class SessionRuntime(
                     }
                 }
         }
-    }
 
-    fun restart(spec: RuntimeSpec): RuntimeOperationResult {
-        return synchronized(lock) {
+    fun restart(spec: RuntimeSpec): RuntimeOperationResult =
+        synchronized(lock) {
             clearInterruptRequest()
             runCatching {
                     stopInternal(reason = null, notifyHost = false)
@@ -122,7 +132,6 @@ class SessionRuntime(
                     }
                 }
         }
-    }
 
     fun stop(reason: String? = null): RuntimeOperationResult {
         requestStop(reason)
@@ -154,13 +163,15 @@ class SessionRuntime(
 
     fun snapshot(): RuntimeSnapshot = currentSnapshot
 
-    fun queryTunnelState(): TunnelState {
-        return if (currentSnapshot.phase == RuntimePhase.Running) Clash.queryTunnelState()
-        else TunnelState(TunnelState.Mode.Rule)
-    }
+    fun queryTunnelState(): TunnelState =
+        if (currentSnapshot.phase == RuntimePhase.Running) {
+            Clash.queryTunnelState()
+        } else {
+            TunnelState(TunnelState.Mode.Rule)
+        }
 
-    fun queryTrafficNow(): Long {
-        return if (currentSnapshot.phase == RuntimePhase.Running) {
+    fun queryTrafficNow(): Long =
+        if (currentSnapshot.phase == RuntimePhase.Running) {
             Clash.queryTrafficNow().also {
                 queryCache.updateTrafficNow(it)
                 publishSnapshot(currentSnapshot.copy(trafficReady = true))
@@ -168,10 +179,9 @@ class SessionRuntime(
         } else {
             0L
         }
-    }
 
-    fun queryTrafficTotal(): Long {
-        return if (currentSnapshot.phase == RuntimePhase.Running) {
+    fun queryTrafficTotal(): Long =
+        if (currentSnapshot.phase == RuntimePhase.Running) {
             Clash.queryTrafficTotal().also {
                 queryCache.updateTrafficTotal(it)
                 publishSnapshot(currentSnapshot.copy(trafficReady = true))
@@ -179,7 +189,6 @@ class SessionRuntime(
         } else {
             0L
         }
-    }
 
     fun queryConnections(): ConnectionSnapshot {
         if (currentSnapshot.phase != RuntimePhase.Running) return ConnectionSnapshot()
@@ -230,9 +239,7 @@ class SessionRuntime(
         return ensureRuntimeSnapshot().providers
     }
 
-    fun patchSelector(group: String, name: String): Boolean {
-        return Clash.patchSelector(group, name)
-    }
+    fun patchSelector(group: String, name: String): Boolean = Clash.patchSelector(group, name)
 
     fun closeConnection(id: String): Boolean {
         if (currentSnapshot.phase != RuntimePhase.Running) return false
@@ -271,7 +278,10 @@ class SessionRuntime(
                 Clash.healthCheckProxy(proxyName).await().also { refreshRuntimeProxyGroup(group) }
             }
             .getOrElse {
-                """{"delay":-1,"error":${com.github.yumelira.yumebox.service.root.RootTunJson.Default.encodeToString(String.serializer(), it.message ?: "health check proxy failed")}}"""
+                """{"delay":-1,"error":${com.github.yumelira.yumebox.service.root.RootTunJson.Default.encodeToString(
+                String.serializer(),
+                it.message ?: "health check proxy failed",
+            )}}"""
             }
     }
 
@@ -293,9 +303,8 @@ class SessionRuntime(
         telemetry.setLogObserver(observer)
     }
 
-    fun queryRecentLogsJson(sinceSeq: Long): RuntimeLogChunk {
-        return telemetry.queryRecentLogsJson(sinceSeq)
-    }
+    fun queryRecentLogsJson(sinceSeq: Long): RuntimeLogChunk =
+        telemetry.queryRecentLogsJson(sinceSeq)
 
     private fun startInternal(spec: RuntimeSpec) {
         val startedAt = System.currentTimeMillis()
@@ -396,8 +405,11 @@ class SessionRuntime(
         publishSnapshot(
             currentSnapshot.copy(
                 phase =
-                    if (currentSnapshot.phase == RuntimePhase.Idle) RuntimePhase.Idle
-                    else RuntimePhase.Stopping,
+                    if (currentSnapshot.phase == RuntimePhase.Idle) {
+                        RuntimePhase.Idle
+                    } else {
+                        RuntimePhase.Stopping
+                    },
                 transportReady = false,
                 groupsReady = false,
                 trafficReady = false,
@@ -467,7 +479,10 @@ class SessionRuntime(
         startupLog(
             spec,
             "runtime verify: expectedGroups=${expectedGroups.size}" +
-                expectedGroups.takeIf { it.isNotEmpty() }?.let { " sample=${it.take(5)}" }.orEmpty(),
+                expectedGroups
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { " sample=${it.take(5)}" }
+                    .orEmpty(),
         )
         if (expectedGroups.isEmpty()) {
             return
@@ -504,15 +519,14 @@ class SessionRuntime(
         )
     }
 
-    private fun readExpectedGroupNames(spec: RuntimeSpec): List<String> {
-        return runCatching {
+    private fun readExpectedGroupNames(spec: RuntimeSpec): List<String> =
+        runCatching {
                 runBlocking { proxyGroupResolver.expectedGroupNames(spec, false) }
             }
             .getOrElse { error ->
                 startupLog(spec, "runtime verify: expected group inspect failed=${error.message}")
                 emptyList()
             }
-    }
 
     private fun startObservers() {
         if (networkObserver == null) {
@@ -583,17 +597,15 @@ class SessionRuntime(
         return group
     }
 
-    private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return runBlocking {
+    private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> =
+        runBlocking {
             proxyGroupResolver.resolvedGroupNames(currentSpec, excludeNotSelectable)
         }
-    }
 
-    private fun resolveRuntimeProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
-        return runBlocking {
+    private fun resolveRuntimeProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> =
+        runBlocking {
             proxyGroupResolver.resolvedGroups(currentSpec, excludeNotSelectable, enrichLive = true)
         }
-    }
 
     private fun ensureRuntimeSnapshot(): SessionRuntimeQuerySnapshot {
         val snapshot = queryCache.snapshot()

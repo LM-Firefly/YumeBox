@@ -67,9 +67,7 @@ object YamlCodec {
         return json.decodeFromJsonElement(serializer, element)
     }
 
-    fun dumpMap(value: Map<String, Any?>): String {
-        return dumpValue(value)
-    }
+    fun dumpMap(value: Map<String, Any?>): String = dumpValue(value)
 
     @Suppress("UNCHECKED_CAST")
     fun loadMap(content: String): Map<String, Any?> {
@@ -77,21 +75,17 @@ object YamlCodec {
         return loaded as? Map<String, Any?> ?: emptyMap()
     }
 
-    fun dumpValue(value: Any?): String {
-        return yaml.dump(normalizeYamlValue(value))
-    }
+    fun dumpValue(value: Any?): String = yaml.dump(normalizeYamlValue(value))
 
-    fun loadValue(content: String): Any? {
-        return normalizeYamlValue(yaml.load(content))
-    }
+    fun loadValue(content: String): Any? = normalizeYamlValue(yaml.load(content))
 
     fun validate(content: String) {
         if (content.isBlank()) return
         yaml.load(content)
     }
 
-    private fun toYamlNode(element: JsonElement): Any? {
-        return when (element) {
+    private fun toYamlNode(element: JsonElement): Any? =
+        when (element) {
             JsonNull -> null
             is JsonObject ->
                 LinkedHashMap<String, Any?>().apply {
@@ -109,10 +103,9 @@ object YamlCodec {
                     else -> element.content
                 }
         }
-    }
 
-    private fun toJsonElement(value: Any?): JsonElement {
-        return when (value) {
+    private fun toJsonElement(value: Any?): JsonElement =
+        when (value) {
             null -> JsonNull
             is Map<*, *> ->
                 JsonObject(
@@ -130,10 +123,9 @@ object YamlCodec {
             is Number -> JsonPrimitive(value.toDouble())
             else -> JsonPrimitive(value.toString())
         }
-    }
 
-    private fun normalizeYamlValue(value: Any?): Any? {
-        return when (value) {
+    private fun normalizeYamlValue(value: Any?): Any? =
+        when (value) {
             null -> null
             is Map<*, *> ->
                 LinkedHashMap<String, Any?>().apply {
@@ -146,5 +138,4 @@ object YamlCodec {
             is Array<*> -> value.map(::normalizeYamlValue)
             else -> value
         }
-    }
 }

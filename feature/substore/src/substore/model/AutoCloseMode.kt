@@ -28,14 +28,13 @@ enum class AutoCloseMode(val minutes: Int?) {
     MINUTES_5(5),
     MINUTES_10(10);
 
-    fun getDisplayName(): String {
-        return when (this) {
+    fun getDisplayName(): String =
+        when (this) {
             ALWAYS_ON -> MLang.Feature.ServiceStatus.AutoCloseModeAlwaysOn
             DISABLED -> MLang.Feature.ServiceStatus.AutoCloseModeDisabled
             MINUTES_5 -> MLang.Feature.ServiceStatus.AutoCloseMode5Min
             MINUTES_10 -> MLang.Feature.ServiceStatus.AutoCloseMode10Min
         }
-    }
 
     val shouldStartTimer: Boolean
         get() = minutes != null

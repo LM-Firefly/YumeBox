@@ -23,7 +23,7 @@ package com.github.yumelira.yumebox.service.clash.module
 import android.app.Service
 import android.content.Intent
 import com.github.yumelira.yumebox.core.Clash
-import java.util.*
+import java.util.TimeZone
 
 class TimeZoneModule(service: Service) : Module<Unit>(service) {
     override suspend fun run() {

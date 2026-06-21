@@ -23,23 +23,22 @@ package com.github.yumelira.yumebox.screen.settings
 import android.content.Context
 import android.net.Uri
 import com.github.yumelira.yumebox.core.util.acgWallpaperFile
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
- * Copies the ACG wallpaper from an external [sourceUri] (typically a `content://` URI from the photo
- * picker) into the app-private files dir, so rendering survives deletion/permission loss of the
- * original source.
+ * Copies the ACG wallpaper from an external [sourceUri] (typically a `content://` URI from the
+ * photo picker) into the app-private files dir, so rendering survives deletion/permission loss of
+ * the original source.
  *
- * The copy is written to a temp file then renamed over the stable slot, so a half-written copy never
- * replaces a good one (storage-failure edge case).
+ * The copy is written to a temp file then renamed over the stable slot, so a half-written copy
+ * never replaces a good one (storage-failure edge case).
  *
  * @return a `file://` URI pointing at the local copy on success, or `null` if the source could not
  *   be read (caller should fall back to the original source URI in that case).
  */
 object AcgWallpaperImporter {
-
     suspend fun importToLocal(context: Context, sourceUri: String): String? =
         withContext(Dispatchers.IO) {
             runCatching {

@@ -42,7 +42,6 @@ class CustomRoutingViewModel(
     private val activeProfileOverrideReloader: ActiveProfileOverrideReloader,
     private val customRoutingBootstrapper: CustomRoutingBootstrapper,
 ) : ViewModel() {
-
     private val presetSelectionState = MutableStateFlow(defaultOverridePresetTemplateSelection())
     val presetSelection: StateFlow<OverridePresetTemplateSelection> =
         presetSelectionState.asStateFlow()
@@ -64,32 +63,28 @@ class CustomRoutingViewModel(
 
     suspend fun savePresetSelection(
         updatedPresetSelection: OverridePresetTemplateSelection
-    ): Result<Unit> {
-        return runCatching {
-            val generatedYaml = buildPresetTemplateYaml(updatedPresetSelection)
-            overrideConfigRepository.saveCustomRoutingContent(generatedYaml)
-            applyContentState(generatedYaml)
-            activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
-                OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
-            )
-        }
+    ): Result<Unit> = runCatching {
+        val generatedYaml = buildPresetTemplateYaml(updatedPresetSelection)
+        overrideConfigRepository.saveCustomRoutingContent(generatedYaml)
+        applyContentState(generatedYaml)
+        activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
+            OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+        )
     }
 
-    suspend fun saveCustomRoutingYaml(content: String): Result<Unit> {
-        return runCatching {
-            val contentToSave =
-                if (content.isBlank()) {
-                    buildPresetTemplateYaml(defaultOverridePresetTemplateSelection())
-                } else {
-                    YamlCodec.validate(content)
-                    content
-                }
-            overrideConfigRepository.saveCustomRoutingContent(contentToSave)
-            applyContentState(contentToSave)
-            activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
-                OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
-            )
-        }
+    suspend fun saveCustomRoutingYaml(content: String): Result<Unit> = runCatching {
+        val contentToSave =
+            if (content.isBlank()) {
+                buildPresetTemplateYaml(defaultOverridePresetTemplateSelection())
+            } else {
+                YamlCodec.validate(content)
+                content
+            }
+        overrideConfigRepository.saveCustomRoutingContent(contentToSave)
+        applyContentState(contentToSave)
+        activeProfileOverrideReloader.reapplyActiveProfileIfUsingOverride(
+            OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
+        )
     }
 
     private suspend fun reloadStateFromStoredContent() {

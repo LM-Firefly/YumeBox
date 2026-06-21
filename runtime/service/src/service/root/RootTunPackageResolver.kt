@@ -90,8 +90,8 @@ internal class RootTunPackageResolver(
         )
     }
 
-    private fun resolvePackageUidLookup(selectedPackages: Set<String>): PackageUidLookup {
-        return when (store.accessControlMode) {
+    private fun resolvePackageUidLookup(selectedPackages: Set<String>): PackageUidLookup =
+        when (store.accessControlMode) {
             AccessControlMode.AcceptAll,
             AccessControlMode.RejectSelected -> resolveFullPackageUidLookup(selectedPackages)
 
@@ -102,7 +102,6 @@ internal class RootTunPackageResolver(
                     hasFullPackageAccess = false,
                 )
         }
-    }
 
     private fun resolveFullPackageUidLookup(selectedPackages: Set<String>): PackageUidLookup {
         RootPackageShell.queryPackageUidMap()
@@ -159,8 +158,8 @@ internal class RootTunPackageResolver(
         return packageInfo.applicationInfo?.uid
     }
 
-    private fun queryPackageInfo(packageName: String): PackageInfo {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    private fun queryPackageInfo(packageName: String): PackageInfo =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.getPackageInfo(
                 packageName,
                 PackageManager.PackageInfoFlags.of(0),
@@ -168,16 +167,14 @@ internal class RootTunPackageResolver(
         } else {
             @Suppress("DEPRECATION") context.packageManager.getPackageInfo(packageName, 0)
         }
-    }
 
-    private fun installedPackageUidMap(): Map<String, Int> {
-        return installedPackages()
+    private fun installedPackageUidMap(): Map<String, Int> =
+        installedPackages()
             .asSequence()
             .mapNotNull { packageInfo ->
                 packageInfo.applicationInfo?.uid?.let { uid -> packageInfo.packageName to uid }
             }
             .toMap()
-    }
 
     private fun hasInstalledAppsPermission(): Boolean {
         val permission = MIUI_GET_INSTALLED_APPS_PERMISSION
@@ -196,13 +193,12 @@ internal class RootTunPackageResolver(
             PackageManager.PERMISSION_GRANTED
     }
 
-    private fun installedPackages(): List<PackageInfo> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    private fun installedPackages(): List<PackageInfo> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
         } else {
             @Suppress("DEPRECATION") context.packageManager.getInstalledPackages(0)
         }
-    }
 
     private companion object {
         const val APP_UID_MIN = 10_000

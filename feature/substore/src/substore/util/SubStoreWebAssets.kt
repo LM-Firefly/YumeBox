@@ -40,9 +40,7 @@ object SubStoreWebAssets {
         }
     }
 
-    fun getLocalBaseUrl(): String {
-        return "file://${SubStorePaths.frontendDir.absolutePath}/"
-    }
+    fun getLocalBaseUrl(): String = "file://${SubStorePaths.frontendDir.absolutePath}/"
 
     fun getLocalBaseUrl(context: Context): String = getLocalBaseUrl()
 }

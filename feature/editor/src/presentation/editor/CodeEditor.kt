@@ -21,7 +21,11 @@
 package com.github.yumelira.yumebox.feature.editor.editor
 
 import android.util.TypedValue
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -111,7 +115,6 @@ private fun createCodeEditor(
     isDark: Boolean,
     onTextChange: ((String) -> Unit)?,
 ): CodeEditor {
-
     TextMateInitializer.initialize(context)
 
     return CodeEditor(context).apply {

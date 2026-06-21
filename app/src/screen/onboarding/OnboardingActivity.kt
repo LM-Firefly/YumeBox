@@ -52,7 +52,6 @@ import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 
 internal class OnboardingActivity : OnboardingBaseActivity() {
-
     private val appSettingsStorage: AppSettingsStore by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -207,7 +206,9 @@ private fun OnboardingPagerScreen(
                                     runCatching { colorFromArgb(themeState.themeSeedColorArgb) }
                                         .getOrDefault(Color.White)
                                 editingThemeSeedHex =
-                                    "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
+                                    "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(
+                                        16
+                                    ).uppercase().padStart(6, '0')}"
                             }
                             showThemeColorPicker = show
                         },

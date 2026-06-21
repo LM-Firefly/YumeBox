@@ -49,21 +49,22 @@ object DashboardShortcutHelper {
 
     private fun fetchFavicon(context: Context, url: String): IconCompat {
         return runCatching {
-            val u = java.net.URL(url)
-            val faviconUrl = java.net.URL("${u.protocol}://${u.host}/favicon.ico")
-            val conn =
-                (faviconUrl.openConnection() as java.net.HttpURLConnection).apply {
-                    connectTimeout = 5000
-                    readTimeout = 5000
-                    instanceFollowRedirects = true
+                val u = java.net.URL(url)
+                val faviconUrl = java.net.URL("${u.protocol}://${u.host}/favicon.ico")
+                val conn =
+                    (faviconUrl.openConnection() as java.net.HttpURLConnection).apply {
+                        connectTimeout = 5000
+                        readTimeout = 5000
+                        instanceFollowRedirects = true
+                    }
+                conn.inputStream.use { input ->
+                    val bytes = input.readBytes()
+                    val bmp =
+                        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                            ?: return@runCatching null
+                    IconCompat.createWithBitmap(bmp)
                 }
-            conn.inputStream.use { input ->
-                val bytes = input.readBytes()
-                val bmp =
-                    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        ?: return@runCatching null
-                IconCompat.createWithBitmap(bmp)
             }
-        }.getOrNull() ?: IconCompat.createWithResource(context, R.mipmap.ic_launcher)
+            .getOrNull() ?: IconCompat.createWithResource(context, R.mipmap.ic_launcher)
     }
 }

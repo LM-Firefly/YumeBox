@@ -21,7 +21,11 @@
 package com.github.yumelira.yumebox.service
 
 import android.content.Context
-import android.net.*
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import com.github.yumelira.yumebox.core.Clash
 import java.net.Inet4Address
@@ -108,9 +112,8 @@ class ServiceNetworkObserver(
         return entry?.value?.dnsList ?: emptyList()
     }
 
-    private fun selectNetwork(): Network? {
-        return networkInfos.asSequence().minByOrNull { networkToScore(it) }?.key
-    }
+    private fun selectNetwork(): Network? =
+        networkInfos.asSequence().minByOrNull { networkToScore(it) }?.key
 
     private fun networkToScore(entry: Map.Entry<Network, NetworkInfo>): Int {
         val capabilities = connectivity?.getNetworkCapabilities(entry.key)

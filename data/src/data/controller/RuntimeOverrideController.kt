@@ -79,13 +79,11 @@ class RuntimeOverrideController(
         return Result.success(updated)
     }
 
-    private suspend fun requireActiveProfile(): Profile {
-        return queryActiveProfile() ?: error("No active profile selected")
-    }
+    private suspend fun requireActiveProfile(): Profile =
+        queryActiveProfile() ?: error("No active profile selected")
 
-    private fun runtimeOverrideId(profileUuid: UUID): String {
-        return "${OverrideConfigStore.INTERNAL_RUNTIME_PREFIX}-profile-$profileUuid"
-    }
+    private fun runtimeOverrideId(profileUuid: UUID): String =
+        "${OverrideConfigStore.INTERNAL_RUNTIME_PREFIX}-profile-$profileUuid"
 
     private companion object {
         private const val INTERNAL_RUNTIME_NAME = "运行时覆写"

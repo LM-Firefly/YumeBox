@@ -21,12 +21,27 @@
 package com.github.yumelira.yumebox.presentation.screen.node
 
 import androidx.compose.animation.animateColor
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -184,24 +199,28 @@ internal fun NodeSelectableCard(
             modifier
                 .fillMaxWidth()
                 .let {
-                    if (onClick != null)
+                    if (onClick != null) {
                         it.pressable(
                             interactionSource = interactionSource,
                             indication = SinkFeedback(),
                         )
-                    else it
+                    } else {
+                        it
+                    }
                 }
                 .clip(shape)
                 .background(backgroundColor)
                 .border(sizes.nodeCardBorderWidth, borderColor, shape)
                 .let {
-                    if (onClick != null)
+                    if (onClick != null) {
                         it.clickable(
                             interactionSource = interactionSource,
                             indication = null,
                             onClick = onClick,
                         )
-                    else it
+                    } else {
+                        it
+                    }
                 }
                 .padding(horizontal = sizes.nodeCardPaddingHorizontal, vertical = paddingVertical),
         content = content,
@@ -298,13 +317,15 @@ internal fun NodeCard(
                                 modifier =
                                     Modifier.padding(start = sizes.nodeCardTrailingGap).let {
                                         modifier ->
-                                        if (onNodeTestClick != null && singleNodeTestEnabled)
+                                        if (onNodeTestClick != null && singleNodeTestEnabled) {
                                             modifier.clickable(
                                                 interactionSource = delayInteractionSource,
                                                 indication = null,
                                                 onClick = onNodeTestClick,
                                             )
-                                        else modifier
+                                        } else {
+                                            modifier
+                                        }
                                     },
                             )
                         }
@@ -396,8 +417,11 @@ private fun NodeMultiplierChip(multiplier: Float) {
         if (isHigh) appColors.status.destructiveContainer else primary.copy(alpha = opacity.subtle)
     val chipColor = if (isHigh) appColors.status.destructive else primary
     val label =
-        if (multiplier == multiplier.toLong().toFloat()) "x${multiplier.toLong()}"
-        else "x$multiplier"
+        if (multiplier == multiplier.toLong().toFloat()) {
+            "x${multiplier.toLong()}"
+        } else {
+            "x$multiplier"
+        }
 
     Row(
         modifier =

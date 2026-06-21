@@ -34,8 +34,6 @@ import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import dev.oom_wg.purejoy.mlang.MLang
-import java.io.File
-import java.util.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +42,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
+import java.util.UUID
 
 class ProfilesViewModel(
     application: Application,
@@ -54,7 +54,6 @@ class ProfilesViewModel(
         application,
         ProfilesUiState(),
     ) {
-
     val linkOpenMode: Preference<LinkOpenMode> = profileLinksStorage.linkOpenMode
     val links: Preference<List<ProfileLink>> = profileLinksStorage.links
     val defaultLinkId: Preference<String> = profileLinksStorage.defaultLinkId
@@ -151,7 +150,7 @@ class ProfilesViewModel(
     private suspend fun copyFileToImportedDir(uri: Uri, uuid: UUID) {
         withContext(Dispatchers.IO) {
             val context = getApplication<Application>()
-            val importedDir = File(context.filesDir, "imported/${uuid}")
+            val importedDir = File(context.filesDir, "imported/$uuid")
             importedDir.mkdirs()
 
             val outputFile = File(importedDir, "config.yaml")

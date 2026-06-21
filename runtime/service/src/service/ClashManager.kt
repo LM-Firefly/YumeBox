@@ -23,7 +23,14 @@ package com.github.yumelira.yumebox.service
 import android.content.Context
 import android.content.Intent
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.*
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.LogMessage
+import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.ProviderList
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.log.Log
@@ -36,8 +43,15 @@ import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
 import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
 import com.tencent.mmkv.MMKV
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -52,9 +66,7 @@ class ClashManager(private val context: Context) :
     private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
     private var logReceiver: ReceiveChannel<LogMessage>? = null
 
-    override fun queryTunnelState(): TunnelState {
-        return Clash.queryTunnelState()
-    }
+    override fun queryTunnelState(): TunnelState = Clash.queryTunnelState()
 
     override fun queryTrafficNow(): Long {
         if (!StatusProvider.serviceRunning) return 0L
@@ -66,13 +78,10 @@ class ClashManager(private val context: Context) :
         return Clash.queryTrafficTotal()
     }
 
-    override fun queryConnections(): ConnectionSnapshot {
-        return Clash.queryConnections()
-    }
+    override fun queryConnections(): ConnectionSnapshot = Clash.queryConnections()
 
-    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return queryProfileProxyGroups(excludeNotSelectable).map(ProxyGroup::name)
-    }
+    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> =
+        queryProfileProxyGroups(excludeNotSelectable).map(ProxyGroup::name)
 
     override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         if (store.activeProfile == null) return emptyList()
@@ -95,37 +104,27 @@ class ClashManager(private val context: Context) :
         }
     }
 
-    override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
-        return runBlocking(Dispatchers.Default) {
+    override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> =
+        runBlocking(Dispatchers.Default) {
             proxyGroupResolver.resolvedGroups(activeRuntimeSpec(), excludeNotSelectable)
         }
-    }
 
-    override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return runBlocking(Dispatchers.Default) {
+    override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> =
+        runBlocking(Dispatchers.Default) {
             proxyGroupResolver.resolvedGroupNames(activeRuntimeSpec(), excludeNotSelectable)
         }
-    }
 
-    override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
-        return Clash.queryGroup(name, proxySort)
-    }
+    override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup =
+        Clash.queryGroup(name, proxySort)
 
-    override fun queryConfiguration(): UiConfiguration {
-        return Clash.queryConfiguration()
-    }
+    override fun queryConfiguration(): UiConfiguration = Clash.queryConfiguration()
 
-    override fun queryProviders(): ProviderList {
-        return ProviderList(Clash.queryProviders())
-    }
+    override fun queryProviders(): ProviderList = ProviderList(Clash.queryProviders())
 
-    override fun patchSelector(group: String, name: String): Boolean {
-        return Clash.patchSelector(group, name)
-    }
+    override fun patchSelector(group: String, name: String): Boolean =
+        Clash.patchSelector(group, name)
 
-    override fun closeConnection(id: String): Boolean {
-        return Clash.closeConnection(id)
-    }
+    override fun closeConnection(id: String): Boolean = Clash.closeConnection(id)
 
     override fun closeAllConnections() {
         Clash.closeAllConnections()
@@ -158,9 +157,8 @@ class ClashManager(private val context: Context) :
         return jsonElement.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
     }
 
-    override suspend fun updateProvider(type: Provider.Type, name: String) {
-        return Clash.updateProvider(type, name).await()
-    }
+    override suspend fun updateProvider(type: Provider.Type, name: String) =
+        Clash.updateProvider(type, name).await()
 
     private fun configuredProxyMode(): ProxyMode {
         val raw =

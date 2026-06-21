@@ -186,8 +186,11 @@ class VpnTunTransport(
                             if (store.allowIpv6) ",$TUN_GATEWAY6/$TUN_SUBNET_PREFIX6" else "",
                     portal = TUN_PORTAL + if (store.allowIpv6) ",$TUN_PORTAL6" else "",
                     dns =
-                        if (store.dnsHijacking) NET_ANY
-                        else (TUN_DNS + if (store.allowIpv6) ",$TUN_DNS6" else ""),
+                        if (store.dnsHijacking) {
+                            NET_ANY
+                        } else {
+                            (TUN_DNS + if (store.allowIpv6) ",$TUN_DNS6" else "")
+                        },
                 )
             }
 

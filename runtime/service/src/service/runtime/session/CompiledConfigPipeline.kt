@@ -23,34 +23,30 @@ package com.github.yumelira.yumebox.service.runtime.session
 import android.content.Context
 import android.util.Log
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.core.model.CompileRequest
 import com.github.yumelira.yumebox.core.model.CompileRawSummary
+import com.github.yumelira.yumebox.core.model.CompileRequest
 import com.github.yumelira.yumebox.core.model.CompileResult
 import com.github.yumelira.yumebox.core.model.OverrideInternalConstants
 import com.github.yumelira.yumebox.core.model.OverrideSpec
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.util.YamlCodec
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
-import java.io.File
-import java.security.MessageDigest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import java.io.File
+import java.security.MessageDigest
 
 class CompiledConfigPipeline(private val context: Context) {
+    fun resolveOverrideSpecs(profileUuid: String): List<OverrideSpec> =
+        resolveOverrideBundle(profileUuid, logger = null).overrides
 
-    fun resolveOverrideSpecs(profileUuid: String): List<OverrideSpec> {
-        return resolveOverrideBundle(profileUuid, logger = null).overrides
-    }
+    fun resolveOverrideSpecs(profileUuid: String, logger: ((String) -> Unit)?): List<OverrideSpec> =
+        resolveOverrideBundle(profileUuid, logger).overrides
 
-    fun resolveOverrideSpecs(profileUuid: String, logger: ((String) -> Unit)?): List<OverrideSpec> {
-        return resolveOverrideBundle(profileUuid, logger).overrides
-    }
-
-    fun resolveOverrideBundle(profileUuid: String): ResolvedOverrideBundle {
-        return resolveOverrideBundle(profileUuid, logger = null)
-    }
+    fun resolveOverrideBundle(profileUuid: String): ResolvedOverrideBundle =
+        resolveOverrideBundle(profileUuid, logger = null)
 
     fun resolveOverrideBundle(
         profileUuid: String,
@@ -121,7 +117,7 @@ class CompiledConfigPipeline(private val context: Context) {
      * alike — goes through the native in-memory compile-and-load path, so no plaintext runtime.yaml
      * is ever written to disk.
      */
-    suspend fun compileAndLoad(spec: RuntimeSpec, logger: ((String) -> Unit)?): Unit {
+    suspend fun compileAndLoad(spec: RuntimeSpec, logger: ((String) -> Unit)?) {
         logger?.invoke(
             "runtime native: compile-and-load begin (ageKey=${spec.ageSecretKey != null})"
         )
@@ -130,10 +126,10 @@ class CompiledConfigPipeline(private val context: Context) {
     }
 
     /**
-     * Deletes any leftover runtime.yaml before loading a profile. runtime.yaml is no longer produced
-     * by any code path, but historical builds may have left one on disk; clearing it for every
-     * profile keeps the invariant "no runtime.yaml ever exists". A missing file is the normal case
-     * and returns silently; only a failed delete of an existing file is treated as an error.
+     * Deletes any leftover runtime.yaml before loading a profile. runtime.yaml is no longer
+     * produced by any code path, but historical builds may have left one on disk; clearing it for
+     * every profile keeps the invariant "no runtime.yaml ever exists". A missing file is the normal
+     * case and returns silently; only a failed delete of an existing file is treated as an error.
      */
     private fun removeStaleRuntimeYaml(spec: RuntimeSpec, logger: ((String) -> Unit)?) {
         val runtimeFile = File(spec.runtimeConfigPath)
@@ -143,7 +139,9 @@ class CompiledConfigPipeline(private val context: Context) {
         if (!runtimeFile.delete()) {
             error("Stale runtime.yaml cleanup failed")
         }
-        logger?.invoke("runtime native: removed stale runtime.yaml output=${runtimeFile.safeLogHash()}")
+        logger?.invoke(
+            "runtime native: removed stale runtime.yaml output=${runtimeFile.safeLogHash()}"
+        )
     }
 
     /**
@@ -151,33 +149,31 @@ class CompiledConfigPipeline(private val context: Context) {
      * in-memory compile (`compileAndInspectGroups`) for every profile — encrypted and non-encrypted
      * alike — so no plaintext finalYaml is ever returned to Kotlin and no runtime.yaml is written.
      */
-    suspend fun previewGroups(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<ProxyGroup> {
-        return withContext(Dispatchers.Default) {
+    suspend fun previewGroups(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<ProxyGroup> =
+        withContext(Dispatchers.Default) {
             Clash.compileAndInspectGroups(
                 buildRequest(spec),
                 File(spec.profileDir),
                 excludeNotSelectable,
             )
         }
-    }
 
     /**
      * Always inspects the tun `route-exclude-address` via the native in-memory compile for every
      * profile, so no plaintext finalYaml leaves native and no runtime.yaml is written.
      */
-    suspend fun previewTunRouteExcludeAddress(spec: RuntimeSpec): List<String> {
-        return withContext(Dispatchers.Default) {
+    suspend fun previewTunRouteExcludeAddress(spec: RuntimeSpec): List<String> =
+        withContext(Dispatchers.Default) {
             Clash.compileAndInspectTunRouteExcludeAddress(buildRequest(spec))
         }
-    }
 
     /**
      * Returns the compiled YAML for non-encrypted profiles (the user-initiated "view compiled
-     * config" export). This is the ONLY path that materialises plaintext finalYaml in Kotlin, and it
-     * is intentionally retained: it is out of scope for the runtime.yaml elimination because it is an
-     * explicit user export, not a runtime/load path. `Clash.compilePreview` returns the YAML in
-     * memory and does NOT write `outputPath` to disk. Throws for encrypted profiles since full YAML
-     * must not reach the Kotlin heap.
+     * config" export). This is the ONLY path that materialises plaintext finalYaml in Kotlin, and
+     * it is intentionally retained: it is out of scope for the runtime.yaml elimination because it
+     * is an explicit user export, not a runtime/load path. `Clash.compilePreview` returns the YAML
+     * in memory and does NOT write `outputPath` to disk. Throws for encrypted profiles since full
+     * YAML must not reach the Kotlin heap.
      */
     suspend fun previewCompiledYaml(
         profileUuid: String,
@@ -186,7 +182,9 @@ class CompiledConfigPipeline(private val context: Context) {
         ageSecretKey: String? = null,
     ): CompileResult =
         withContext(Dispatchers.Default) {
-            require(ageSecretKey == null) { "previewCompiledYaml is not supported for encrypted profiles" }
+            require(ageSecretKey == null) {
+                "previewCompiledYaml is not supported for encrypted profiles"
+            }
             val request =
                 CompileRequest(
                     profileUuid = profileUuid,
@@ -353,25 +351,20 @@ class CompiledConfigPipeline(private val context: Context) {
         return file
     }
 
-    private fun isInternalRuntimeId(overrideId: String): Boolean {
-        return overrideId.startsWith(INTERNAL_RUNTIME_PREFIX)
-    }
+    private fun isInternalRuntimeId(overrideId: String): Boolean =
+        overrideId.startsWith(INTERNAL_RUNTIME_PREFIX)
 
-    private fun isLegacyPresetId(overrideId: String): Boolean {
-        return overrideId.startsWith(LEGACY_PRESET_PREFIX)
-    }
+    private fun isLegacyPresetId(overrideId: String): Boolean =
+        overrideId.startsWith(LEGACY_PRESET_PREFIX)
 
-    private fun isCustomRoutingOverrideId(overrideId: String): Boolean {
-        return overrideId == OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
-    }
+    private fun isCustomRoutingOverrideId(overrideId: String): Boolean =
+        overrideId == OverrideInternalConstants.CUSTOM_ROUTING_OVERRIDE_ID
 
-    private fun isReservedOverrideId(overrideId: String): Boolean {
-        return isInternalRuntimeId(overrideId) || isLegacyPresetId(overrideId)
-    }
+    private fun isReservedOverrideId(overrideId: String): Boolean =
+        isInternalRuntimeId(overrideId) || isLegacyPresetId(overrideId)
 
-    private fun isUserOverrideId(overrideId: String): Boolean {
-        return !isInternalRuntimeId(overrideId) && !isLegacyPresetId(overrideId)
-    }
+    private fun isUserOverrideId(overrideId: String): Boolean =
+        !isInternalRuntimeId(overrideId) && !isLegacyPresetId(overrideId)
 
     private fun describeOverrideFile(file: File, overrideId: String): String {
         val content = file.takeIf(File::exists)?.readText().orEmpty()
@@ -389,11 +382,8 @@ class CompiledConfigPipeline(private val context: Context) {
         }
     }
 
-    suspend fun previewGroupNames(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<String> {
-        return previewGroups(spec, excludeNotSelectable)
-            .map(ProxyGroup::name)
-            .filter(String::isNotBlank)
-    }
+    suspend fun previewGroupNames(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<String> =
+        previewGroups(spec, excludeNotSelectable).map(ProxyGroup::name).filter(String::isNotBlank)
 
     private fun File.toOverrideSpec(): OverrideSpec {
         val extension =
@@ -445,12 +435,11 @@ class CompiledConfigPipeline(private val context: Context) {
     }
 }
 
-private fun String.toOverrideExtension(): String? {
-    return when (lowercase()) {
+private fun String.toOverrideExtension(): String? =
+    when (lowercase()) {
         "yaml",
         "yml" -> "yaml"
         "js",
         "javascript" -> "js"
         else -> null
     }
-}

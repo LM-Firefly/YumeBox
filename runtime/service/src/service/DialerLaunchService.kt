@@ -27,7 +27,6 @@ import androidx.core.app.ServiceCompat
 import com.github.yumelira.yumebox.service.common.constants.Components
 
 class DialerLaunchService : Service() {
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

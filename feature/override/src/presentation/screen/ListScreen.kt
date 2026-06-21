@@ -493,8 +493,11 @@ private fun CreateConfigDialog(
         }
     val stableContentHeight =
         remember(stableContentHeightPx, density) {
-            if (stableContentHeightPx <= 0) UiDp.dp0
-            else with(density) { stableContentHeightPx.toDp() }
+            if (stableContentHeightPx <= 0) {
+                UiDp.dp0
+            } else {
+                with(density) { stableContentHeightPx.toDp() }
+            }
         }
     val importConfigLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
@@ -512,9 +515,11 @@ private fun CreateConfigDialog(
                             ?.use { cursor ->
                                 val columnIndex =
                                     cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                                if (cursor.moveToFirst() && columnIndex >= 0)
+                                if (cursor.moveToFirst() && columnIndex >= 0) {
                                     cursor.getString(columnIndex)
-                                else ""
+                                } else {
+                                    ""
+                                }
                             }
                             .orEmpty()
                             .ifBlank {
@@ -734,7 +739,10 @@ private fun DeleteConfirmDialog(
     }
 }
 
-private data class OverrideConfigListItem(val config: OverrideConfig, val isInUse: Boolean)
+private data class OverrideConfigListItem(
+    val config: OverrideConfig,
+    val isInUse: Boolean,
+)
 
 private enum class OverrideConfigInputMode {
     CreateNew,

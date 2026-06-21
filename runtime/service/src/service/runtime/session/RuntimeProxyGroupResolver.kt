@@ -29,19 +29,17 @@ import java.security.MessageDigest
 /**
  * Resolves the proxy-group list shown in the UI.
  *
- * When a session is running the live core itself is the single source of truth for group
- * **order + membership + live state**: the mihomo fork preserves the `proxy-groups:` declaration
- * order (`config/config.go`), and native `QueryProxyGroupNames` walks the GLOBAL provider in that
- * exact declaration order. Since the rust override path now loads the rawConfig correctly, the
- * running core already yields the correct order with real-time `now` / `proxies`, so a canonical
- * recompile is redundant while running.
+ * When a session is running the live core itself is the single source of truth for group **order +
+ * membership + live state**: the mihomo fork preserves the `proxy-groups:` declaration order
+ * (`config/config.go`), and native `QueryProxyGroupNames` walks the GLOBAL provider in that exact
+ * declaration order. Since the rust override path now loads the rawConfig correctly, the running
+ * core already yields the correct order with real-time `now` / `proxies`, so a canonical recompile
+ * is redundant while running.
  *
  * [canonicalGroups] (compiled rawConfig, `proxy-groups:` declaration order) is kept only as the
  * preview source and as the fallback for the transient window before the core has loaded.
  */
-class RuntimeProxyGroupResolver(
-    private val compiledConfigPipeline: CompiledConfigPipeline,
-) {
+class RuntimeProxyGroupResolver(private val compiledConfigPipeline: CompiledConfigPipeline) {
     private val expectedNameCacheLock = Any()
     private var expectedNameCache: ExpectedGroupCache? = null
 
@@ -50,9 +48,10 @@ class RuntimeProxyGroupResolver(
 
     /**
      * Authoritative ordered group list straight from the compiled rawConfig (`proxy-groups:`).
-     * Always rebuilt from a fresh compile via [CompiledConfigPipeline.previewGroups] so it can never
-     * read a stale on-disk runtime.yaml; cached by the [CanonicalGroupKey] so the recompile only
-     * happens when the config/override set actually changes (fingerprint flip), not on every refresh.
+     * Always rebuilt from a fresh compile via [CompiledConfigPipeline.previewGroups] so it can
+     * never read a stale on-disk runtime.yaml; cached by the [CanonicalGroupKey] so the recompile
+     * only happens when the config/override set actually changes (fingerprint flip), not on every
+     * refresh.
      *
      * An empty result is NOT cached: a transient empty compile during the start window must not
      * poison the cache for the rest of the session.
@@ -69,7 +68,11 @@ class RuntimeProxyGroupResolver(
                 ageSecretKeyFingerprint = sha256Short(spec.ageSecretKey),
             )
         synchronized(canonicalCacheLock) {
-            canonicalCache?.takeIf { it.key == cacheKey }?.let { return it.groups }
+            canonicalCache
+                ?.takeIf { it.key == cacheKey }
+                ?.let {
+                    return it.groups
+                }
         }
 
         val groups =
@@ -85,18 +88,20 @@ class RuntimeProxyGroupResolver(
         return groups
     }
 
-    suspend fun expectedGroupNames(
-        spec: RuntimeSpec,
-        excludeNotSelectable: Boolean,
-    ): List<String> {
-        val cacheKey = ExpectedGroupKey(
-            profileUuid = spec.profileUuid,
-            effectiveFingerprint = spec.effectiveFingerprint,
-            excludeNotSelectable = excludeNotSelectable,
-            ageSecretKeyFingerprint = sha256Short(spec.ageSecretKey),
-        )
+    suspend fun expectedGroupNames(spec: RuntimeSpec, excludeNotSelectable: Boolean): List<String> {
+        val cacheKey =
+            ExpectedGroupKey(
+                profileUuid = spec.profileUuid,
+                effectiveFingerprint = spec.effectiveFingerprint,
+                excludeNotSelectable = excludeNotSelectable,
+                ageSecretKeyFingerprint = sha256Short(spec.ageSecretKey),
+            )
         synchronized(expectedNameCacheLock) {
-            expectedNameCache?.takeIf { it.key == cacheKey }?.let { return it.names }
+            expectedNameCache
+                ?.takeIf { it.key == cacheKey }
+                ?.let {
+                    return it.names
+                }
         }
 
         // Every profile (encrypted and non-encrypted) goes through the native in-memory compile, so
@@ -113,21 +118,24 @@ class RuntimeProxyGroupResolver(
         return names
     }
 
-    fun runtimeGroupNames(excludeNotSelectable: Boolean): List<String> {
-        return Clash.queryGroupNames(excludeNotSelectable)
-    }
+    fun runtimeGroupNames(excludeNotSelectable: Boolean): List<String> =
+        Clash.queryGroupNames(excludeNotSelectable)
 
     suspend fun resolvedGroupNames(
         spec: RuntimeSpec?,
         excludeNotSelectable: Boolean,
     ): List<String> {
-        // Running core is the source of truth: GLOBAL provider order == proxy-groups declaration order.
+        // Running core is the source of truth: GLOBAL provider order == proxy-groups declaration
+        // order.
         val coreNames = runtimeGroupNames(excludeNotSelectable).filter(String::isNotBlank)
         if (coreNames.isNotEmpty()) {
             return coreNames
         }
-        // Core not loaded yet (preview / transient start window): fall back to the compiled rawConfig.
-        return spec?.let { canonicalGroups(it, excludeNotSelectable) }.orEmpty()
+        // Core not loaded yet (preview / transient start window): fall back to the compiled
+        // rawConfig.
+        return spec
+            ?.let { canonicalGroups(it, excludeNotSelectable) }
+            .orEmpty()
             .map(ProxyGroup::name)
             .filter(String::isNotBlank)
     }
@@ -138,8 +146,8 @@ class RuntimeProxyGroupResolver(
      * @param enrichLive when true (running session) the list is taken straight from the live core
      *   ([coreGroups]): it already carries the `proxy-groups:` declaration order plus real-time
      *   `now` / `proxies`, so no canonical recompile is needed. When the core is not loaded yet
-     *   (transient start window) or when [enrichLive] is false (preview / not running), the compiled
-     *   rawConfig ([canonicalGroups]) is used instead.
+     *   (transient start window) or when [enrichLive] is false (preview / not running), the
+     *   compiled rawConfig ([canonicalGroups]) is used instead.
      */
     suspend fun resolvedGroups(
         spec: RuntimeSpec?,
@@ -164,21 +172,26 @@ class RuntimeProxyGroupResolver(
      */
     private fun coreGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
         val coreNamesByTrimmed = buildCoreNamesByTrimmed(excludeNotSelectable)
-        return runtimeGroupNames(excludeNotSelectable)
-            .mapNotNull { name -> queryUsableGroup(name, coreNamesByTrimmed) }
+        return runtimeGroupNames(excludeNotSelectable).mapNotNull { name ->
+            queryUsableGroup(name, coreNamesByTrimmed)
+        }
     }
 
     private fun queryUsableGroup(
         name: String,
         coreNamesByTrimmed: Map<String, String>,
     ): ProxyGroup? {
-        Clash.queryGroup(name, ProxySort.Default).takeIf(::isUsable)?.let { return it }
+        Clash.queryGroup(name, ProxySort.Default).takeIf(::isUsable)?.let {
+            return it
+        }
 
         // The expected name was trimmed in the native compile but the core registers the raw key.
         // Retry against the core's actual (untrimmed) key for this trimmed name.
         val actualKey = coreNamesByTrimmed[name.trim()]
         if (actualKey != null && actualKey != name) {
-            Clash.queryGroup(actualKey, ProxySort.Default).takeIf(::isUsable)?.let { return it }
+            Clash.queryGroup(actualKey, ProxySort.Default).takeIf(::isUsable)?.let {
+                return it
+            }
         }
         return null
     }
@@ -210,8 +223,8 @@ class RuntimeProxyGroupResolver(
     }
 
     /**
-     * Short SHA-256 hash of the age secret key. The raw key is NEVER stored in the cache key;
-     * only this hash is. Returns the literal "none" when the profile is not age-encrypted so a
+     * Short SHA-256 hash of the age secret key. The raw key is NEVER stored in the cache key; only
+     * this hash is. Returns the literal "none" when the profile is not age-encrypted so a
      * null/non-null transition still invalidates the caches.
      */
     private fun sha256Short(value: String?): String {

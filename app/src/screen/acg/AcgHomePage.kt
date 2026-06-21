@@ -25,17 +25,42 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
@@ -73,7 +98,6 @@ import com.github.yumelira.yumebox.screen.home.HomeProxyControlState
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import dev.oom_wg.purejoy.mlang.MLang
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -81,6 +105,7 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import java.io.File
 
 @Composable
 fun AcgHomePage(
@@ -209,8 +234,11 @@ fun AcgHomePage(
                 tween(
                     durationMillis = if (sidebarExpanded) 420 else 320,
                     easing =
-                        if (sidebarExpanded) AnimationSpecs.EmphasizedDecelerate
-                        else AnimationSpecs.EmphasizedAccelerate,
+                        if (sidebarExpanded) {
+                            AnimationSpecs.EmphasizedDecelerate
+                        } else {
+                            AnimationSpecs.EmphasizedAccelerate
+                        },
                 ),
             label = "acg_sidebar_toggle",
         )
@@ -415,7 +443,8 @@ fun AcgHomePage(
                         .padding(
                             end = UiDp.dp12,
                             bottom =
-                                mainInnerPadding.calculateBottomPadding() + AcgUi.Button.bottomInset,
+                                mainInnerPadding.calculateBottomPadding() +
+                                    AcgUi.Button.bottomInset,
                         )
             ) {
                 AcgLaunchButton(
@@ -535,9 +564,10 @@ private fun AcgWallpaperBackground(
 private const val ACG_BUNDLED_WALLPAPER = "file:///android_asset/wallpaper.jpg"
 
 /**
- * Maps a stored wallpaper preference value to a Sketch-loadable model. A `file://` path is only used
- * when the backing file exists; otherwise (blank value, missing local copy, or a dead source) the
- * bundled asset is returned. Must be called off the main thread because it touches the filesystem.
+ * Maps a stored wallpaper preference value to a Sketch-loadable model. A `file://` path is only
+ * used when the backing file exists; otherwise (blank value, missing local copy, or a dead source)
+ * the bundled asset is returned. Must be called off the main thread because it touches the
+ * filesystem.
  */
 private fun resolveAcgWallpaperModel(context: Context, wallpaperUri: String): String {
     if (wallpaperUri.isBlank()) return ACG_BUNDLED_WALLPAPER

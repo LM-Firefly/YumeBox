@@ -20,43 +20,36 @@
 
 package com.github.yumelira.yumebox.common.util
 
-import java.util.*
+import java.util.Locale
 
 object LocaleUtil {
-
     private val NORMALIZED_REGION_CODES = setOf("TW")
-    @Volatile private var currentLocaleOverride: Locale? = null
+
+    @Volatile private var override: Locale? = null
 
     fun setCurrentLocale(locale: Locale?) {
-        currentLocaleOverride = locale
+        override = locale
     }
 
-    fun currentLocale(): Locale = currentLocaleOverride ?: Locale.getDefault()
+    fun currentLocale(): Locale = override ?: Locale.getDefault()
 
-    fun isChineseLocale(): Boolean {
-        val locale = currentLocale()
-        return locale.language == "zh"
-    }
+    fun isChineseLocale(): Boolean = currentLocale().language == "zh"
 
     fun normalizeRegionCode(countryCode: String?): String? {
-        if (countryCode == null) return null
-        if (!isChineseLocale()) return countryCode
-
-        val upperCode = countryCode.uppercase()
-        return if (upperCode in NORMALIZED_REGION_CODES) "CN" else countryCode
+        if (countryCode == null || !isChineseLocale()) return countryCode
+        return if (countryCode.uppercase() in NORMALIZED_REGION_CODES) "CN" else countryCode
     }
 
     fun normalizeFlagUrl(
         countryCode: String,
         baseUrl: String = "https://hatscripts.github.io/circle-flags/flags/",
     ): String {
-        val normalizedCode =
-            if (isChineseLocale()) {
-                val upperCode = countryCode.uppercase()
-                if (upperCode in NORMALIZED_REGION_CODES) "cn" else countryCode.lowercase()
+        val code =
+            if (isChineseLocale() && countryCode.uppercase() in NORMALIZED_REGION_CODES) {
+                "cn"
             } else {
                 countryCode.lowercase()
             }
-        return "${baseUrl}${normalizedCode}.svg"
+        return "$baseUrl$code.svg"
     }
 }

@@ -33,8 +33,6 @@ import com.github.yumelira.yumebox.core.model.ProxySort
 import com.github.yumelira.yumebox.service.RootTunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.topjohnwu.superuser.ipc.RootService
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -42,6 +40,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 internal object RootTunServiceBridge {
     private val mutex = Mutex()
@@ -114,57 +114,50 @@ internal object RootTunServiceBridge {
         return result
     }
 
-    suspend fun queryStatus(context: Context): RootTunStatus {
-        return remoteCall(context) { service ->
+    suspend fun queryStatus(context: Context): RootTunStatus =
+        remoteCall(context) { service ->
             val statusJson = service.queryStatus()
             RootTunJson.Default.decodeFromString(RootTunStatus.serializer(), statusJson)
         }
-    }
 
-    suspend fun queryTrafficNow(context: Context): Long {
-        return remoteCall(context) { service -> service.queryTrafficNow() }
-    }
+    suspend fun queryTrafficNow(context: Context): Long =
+        remoteCall(context) { service -> service.queryTrafficNow() }
 
-    suspend fun queryTrafficTotal(context: Context): Long {
-        return remoteCall(context) { service -> service.queryTrafficTotal() }
-    }
+    suspend fun queryTrafficTotal(context: Context): Long =
+        remoteCall(context) { service -> service.queryTrafficTotal() }
 
     suspend fun queryProxyGroupNames(
         context: Context,
         excludeNotSelectable: Boolean = false,
-    ): List<String> {
-        return remoteCall(context) { service ->
+    ): List<String> =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 ListSerializer(String.serializer()),
                 service.queryProxyGroupNamesJson(excludeNotSelectable),
             )
         }
-    }
 
     suspend fun queryProxyGroup(
         context: Context,
         name: String,
         sort: ProxySort = ProxySort.Default,
-    ): ProxyGroup? {
-        return remoteCall(context) { service ->
+    ): ProxyGroup? =
+        remoteCall(context) { service ->
             service.queryProxyGroupJson(name, sort.name)?.let {
                 RootTunJson.Default.decodeFromString(ProxyGroup.serializer(), it)
             }
         }
-    }
 
-    suspend fun queryConnections(context: Context): ConnectionSnapshot {
-        return remoteCall(context) { service ->
+    suspend fun queryConnections(context: Context): ConnectionSnapshot =
+        remoteCall(context) { service ->
             RootTunJson.Default.decodeFromString(
                 ConnectionSnapshot.serializer(),
                 service.queryConnectionsJson(),
             )
         }
-    }
 
-    suspend fun closeConnection(context: Context, id: String): Boolean {
-        return remoteCall(context) { service -> service.closeConnection(id) }
-    }
+    suspend fun closeConnection(context: Context, id: String): Boolean =
+        remoteCall(context) { service -> service.closeConnection(id) }
 
     suspend fun closeAllConnections(context: Context) {
         remoteCall(context) { service -> service.closeAllConnections() }
@@ -262,9 +255,8 @@ internal object RootTunServiceBridge {
         }
     }
 
-    private fun createIntent(context: Context): Intent {
-        return Intent(context, RootTunRootService::class.java)
-    }
+    private fun createIntent(context: Context): Intent =
+        Intent(context, RootTunRootService::class.java)
 
     private fun cachedBinder(context: Context): IRootTunService? {
         val current = binder ?: return null

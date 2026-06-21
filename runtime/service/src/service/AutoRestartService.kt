@@ -44,12 +44,15 @@ import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AutoRestartService : Service() {
-
     companion object {
         private const val TAG = "AutoRestartService"
         private const val NOTIFICATION_ID = 1101
@@ -123,7 +126,7 @@ class AutoRestartService : Service() {
             Timber.tag(TAG).i("Skip auto start: manual pause gate is active in current session")
             return
         }
-        StartupTaskCoordinator.awaitRuntimeWarmup()
+        StartupTaskCoordinator.awaitWarmup()
         val skipUpdateOnPostUpdateColdStart = featureStore.consumePostUpdateColdStartPending()
 
         val activeProfile = profileManager.queryActive()
@@ -227,14 +230,13 @@ class AutoRestartService : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+    private fun createNotification(): Notification =
+        NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("YumeBox")
             .setContentText("Checking auto-start...")
             .setSmallIcon(R.drawable.ic_logo_service)
             .setOngoing(true)
             .build()
-    }
 
     override fun onDestroy() {
         AutoStartExecutionGate.clear(serviceCache)

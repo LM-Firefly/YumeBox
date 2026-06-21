@@ -23,8 +23,8 @@ package com.github.yumelira.yumebox.service.common.compat
 import android.app.PendingIntent
 import android.os.Build
 
-fun pendingIntentFlags(flags: Int, mutable: Boolean = false): Int {
-    return if (Build.VERSION.SDK_INT >= 24) {
+fun pendingIntentFlags(flags: Int, mutable: Boolean = false): Int =
+    if (Build.VERSION.SDK_INT >= 24) {
         if (Build.VERSION.SDK_INT > 30 && mutable) {
             flags or PendingIntent.FLAG_MUTABLE
         } else {
@@ -33,4 +33,3 @@ fun pendingIntentFlags(flags: Int, mutable: Boolean = false): Int {
     } else {
         flags
     }
-}

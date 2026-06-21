@@ -38,7 +38,6 @@ class ProvidersViewModel(
     private val proxyFacade: ProxyFacade,
     private val providersRepository: ProvidersController,
 ) : ViewModel() {
-
     private val _providers = MutableStateFlow<List<Provider>>(emptyList())
     val providers: StateFlow<List<Provider>> = _providers.asStateFlow()
 

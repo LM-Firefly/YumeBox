@@ -29,7 +29,6 @@ import org.json.JSONObject
 import timber.log.Timber
 
 object JsonDiagnosticsProvider {
-
     fun analyze(content: String): DiagnosticsContainer {
         val container = DiagnosticsContainer()
 
@@ -40,12 +39,10 @@ object JsonDiagnosticsProvider {
         val trimmed = content.trim()
 
         try {
-
             when {
                 trimmed.startsWith("{") -> JSONObject(trimmed)
                 trimmed.startsWith("[") -> JSONArray(trimmed)
                 else -> {
-
                     container.addDiagnostic(
                         DiagnosticRegion(
                             0,
@@ -95,11 +92,10 @@ object JsonDiagnosticsProvider {
         )
     }
 
-    private fun formatErrorMessage(message: String): String {
-        return when {
+    private fun formatErrorMessage(message: String): String =
+        when {
             message.contains("Unterminated") -> "未终止的字符串或对象"
             message.contains("Expected") -> {
-
                 val expectedPattern = "Expected (\\S+)".toRegex()
                 val expected = expectedPattern.find(message)?.groupValues?.get(1) ?: "未知"
                 "期望 $expected"
@@ -108,5 +104,4 @@ object JsonDiagnosticsProvider {
             message.contains("Duplicate") -> "重复的键"
             else -> message
         }
-    }
 }

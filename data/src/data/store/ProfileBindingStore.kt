@@ -25,7 +25,6 @@ import com.github.yumelira.yumebox.core.util.YamlCodec
 import com.github.yumelira.yumebox.data.model.MetadataIndex
 import com.github.yumelira.yumebox.data.model.OverrideMetadata
 import com.github.yumelira.yumebox.data.model.ProfileBinding
-import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.io.File
 
 class ProfileBindingStore(context: Context) : ProfileBindingProvider {
     private val metadataFile = File(context.filesDir, "overrides/metadata.yaml")
@@ -46,9 +46,8 @@ class ProfileBindingStore(context: Context) : ProfileBindingProvider {
     override suspend fun getBinding(profileId: String): ProfileBinding? =
         withContext(Dispatchers.IO) { loadBindings()[profileId] }
 
-    override fun getBindingFlow(profileId: String): Flow<ProfileBinding?> {
-        return bindingsStateFlow.asStateFlow().map { bindings -> bindings[profileId] }
-    }
+    override fun getBindingFlow(profileId: String): Flow<ProfileBinding?> =
+        bindingsStateFlow.asStateFlow().map { bindings -> bindings[profileId] }
 
     override suspend fun setBinding(binding: ProfileBinding) =
         withContext(Dispatchers.IO) {
@@ -67,9 +66,8 @@ class ProfileBindingStore(context: Context) : ProfileBindingProvider {
     override suspend fun getAllBindings(): List<ProfileBinding> =
         withContext(Dispatchers.IO) { loadBindings().values.toList() }
 
-    override fun getAllBindingsFlow(): Flow<List<ProfileBinding>> {
-        return bindingsStateFlow.asStateFlow().map { bindings -> bindings.values.toList() }
-    }
+    override fun getAllBindingsFlow(): Flow<List<ProfileBinding>> =
+        bindingsStateFlow.asStateFlow().map { bindings -> bindings.values.toList() }
 
     override suspend fun getProfilesUsingOverride(overrideId: String): List<String> =
         withContext(Dispatchers.IO) {
@@ -139,14 +137,13 @@ class ProfileBindingStore(context: Context) : ProfileBindingProvider {
         setBinding(existing.moveOverride(fromIndex, toIndex))
     }
 
-    private fun loadBindings(): Map<String, ProfileBinding> {
-        return try {
+    private fun loadBindings(): Map<String, ProfileBinding> =
+        try {
             loadMetadataIndex().profileChains
         } catch (error: Exception) {
             Timber.w(error, "Failed to load bindings from metadata.yaml, returning empty map")
             emptyMap()
         }
-    }
 
     private fun saveBindings(map: Map<String, ProfileBinding>) {
         val index = loadMetadataIndex().copy(profileChains = map)
@@ -174,8 +171,8 @@ class ProfileBindingStore(context: Context) : ProfileBindingProvider {
         metadataFile.writeText(YamlCodec.encode(MetadataIndex.serializer(), index))
     }
 
-    private fun sanitizeMetadataIndex(index: MetadataIndex): MetadataIndex {
-        return index.copy(
+    private fun sanitizeMetadataIndex(index: MetadataIndex): MetadataIndex =
+        index.copy(
             profileChains =
                 index.profileChains.mapValues { (_, binding) ->
                     binding.copy(
@@ -183,13 +180,10 @@ class ProfileBindingStore(context: Context) : ProfileBindingProvider {
                     )
                 }
         )
-    }
 
-    private fun isLegacyPresetOverrideId(overrideId: String): Boolean {
-        return overrideId.startsWith(OverrideMetadata.LEGACY_SYSTEM_PREFIX)
-    }
+    private fun isLegacyPresetOverrideId(overrideId: String): Boolean =
+        overrideId.startsWith(OverrideMetadata.LEGACY_SYSTEM_PREFIX)
 
-    private fun isOverrideApplied(binding: ProfileBinding, overrideId: String): Boolean {
-        return binding.overrideIds.contains(overrideId)
-    }
+    private fun isOverrideApplied(binding: ProfileBinding, overrideId: String): Boolean =
+        binding.overrideIds.contains(overrideId)
 }

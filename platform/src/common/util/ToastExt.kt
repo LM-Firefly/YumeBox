@@ -24,13 +24,17 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import java.util.*
-import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.ArrayDeque
+import java.util.concurrent.atomic.AtomicLong
 
-data class ToastDialogEvent(val id: Long, val title: String, val message: String)
+data class ToastDialogEvent(
+    val id: Long,
+    val title: String,
+    val message: String,
+)
 
 object ToastDialogBridge {
     private const val DEFAULT_TITLE = "提示"
@@ -71,8 +75,8 @@ fun showToastDialog(message: String, title: String = "提示") {
     ToastDialogBridge.show(message = message, title = title)
 }
 
+@Suppress("UNUSED_PARAMETER")
 fun Context.toast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-    @Suppress("UNUSED_VARIABLE") val ignored = duration
     showToastDialog(message)
 }
 

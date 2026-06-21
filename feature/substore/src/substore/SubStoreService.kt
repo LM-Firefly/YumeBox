@@ -30,9 +30,7 @@ class SubStoreService : Service() {
     private var caseEngine: CaseEngine? = null
     private var isRunning = false
 
-    override fun onBind(intent: Intent): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (isRunning) return START_STICKY

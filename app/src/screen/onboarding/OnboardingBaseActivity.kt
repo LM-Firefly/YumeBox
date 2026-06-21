@@ -47,7 +47,6 @@ import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal abstract class OnboardingBaseActivity : ComponentActivity() {
-
     protected val previewMode: Boolean
         get() = OnboardingLauncher.isPreviewMode(intent)
 

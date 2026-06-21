@@ -25,12 +25,7 @@ import android.content.Intent
 import android.net.VpnService
 
 object VpnUtils {
+    fun checkVpnPermission(context: Context): Boolean = VpnService.prepare(context) == null
 
-    fun checkVpnPermission(context: Context): Boolean {
-        return VpnService.prepare(context) == null
-    }
-
-    fun getVpnPermissionIntent(context: Context): Intent? {
-        return VpnService.prepare(context)
-    }
+    fun getVpnPermissionIntent(context: Context): Intent? = VpnService.prepare(context)
 }

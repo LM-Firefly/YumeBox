@@ -22,46 +22,42 @@ package com.github.yumelira.yumebox.service.runtime.config
 
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.tencent.mmkv.MMKV
-import java.util.*
 import kotlinx.serialization.json.Json
+import java.util.UUID
 
 class ServiceStore {
     private val store = Store(MMKV.mmkvWithID("service", MMKV.MULTI_PROCESS_MODE).asStoreProvider())
     private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
 
-    private fun readBoolean(newKey: String, legacyKey: String, defaultValue: Boolean): Boolean {
-        return when {
+    private fun readBoolean(newKey: String, legacyKey: String, defaultValue: Boolean): Boolean =
+        when {
             networkSettings.containsKey(newKey) -> networkSettings.decodeBool(newKey, defaultValue)
             else -> store.provider.getBoolean(legacyKey, defaultValue)
         }
-    }
 
-    private fun readString(newKey: String, legacyKey: String, defaultValue: String): String {
-        return when {
+    private fun readString(newKey: String, legacyKey: String, defaultValue: String): String =
+        when {
             networkSettings.containsKey(newKey) ->
                 networkSettings.decodeString(newKey, defaultValue) ?: defaultValue
             else -> store.provider.getString(legacyKey, defaultValue)
         }
-    }
 
-    private fun readInt(newKey: String, legacyKey: String, defaultValue: Int): Int {
-        return when {
+    private fun readInt(newKey: String, legacyKey: String, defaultValue: Int): Int =
+        when {
             networkSettings.containsKey(newKey) -> networkSettings.decodeInt(newKey, defaultValue)
             else -> store.provider.getInt(legacyKey, defaultValue)
         }
-    }
 
     private fun readStringSet(
         newKey: String,
         legacyKey: String,
         defaultValue: Set<String>,
-    ): Set<String> {
-        return when {
+    ): Set<String> =
+        when {
             networkSettings.containsKey(newKey) ->
                 networkSettings.decodeStringSet(newKey, defaultValue) ?: defaultValue
             else -> store.provider.getStringSet(legacyKey, defaultValue)
         }
-    }
 
     private fun readStringList(newKey: String, defaultValue: List<String>): List<String> {
         if (!networkSettings.containsKey(newKey)) return defaultValue

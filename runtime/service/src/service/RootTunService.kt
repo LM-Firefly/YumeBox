@@ -44,8 +44,9 @@ import com.github.yumelira.yumebox.service.root.RootTunStatus
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class RootTunService : BaseService() {
     private val stateStore by lazy { RootTunStateStore(appContextOrSelf) }
@@ -290,15 +291,14 @@ class RootTunService : BaseService() {
         }
     }
 
-    private fun describeStatus(status: RootTunStatus): String {
-        return when (status.state) {
+    private fun describeStatus(status: RootTunStatus): String =
+        when (status.state) {
             RootTunState.Starting -> "Starting..."
             RootTunState.Running -> MLang.Service.Notification.Running
             RootTunState.Stopping -> "Stopping..."
             RootTunState.Failed -> "Failed: ${status.lastError ?: "unknown error"}"
             RootTunState.Idle -> "Stopped"
         }
-    }
 
     companion object {
         private const val ACTION_START = "com.github.yumelira.yumebox.ROOT_TUN_SERVICE_START"

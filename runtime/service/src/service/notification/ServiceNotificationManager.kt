@@ -36,11 +36,20 @@ import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
 import com.tencent.mmkv.MMKV
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
-class ServiceNotificationManager(private val service: Service, private val config: Config) {
-    data class Config(val notificationId: Int, val channelId: String, val channelName: String)
+class ServiceNotificationManager(
+    private val service: Service,
+    private val config: Config,
+) {
+    data class Config(
+        val notificationId: Int,
+        val channelId: String,
+        val channelName: String,
+    )
 
     private val serviceStore by lazy { ServiceStore() }
     private val settingsStore by lazy { MMKV.mmkvWithID("settings", MMKV.MULTI_PROCESS_MODE) }
@@ -58,12 +67,10 @@ class ServiceNotificationManager(private val service: Service, private val confi
         )
     }
 
-    fun createInitialNotification(): Notification {
-        return buildRunningNotification()
-    }
+    fun createInitialNotification(): Notification = buildRunningNotification()
 
-    fun startTrafficUpdate(scope: CoroutineScope): Job {
-        return scope.launch(Dispatchers.Default) {
+    fun startTrafficUpdate(scope: CoroutineScope): Job =
+        scope.launch(Dispatchers.Default) {
             PollingTimers.ticks(PollingTimerSpecs.ServiceTrafficNotification).collect {
                 val notification = buildRunningNotification()
                 val fingerprint =
@@ -75,7 +82,6 @@ class ServiceNotificationManager(private val service: Service, private val confi
                 }
             }
         }
-    }
 
     private fun buildRunningNotification(): Notification {
         val profileName = resolveProfileName()

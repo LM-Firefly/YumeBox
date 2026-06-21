@@ -54,7 +54,5 @@ class LogRecordServiceGateway : LogRecordGateway {
         LogRecordService.stop(application)
     }
 
-    override fun getLogDir(application: Application): File {
-        return LogRecordService.getLogDir(application)
-    }
+    override fun getLogDir(application: Application): File = LogRecordService.getLogDir(application)
 }

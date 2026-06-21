@@ -26,7 +26,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.github.yumelira.yumebox.common.util.DeviceUtil
 import com.github.yumelira.yumebox.data.store.LinkOpenMode
-import com.github.yumelira.yumebox.presentation.component.*
+import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.EnumSelector
+import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
+import com.github.yumelira.yumebox.presentation.component.Title
+import com.github.yumelira.yumebox.presentation.component.TopBar
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.substore.model.AutoCloseMode
 import dev.oom_wg.purejoy.mlang.MLang
@@ -53,9 +59,9 @@ fun FeatureContent(
     val autoCloseMode by viewModel.autoCloseMode.collectAsState()
 
     val host = "127.0.0.1"
-    val frontendUrl = "http://${host}:${frontendPort}"
-    val backendUrl = "http://${host}:${backendPort}"
-    val subStoreUrl = "${frontendUrl}/subs?api=${backendUrl}"
+    val frontendUrl = "http://$host:$frontendPort"
+    val backendUrl = "http://$host:$backendPort"
+    val subStoreUrl = "$frontendUrl/subs?api=$backendUrl"
 
     val isDownloadingSubStoreFrontend by viewModel.isDownloadingSubStoreFrontend.collectAsState()
     val isDownloadingSubStoreBackend by viewModel.isDownloadingSubStoreBackend.collectAsState()
@@ -238,11 +244,10 @@ fun FeatureContent(
     }
 }
 
-private fun panelUrlFor(panelType: Int): String {
-    return when (panelType) {
+private fun panelUrlFor(panelType: Int): String =
+    when (panelType) {
         0 -> "https://board.zash.run.place"
         1 -> "https://metacubex.github.io/metacubexd"
         2 -> "https://yacd.haishan.me"
         else -> "https://board.zash.run.place"
     }
-}

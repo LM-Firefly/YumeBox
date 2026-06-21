@@ -23,7 +23,10 @@ package com.github.yumelira.yumebox.domain.model
 import com.github.yumelira.yumebox.core.model.Traffic
 import com.github.yumelira.yumebox.core.util.decodeTrafficValue
 
-data class TrafficData(val upload: Long, val download: Long) {
+data class TrafficData(
+    val upload: Long,
+    val download: Long,
+) {
     companion object {
         val ZERO = TrafficData(0, 0)
 

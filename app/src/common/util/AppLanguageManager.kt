@@ -31,7 +31,6 @@ import dev.oom_wg.purejoy.mlang.MLang
 import java.util.Locale
 
 object AppLanguageManager {
-
     @Volatile private var activeLanguage: AppLanguage = AppLanguage.System
 
     @Volatile private var activeLocale: Locale = Locale.getDefault()
@@ -66,13 +65,12 @@ object AppLanguageManager {
         }
     }
 
-    private fun resolveLocale(language: AppLanguage): Locale {
-        return when (language) {
+    private fun resolveLocale(language: AppLanguage): Locale =
+        when (language) {
             AppLanguage.System -> systemLocale()
             AppLanguage.Zh -> Locale.SIMPLIFIED_CHINESE
             AppLanguage.En -> Locale.ENGLISH
         }
-    }
 
     private fun systemLocale(): Locale {
         val resources = Resources.getSystem()

@@ -20,7 +20,10 @@
 
 package com.github.yumelira.yumebox.service.runtime.util
 
-data class IPNet(val ip: String, val prefix: Int)
+data class IPNet(
+    val ip: String,
+    val prefix: Int,
+)
 
 fun parseCIDR(cidr: String): IPNet {
     val s = cidr.split("/", limit = 2)

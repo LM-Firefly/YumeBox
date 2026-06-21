@@ -29,8 +29,8 @@ object TrafficChartConfig {
 
     const val DEFAULT_SAMPLE_LIMIT = 24
 
-    fun calculateBarFraction(speedBytes: Long): Float {
-        return when {
+    fun calculateBarFraction(speedBytes: Long): Float =
+        when {
             speedBytes <= 0 -> MIN_VISIBLE_HEIGHT
             speedBytes < BOUND_A -> {
                 val ratio = (speedBytes / BOUND_A).coerceIn(0.0, 1.0)
@@ -49,5 +49,4 @@ object TrafficChartConfig {
 
             else -> 1.0f
         }
-    }
 }
