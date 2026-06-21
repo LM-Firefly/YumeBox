@@ -40,7 +40,6 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val excludeFromRecents by boolFlow(false)
     val showTrafficNotification by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
-    val bottomBarUseLegacyStyle by boolFlow(true)
     val topBarBlurEnabled by boolFlow(false)
     val predictiveBackEnabled by boolFlow(false)
     val smoothCornerEnabled by boolFlow(true)

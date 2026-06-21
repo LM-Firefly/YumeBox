@@ -59,7 +59,6 @@ class AppSettingsViewModel(
     val excludeFromRecents: Preference<Boolean> = settings.excludeFromRecents
     val showTrafficNotification: Preference<Boolean> = settings.showTrafficNotification
     val bottomBarAutoHide: Preference<Boolean> = settings.bottomBarAutoHide
-    val bottomBarUseLegacyStyle: Preference<Boolean> = settings.bottomBarUseLegacyStyle
     val topBarBlurEnabled: Preference<Boolean> = settings.topBarBlurEnabled
     val predictiveBackEnabled: Preference<Boolean> = settings.predictiveBackEnabled
     val smoothCornerEnabled: Preference<Boolean> = settings.smoothCornerEnabled
@@ -93,8 +92,6 @@ class AppSettingsViewModel(
     fun resetThemeSeedColor() = themeSeedColorArgb.set(DEFAULT_CUSTOM_THEME_SEED_ARGB)
 
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
-
-    fun onBottomBarUseLegacyStyleChange(enabled: Boolean) = bottomBarUseLegacyStyle.set(enabled)
 
     fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
 

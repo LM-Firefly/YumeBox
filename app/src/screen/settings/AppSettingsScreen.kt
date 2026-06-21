@@ -148,7 +148,6 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     val predictiveBackEnabled by viewModel.predictiveBackEnabled.state.collectAsState()
     val smoothCornerEnabled by viewModel.smoothCornerEnabled.state.collectAsState()
     val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
-    val bottomBarUseLegacyStyle by viewModel.bottomBarUseLegacyStyle.state.collectAsState()
     val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
     val pageScale by viewModel.pageScale.state.collectAsState()
 
@@ -198,12 +197,6 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
             summary = MLang.AppSettings.Interface.AutoHideNavbarSummary,
             checked = bottomBarAutoHide,
             onCheckedChange = viewModel::onBottomBarAutoHideChange,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.LegacyNavbarStyleTitle,
-            summary = MLang.AppSettings.Interface.LegacyNavbarStyleSummary,
-            checked = bottomBarUseLegacyStyle,
-            onCheckedChange = viewModel::onBottomBarUseLegacyStyleChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Interface.TopBarBlurTitle,

@@ -204,24 +204,14 @@ val LocalNavigator =
     compositionLocalOf<DestinationsNavigator> { error("LocalNavigator is not provided") }
 val LocalBottomBarHazeState = compositionLocalOf<HazeState?> { null }
 val LocalBottomBarHazeStyle = compositionLocalOf<HazeStyle?> { null }
-val LocalBottomBarUseLegacyStyle = compositionLocalOf { false }
 
 object MainBottomBarDefaults {
-    val CornerRadius = UiDp.dp28
-    val Shape = RoundedCornerShape(topStart = CornerRadius, topEnd = CornerRadius)
-    val BorderWidth = UiDp.dp0_26
-    val OutlineHorizontalInset = UiDp.dp0
-    val ItemHeight = UiDp.dp60
-    val IconSize = UiDp.dp26
-    val LabelFontSize = 11.5.sp
-    val IconLabelSpacing = UiDp.dp3
     val HorizontalPadding = UiDp.dp48
     val TopPadding = UiDp.dp6
     val FloatingBottomPadding = UiDp.dp12
     val EnterOffset = UiDp.dp68
     val ExitOffset = UiDp.dp84
-    val ModernReservedHeight = UiDp.dp64
-    val LegacyReservedHeight = UiDp.dp68
+    val FloatingReservedHeight = UiDp.dp68
     val PagerAnimationSpec: AnimationSpec<Float> =
         spring(
             stiffness = Spring.StiffnessMediumLow,
@@ -237,9 +227,7 @@ fun rememberMainPagerFlingBehavior(pagerState: PagerState): TargetedFlingBehavio
     )
 
 @Composable
-fun rememberBottomBarReservedHeight(
-    useLegacyStyle: Boolean = LocalBottomBarUseLegacyStyle.current
-): Dp {
+fun rememberBottomBarReservedHeight(): Dp {
     val density = LocalDensity.current
     val systemBottomInset =
         with(density) {
@@ -249,12 +237,8 @@ fun rememberBottomBarReservedHeight(
                 )
                 .toDp()
         }
-    return remember(systemBottomInset, useLegacyStyle) {
-        if (useLegacyStyle) {
-            MainBottomBarDefaults.LegacyReservedHeight + systemBottomInset
-        } else {
-            MainBottomBarDefaults.ModernReservedHeight
-        }
+    return remember(systemBottomInset) {
+        MainBottomBarDefaults.FloatingReservedHeight + systemBottomInset
     }
 }
 
@@ -271,245 +255,13 @@ private fun Modifier.bottomBarHazeEffect(state: HazeState?, style: HazeStyle?): 
     }
 }
 
-private fun Modifier.bottomBarOutline(
-    shape: Shape,
-    color: Color,
-    edgeFadeAlpha: Float,
-    middleFadeAlpha: Float,
-): Modifier =
-    graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen).drawWithCache {
-        val strokeWidth = max(MainBottomBarDefaults.BorderWidth.toPx(), 1f)
-        val outline = shape.createOutline(size, layoutDirection, this)
-        val topBorderHeight = MainBottomBarDefaults.CornerRadius.toPx() + strokeWidth * 2f
-        val fadeMaskBrush =
-            Brush.horizontalGradient(
-                colorStops =
-                    arrayOf(
-                        0f to Color.Transparent,
-                        0.01f to Black.copy(alpha = edgeFadeAlpha),
-                        0.025f to Black.copy(alpha = middleFadeAlpha),
-                        0.045f to Black,
-                        0.955f to Black,
-                        0.975f to Black.copy(alpha = middleFadeAlpha),
-                        0.99f to Black.copy(alpha = edgeFadeAlpha),
-                        1f to Color.Transparent,
-                    )
-            )
-        val layerBounds = Rect(0f, 0f, size.width, size.height)
-        val layerPaint = Paint()
-
-        onDrawWithContent {
-            drawContent()
-            drawIntoCanvas { canvas -> canvas.saveLayer(layerBounds, layerPaint) }
-            clipRect(bottom = topBorderHeight) {
-                drawOutline(outline = outline, color = color, style = Stroke(width = strokeWidth))
-            }
-            drawIntoCanvas { canvas ->
-                drawRect(brush = fadeMaskBrush, size = size, blendMode = BlendMode.DstIn)
-                canvas.restore()
-            }
-        }
-    }
-
 @Composable
-fun BottomBarContent(isVisible: Boolean = true, useLegacyStyle: Boolean = false) {
-    if (useLegacyStyle) {
-        LegacyBottomBarContent(isVisible = isVisible)
-    } else {
-        ModernBottomBarContent(isVisible = isVisible)
-    }
+fun BottomBarContent(isVisible: Boolean = true) {
+    FloatingBottomBarContent(isVisible = isVisible)
 }
 
 @Composable
-private fun ModernBottomBarContent(isVisible: Boolean = true) {
-    val bottomBarScrollBehavior = LocalBottomBarScrollBehavior.current
-    val mainPagerState = LocalMainPagerState.current
-    val hazeState = LocalBottomBarHazeState.current
-    val hazeStyle = LocalBottomBarHazeStyle.current
-    val page by remember(mainPagerState) { derivedStateOf { mainPagerState.selectedPage } }
-    val bottomBarVisible = isVisible && (bottomBarScrollBehavior?.isBottomBarVisible ?: true)
-    val hazeEnabled = hazeState != null && hazeStyle != null
-    val opacity = AppTheme.opacity
-    val colorScheme = MiuixTheme.colorScheme
-    val isDarkSurface = colorScheme.background.luminance() < 0.5f
-    val outlineColor =
-        if (isDarkSurface) {
-            White.copy(alpha = opacity.brightOutline)
-        } else {
-            Black.copy(alpha = opacity.mutedStrong)
-        }
-    val selectedColor = colorScheme.primary
-    val unselectedColor = colorScheme.onSurface.copy(alpha = opacity.secondaryText)
-    val barSurfaceColor = colorScheme.background
-    val barSurfaceAlpha =
-        if (hazeEnabled) {
-            opacity.elevatedSurface
-        } else {
-            1f
-        }
-
-    val handlePageChange = LocalHandlePageChange.current
-    val onItemClick: (Int) -> Unit = { index ->
-        if (index != mainPagerState.selectedPage) {
-            handlePageChange(index)
-        }
-    }
-
-    AnimatedVisibility(
-        visible = bottomBarVisible,
-        enter =
-            fadeIn(
-                animationSpec =
-                    tween(durationMillis = 240, easing = AnimationSpecs.EmphasizedDecelerate)
-            ) +
-                slideInVertically(
-                    animationSpec =
-                        tween(durationMillis = 240, easing = AnimationSpecs.EmphasizedDecelerate),
-                    initialOffsetY = { fullHeight -> (fullHeight * 0.92f).toInt() },
-                ),
-        exit =
-            fadeOut(
-                animationSpec =
-                    tween(durationMillis = 180, easing = AnimationSpecs.EmphasizedAccelerate)
-            ) +
-                slideOutVertically(
-                    animationSpec =
-                        tween(durationMillis = 220, easing = AnimationSpecs.EmphasizedAccelerate),
-                    targetOffsetY = { fullHeight -> (fullHeight * 1.08f).toInt() },
-                ),
-    ) {
-        val barShape = MainBottomBarDefaults.Shape
-        val surfaceModifier =
-            Modifier.fillMaxWidth()
-                .clip(barShape)
-                .then(
-                    if (hazeEnabled) {
-                        Modifier.bottomBarHazeEffect(hazeState, hazeStyle)
-                    } else {
-                        Modifier
-                    }
-                )
-                .background(barSurfaceColor.copy(alpha = barSurfaceAlpha))
-                .bottomBarOutline(
-                    shape = barShape,
-                    color = outlineColor,
-                    edgeFadeAlpha = opacity.lightOverlay,
-                    middleFadeAlpha = opacity.accent,
-                )
-
-        BottomBarLayout(modifier = surfaceModifier) {
-            BottomBarDestination.entries.forEachIndexed { index, destination ->
-                BottomBarItem(
-                    selected = page == index,
-                    onClick = { onItemClick(index) },
-                    icon = destination.icon,
-                    label = destination.label,
-                    enabled = bottomBarVisible,
-                    selectedColor = selectedColor,
-                    unselectedColor = unselectedColor,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun BottomBarLayout(
-    modifier: Modifier = Modifier,
-    content: @Composable RowScope.() -> Unit,
-) {
-    val captionBarBottomPadding =
-        WindowInsets.captionBar
-            .only(WindowInsetsSides.Bottom)
-            .asPaddingValues()
-            .calculateBottomPadding()
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(MainBottomBarDefaults.ItemHeight),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            content = content,
-        )
-
-        val navigationBarsPadding = WindowInsets.navigationBars.asPaddingValues()
-        Spacer(
-            modifier =
-                Modifier.fillMaxWidth()
-                    .height(
-                        navigationBarsPadding.calculateBottomPadding() + captionBarBottomPadding
-                    )
-                    .pointerInput(Unit) { detectTapGestures {} }
-        )
-    }
-}
-
-@Composable
-private fun RowScope.BottomBarItem(
-    selected: Boolean,
-    onClick: () -> Unit,
-    icon: ImageVector,
-    label: String,
-    enabled: Boolean,
-    selectedColor: Color,
-    unselectedColor: Color,
-) {
-    val opacity = AppTheme.opacity
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val tint =
-        when {
-            isPressed ->
-                if (selected) {
-                    selectedColor.copy(alpha = opacity.medium)
-                } else {
-                    unselectedColor.copy(alpha = opacity.secondaryText)
-                }
-
-            selected -> selectedColor
-            else -> unselectedColor
-        }
-
-    Column(
-        modifier =
-            Modifier.weight(1f)
-                .fillMaxHeight()
-                .clickable(
-                    enabled = enabled,
-                    interactionSource = interactionSource,
-                    indication = null,
-                    role = Role.Tab,
-                    onClick = onClick,
-                )
-                .semantics(mergeDescendants = true) {
-                    this.selected = selected
-                    this.role = Role.Tab
-                },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(MainBottomBarDefaults.IconSize),
-        )
-        Spacer(modifier = Modifier.height(MainBottomBarDefaults.IconLabelSpacing))
-        BasicText(
-            text = label,
-            style =
-                TextStyle(
-                    color = tint,
-                    fontSize = MainBottomBarDefaults.LabelFontSize,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                    textAlign = TextAlign.Center,
-                ),
-        )
-    }
-}
-
-@Composable
-private fun LegacyBottomBarContent(isVisible: Boolean = true) {
+private fun FloatingBottomBarContent(isVisible: Boolean = true) {
     val bottomBarScrollBehavior = LocalBottomBarScrollBehavior.current
     val mainPagerState = LocalMainPagerState.current
     val pagerState = mainPagerState.pagerState

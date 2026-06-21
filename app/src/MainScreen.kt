@@ -63,7 +63,6 @@ import com.github.yumelira.yumebox.presentation.component.BottomBarContent
 import com.github.yumelira.yumebox.presentation.component.LocalBottomBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalBottomBarHazeStyle
 import com.github.yumelira.yumebox.presentation.component.LocalBottomBarScrollBehavior
-import com.github.yumelira.yumebox.presentation.component.LocalBottomBarUseLegacyStyle
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.LocalMainPagerState
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
@@ -110,8 +109,6 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
     val featureViewModel = koinViewModel<FeatureViewModel>()
     val homeViewModel = koinViewModel<HomeViewModel>()
     val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
-    val bottomBarUseLegacyStyle by
-        appSettingsViewModel.bottomBarUseLegacyStyle.state.collectAsState()
     val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsState()
     val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsState()
     val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsState()
@@ -133,7 +130,9 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                 )
             }
         }
-    val acgBottomBarVisible by
+    // Floating nav bar (with the proxy FAB) shows on the standard home and every other page; the
+    // ACG home has its own chrome, so it stays hidden there.
+    val bottomBarVisible by
         remember(acgMainUiEnabled, settledMainPage, mainPagerState.selectedPage) {
             derivedStateOf {
                 if (!acgMainUiEnabled) {
@@ -195,17 +194,16 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
         LocalBottomBarScrollBehavior provides bottomBarScrollBehavior,
         LocalBottomBarHazeState provides if (topBarBlurEnabled) hazeState else null,
         LocalBottomBarHazeStyle provides if (topBarBlurEnabled) bottomBarHazeStyle else null,
-        LocalBottomBarUseLegacyStyle provides bottomBarUseLegacyStyle,
     ) {
         Scaffold { innerPadding ->
             Box(Modifier.fillMaxSize()) {
                 val layoutDirection = LocalLayoutDirection.current
                 val visibleBottomBarReservedHeight =
-                    rememberBottomBarReservedHeight(useLegacyStyle = bottomBarUseLegacyStyle)
+                    rememberBottomBarReservedHeight()
                 val bottomBarReservedHeight by
                     animateDpAsState(
                         targetValue =
-                            if (acgBottomBarVisible) visibleBottomBarReservedHeight else UiDp.dp0,
+                            if (bottomBarVisible) visibleBottomBarReservedHeight else UiDp.dp0,
                         animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
                         label = "main_bottom_bar_reserved_height",
                     )
@@ -264,10 +262,7 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom,
                 ) {
-                    BottomBarContent(
-                        isVisible = acgBottomBarVisible,
-                        useLegacyStyle = bottomBarUseLegacyStyle,
-                    )
+                    BottomBarContent(isVisible = bottomBarVisible)
                 }
             }
         }
