@@ -24,7 +24,7 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.core.util.acgWallpaperFile
+import com.github.yumelira.yumebox.core.util.moeWallpaperFile
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
 import com.github.yumelira.yumebox.data.model.AppColorTheme
 import com.github.yumelira.yumebox.data.model.AppLanguage
@@ -62,15 +62,15 @@ class AppSettingsViewModel(
     val topBarBlurEnabled: Preference<Boolean> = settings.topBarBlurEnabled
     val predictiveBackEnabled: Preference<Boolean> = settings.predictiveBackEnabled
     val smoothCornerEnabled: Preference<Boolean> = settings.smoothCornerEnabled
-    val acgMainUiEnabled: Preference<Boolean> = settings.acgMainUiEnabled
-    val acgWallpaperUri: Preference<String> = settings.acgWallpaperUri
-    val acgWallpaperSourceUri: Preference<String> = settings.acgWallpaperSourceUri
-    val acgWallpaperZoom: Preference<Float> = settings.acgWallpaperZoom
-    val acgWallpaperBiasX: Preference<Float> = settings.acgWallpaperBiasX
-    val acgWallpaperBiasY: Preference<Float> = settings.acgWallpaperBiasY
-    val acgHomeQuote: Preference<String> = settings.acgHomeQuote
-    val acgHomeQuoteAuthor: Preference<String> = settings.acgHomeQuoteAuthor
-    val acgSidebarExpanded: Preference<Boolean> = settings.acgSidebarExpanded
+    val classicHomeEnabled: Preference<Boolean> = settings.classicHomeEnabled
+    val moeWallpaperUri: Preference<String> = settings.moeWallpaperUri
+    val moeWallpaperSourceUri: Preference<String> = settings.moeWallpaperSourceUri
+    val moeWallpaperZoom: Preference<Float> = settings.moeWallpaperZoom
+    val moeWallpaperBiasX: Preference<Float> = settings.moeWallpaperBiasX
+    val moeWallpaperBiasY: Preference<Float> = settings.moeWallpaperBiasY
+    val moeHomeQuote: Preference<String> = settings.moeHomeQuote
+    val moeHomeQuoteAuthor: Preference<String> = settings.moeHomeQuoteAuthor
+    val moeSidebarExpanded: Preference<Boolean> = settings.moeSidebarExpanded
     val pageScale: Preference<Float> = settings.pageScale
     val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
     val screenshotProtectionEnabled: Preference<Boolean> = settings.screenshotProtectionEnabled
@@ -99,49 +99,49 @@ class AppSettingsViewModel(
 
     fun onSmoothCornerEnabledChange(enabled: Boolean) = smoothCornerEnabled.set(enabled)
 
-    fun onAcgMainUiEnabledChange(enabled: Boolean) = acgMainUiEnabled.set(enabled)
+    fun onClassicHomeEnabledChange(enabled: Boolean) = classicHomeEnabled.set(enabled)
 
-    fun onAcgWallpaperUriChange(uri: String) = acgWallpaperUri.set(uri)
+    fun onMoeWallpaperUriChange(uri: String) = moeWallpaperUri.set(uri)
 
     /**
-     * Persists the selected ACG wallpaper by copying [sourceUri] into the app-private files dir and
-     * storing the resulting `file://` path as [acgWallpaperUri], while remembering the original
-     * source in [acgWallpaperSourceUri] for lazy re-import. If the copy fails the original source
+     * Persists the selected Moe wallpaper by copying [sourceUri] into the app-private files dir and
+     * storing the resulting `file://` path as [moeWallpaperUri], while remembering the original
+     * source in [moeWallpaperSourceUri] for lazy re-import. If the copy fails the original source
      * URI is persisted directly (degraded but working) and a toast is shown.
      */
-    fun applyAcgWallpaper(sourceUri: String, onApplied: () -> Unit) {
+    fun applyMoeWallpaper(sourceUri: String, onApplied: () -> Unit) {
         viewModelScope.launch {
-            val localPath = AcgWallpaperImporter.importToLocal(application, sourceUri)
+            val localPath = MoeWallpaperImporter.importToLocal(application, sourceUri)
             if (localPath != null) {
-                acgWallpaperUri.set(localPath)
-                acgWallpaperSourceUri.set(sourceUri)
+                moeWallpaperUri.set(localPath)
+                moeWallpaperSourceUri.set(sourceUri)
             } else {
-                acgWallpaperUri.set(sourceUri)
-                acgWallpaperSourceUri.set(sourceUri)
-                application.toast(MLang.AppSettings.Experimental.WallpaperImportFailed)
+                moeWallpaperUri.set(sourceUri)
+                moeWallpaperSourceUri.set(sourceUri)
+                application.toast(MLang.AppSettings.Interface.HomeWallpaperImportFailed)
             }
             onApplied()
         }
     }
 
-    fun onAcgWallpaperCropChange(zoom: Float, biasX: Float, biasY: Float) {
-        acgWallpaperZoom.set(zoom.coerceIn(1f, 5f))
-        acgWallpaperBiasX.set(biasX.coerceIn(-1f, 1f))
-        acgWallpaperBiasY.set(biasY.coerceIn(-1f, 1f))
+    fun onMoeWallpaperCropChange(zoom: Float, biasX: Float, biasY: Float) {
+        moeWallpaperZoom.set(zoom.coerceIn(1f, 5f))
+        moeWallpaperBiasX.set(biasX.coerceIn(-1f, 1f))
+        moeWallpaperBiasY.set(biasY.coerceIn(-1f, 1f))
     }
 
-    fun onAcgHomeQuoteChange(quote: String) = acgHomeQuote.set(quote)
+    fun onMoeHomeQuoteChange(quote: String) = moeHomeQuote.set(quote)
 
-    fun onAcgHomeQuoteAuthorChange(author: String) = acgHomeQuoteAuthor.set(author)
+    fun onMoeHomeQuoteAuthorChange(author: String) = moeHomeQuoteAuthor.set(author)
 
-    fun onAcgSidebarExpandedChange(expanded: Boolean) = acgSidebarExpanded.set(expanded)
+    fun onMoeSidebarExpandedChange(expanded: Boolean) = moeSidebarExpanded.set(expanded)
 
-    fun clearAcgWallpaperUri() {
+    fun clearMoeWallpaperUri() {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { runCatching { application.acgWallpaperFile().delete() } }
-            acgWallpaperUri.set("")
-            acgWallpaperSourceUri.set("")
-            onAcgWallpaperCropChange(zoom = 1f, biasX = 0f, biasY = 0f)
+            withContext(Dispatchers.IO) { runCatching { application.moeWallpaperFile().delete() } }
+            moeWallpaperUri.set("")
+            moeWallpaperSourceUri.set("")
+            onMoeWallpaperCropChange(zoom = 1f, biasX = 0f, biasY = 0f)
         }
     }
 

@@ -70,7 +70,7 @@ import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.AcgWallpaperCropScreenDestination
+import com.ramcosta.composedestinations.generated.destinations.MoeWallpaperCropScreenDestination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
@@ -96,11 +96,10 @@ fun AppSettingsScreen(navigator: DestinationsNavigator) {
             innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item { AppBehaviorSettingsSection(viewModel) }
-            item { AppInterfaceSettingsSection(viewModel) }
+            item { AppInterfaceSettingsSection(viewModel = viewModel, navigator = navigator) }
             item { AppPrivacySettingsSection(viewModel) }
             item { AppServiceSettingsSection(viewModel) }
             item { AppNetworkSettingsSection(viewModel) }
-            item { AppExperimentalSettingsSection(viewModel = viewModel, navigator = navigator) }
         }
     }
 }
@@ -139,7 +138,10 @@ private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
 }
 
 @Composable
-private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
+private fun AppInterfaceSettingsSection(
+    viewModel: AppSettingsViewModel,
+    navigator: DestinationsNavigator,
+) {
     val context = LocalContext.current
     val themeMode by viewModel.themeMode.state.collectAsState()
     val appLanguage by viewModel.appLanguage.state.collectAsState()
@@ -150,6 +152,16 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
     val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
     val pageScale by viewModel.pageScale.state.collectAsState()
+    val classicHomeEnabled by viewModel.classicHomeEnabled.state.collectAsState()
+    val homeQuote by viewModel.moeHomeQuote.state.collectAsState()
+    val homeQuoteAuthor by viewModel.moeHomeQuoteAuthor.state.collectAsState()
+    val homeSidebarExpanded by viewModel.moeSidebarExpanded.state.collectAsState()
+    val homeQuoteSummary =
+        remember(homeQuote) { homeQuote.ifBlank { MLang.AppSettings.Interface.HomeQuoteDefault } }
+    val homeQuoteAuthorSummary =
+        remember(homeQuoteAuthor) {
+            homeQuoteAuthor.ifBlank { MLang.AppSettings.Interface.HomeQuoteAuthorDefault }
+        }
 
     Title(MLang.AppSettings.Interface.ColorThemeTitle)
     Card {
@@ -222,6 +234,41 @@ private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
             onCheckedChange = viewModel::onSmoothCornerEnabledChange,
         )
         PageScalePreferenceItem(pageScale = pageScale, onApply = viewModel::onPageScaleChange)
+    }
+    Title(MLang.AppSettings.Section.Home)
+    Card {
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.ClassicHomeTitle,
+            summary = MLang.AppSettings.Interface.ClassicHomeSummary,
+            checked = classicHomeEnabled,
+            onCheckedChange = viewModel::onClassicHomeEnabledChange,
+        )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.HomeSidebarExpandedTitle,
+            summary = MLang.AppSettings.Interface.HomeSidebarExpandedSummary,
+            checked = homeSidebarExpanded,
+            onCheckedChange = viewModel::onMoeSidebarExpandedChange,
+        )
+        MoeQuotePreferenceItem(
+            title = MLang.AppSettings.Interface.HomeQuoteTitle,
+            summary = homeQuoteSummary,
+            dialogTitle = MLang.AppSettings.Interface.EditHomeQuoteTitle,
+            currentValue = homeQuote,
+            onConfirm = viewModel::onMoeHomeQuoteChange,
+        )
+        MoeQuotePreferenceItem(
+            title = MLang.AppSettings.Interface.HomeQuoteAuthorTitle,
+            summary = homeQuoteAuthorSummary,
+            dialogTitle = MLang.AppSettings.Interface.EditHomeQuoteAuthorTitle,
+            currentValue = homeQuoteAuthor,
+            onConfirm = viewModel::onMoeHomeQuoteAuthorChange,
+        )
+        MoeWallpaperPreferenceItem(
+            navigator = navigator,
+            wallpaperZoom = viewModel.moeWallpaperZoom.value,
+            wallpaperBiasX = viewModel.moeWallpaperBiasX.value,
+            wallpaperBiasY = viewModel.moeWallpaperBiasY.value,
+        )
     }
 }
 
@@ -337,60 +384,6 @@ private fun AppNetworkSettingsSection(viewModel: AppSettingsViewModel) {
 }
 
 @Composable
-private fun AppExperimentalSettingsSection(
-    viewModel: AppSettingsViewModel,
-    navigator: DestinationsNavigator,
-) {
-    val acgMainUiEnabled by viewModel.acgMainUiEnabled.state.collectAsState()
-    val acgHomeQuote by viewModel.acgHomeQuote.state.collectAsState()
-    val acgHomeQuoteAuthor by viewModel.acgHomeQuoteAuthor.state.collectAsState()
-    val acgSidebarExpanded by viewModel.acgSidebarExpanded.state.collectAsState()
-    val acgQuoteSummary =
-        remember(acgHomeQuote) {
-            acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault }
-        }
-    val acgQuoteAuthorSummary =
-        remember(acgHomeQuoteAuthor) {
-            acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault }
-        }
-    Title(MLang.AppSettings.Section.Experimental)
-    Card {
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Experimental.AcgHomeTitle,
-            summary = MLang.AppSettings.Experimental.AcgHomeSummary,
-            checked = acgMainUiEnabled,
-            onCheckedChange = viewModel::onAcgMainUiEnabledChange,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Experimental.AcgSidebarExpandedTitle,
-            summary = MLang.AppSettings.Experimental.AcgSidebarExpandedSummary,
-            checked = acgSidebarExpanded,
-            onCheckedChange = viewModel::onAcgSidebarExpandedChange,
-        )
-        AcgQuotePreferenceItem(
-            title = MLang.AppSettings.Experimental.AcgQuoteTitle,
-            summary = acgQuoteSummary,
-            dialogTitle = MLang.AppSettings.Experimental.EditAcgQuoteTitle,
-            currentValue = acgHomeQuote,
-            onConfirm = viewModel::onAcgHomeQuoteChange,
-        )
-        AcgQuotePreferenceItem(
-            title = MLang.AppSettings.Experimental.AcgQuoteAuthorTitle,
-            summary = acgQuoteAuthorSummary,
-            dialogTitle = MLang.AppSettings.Experimental.EditAcgQuoteAuthorTitle,
-            currentValue = acgHomeQuoteAuthor,
-            onConfirm = viewModel::onAcgHomeQuoteAuthorChange,
-        )
-        AcgWallpaperPreferenceItem(
-            navigator = navigator,
-            wallpaperZoom = viewModel.acgWallpaperZoom.value,
-            wallpaperBiasX = viewModel.acgWallpaperBiasX.value,
-            wallpaperBiasY = viewModel.acgWallpaperBiasY.value,
-        )
-    }
-}
-
-@Composable
 private fun BiometricProtectedPreferenceSwitch(
     checkedFlow: kotlinx.coroutines.flow.StateFlow<Boolean>,
     title: String,
@@ -472,7 +465,7 @@ private fun HideAppIconPreferenceItem(
 }
 
 @Composable
-private fun AcgQuotePreferenceItem(
+private fun MoeQuotePreferenceItem(
     title: String,
     summary: String,
     dialogTitle: String,
@@ -500,7 +493,7 @@ private fun AcgQuotePreferenceItem(
 }
 
 @Composable
-private fun AcgWallpaperPreferenceItem(
+private fun MoeWallpaperPreferenceItem(
     navigator: DestinationsNavigator,
     wallpaperZoom: Float,
     wallpaperBiasX: Float,
@@ -518,7 +511,7 @@ private fun AcgWallpaperPreferenceItem(
                 )
             }
             navigator.navigate(
-                AcgWallpaperCropScreenDestination(
+                MoeWallpaperCropScreenDestination(
                     wallpaperUri = uri.toString(),
                     initialZoom = wallpaperZoom,
                     initialBiasX = wallpaperBiasX,
@@ -530,8 +523,8 @@ private fun AcgWallpaperPreferenceItem(
         }
 
     PreferenceArrowItem(
-        title = MLang.AppSettings.Experimental.WallpaperTitle,
-        summary = MLang.AppSettings.Experimental.WallpaperSummary,
+        title = MLang.AppSettings.Interface.HomeWallpaperTitle,
+        summary = MLang.AppSettings.Interface.HomeWallpaperSummary,
         onClick = {
             wallpaperPickerLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)

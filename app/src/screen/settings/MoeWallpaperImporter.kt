@@ -22,13 +22,13 @@ package com.github.yumelira.yumebox.screen.settings
 
 import android.content.Context
 import android.net.Uri
-import com.github.yumelira.yumebox.core.util.acgWallpaperFile
+import com.github.yumelira.yumebox.core.util.moeWallpaperFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Copies the ACG wallpaper from an external [sourceUri] (typically a `content://` URI from the
+ * Copies the Moe wallpaper from an external [sourceUri] (typically a `content://` URI from the
  * photo picker) into the app-private files dir, so rendering survives deletion/permission loss of
  * the original source.
  *
@@ -38,19 +38,19 @@ import java.io.File
  * @return a `file://` URI pointing at the local copy on success, or `null` if the source could not
  *   be read (caller should fall back to the original source URI in that case).
  */
-object AcgWallpaperImporter {
+object MoeWallpaperImporter {
     suspend fun importToLocal(context: Context, sourceUri: String): String? =
         withContext(Dispatchers.IO) {
             runCatching {
-                    val target = context.acgWallpaperFile()
+                    val target = context.moeWallpaperFile()
                     val tmp = File(target.parentFile, "wallpaper.tmp")
                     context.contentResolver.openInputStream(Uri.parse(sourceUri)).use { input ->
-                        requireNotNull(input) { "Unable to open ACG wallpaper source: $sourceUri" }
+                        requireNotNull(input) { "Unable to open Moe wallpaper source: $sourceUri" }
                         tmp.outputStream().use { input.copyTo(it) }
                     }
                     if (!tmp.renameTo(target)) {
                         target.delete()
-                        check(tmp.renameTo(target)) { "Failed to swap ACG wallpaper temp file" }
+                        check(tmp.renameTo(target)) { "Failed to swap Moe wallpaper temp file" }
                     }
                     "file://${target.absolutePath}"
                 }

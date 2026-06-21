@@ -112,8 +112,7 @@ fun SearchStatus.TopAppBarAnim(
             label = "SearchTopBarAlpha",
         )
     Box(
-        modifier =
-            modifier.fillMaxWidth().background(colorScheme.surface).graphicsLayer {
+        modifier = modifier.fillMaxWidth().background(colorScheme.surface).graphicsLayer {
                 this.alpha = alpha
             }
     ) {

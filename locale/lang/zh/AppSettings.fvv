@@ -8,7 +8,7 @@ AppSettings = {
         Privacy = "隐私"
         Service = "服务"
         Network = "网络"
-        Experimental = "实验性内容"
+        Home = "首页"
     }
 
     Behavior = {
@@ -53,6 +53,26 @@ AppSettings = {
         PageScaleTitle = "页面缩放"
         PageScaleSummary = "调整应用界面的整体缩放比例"
         PageScaleDialogSummary = "80% - 120%"
+
+        ClassicHomeTitle = "经典首页"
+        ClassicHomeSummary = "回退到旧版首页布局"
+        HomeQuoteTitle = "首页一言"
+        HomeQuoteDefault = "在安静的线路上，等一朵云完成漫游"
+        HomeQuoteAuthorTitle = "一言作者"
+        HomeQuoteAuthorDefault = "YumeBox"
+        EditHomeQuoteTitle = "编辑一言"
+        EditHomeQuoteAuthorTitle = "编辑一言作者"
+        HomeSidebarExpandedTitle = "首页侧栏默认展开"
+        HomeSidebarExpandedSummary = "进入首页时默认展开左侧信息栏"
+        HomeWallpaperTitle = "首页壁纸"
+        HomeWallpaperSummary = "为首页选择自定义壁纸"
+        HomeWallpaperCropTitle = "壁纸选择裁剪器"
+        HomeWallpaperCropSummary = "以首页可视区域为选区，左右滑动选择显示范围"
+        HomeWallpaperCropModeFree = "手动预览"
+        HomeWallpaperCropModeFixed = "固定比例裁剪"
+        HomeWallpaperCropSwitchMode = "切换模式"
+        ResetHomeWallpaperTitle = "重置首页壁纸"
+        HomeWallpaperImportFailed = "无法将壁纸复制到本地，已改用原始来源"
     }
 
     Privacy = {
@@ -79,28 +99,6 @@ AppSettings = {
         HideIconSummary = "隐藏后可通过拨号盘 *#*#0721#*#* 打开"
         HideFromRecentsTitle = "隐藏后台卡片"
         HideFromRecentsSummary = "启用后不在最近任务列表（后台卡片）中显示应用"
-    }
-
-    Experimental = {
-        AcgHomeTitle = "ACG 实验首页"
-        AcgHomeSummary = "启用新的 ACG 风格首页布局"
-        AcgQuoteTitle = "ACG 一言"
-        AcgQuoteDefault = "在安静的线路上，等一朵云完成漫游"
-        AcgQuoteAuthorTitle = "ACG 一言作者"
-        AcgQuoteAuthorDefault = "YumeBox"
-        AcgSidebarExpandedTitle = "ACG 侧栏默认展开"
-        AcgSidebarExpandedSummary = "进入 ACG 首页时默认展开左侧信息栏"
-        WallpaperTitle = "ACG 壁纸"
-        WallpaperSummary = "为 ACG 首页选择自定义壁纸"
-        WallpaperCropTitle = "壁纸选择裁剪器"
-        WallpaperCropSummary = "以首页可视区域为选区，左右滑动选择显示范围"
-        WallpaperCropModeFree = "手动预览"
-        WallpaperCropModeFixed = "固定比例裁剪"
-        WallpaperCropSwitchMode = "切换模式"
-        ResetWallpaperTitle = "重置 ACG 壁纸"
-        EditAcgQuoteTitle = "编辑 ACG 一言"
-        EditAcgQuoteAuthorTitle = "编辑 ACG 一言作者"
-        WallpaperImportFailed = "无法将壁纸复制到本地，已改用原始来源"
     }
 
     ServiceSection = {

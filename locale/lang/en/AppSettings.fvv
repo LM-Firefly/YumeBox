@@ -8,7 +8,7 @@ AppSettings = {
         Privacy = "Privacy"
         Service = "Service"
         Network = "Network"
-        Experimental = "Experimental"
+        Home = "Home"
     }
 
     Behavior = {
@@ -53,6 +53,26 @@ AppSettings = {
         PageScaleTitle = "Page Scale"
         PageScaleSummary = "Adjust the overall UI scaling ratio of the app"
         PageScaleDialogSummary = "80% - 120%"
+
+        ClassicHomeTitle = "Classic Home"
+        ClassicHomeSummary = "Switch back to the legacy home layout"
+        HomeQuoteTitle = "Home Quote"
+        HomeQuoteDefault = "Wait for a cloud to finish roaming on a quiet route"
+        HomeQuoteAuthorTitle = "Home Quote Author"
+        HomeQuoteAuthorDefault = "YumeBox"
+        EditHomeQuoteTitle = "Edit Home Quote"
+        EditHomeQuoteAuthorTitle = "Edit Home Quote Author"
+        HomeSidebarExpandedTitle = "Expand Home Sidebar by Default"
+        HomeSidebarExpandedSummary = "Open the left info sidebar by default on the home page"
+        HomeWallpaperTitle = "Home Wallpaper"
+        HomeWallpaperSummary = "Choose a custom wallpaper for the home page"
+        HomeWallpaperCropTitle = "Wallpaper Cropper"
+        HomeWallpaperCropSummary = "Use the home viewport height and slide left or right to pick the visible area"
+        HomeWallpaperCropModeFree = "Manual Preview"
+        HomeWallpaperCropModeFixed = "Fixed Ratio Crop"
+        HomeWallpaperCropSwitchMode = "Switch Mode"
+        ResetHomeWallpaperTitle = "Reset Home Wallpaper"
+        HomeWallpaperImportFailed = "Could not copy the wallpaper locally; using the original source"
     }
 
     Privacy = {
@@ -79,28 +99,6 @@ AppSettings = {
         HideIconSummary = "After hiding, you can open via dialer *#*#0721#*#*"
         HideFromRecentsTitle = "Hide Recents Card"
         HideFromRecentsSummary = "Do not show this app in the recent tasks list (recents card)"
-    }
-
-    Experimental = {
-        AcgHomeTitle = "ACG Experimental Home"
-        AcgHomeSummary = "Enable the new ACG-inspired home layout"
-        AcgQuoteTitle = "ACG Quote"
-        AcgQuoteDefault = "Wait for a cloud to finish roaming on a quiet route"
-        AcgQuoteAuthorTitle = "ACG Quote Author"
-        AcgQuoteAuthorDefault = "YumeBox"
-        AcgSidebarExpandedTitle = "Expand ACG Sidebar by Default"
-        AcgSidebarExpandedSummary = "Open the left info sidebar by default on the ACG home page"
-        WallpaperTitle = "ACG Wallpaper"
-        WallpaperSummary = "Choose a custom wallpaper for the ACG home page"
-        WallpaperCropTitle = "Wallpaper Cropper"
-        WallpaperCropSummary = "Use the home viewport height and slide left or right to pick the visible area"
-        WallpaperCropModeFree = "Manual Preview"
-        WallpaperCropModeFixed = "Fixed Ratio Crop"
-        WallpaperCropSwitchMode = "Switch Mode"
-        ResetWallpaperTitle = "Reset ACG Wallpaper"
-        EditAcgQuoteTitle = "Edit ACG Quote"
-        EditAcgQuoteAuthorTitle = "Edit ACG Quote Author"
-        WallpaperImportFailed = "Could not copy the wallpaper locally; using the original source"
     }
 
     ServiceSection = {

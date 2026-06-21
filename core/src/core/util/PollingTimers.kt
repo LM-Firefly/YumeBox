@@ -48,7 +48,7 @@ data class PollingTimerSpec(
 }
 
 object PollingTimerSpecs {
-    val AcgElapsedClock = PollingTimerSpec("acg_elapsed_clock", 1_000L, 0L)
+    val MoeElapsedClock = PollingTimerSpec("acg_elapsed_clock", 1_000L, 0L)
     val HomeSpeedSampling = PollingTimerSpec("home_speed_sampling", 1_000L, 0L)
     val LogScreenRefresh = PollingTimerSpec("log_screen_refresh", 500L, 0L)
     val ConnectionsPolling = PollingTimerSpec("connections_polling", 1_000L, 0L)

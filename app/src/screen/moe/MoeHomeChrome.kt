@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.acg
+package com.github.yumelira.yumebox.screen.moe
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
@@ -46,7 +46,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -68,7 +67,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.common.util.formatBytesForDisplay
-import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.presentation.component.CountryFlagCircle
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.icon.Yume
@@ -88,7 +86,7 @@ import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-internal fun AcgSidebarDecoration(
+internal fun MoeSidebarDecoration(
     backdrop: LayerBackdrop,
     blurEnabled: Boolean,
     blurProgress: Float,
@@ -156,7 +154,7 @@ internal fun AcgSidebarDecoration(
                     shape = RectangleShape,
                 )
                 .padding(
-                    horizontal = AcgUi.Sidebar.innerHorizontalPadding,
+                    horizontal = MoeUi.Sidebar.innerHorizontalPadding,
                     vertical = spacing.space24,
                 ),
         content = content,
@@ -164,57 +162,58 @@ internal fun AcgSidebarDecoration(
 }
 
 @Composable
-internal fun AcgSidebarContent(
+internal fun MoeSidebarContent(
     topValue: String,
     bottomValue: String,
-    proxyMode: ProxyMode,
-    icons: List<AcgSidebarIconItem>,
+    icons: List<MoeSidebarIconItem>,
     visibleWidth: Dp,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        AcgSidebarRail(
+    // 在「可见条」内居中：扣除 decoration 的左右内边距后定宽，居中即对齐可见区域中线。
+    val laneWidth =
+        (visibleWidth - MoeUi.Sidebar.innerHorizontalPadding * 2).coerceAtLeast(0.dp)
+    Box(
+        modifier = Modifier.fillMaxHeight().width(laneWidth),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        MoeSidebarRail(
             topValue = topValue,
             bottomValue = bottomValue,
-            proxyMode = proxyMode,
             icons = icons,
-            modifier =
-                Modifier.fillMaxHeight()
-                    .width(AcgUi.Sidebar.statsWidth)
-                    .offset(x = calculateAcgSidebarLaneStart(visibleWidth)),
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
 
 @Composable
-internal fun AcgQuoteText(quote: AcgQuote, color: Color, modifier: Modifier = Modifier) {
+internal fun MoeQuoteText(quote: MoeQuote, color: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(AcgUi.Quote.contentGap),
+        verticalArrangement = Arrangement.spacedBy(MoeUi.Quote.contentGap),
     ) {
         Text(
             text = quote.text,
             color = color,
             style = MiuixTheme.textStyles.title2,
             fontWeight = FontWeight.Medium,
-            fontSize = AcgUi.Quote.textSize,
-            lineHeight = AcgUi.Quote.lineHeight,
+            fontSize = MoeUi.Quote.textSize,
+            lineHeight = MoeUi.Quote.lineHeight,
             softWrap = true,
             overflow = TextOverflow.Clip,
         )
         Text(
             text = "— ${quote.author}",
-            modifier = Modifier.align(Alignment.End).padding(top = AcgUi.Quote.authorTopGap),
-            color = color.copy(alpha = AcgUi.Quote.authorAlpha),
+            modifier = Modifier.align(Alignment.End).padding(top = MoeUi.Quote.authorTopGap),
+            color = color.copy(alpha = MoeUi.Quote.authorAlpha),
             style = MiuixTheme.textStyles.footnote1,
             fontWeight = FontWeight.Medium,
-            fontSize = AcgUi.Quote.authorSize,
+            fontSize = MoeUi.Quote.authorSize,
             softWrap = false,
         )
     }
 }
 
 @Composable
-internal fun AcgLaunchButton(
+internal fun MoeLaunchButton(
     controlState: HomeProxyControlState,
     enabled: Boolean,
     onClick: () -> Unit,
@@ -237,9 +236,9 @@ internal fun AcgLaunchButton(
         }
     val pressScale by
         animateFloatAsState(
-            targetValue = if (isPressed && enabled) AcgUi.Button.pressedScale else 1f,
+            targetValue = if (isPressed && enabled) MoeUi.Button.pressedScale else 1f,
             animationSpec = spring(dampingRatio = 0.42f, stiffness = 520f),
-            label = "acg_launch_button_press_scale",
+            label = "moe_launch_button_press_scale",
         )
 
     Box(
@@ -248,9 +247,9 @@ internal fun AcgLaunchButton(
                     scaleX = pressScale
                     scaleY = pressScale
                 }
-                .width(AcgUi.Button.fixedWidth)
-                .clip(AcgUi.Shape.launchButton)
-                .background(background, AcgUi.Shape.launchButton)
+                .width(MoeUi.Button.fixedWidth)
+                .clip(MoeUi.Shape.launchButton)
+                .background(background, MoeUi.Shape.launchButton)
                 .clickable(
                     enabled = enabled,
                     interactionSource = interactionSource,
@@ -258,8 +257,8 @@ internal fun AcgLaunchButton(
                     onClick = onClick,
                 )
                 .padding(
-                    horizontal = AcgUi.Button.horizontalPadding,
-                    vertical = AcgUi.Button.verticalPadding,
+                    horizontal = MoeUi.Button.horizontalPadding,
+                    vertical = MoeUi.Button.verticalPadding,
                 )
     ) {
         Row(
@@ -317,7 +316,7 @@ internal fun AcgLaunchButton(
                             )
                             .using(SizeTransform(clip = false))
                     },
-                    label = "acg_launch_button_text",
+                    label = "moe_launch_button_text",
                 ) { state ->
                     Text(
                         text =
@@ -341,31 +340,31 @@ internal fun AcgLaunchButton(
 }
 
 @Composable
-internal fun AcgTrafficStrip(
+internal fun MoeTrafficStrip(
     downloadSpeed: Long,
     uploadSpeed: Long,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(AcgUi.Hero.trafficRowGap),
+        horizontalArrangement = Arrangement.spacedBy(MoeUi.Hero.trafficRowGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            AcgTrafficItem(label = MLang.Home.Traffic.UpShort, speed = uploadSpeed)
+            MoeTrafficItem(label = MLang.Home.Traffic.UpShort, speed = uploadSpeed)
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            AcgTrafficItem(label = MLang.Home.Traffic.DownShort, speed = downloadSpeed)
+            MoeTrafficItem(label = MLang.Home.Traffic.DownShort, speed = downloadSpeed)
         }
     }
 }
 
 @Composable
-private fun AcgTrafficItem(label: String, speed: Long) {
+private fun MoeTrafficItem(label: String, speed: Long) {
     val (value, unit) = formatBytesForDisplay(speed)
     val onSurface = MiuixTheme.colorScheme.onSurface
     Row(
-        horizontalArrangement = Arrangement.spacedBy(AcgUi.Traffic.itemGap),
+        horizontalArrangement = Arrangement.spacedBy(MoeUi.Traffic.itemGap),
         verticalAlignment = Alignment.Bottom,
     ) {
         Text(
@@ -375,7 +374,7 @@ private fun AcgTrafficItem(label: String, speed: Long) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.8.sp,
-            modifier = Modifier.padding(bottom = AcgUi.Traffic.labelBottomPadding),
+            modifier = Modifier.padding(bottom = MoeUi.Traffic.labelBottomPadding),
         )
         Text(
             text = value,
@@ -389,13 +388,13 @@ private fun AcgTrafficItem(label: String, speed: Long) {
             color = onSurface.copy(alpha = 0.55f),
             style = MiuixTheme.textStyles.footnote1,
             fontSize = 12.sp,
-            modifier = Modifier.padding(bottom = AcgUi.Traffic.labelBottomPadding),
+            modifier = Modifier.padding(bottom = MoeUi.Traffic.labelBottomPadding),
         )
     }
 }
 
 @Composable
-internal fun AcgHomeInfoPanel(
+internal fun MoeHomeInfoPanel(
     serverName: String?,
     serverPing: Int?,
     modifier: Modifier = Modifier,
@@ -409,14 +408,14 @@ internal fun AcgHomeInfoPanel(
                 MLang.Home.NodeInfo.DelayValue.format(ping)
             }
     Row(
-        modifier = modifier.fillMaxWidth().heightIn(min = AcgUi.Hero.infoRowMinHeight),
+        modifier = modifier.fillMaxWidth().heightIn(min = MoeUi.Hero.infoRowMinHeight),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (resolvedNodeName.isNotBlank()) {
-            AcgInfoBlock(
+            MoeInfoBlock(
                 value = resolvedNodeName,
-                modifier = Modifier.weight(1f).padding(end = AcgUi.Info.trailingPadding),
+                modifier = Modifier.weight(1f).padding(end = MoeUi.Info.trailingPadding),
                 leading = {
                     flaggedNode?.countryCode?.let { countryCode ->
                         CountryFlagCircle(
@@ -427,17 +426,17 @@ internal fun AcgHomeInfoPanel(
                 },
             )
         } else {
-            Spacer(modifier = Modifier.weight(1f).padding(end = AcgUi.Info.trailingPadding))
+            Spacer(modifier = Modifier.weight(1f).padding(end = MoeUi.Info.trailingPadding))
         }
 
         if (resolvedPing != null) {
-            AcgInfoBlock(
+            MoeInfoBlock(
                 value = resolvedPing,
-                modifier = Modifier.width(AcgUi.Hero.delayWidth),
+                modifier = Modifier.width(MoeUi.Hero.delayWidth),
                 valueColor =
                     when {
-                        serverPing < 500 -> AppTheme.colors.acg.pingExcellent
-                        else -> AppTheme.colors.acg.pingWarning
+                        serverPing < 500 -> AppTheme.colors.moe.pingExcellent
+                        else -> AppTheme.colors.moe.pingWarning
                     },
                 alignEnd = true,
             )
@@ -446,7 +445,7 @@ internal fun AcgHomeInfoPanel(
 }
 
 @Composable
-private fun AcgInfoBlock(
+private fun MoeInfoBlock(
     value: String,
     modifier: Modifier = Modifier,
     valueColor: Color = MiuixTheme.colorScheme.onBackground,
@@ -458,7 +457,7 @@ private fun AcgInfoBlock(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement =
             Arrangement.spacedBy(
-                space = AcgUi.Info.blockGap,
+                space = MoeUi.Info.blockGap,
                 alignment = if (alignEnd) Alignment.End else Alignment.Start,
             ),
         verticalAlignment = Alignment.CenterVertically,

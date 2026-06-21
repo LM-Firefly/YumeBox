@@ -105,7 +105,7 @@ data class StateColors(
     val neutralPlaceholderBackground: Color = Color(0xFFE0E0E0),
 )
 
-data class AcgColors(
+data class MoeColors(
     val pingExcellent: Color = Color(0xFF0E7A34),
     val pingWarning: Color = Color(0xFFB87900),
 )
@@ -141,7 +141,7 @@ data class AppColors(
     val connection: ConnectionColors = ConnectionColors(),
     val status: StatusColors = StatusColors(),
     val state: StateColors = StateColors(),
-    val acg: AcgColors = AcgColors(),
+    val moe: MoeColors = MoeColors(),
     val editor: EditorColors = EditorColors(),
 ) {
     val neutralPlaceholderBackground: Color

@@ -34,7 +34,7 @@ import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.appModule
 import com.github.yumelira.yumebox.feature.meta.presentation.util.CustomRoutingBootstrapper
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
-import com.github.yumelira.yumebox.screen.settings.AcgWallpaperImporter
+import com.github.yumelira.yumebox.screen.settings.MoeWallpaperImporter
 import com.github.yumelira.yumebox.substore.util.AppUtil
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.CoroutineScope
@@ -103,23 +103,23 @@ class App : Application() {
     }
 
     /**
-     * Best-effort self-heal for the ACG wallpaper: if the persisted
-     * [AppSettingsStore.acgWallpaperUri] points at a local file:// copy that no longer exists, but
+     * Best-effort self-heal for the Moe wallpaper: if the persisted
+     * [AppSettingsStore.moeWallpaperUri] points at a local file:// copy that no longer exists, but
      * the original source is still recorded and readable, re-import it so the home screen keeps
      * rendering the user's choice after a cache or data wipe. Silent no-op otherwise; the render
      * path falls back to the bundled asset.
      */
-    private suspend fun ensureAcgWallpaperLocalCopy(appSettings: AppSettingsStore) {
-        val stored = appSettings.acgWallpaperUri.value
+    private suspend fun ensureMoeWallpaperLocalCopy(appSettings: AppSettingsStore) {
+        val stored = appSettings.moeWallpaperUri.value
         if (!stored.startsWith("file://")) return
         val localPath = stored.removePrefix("file://")
         if (localPath.startsWith("/android_asset/")) return
         if (File(localPath).exists()) return
-        val source = appSettings.acgWallpaperSourceUri.value
+        val source = appSettings.moeWallpaperSourceUri.value
         if (source.isBlank()) return
-        val reimported = AcgWallpaperImporter.importToLocal(this, source)
+        val reimported = MoeWallpaperImporter.importToLocal(this, source)
         if (reimported != null) {
-            appSettings.acgWallpaperUri.set(reimported)
+            appSettings.moeWallpaperUri.set(reimported)
         }
     }
 
@@ -142,8 +142,8 @@ class App : Application() {
         StartupTaskCoordinator.startWarmup(startupScope) {
             runCatching { koin.get<CustomRoutingBootstrapper>().ensureDefaultContent() }
                 .onFailure { Timber.e(it, "Failed to bootstrap custom routing default content") }
-            runCatching { ensureAcgWallpaperLocalCopy(appSettings) }
-                .onFailure { Timber.e(it, "Failed to ensure ACG wallpaper local copy") }
+            runCatching { ensureMoeWallpaperLocalCopy(appSettings) }
+                .onFailure { Timber.e(it, "Failed to ensure Moe wallpaper local copy") }
             runCatching { koin.get<AppTrafficStatisticsCollector>() }
             runCatching { koin.get<ProxyFacade>().awaitProxyGroupWarmUp() }
 

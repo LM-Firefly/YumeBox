@@ -28,21 +28,22 @@ const val LEGACY_RUNTIME_HOME_DIR_NAME = "clash"
 const val PROFILE_PROVIDERS_DIR_NAME = "providers"
 const val RULE_PROVIDER_SCOPE = "rules"
 const val PROXY_PROVIDER_SCOPE = "proxies"
-const val ACG_ASSETS_DIR_NAME = "acg"
-const val ACG_WALLPAPER_FILE_NAME = "wallpaper.dat"
+// Kept as the literal "acg" so wallpapers copied under the old path stay resolvable after the rename.
+const val MOE_ASSETS_DIR_NAME = "acg"
+const val MOE_WALLPAPER_FILE_NAME = "wallpaper.dat"
 
 val Context.runtimeHomeDir: File
     get() = filesDir.resolve(RUNTIME_HOME_DIR_NAME)
 
-val Context.acgAssetsDir: File
-    get() = filesDir.resolve(ACG_ASSETS_DIR_NAME)
+val Context.moeAssetsDir: File
+    get() = filesDir.resolve(MOE_ASSETS_DIR_NAME)
 
 /**
- * Stable app-private slot for the locally copied ACG wallpaper. The directory is created on access
+ * Stable app-private slot for the locally copied home wallpaper. The directory is created on access
  * so callers can stream-copy into the returned file directly.
  */
-fun Context.acgWallpaperFile(): File =
-    acgAssetsDir.apply { mkdirs() }.resolve(ACG_WALLPAPER_FILE_NAME)
+fun Context.moeWallpaperFile(): File =
+    moeAssetsDir.apply { mkdirs() }.resolve(MOE_WALLPAPER_FILE_NAME)
 
 val Context.legacyRuntimeHomeDir: File
     get() = filesDir.resolve(LEGACY_RUNTIME_HOME_DIR_NAME)

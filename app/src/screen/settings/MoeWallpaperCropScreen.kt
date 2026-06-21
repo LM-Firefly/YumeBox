@@ -73,7 +73,7 @@ import kotlin.math.max
 
 @Composable
 @Destination<RootGraph>
-fun AcgWallpaperCropScreen(
+fun MoeWallpaperCropScreen(
     navigator: DestinationsNavigator,
     wallpaperUri: String,
     initialZoom: Float = 1f,
@@ -209,12 +209,12 @@ fun AcgWallpaperCropScreen(
                         .clip(RoundedCornerShape(UiDp.dp12)),
                 colors = ButtonDefaults.buttonColorsPrimary(),
                 onClick = {
-                    viewModel.onAcgWallpaperCropChange(
+                    viewModel.onMoeWallpaperCropChange(
                         zoom = 1f,
                         biasX = viewportLayout.biasX,
                         biasY = viewportLayout.biasY,
                     )
-                    viewModel.applyAcgWallpaper(sourceUri = wallpaperUri) {
+                    viewModel.applyMoeWallpaper(sourceUri = wallpaperUri) {
                         navigator.popBackStack()
                     }
                 },

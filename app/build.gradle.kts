@@ -178,6 +178,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.animation)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(project(":core"))

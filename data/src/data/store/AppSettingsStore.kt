@@ -43,19 +43,54 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val topBarBlurEnabled by boolFlow(false)
     val predictiveBackEnabled by boolFlow(false)
     val smoothCornerEnabled by boolFlow(true)
-    val acgMainUiEnabled by boolFlow(false)
-    val acgWallpaperUri by strFlow("")
-    val acgWallpaperSourceUri by strFlow("")
-    val acgWallpaperZoom by floatFlow(1.0f)
-    val acgWallpaperBiasX by floatFlow(0.0f)
-    val acgWallpaperBiasY by floatFlow(0.0f)
-    val acgHomeQuote by strFlow("时间一分一秒流逝而去 终结一步一步迎面而来")
-    val acgHomeQuoteAuthor by strFlow("恋文")
-    val acgSidebarExpanded by boolFlow(true)
+    val classicHomeEnabled by boolFlow(false)
+    val moeWallpaperUri by strFlow("")
+    val moeWallpaperSourceUri by strFlow("")
+    val moeWallpaperZoom by floatFlow(1.0f)
+    val moeWallpaperBiasX by floatFlow(0.0f)
+    val moeWallpaperBiasY by floatFlow(0.0f)
+    val moeHomeQuote by strFlow("时间一分一秒流逝而去 终结一步一步迎面而来")
+    val moeHomeQuoteAuthor by strFlow("恋文")
+    val moeSidebarExpanded by boolFlow(true)
     val pageScale by floatFlow(1.0f)
     val singleNodeTest by boolFlow(true)
     val screenshotProtectionEnabled by boolFlow(false)
     val biometricUnlockEnabled by boolFlow(false)
 
     val customUserAgent by strFlow("")
+
+    init {
+        migrateLegacyHomeKeys()
+    }
+
+    /**
+     * One-time rename migration: pre-rename builds persisted the home/wallpaper preferences under
+     * `acg*` keys. Copy any legacy value onto the new `moe*` key when the new key is still absent, so
+     * upgrading users keep their saved quote, author, wallpaper and crop framing.
+     */
+    private fun migrateLegacyHomeKeys() {
+        fun moveString(old: String, new: String) {
+            if (mmkv.containsKey(old) && !mmkv.containsKey(new)) {
+                mmkv.decodeString(old)?.let { mmkv.encode(new, it) }
+            }
+        }
+        fun moveFloat(old: String, new: String) {
+            if (mmkv.containsKey(old) && !mmkv.containsKey(new)) {
+                mmkv.encode(new, mmkv.decodeFloat(old, 0f))
+            }
+        }
+        fun moveBool(old: String, new: String) {
+            if (mmkv.containsKey(old) && !mmkv.containsKey(new)) {
+                mmkv.encode(new, mmkv.decodeBool(old, false))
+            }
+        }
+        moveString("acgWallpaperUri", "moeWallpaperUri")
+        moveString("acgWallpaperSourceUri", "moeWallpaperSourceUri")
+        moveString("acgHomeQuote", "moeHomeQuote")
+        moveString("acgHomeQuoteAuthor", "moeHomeQuoteAuthor")
+        moveFloat("acgWallpaperZoom", "moeWallpaperZoom")
+        moveFloat("acgWallpaperBiasX", "moeWallpaperBiasX")
+        moveFloat("acgWallpaperBiasY", "moeWallpaperBiasY")
+        moveBool("acgSidebarExpanded", "moeSidebarExpanded")
+    }
 }

@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.acg
+package com.github.yumelira.yumebox.screen.moe
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -108,7 +108,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
 
 @Composable
-fun AcgHomePage(
+fun MoeHomePage(
     mainInnerPadding: PaddingValues,
     wallpaperUri: String,
     wallpaperZoom: Float = 1f,
@@ -134,12 +134,11 @@ fun AcgHomePage(
     val selectedServerName by homeViewModel.selectedServerName.collectAsState()
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val trafficNow by homeViewModel.trafficNow.collectAsState()
-    val proxyMode by homeViewModel.proxyMode.collectAsState()
     val runtimeSnapshot by homeViewModel.runtimeSnapshot.collectAsState()
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val acgHomeQuote by appSettingsViewModel.acgHomeQuote.state.collectAsState()
-    val acgHomeQuoteAuthor by appSettingsViewModel.acgHomeQuoteAuthor.state.collectAsState()
-    val sidebarExpanded by appSettingsViewModel.acgSidebarExpanded.state.collectAsState()
+    val moeHomeQuote by appSettingsViewModel.moeHomeQuote.state.collectAsState()
+    val moeHomeQuoteAuthor by appSettingsViewModel.moeHomeQuoteAuthor.state.collectAsState()
+    val sidebarExpanded by appSettingsViewModel.moeSidebarExpanded.state.collectAsState()
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -167,20 +166,11 @@ fun AcgHomePage(
     }
 
     val visualControlState = controlState
+    // Tick once a second whether running or idle: running drives the elapsed timer, idle drives the
+    // wall-clock shown in the rail so it always reflects the real time instead of a frozen 00:00.
     val now by
-        produceState(
-            initialValue = System.currentTimeMillis(),
-            visualControlState,
-            runtimeSnapshot.startedAt,
-        ) {
-            if (
-                visualControlState != HomeProxyControlState.Running ||
-                    runtimeSnapshot.startedAt == null
-            ) {
-                value = System.currentTimeMillis()
-                return@produceState
-            }
-            PollingTimers.ticks(PollingTimerSpecs.AcgElapsedClock).collect {
+        produceState(initialValue = System.currentTimeMillis()) {
+            PollingTimers.ticks(PollingTimerSpecs.MoeElapsedClock).collect {
                 value = System.currentTimeMillis()
             }
         }
@@ -193,11 +183,11 @@ fun AcgHomePage(
             0L
         }
     val durationPair =
-        remember(elapsedMillis, isRunning) {
+        remember(isRunning, elapsedMillis, now) {
             if (isRunning) {
-                formatAcgDuration(elapsedMillis)
+                formatMoeDuration(elapsedMillis)
             } else {
-                AcgDurationPair()
+                formatMoeClock(now)
             }
         }
     val trafficData =
@@ -216,16 +206,16 @@ fun AcgHomePage(
     val handlePageChange = LocalHandlePageChange.current
     val sidebarIcons = remember {
         listOf(
-            AcgSidebarIconItem(ShellIcons.OpenProxy) { handlePageChange(1) },
-            AcgSidebarIconItem(ShellIcons.OpenProfiles) { handlePageChange(2) },
-            AcgSidebarIconItem(ShellIcons.OpenSettings) { handlePageChange(3) },
+            MoeSidebarIconItem(ShellIcons.OpenProxy) { handlePageChange(1) },
+            MoeSidebarIconItem(ShellIcons.OpenProfiles) { handlePageChange(2) },
+            MoeSidebarIconItem(ShellIcons.OpenSettings) { handlePageChange(3) },
         )
     }
     val quote =
-        AcgQuote(
-            text = acgHomeQuote.ifBlank { MLang.AppSettings.Experimental.AcgQuoteDefault },
+        MoeQuote(
+            text = moeHomeQuote.ifBlank { MLang.AppSettings.Interface.HomeQuoteDefault },
             author =
-                acgHomeQuoteAuthor.ifBlank { MLang.AppSettings.Experimental.AcgQuoteAuthorDefault },
+                moeHomeQuoteAuthor.ifBlank { MLang.AppSettings.Interface.HomeQuoteAuthorDefault },
         )
     val animatedSidebarToggleProgress by
         animateFloatAsState(
@@ -240,7 +230,7 @@ fun AcgHomePage(
                             AnimationSpecs.EmphasizedAccelerate
                         },
                 ),
-            label = "acg_sidebar_toggle",
+            label = "moe_sidebar_toggle",
         )
 
     val handleProxyAction: () -> Unit = {
@@ -258,9 +248,9 @@ fun AcgHomePage(
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val sidebarWidth = maxWidth * AcgUi.Sidebar.fraction
-        val contentStart = (sidebarWidth - AcgUi.Sidebar.contentOverlap).coerceAtLeast(UiDp.dp0)
-        val collapsedVisibleWidth = AcgUi.Sidebar.collapsedVisibleWidth
+        val sidebarWidth = maxWidth * MoeUi.Sidebar.fraction
+        val contentStart = (sidebarWidth - MoeUi.Sidebar.contentOverlap).coerceAtLeast(UiDp.dp0)
+        val collapsedVisibleWidth = MoeUi.Sidebar.collapsedVisibleWidth
         val heroHeight = maxHeight * 0.66f
         val clampedPageProgress = pageProgress.coerceIn(0f, 1f)
         val clampedSidebarProgress = sidebarProgress.coerceIn(0f, 1f)
@@ -287,16 +277,16 @@ fun AcgHomePage(
                 }
             }
 
-        AcgWallpaperBackground(
+        MoeWallpaperBackground(
             wallpaperUri = wallpaperUri,
             wallpaperZoom = wallpaperZoom,
             wallpaperBiasX = wallpaperBiasX,
             wallpaperBiasY = wallpaperBiasY,
-            qualityMode = AcgWallpaperQualityMode.BackgroundBlur,
+            qualityMode = MoeWallpaperQualityMode.BackgroundBlur,
             modifier = Modifier.matchParentSize().layerBackdrop(wallpaperBackdrop),
         )
 
-        AcgSidebarDecoration(
+        MoeSidebarDecoration(
             backdrop = wallpaperBackdrop,
             blurEnabled = sidebarBlurReady,
             blurProgress = effectiveSidebarProgress,
@@ -309,10 +299,9 @@ fun AcgHomePage(
                         alpha = sidebarAlpha
                     },
             content = {
-                AcgSidebarContent(
+                MoeSidebarContent(
                     topValue = durationPair.top,
                     bottomValue = durationPair.bottom,
-                    proxyMode = proxyMode,
                     icons = sidebarIcons,
                     visibleWidth = sidebarVisibleWidth,
                 )
@@ -338,34 +327,34 @@ fun AcgHomePage(
                     Modifier.align(Alignment.TopStart)
                         .fillMaxWidth()
                         .padding(
-                            start = AcgUi.Hero.containerHorizontalInset,
-                            end = AcgUi.Hero.containerHorizontalInset,
+                            start = MoeUi.Hero.containerHorizontalInset,
+                            end = MoeUi.Hero.containerHorizontalInset,
                             top = statusBarTop,
                         )
                         .fillMaxHeight(0.66f)
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onDoubleTap = {
-                                    appSettingsViewModel.onAcgSidebarExpandedChange(
+                                    appSettingsViewModel.onMoeSidebarExpandedChange(
                                         !sidebarExpanded
                                     )
                                 }
                             )
                         }
                         .graphicsLayer {
-                            shape = AcgUi.Shape.hero
+                            shape = MoeUi.Shape.hero
                             clip = true
                             transformOrigin = TransformOrigin(0.5f, 0f)
                             scaleX = heroImageScale
                             scaleY = heroImageScale
                         }
             ) {
-                AcgWallpaperBackground(
+                MoeWallpaperBackground(
                     wallpaperUri = wallpaperUri,
                     wallpaperZoom = wallpaperZoom,
                     wallpaperBiasX = wallpaperBiasX,
                     wallpaperBiasY = wallpaperBiasY,
-                    qualityMode = AcgWallpaperQualityMode.Foreground,
+                    qualityMode = MoeWallpaperQualityMode.Foreground,
                     modifier = Modifier.matchParentSize(),
                 )
                 Spacer(
@@ -391,21 +380,21 @@ fun AcgHomePage(
                         Modifier.align(Alignment.BottomStart)
                             .fillMaxWidth()
                             .padding(
-                                start = AcgUi.Hero.contentHorizontalInset,
-                                end = AcgUi.Hero.contentHorizontalInset,
-                                bottom = AcgUi.Hero.trafficBottomInset,
+                                start = MoeUi.Hero.contentHorizontalInset,
+                                end = MoeUi.Hero.contentHorizontalInset,
+                                bottom = MoeUi.Hero.trafficBottomInset,
                             ),
                     enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 }),
                     exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 3 }),
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(AcgUi.Hero.runtimeInfoTopGap)
+                        verticalArrangement = Arrangement.spacedBy(MoeUi.Hero.runtimeInfoTopGap)
                     ) {
-                        AcgTrafficStrip(
+                        MoeTrafficStrip(
                             downloadSpeed = trafficData.download,
                             uploadSpeed = trafficData.upload,
                         )
-                        AcgHomeInfoPanel(
+                        MoeHomeInfoPanel(
                             serverName = selectedServerName.takeIf { isRunning },
                             serverPing = selectedServerPing.takeIf { isRunning },
                             modifier = Modifier.fillMaxWidth(),
@@ -420,17 +409,17 @@ fun AcgHomePage(
                         .fillMaxWidth()
                         .padding(
                             start =
-                                AcgUi.Hero.containerHorizontalInset +
-                                    AcgUi.Hero.contentHorizontalInset,
+                                MoeUi.Hero.containerHorizontalInset +
+                                    MoeUi.Hero.contentHorizontalInset,
                             end =
-                                AcgUi.Hero.containerHorizontalInset +
-                                    AcgUi.Hero.contentHorizontalInset,
-                            top = statusBarTop + heroHeight + AcgUi.Hero.belowHeroTopGap,
+                                MoeUi.Hero.containerHorizontalInset +
+                                    MoeUi.Hero.contentHorizontalInset,
+                            top = statusBarTop + heroHeight + MoeUi.Hero.belowHeroTopGap,
                         ),
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(AcgUi.Hero.belowHeroContentGap),
+                verticalArrangement = Arrangement.spacedBy(MoeUi.Hero.belowHeroContentGap),
             ) {
-                AcgQuoteText(
+                MoeQuoteText(
                     quote = quote,
                     color = MiuixTheme.colorScheme.onBackground,
                     modifier = Modifier.fillMaxWidth(),
@@ -444,10 +433,10 @@ fun AcgHomePage(
                             end = UiDp.dp12,
                             bottom =
                                 mainInnerPadding.calculateBottomPadding() +
-                                    AcgUi.Button.bottomInset,
+                                    MoeUi.Button.bottomInset,
                         )
             ) {
-                AcgLaunchButton(
+                MoeLaunchButton(
                     controlState = visualControlState,
                     enabled =
                         profilesLoaded && profiles.isNotEmpty() && visualControlState.canInteract,
@@ -459,12 +448,12 @@ fun AcgHomePage(
 }
 
 @Composable
-private fun AcgWallpaperBackground(
+private fun MoeWallpaperBackground(
     wallpaperUri: String,
     wallpaperZoom: Float = 1f,
     wallpaperBiasX: Float = 0f,
     wallpaperBiasY: Float = 0f,
-    qualityMode: AcgWallpaperQualityMode = AcgWallpaperQualityMode.Foreground,
+    qualityMode: MoeWallpaperQualityMode = MoeWallpaperQualityMode.Foreground,
     modifier: Modifier = Modifier,
 ) {
     val clampedZoom = wallpaperZoom.coerceIn(1f, 5f)
@@ -476,12 +465,12 @@ private fun AcgWallpaperBackground(
     // legacy content:// that became unreadable) falls back to the bundled asset.
     val model by
         produceState(
-            initialValue = wallpaperUri.ifBlank { ACG_BUNDLED_WALLPAPER },
+            initialValue = wallpaperUri.ifBlank { MOE_BUNDLED_WALLPAPER },
             wallpaperUri,
         ) {
             value =
                 withContext(Dispatchers.IO) {
-                    resolveAcgWallpaperModel(context, wallpaperUri)
+                    resolveMoeWallpaperModel(context, wallpaperUri)
                 }
         }
 
@@ -526,7 +515,7 @@ private fun AcgWallpaperBackground(
                         memoryCachePolicy(CachePolicy.DISABLED)
                         downloadCachePolicy(CachePolicy.DISABLED)
                         resultCachePolicy(CachePolicy.DISABLED)
-                        if (qualityMode == AcgWallpaperQualityMode.BackgroundBlur) {
+                        if (qualityMode == MoeWallpaperQualityMode.BackgroundBlur) {
                             size(requestWidth, requestHeight)
                             precision(Precision.LESS_PIXELS)
                         } else {
@@ -561,7 +550,7 @@ private fun AcgWallpaperBackground(
     }
 }
 
-private const val ACG_BUNDLED_WALLPAPER = "file:///android_asset/wallpaper.jpg"
+private const val MOE_BUNDLED_WALLPAPER = "file:///android_asset/wallpaper.jpg"
 
 /**
  * Maps a stored wallpaper preference value to a Sketch-loadable model. A `file://` path is only
@@ -569,12 +558,12 @@ private const val ACG_BUNDLED_WALLPAPER = "file:///android_asset/wallpaper.jpg"
  * the bundled asset is returned. Must be called off the main thread because it touches the
  * filesystem.
  */
-private fun resolveAcgWallpaperModel(context: Context, wallpaperUri: String): String {
-    if (wallpaperUri.isBlank()) return ACG_BUNDLED_WALLPAPER
+private fun resolveMoeWallpaperModel(context: Context, wallpaperUri: String): String {
+    if (wallpaperUri.isBlank()) return MOE_BUNDLED_WALLPAPER
     if (wallpaperUri.startsWith("file://")) {
         val path = wallpaperUri.removePrefix("file://")
         if (path.startsWith("/android_asset/")) return wallpaperUri
-        return if (File(path).exists()) wallpaperUri else ACG_BUNDLED_WALLPAPER
+        return if (File(path).exists()) wallpaperUri else MOE_BUNDLED_WALLPAPER
     }
     // Legacy content:// (pre-feature installs) or other schemes: try to read it; if unreadable,
     // fall back to the bundled asset instead of rendering nothing.
@@ -584,5 +573,5 @@ private fun resolveAcgWallpaperModel(context: Context, wallpaperUri: String): St
                     ?: false
             }
             .getOrDefault(false)
-    return if (readable) wallpaperUri else ACG_BUNDLED_WALLPAPER
+    return if (readable) wallpaperUri else MOE_BUNDLED_WALLPAPER
 }

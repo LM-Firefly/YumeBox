@@ -77,8 +77,8 @@ import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
-import com.github.yumelira.yumebox.screen.acg.AcgHomePage
-import com.github.yumelira.yumebox.screen.acg.calculateHomeVisibility
+import com.github.yumelira.yumebox.screen.moe.MoeHomePage
+import com.github.yumelira.yumebox.screen.moe.calculateHomeVisibility
 import com.github.yumelira.yumebox.screen.home.HomePager
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.profiles.ProfilesPager
@@ -110,11 +110,11 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
     val homeViewModel = koinViewModel<HomeViewModel>()
     val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
     val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsState()
-    val acgMainUiEnabled by appSettingsViewModel.acgMainUiEnabled.state.collectAsState()
-    val acgWallpaperUri by appSettingsViewModel.acgWallpaperUri.state.collectAsState()
-    val acgWallpaperZoom by appSettingsViewModel.acgWallpaperZoom.state.collectAsState()
-    val acgWallpaperBiasX by appSettingsViewModel.acgWallpaperBiasX.state.collectAsState()
-    val acgWallpaperBiasY by appSettingsViewModel.acgWallpaperBiasY.state.collectAsState()
+    val classicHomeEnabled by appSettingsViewModel.classicHomeEnabled.state.collectAsState()
+    val moeWallpaperUri by appSettingsViewModel.moeWallpaperUri.state.collectAsState()
+    val moeWallpaperZoom by appSettingsViewModel.moeWallpaperZoom.state.collectAsState()
+    val moeWallpaperBiasX by appSettingsViewModel.moeWallpaperBiasX.state.collectAsState()
+    val moeWallpaperBiasY by appSettingsViewModel.moeWallpaperBiasY.state.collectAsState()
     val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
     val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
     val bottomBarScrollBehavior =
@@ -130,12 +130,12 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                 )
             }
         }
-    // Floating nav bar (with the proxy FAB) shows on the standard home and every other page; the
-    // ACG home has its own chrome, so it stays hidden there.
+    // Floating nav bar (with the proxy FAB) shows on the classic home and every other page; the
+    // default home has its own chrome, so it stays hidden there.
     val bottomBarVisible by
-        remember(acgMainUiEnabled, settledMainPage, mainPagerState.selectedPage) {
+        remember(classicHomeEnabled, settledMainPage, mainPagerState.selectedPage) {
             derivedStateOf {
-                if (!acgMainUiEnabled) {
+                if (classicHomeEnabled) {
                     true
                 } else if (mainPagerState.selectedPage == 0) {
                     false
@@ -243,11 +243,11 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                     MainRootPageContent(
                         page = page,
                         mainInnerPadding = mainInnerPadding,
-                        acgMainUiEnabled = acgMainUiEnabled,
-                        acgWallpaperUri = acgWallpaperUri,
-                        acgWallpaperZoom = acgWallpaperZoom,
-                        acgWallpaperBiasX = acgWallpaperBiasX,
-                        acgWallpaperBiasY = acgWallpaperBiasY,
+                        classicHomeEnabled = classicHomeEnabled,
+                        moeWallpaperUri = moeWallpaperUri,
+                        moeWallpaperZoom = moeWallpaperZoom,
+                        moeWallpaperBiasX = moeWallpaperBiasX,
+                        moeWallpaperBiasY = moeWallpaperBiasY,
                         navigator = navigator,
                         activity = activity,
                         selectedPanelType = selectedPanelType,
@@ -286,11 +286,11 @@ private fun MainScreenBackHandler(mainPagerState: MainPagerState) {
 private fun MainRootPageContent(
     page: Int,
     mainInnerPadding: PaddingValues,
-    acgMainUiEnabled: Boolean,
-    acgWallpaperUri: String,
-    acgWallpaperZoom: Float,
-    acgWallpaperBiasX: Float,
-    acgWallpaperBiasY: Float,
+    classicHomeEnabled: Boolean,
+    moeWallpaperUri: String,
+    moeWallpaperZoom: Float,
+    moeWallpaperBiasX: Float,
+    moeWallpaperBiasY: Float,
     navigator: DestinationsNavigator,
     activity: Activity?,
     selectedPanelType: Int,
@@ -300,18 +300,18 @@ private fun MainRootPageContent(
 ) {
     when (page) {
         0 -> {
-            if (acgMainUiEnabled) {
-                AcgHomePage(
+            if (classicHomeEnabled) {
+                HomePager(mainInnerPadding = mainInnerPadding, isActive = selectedPage == 0)
+            } else {
+                MoeHomePage(
                     mainInnerPadding = mainInnerPadding,
-                    wallpaperUri = acgWallpaperUri,
-                    wallpaperZoom = acgWallpaperZoom,
-                    wallpaperBiasX = acgWallpaperBiasX,
-                    wallpaperBiasY = acgWallpaperBiasY,
+                    wallpaperUri = moeWallpaperUri,
+                    wallpaperZoom = moeWallpaperZoom,
+                    wallpaperBiasX = moeWallpaperBiasX,
+                    wallpaperBiasY = moeWallpaperBiasY,
                     isActive = selectedPage == 0,
                     pageProgress = homePageProgress,
                 )
-            } else {
-                HomePager(mainInnerPadding = mainInnerPadding, isActive = selectedPage == 0)
             }
         }
 
