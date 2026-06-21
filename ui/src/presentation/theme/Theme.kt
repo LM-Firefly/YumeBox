@@ -26,6 +26,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import com.github.yumelira.yumebox.data.model.ThemeMode
+import top.yukonga.miuix.kmp.squircle.LocalSquircleEnabled
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal val LocalPlatformSystemUiEffect = compositionLocalOf<@Composable () -> Unit> { {} }
@@ -66,7 +67,8 @@ fun YumeTheme(
         LocalSizes provides sizes,
         LocalOpacity provides opacity,
         LocalAppColors provides appColors,
+        LocalSquircleEnabled provides smoothCornerEnabled,
     ) {
-        MiuixTheme(colors = colorScheme, smoothRounding = smoothCornerEnabled) { content() }
+        MiuixTheme(colors = colorScheme) { content() }
     }
 }

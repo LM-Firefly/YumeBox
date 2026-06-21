@@ -61,7 +61,7 @@ import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
-import top.yukonga.miuix.kmp.basic.SpinnerEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
@@ -215,9 +215,9 @@ private fun ProfileTypeSelectorCard(
                 title = MLang.ProfilesPage.Type.Title,
                 items =
                     listOf(
-                        SpinnerEntry(title = MLang.ProfilesPage.Type.Subscription),
-                        SpinnerEntry(title = MLang.ProfilesPage.Type.LocalFile),
-                        SpinnerEntry(title = MLang.ProfilesPage.Type.QrScan),
+                        DropdownItem(title = MLang.ProfilesPage.Type.Subscription),
+                        DropdownItem(title = MLang.ProfilesPage.Type.LocalFile),
+                        DropdownItem(title = MLang.ProfilesPage.Type.QrScan),
                     ),
                 selectedIndex = selectedTypeIndex,
                 onSelectedIndexChange = onTypeSelected,

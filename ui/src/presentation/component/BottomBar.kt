@@ -66,6 +66,7 @@ import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -134,7 +135,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.shapes.SmoothUnevenRoundedCornerShape
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -208,7 +208,7 @@ val LocalBottomBarUseLegacyStyle = compositionLocalOf { false }
 
 object MainBottomBarDefaults {
     val CornerRadius = UiDp.dp28
-    val Shape = SmoothUnevenRoundedCornerShape(topStart = CornerRadius, topEnd = CornerRadius)
+    val Shape = RoundedCornerShape(topStart = CornerRadius, topEnd = CornerRadius)
     val BorderWidth = UiDp.dp0_26
     val OutlineHorizontalInset = UiDp.dp0
     val ItemHeight = UiDp.dp60

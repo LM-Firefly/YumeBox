@@ -105,7 +105,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SpinnerEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
@@ -642,7 +642,7 @@ private fun OverrideInputModeSelector(
     top.yukonga.miuix.kmp.basic.Card {
         WindowSpinnerPreference(
             title = MLang.ProfilesPage.Type.Title,
-            items = inputModeOptions.map { inputMode -> SpinnerEntry(title = inputMode.label) },
+            items = inputModeOptions.map { inputMode -> DropdownItem(title = inputMode.label) },
             selectedIndex = selectedModeIndex,
             onSelectedIndexChange = { index ->
                 inputModeOptions.getOrNull(index)?.let(onSelectedModeChange)

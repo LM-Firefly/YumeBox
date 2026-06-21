@@ -229,21 +229,6 @@ object Clash {
         }
     }
 
-    fun inspectCompiledGroups(
-        yamlText: String,
-        profileDir: File,
-        excludeNotSelectable: Boolean,
-    ): List<ProxyGroup> {
-        val groupsYaml =
-            Bridge.nativeInspectCompiledGroups(
-                yamlText,
-                profileDir.absolutePath,
-                excludeNotSelectable,
-            ) ?: return emptyList()
-        return runCatching { YamlCodec.decode(ListSerializer(ProxyGroup.serializer()), groupsYaml) }
-            .getOrElse { emptyList() }
-    }
-
     fun queryGroup(name: String, sort: ProxySort): ProxyGroup =
         Bridge.nativeQueryGroup(name, sort.name)?.let {
             Json.decodeFromString(ProxyGroup.serializer(), it)
@@ -291,11 +276,6 @@ object Clash {
 
     fun load(path: File): CompletableDeferred<Unit> =
         CompletableDeferred<Unit>().apply { Bridge.nativeLoad(this, path.absolutePath) }
-
-    fun loadCompiledConfig(path: File): CompletableDeferred<Unit> =
-        CompletableDeferred<Unit>().apply {
-            Bridge.nativeLoadCompiledConfig(this, path.absolutePath)
-        }
 
     fun queryProviders(): List<Provider> {
         val providers = Json.decodeFromString(JsonArray.serializer(), Bridge.nativeQueryProviders())
