@@ -55,6 +55,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.github.yumelira.yumebox.data.model.ProxySortMode
 import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.domain.model.isSelectable
@@ -353,7 +354,7 @@ private fun CircularTopBarIconButton(
 ) {
     IconButton(
         onClick = onClick,
-        backgroundColor = MiuixTheme.colorScheme.secondaryContainer,
+        backgroundColor = Color.White,
         cornerRadius = UiDp.dp40,
         minHeight = UiDp.dp40,
         minWidth = UiDp.dp40,
