@@ -54,76 +54,13 @@ rules-end:
   <Step title="绑定订阅">
     将一个或多个覆写绑定到目标订阅。
   </Step>
-  <Step title="启动或重载">
-    YumeBox 解析绑定链，构建 `RuntimeSpec`，再进入 native 编译。
-  </Step>
-  <Step title="加载内核">
-    编译结果以内存形式加载到 mihomo，随后启动 HTTP、TUN 或 Root TUN。
+  <Step title="按链叠加">
+    启动或重载时，YumeBox 按绑定顺序应用覆写链，后一个覆写基于前一个的结果继续处理。
   </Step>
 </Steps>
 
-多个覆写按绑定顺序执行。后面的覆写会基于前一个覆写的结果继续处理。
+多个覆写按绑定顺序执行，叠加结果在 native 编译层一次性合并并加载进内核。
 
-## 编译链路
-
-```mermaid
-%%{init: {"theme": "base", "flowchart": {"curve": "basis", "htmlLabels": true, "nodeSpacing": 42, "rankSpacing": 52}, "themeVariables": {"primaryColor": "#ecfdf5", "primaryBorderColor": "#16a34a", "primaryTextColor": "#052e16", "lineColor": "#64748b", "tertiaryColor": "#f8fafc", "fontFamily": "Inter, ui-sans-serif, system-ui"}}}%%
-flowchart TB
-    subgraph Inputs["配置输入"]
-        direction LR
-        Profile["订阅<br/><code>config.yaml</code>"]
-        Binding["绑定索引<br/><code>metadata.yaml</code>"]
-        OverrideFiles["覆写文件<br/><code>.yaml</code> / <code>.js</code>"]
-    end
-
-    subgraph Runtime["运行时编排"]
-        direction TB
-        Resolve["解析覆写链"]
-        Spec["生成<br/><code>RuntimeSpec</code>"]
-        Session["启动 / 重载 / 回滚"]
-    end
-
-    subgraph Compiler["Native 编译器"]
-        direction TB
-        Source["读取源配置<br/>必要时解密"]
-        Apply{"应用覆写"}
-        YAML["YAML 补丁<br/>merge / append / force"]
-        JS["JS 脚本<br/><code>main(profile)</code>"]
-        Patch["运行时补丁<br/>DNS / profile / provider path"]
-    end
-
-    subgraph Core["mihomo 运行态"]
-        direction TB
-        Load["内存加载<br/>raw config"]
-        Transport["HTTP / TUN / Root TUN"]
-        Ready["运行快照<br/>代理组与选择恢复"]
-    end
-
-    Profile --> Resolve
-    Binding --> Resolve
-    OverrideFiles --> Resolve
-    Resolve --> Spec --> Session
-    Session --> Source --> Apply
-    Apply -->|".yaml / .yml"| YAML --> Patch
-    Apply -->|".js"| JS --> Patch
-    Patch --> Load --> Transport --> Ready
-
-    classDef app fill:#f8fafc,stroke:#94a3b8,color:#0f172a
-    classDef runtime fill:#ecfdf5,stroke:#16a34a,color:#052e16
-    classDef compiler fill:#eff6ff,stroke:#2563eb,color:#172554
-    classDef decision fill:#fff7ed,stroke:#f97316,color:#7c2d12
-    classDef core fill:#f0fdf4,stroke:#22c55e,color:#052e16
-
-    class Profile,Binding,OverrideFiles app
-    class Resolve,Spec,Session runtime
-    class Source,YAML,JS,Patch compiler
-    class Apply decision
-    class Load,Transport,Ready core
-```
-
-## 运行时约束
-
-- 正常启动使用 native in-memory compile-and-load，不写出明文 `runtime.yaml`。
-- 历史版本遗留的 `runtime.yaml` 会在启动前清理。
-- age 加密订阅会在 native 编译层解密，JS 日志会隐藏敏感内容。
-- JS 覆写失败时只跳过当前脚本，并保留执行脚本前的配置。
+<Card title="启动流程" icon="rocket" href="/architecture/overview#启动流程">
+  覆写如何在启动时被解析、编译并加载进 mihomo——完整的编译加载链路见架构文档。
+</Card>

@@ -39,6 +39,12 @@
               "/override/index",
               "/override/fields"
             ]
+          },
+          {
+            "group": "流程",
+            "pages": [
+              "/architecture/overview"
+            ]
           }
         ]
       }
