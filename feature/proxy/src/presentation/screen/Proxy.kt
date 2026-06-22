@@ -316,12 +316,12 @@ private fun ProxyTopBar(
         navigationIcon = {
             Row(horizontalArrangement = Arrangement.spacedBy(UiDp.dp12)) {
                 if (showBack) {
-                    IconButton(onClick = onBack) {
+                    CircularTopBarIconButton(onClick = onBack) {
                         Icon(MiuixIcons.Back, contentDescription = MLang.Component.Navigation.Back)
                     }
                 } else {
                     if (onNavigateToProviders != null) {
-                        IconButton(onClick = onNavigateToProviders) {
+                        CircularTopBarIconButton(onClick = onNavigateToProviders) {
                             Icon(Yume.Folders, contentDescription = MLang.Providers.Title)
                         }
                     }
@@ -330,7 +330,7 @@ private fun ProxyTopBar(
         },
         actions = {
             Box {
-                IconButton(onClick = { onShowSortPopupChange(true) }) {
+                CircularTopBarIconButton(onClick = { onShowSortPopupChange(true) }) {
                     Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Action.Sort)
                 }
                 NodeSortPopup(
@@ -342,6 +342,22 @@ private fun ProxyTopBar(
                 )
             }
         },
+    )
+}
+
+/** A circular, filled icon button used for the proxy top bar actions on both edges. */
+@Composable
+private fun CircularTopBarIconButton(
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        backgroundColor = MiuixTheme.colorScheme.secondaryContainer,
+        cornerRadius = UiDp.dp40,
+        minHeight = UiDp.dp40,
+        minWidth = UiDp.dp40,
+        content = content,
     )
 }
 

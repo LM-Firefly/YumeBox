@@ -67,11 +67,10 @@ import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import timber.log.Timber
-import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @SuppressLint("UseKtx")
 @Composable
@@ -128,22 +127,20 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             TopBar(
                 title = MLang.ProfilesPage.Title,
                 scrollBehavior = scrollBehavior,
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier.padding(end = UiDp.dp20, bottom = UiDp.dp85),
-                onClick = {
-                    profileToEdit = null
-                    showAddBottomSheet.value = true
+                actions = {
+                    IconButton(
+                        onClick = {
+                            profileToEdit = null
+                            showAddBottomSheet.value = true
+                        },
+                    ) {
+                        Icon(
+                            imageVector = ShellIcons.AddProfile,
+                            contentDescription = MLang.ProfilesPage.Action.AddProfile,
+                        )
+                    }
                 },
-            ) {
-                Icon(
-                    imageVector = ShellIcons.AddProfile,
-                    contentDescription = MLang.ProfilesPage.Action.AddProfile,
-                    tint = MiuixTheme.colorScheme.onPrimary,
-                )
-            }
+            )
         },
     ) { innerPadding ->
         if (profiles.isEmpty()) {
