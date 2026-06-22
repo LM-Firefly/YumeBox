@@ -5,12 +5,6 @@ description: 首页手势、设置项详解与 yumebox:// 深度链接
 icon: "smartphone"
 ---
 
-为保持界面简洁，App 内的设置项大多只显示标题，详细说明、类型与默认值集中放在本页。各小节附带「在 App 中打开」按钮，点击即可通过 `yumebox://` 深度链接直接跳转到对应界面。
-
-<Note>
-「在 App 中打开」依赖自定义协议 `yumebox://`，仅在已安装 YumeBox 的设备上有效。若点击无反应，可复制链接到浏览器地址栏打开，或在 App 内手动定位。
-</Note>
-
 ## 首页手势
 
 默认的 Moe 首页支持两种手势，无需进入设置即可操作壁纸与侧栏：
@@ -26,15 +20,7 @@ icon: "smartphone"
 
 因此原先「首页侧栏默认展开」开关与「首页壁纸」设置项已从设置中移除——这两项行为现在完全由首页手势接管。
 
-<Card title="在 App 中打开首页" icon="house" href="yumebox://page/home">
-  `yumebox://page/home`
-</Card>
-
 ## 应用设置详解
-
-<Card title="在 App 中打开应用设置" icon="settings" href="yumebox://screen/appsettings">
-  `yumebox://screen/appsettings`
-</Card>
 
 ### 行为
 
@@ -132,10 +118,6 @@ icon: "smartphone"
 
 ## 网络设置详解
 
-<Card title="在 App 中打开网络设置" icon="network" href="yumebox://screen/network">
-  `yumebox://screen/network`
-</Card>
-
 ### 代理模式
 
 <ParamField path="路由系统流量" type="enum" default="VPN 模式">
@@ -198,10 +180,6 @@ icon: "smartphone"
 
 <ParamField path="管理访问控制列表" type="操作">
   为应用和域名配置访问控制规则。
-
-  <Card title="在 App 中打开访问控制" icon="shield" href="yumebox://screen/access">
-    `yumebox://screen/access`
-  </Card>
 </ParamField>
 
 ## 深度链接 yumebox://
