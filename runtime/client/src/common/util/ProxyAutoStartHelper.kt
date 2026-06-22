@@ -49,6 +49,11 @@ object ProxyAutoStartHelper {
         networkSettingsStorage: NetworkSettingsStore,
         serviceCache: MMKV,
     ) {
+        if (proxyFacade.isRemoteControllerActive()) {
+            Timber.tag(TAG).i("Skip auto start: external controller mode active")
+            proxyFacade.applyRemoteControllerState()
+            return
+        }
         if (AutoStartSessionGate.shouldSkipAutoStart()) {
             Timber.tag(TAG).i("Skip auto start: manual pause gate is active in current session")
             return

@@ -75,6 +75,8 @@ fun HomePager(mainInnerPadding: PaddingValues, isActive: Boolean) {
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val speedHistory by homeViewModel.speedHistory.collectAsState()
     val proxyMode by homeViewModel.proxyMode.collectAsState()
+    val isRemoteController by homeViewModel.isRemoteController.collectAsState()
+    val controllerBackendName by homeViewModel.controllerBackendName.collectAsState()
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -110,7 +112,12 @@ fun HomePager(mainInnerPadding: PaddingValues, isActive: Boolean) {
     val scrollBehavior = MiuixScrollBehavior()
 
     val isRunning = controlState == HomeProxyControlState.Running
-    val isProxyEnabled = profilesLoaded && profiles.isNotEmpty() && controlState.canInteract
+    val isProxyEnabled =
+        if (isRemoteController) {
+            false
+        } else {
+            profilesLoaded && profiles.isNotEmpty() && controlState.canInteract
+        }
 
     Scaffold(topBar = { TopBar(title = MLang.Home.Title, scrollBehavior = scrollBehavior) }) {
         innerPadding ->
@@ -134,12 +141,22 @@ fun HomePager(mainInnerPadding: PaddingValues, isActive: Boolean) {
                             } else {
                                 TrafficData.ZERO
                             },
-                        profileName = currentProfile?.name?.takeIf { isRunning },
+                        // TODO(i18n M7): localize the "控制器" backend label.
+                        profileName =
+                            if (isRemoteController) {
+                                controllerBackendName
+                            } else {
+                                currentProfile?.name?.takeIf { isRunning }
+                            },
                         tunnelMode = null,
                         controlState = controlState,
                         proxyMode = proxyMode,
+                        isRemoteController = isRemoteController,
                         isEnabled = isProxyEnabled,
                         onClick = {
+                            if (isRemoteController) {
+                                return@TrafficDisplay
+                            }
                             if (!hasEnabledProfile || recommendedProfile == null) {
                                 context.toast(MLang.ProfilesVM.Error.ProfileNotExist)
                                 return@TrafficDisplay

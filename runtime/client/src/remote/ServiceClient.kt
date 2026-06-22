@@ -21,6 +21,8 @@
 package com.github.yumelira.yumebox.remote
 
 import android.content.Context
+import com.github.yumelira.yumebox.data.store.MMKVProvider
+import com.github.yumelira.yumebox.data.store.RemoteControllerStore
 import com.github.yumelira.yumebox.service.ClashManager
 import com.github.yumelira.yumebox.service.ProfileManager
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
@@ -55,7 +57,20 @@ object ServiceClient {
                     initializeServiceGlobal(appContext)
                     val localManager = ClashManager(appContext)
                     localClashManager = localManager
-                    clashManager = RuntimeClashManager(appContext, localManager)
+                    val remoteStore =
+                        RemoteControllerStore(MMKVProvider().getMMKV("remote_controller"))
+                    val httpManager =
+                        HttpClashManager(backendProvider = { remoteStore.activeBackend() })
+                    clashManager =
+                        RuntimeClashManager(
+                            appContext,
+                            localManager,
+                            remote = httpManager,
+                            isRemoteControllerActive = {
+                                remoteStore.controllerEnabled.value &&
+                                    remoteStore.activeBackend() != null
+                            },
+                        )
                     profileManager = ProfileManager(appContext)
                     initialized = true
                     Timber.d(

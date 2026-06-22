@@ -43,6 +43,7 @@ import com.github.yumelira.yumebox.data.store.ProfileBindingProvider
 import com.github.yumelira.yumebox.data.store.ProfileBindingStore
 import com.github.yumelira.yumebox.data.store.ProfileLinksStore
 import com.github.yumelira.yumebox.data.store.ProxyDisplaySettingsStore
+import com.github.yumelira.yumebox.data.store.RemoteControllerStore
 import com.github.yumelira.yumebox.data.store.TrafficStatisticsStore
 import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.runtime.client.ProfilesRepository
@@ -76,9 +77,11 @@ val appFoundationModule = module {
     single<MMKV>(named("profile_links")) { get<MMKVProvider>().getMMKV("profile_links") }
     single<MMKV>(named("service_cache")) { get<MMKVProvider>().getMMKV("service_cache") }
     single<MMKV>(named("override_bindings")) { get<MMKVProvider>().getMMKV("override_bindings") }
+    single<MMKV>(named("remote_controller")) { get<MMKVProvider>().getMMKV("remote_controller") }
 
     single { AppSettingsStore(get<MMKV>(named("settings"))) }
     single { NetworkSettingsStore(get(named("network_settings"))) }
+    single { RemoteControllerStore(get(named("remote_controller"))) }
     single { ProfileLinksStore(get(named("profile_links"))) }
     single { FeatureStore(get(named("substore"))) }
     single { ProxyDisplaySettingsStore(get(named("proxy_display"))) }

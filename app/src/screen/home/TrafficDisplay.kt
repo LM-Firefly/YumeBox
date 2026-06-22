@@ -77,6 +77,7 @@ fun TrafficDisplay(
     tunnelMode: TunnelState.Mode?,
     controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
+    isRemoteController: Boolean,
     isEnabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -109,6 +110,7 @@ fun TrafficDisplay(
             uploadSpeed = trafficNow.upload,
             controlState = controlState,
             proxyMode = proxyMode,
+            isRemoteController = isRemoteController,
         )
     }
 }
@@ -222,6 +224,7 @@ private fun UploadSection(
     uploadSpeed: Long,
     controlState: HomeProxyControlState,
     proxyMode: ProxyMode,
+    isRemoteController: Boolean,
 ) {
     val spacing = AppTheme.spacing
 
@@ -258,7 +261,7 @@ private fun UploadSection(
                     )
                 ),
         ) {
-            ProxyStatusCapsule(controlState = controlState)
+            ProxyStatusCapsule(controlState = controlState, isRemoteController = isRemoteController)
             AnimatedVisibility(
                 visible = isRunning,
                 enter =
@@ -342,7 +345,7 @@ private fun ProxyTypeCapsule(proxyMode: ProxyMode) {
 }
 
 @Composable
-private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
+private fun ProxyStatusCapsule(controlState: HomeProxyControlState, isRemoteController: Boolean) {
     val spacing = AppTheme.spacing
     val componentSizes = AppTheme.sizes
     val opacity = AppTheme.opacity
@@ -404,6 +407,7 @@ private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
                             HomeProxyControlState.Idle -> Yume.Rocket
                             HomeProxyControlState.Connecting,
                             HomeProxyControlState.Disconnecting -> Yume.Waiting
+                            HomeProxyControlState.Lost,
                             HomeProxyControlState.Running -> Yume.Activity
                         },
                     contentDescription = null,
@@ -415,7 +419,13 @@ private fun ProxyStatusCapsule(controlState: HomeProxyControlState) {
                         when (state) {
                             HomeProxyControlState.Idle -> MLang.Home.Status.TapToStart
                             HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
-                            HomeProxyControlState.Running -> MLang.Home.Status.Running
+                            HomeProxyControlState.Running ->
+                                if (isRemoteController) {
+                                    "运行中"
+                                } else {
+                                    MLang.Home.Status.Running
+                                }
+                            HomeProxyControlState.Lost -> "失联"
                             HomeProxyControlState.Disconnecting -> MLang.Home.Status.Disconnecting
                         },
                     style =

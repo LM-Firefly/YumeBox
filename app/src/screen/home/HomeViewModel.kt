@@ -39,6 +39,7 @@ import com.github.yumelira.yumebox.runtime.client.ProxyGroupSyncPriority
 import com.github.yumelira.yumebox.runtime.client.RuntimeStateMapper
 import com.github.yumelira.yumebox.service.root.RootAccessSupport
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
@@ -69,6 +70,7 @@ enum class HomeProxyControlState {
     Idle,
     Connecting,
     Running,
+    Lost,
     Disconnecting;
 
     val canInteract: Boolean
@@ -88,6 +90,7 @@ class HomeViewModel(
     private val profilesRepository: ProfilesRepository,
     private val networkInfoService: NetworkInfoService,
     private val networkSettingsStore: NetworkSettingsStore,
+    private val remoteControllerStore: com.github.yumelira.yumebox.data.store.RemoteControllerStore,
 ) :
     AndroidContractStateViewModel<HomeViewModel.HomeUiState, HomeViewModel.HomeUiEffect>(
         application,
@@ -113,6 +116,22 @@ class HomeViewModel(
                 SharingStarted.WhileSubscribed(5000),
                 RuntimeStateMapper.isActuallyRunning(runtimeSnapshot.value),
             )
+    val isRemoteController: StateFlow<Boolean> =
+        runtimeSnapshot
+            .map { it.owner == RuntimeOwner.RemoteController }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                runtimeSnapshot.value.owner == RuntimeOwner.RemoteController,
+            )
+    val controllerBackendName: StateFlow<String?> =
+        combine(
+                remoteControllerStore.activeBackendId.state,
+                remoteControllerStore.backends.state,
+            ) { id, list ->
+                list.firstOrNull { it.id == id }?.let { it.name.ifBlank { "${it.host}:${it.port}" } }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val currentProfile = proxyFacade.currentProfile
     val trafficNow = proxyFacade.trafficNow
     val proxyGroups = proxyFacade.proxyGroups
@@ -133,12 +152,16 @@ class HomeViewModel(
 
     val controlState: StateFlow<HomeProxyControlState> =
         combine(runtimeSnapshot, _pendingTransition) { snapshot, pendingTransition ->
-                resolveControlState(snapshot.phase, pendingTransition)
+                resolveControlState(snapshot.owner, snapshot.phase, pendingTransition)
             }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000),
-                resolveControlState(runtimeSnapshot.value.phase, _pendingTransition.value),
+                resolveControlState(
+                    runtimeSnapshot.value.owner,
+                    runtimeSnapshot.value.phase,
+                    _pendingTransition.value,
+                ),
             )
 
     private val _speedHistory = MutableStateFlow<List<Long>>(emptyList())
@@ -501,9 +524,13 @@ class HomeViewModel(
     }
 
     private fun resolveControlState(
+        owner: RuntimeOwner,
         phase: RuntimePhase,
         pendingTransition: PendingTransition,
     ): HomeProxyControlState {
+        if (owner == RuntimeOwner.RemoteController && phase == RuntimePhase.Failed) {
+            return HomeProxyControlState.Lost
+        }
         if (
             pendingTransition == PendingTransition.Stopping &&
                 phase != RuntimePhase.Stopping &&

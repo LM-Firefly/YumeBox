@@ -27,6 +27,7 @@ import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.screen.FeatureContent
+import com.github.yumelira.yumebox.screen.feature.RemoteControllerSection
 import kotlinx.coroutines.launch
 
 @Composable
@@ -45,5 +46,6 @@ fun FeatureScreen(navigator: Navigator) {
                 )
             }
         },
+        topSection = { RemoteControllerSection() },
     )
 }

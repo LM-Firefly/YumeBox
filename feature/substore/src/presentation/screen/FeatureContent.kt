@@ -49,6 +49,7 @@ fun FeatureContent(
     onOpenExternalUrl: (String) -> Unit,
     onOpenInAppUrl: (String) -> Unit,
     onCreatePanelShortcut: (url: String, label: String) -> Unit = { _, _ -> },
+    topSection: @Composable () -> Unit = {},
 ) {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<FeatureViewModel>()
@@ -82,6 +83,7 @@ fun FeatureContent(
             scrollBehavior = scrollBehavior,
             innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
+            item { topSection() }
             item {
                 val canStartService = isExtensionInstalled && isSubStoreInitialized
                 when {

@@ -141,6 +141,7 @@ fun MoeHomePage(
     val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
     val trafficNow by homeViewModel.trafficNow.collectAsState()
     val runtimeSnapshot by homeViewModel.runtimeSnapshot.collectAsState()
+    val isRemoteController by homeViewModel.isRemoteController.collectAsState()
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
     val moeHomeQuote by appSettingsViewModel.moeHomeQuote.state.collectAsState()
     val moeHomeQuoteAuthor by appSettingsViewModel.moeHomeQuoteAuthor.state.collectAsState()
@@ -183,14 +184,14 @@ fun MoeHomePage(
     val startedAt = runtimeSnapshot.startedAt
     val isRunning = visualControlState == HomeProxyControlState.Running
     val elapsedMillis =
-        if (isRunning && startedAt != null) {
+        if (isRunning && startedAt != null && !isRemoteController) {
             (now - startedAt).coerceAtLeast(0L)
         } else {
             0L
         }
     val durationPair =
-        remember(isRunning, elapsedMillis, now) {
-            if (isRunning) {
+        remember(isRunning, isRemoteController, elapsedMillis, now) {
+            if (isRunning && !isRemoteController) {
                 formatMoeDuration(elapsedMillis)
             } else {
                 formatMoeClock(now)
@@ -240,7 +241,9 @@ fun MoeHomePage(
         )
 
     val handleProxyAction: () -> Unit = {
-        if (!hasEnabledProfile || recommendedProfile == null) {
+        if (isRemoteController) {
+            Unit
+        } else if (!hasEnabledProfile || recommendedProfile == null) {
             context.toast(MLang.ProfilesVM.Error.ProfileNotExist, Toast.LENGTH_SHORT)
         } else if (visualControlState == HomeProxyControlState.Idle) {
             recommendedProfile?.let { profile ->
@@ -471,7 +474,11 @@ fun MoeHomePage(
                 MoeLaunchButton(
                     controlState = visualControlState,
                     enabled =
-                        profilesLoaded && profiles.isNotEmpty() && visualControlState.canInteract,
+                        profilesLoaded &&
+                            profiles.isNotEmpty() &&
+                            visualControlState.canInteract &&
+                            !isRemoteController,
+                    isRemoteController = isRemoteController,
                     onClick = handleProxyAction,
                 )
             }

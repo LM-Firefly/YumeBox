@@ -29,6 +29,7 @@ enum class RuntimeOwner {
     LocalTun,
     LocalHttp,
     RootTun,
+    RemoteController,
 }
 
 @Serializable

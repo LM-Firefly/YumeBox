@@ -41,10 +41,84 @@
             ]
           },
           {
-            "group": "流程",
-            "pages": [
-              "/architecture/overview"
-            ]
+            "group": "日志",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /logs"]
+          },
+          {
+            "group": "流量信息",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /traffic"]
+          },
+          {
+            "group": "内存信息",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /memory"]
+          },
+          {
+            "group": "版本信息",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /version"]
+          },
+          {
+            "group": "缓存",
+            "openapi": "api/openapi.json",
+            "pages": ["POST /cache/fakeip/flush", "POST /cache/dns/flush"]
+          },
+          {
+            "group": "运行配置",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /configs", "PUT /configs", "PATCH /configs", "POST /configs/geo", "POST /restart"]
+          },
+          {
+            "group": "更新",
+            "openapi": "api/openapi.json",
+            "pages": ["POST /upgrade", "POST /upgrade/ui", "POST /upgrade/geo"]
+          },
+          {
+            "group": "策略组",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /group", "GET /group/{name}", "GET /group/{name}/delay"]
+          },
+          {
+            "group": "代理",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /proxies", "GET /proxies/{name}", "PUT /proxies/{name}", "DELETE /proxies/{name}", "GET /proxies/{name}/delay"]
+          },
+          {
+            "group": "代理集合",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /providers/proxies", "GET /providers/proxies/{name}", "PUT /providers/proxies/{name}", "GET /providers/proxies/{name}/healthcheck"]
+          },
+          {
+            "group": "规则",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /rules", "PATCH /rules/disable"]
+          },
+          {
+            "group": "规则集合",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /providers/rules", "PUT /providers/rules/{name}"]
+          },
+          {
+            "group": "连接",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /connections", "DELETE /connections", "DELETE /connections/{id}"]
+          },
+          {
+            "group": "域名查询",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /dns/query"]
+          },
+          {
+            "group": "存储",
+            "openapi": "api/openapi.json",
+            "pages": ["GET /storage/{key}", "PUT /storage/{key}", "DELETE /storage/{key}"]
+          },
+          {
+            "group": "DEBUG",
+            "openapi": "api/openapi.json",
+            "pages": ["PUT /debug/gc"]
           }
         ]
       }
@@ -110,6 +184,12 @@
   },
   "metadata": {
     "timestamp": true
+  },
+  "api": {
+    "playground": {
+      "display": "interactive",
+      "proxy": false
+    }
   },
   "footer": {
     "socials": {

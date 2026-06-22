@@ -56,6 +56,19 @@ fun decodeTrafficValue(value: Long): Long {
     }
 }
 
+fun encodeTrafficValue(bytes: Long): Long {
+    val value = bytes.coerceAtLeast(0L)
+    return when {
+        value < 0x40000000L -> value // type 0: raw bytes
+        value < 0x40000000L * 1024L / 100L -> // type 1: KiB/100
+            (1L shl 30) or ((value * 100L / 1024L) and 0x3FFFFFFFL)
+        value < 0x40000000L * 1024L * 1024L / 100L -> // type 2: MiB/100
+            (2L shl 30) or ((value * 100L / (1024L * 1024L)) and 0x3FFFFFFFL)
+        else -> // type 3: GiB/100
+            (3L shl 30) or ((value * 100L / (1024L * 1024L * 1024L)).coerceAtMost(0x3FFFFFFFL))
+    }
+}
+
 private fun scaleTraffic(value: Long): Long = decodeTrafficValue(value)
 
 fun Traffic.trafficUpload(): String = trafficString(scaleTraffic(this ushr 32))

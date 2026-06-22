@@ -216,6 +216,7 @@ internal fun MoeQuoteText(quote: MoeQuote, color: Color, modifier: Modifier = Mo
 internal fun MoeLaunchButton(
     controlState: HomeProxyControlState,
     enabled: Boolean,
+    isRemoteController: Boolean,
     onClick: () -> Unit,
 ) {
     val spacing = AppTheme.spacing
@@ -272,6 +273,7 @@ internal fun MoeLaunchButton(
                         HomeProxyControlState.Idle -> ShellIcons.StartProxy
                         HomeProxyControlState.Running -> ShellIcons.StopProxy
                         HomeProxyControlState.Connecting,
+                        HomeProxyControlState.Lost,
                         HomeProxyControlState.Disconnecting -> Yume.Waiting
                     },
                 contentDescription = null,
@@ -323,7 +325,9 @@ internal fun MoeLaunchButton(
                             when (state) {
                                 HomeProxyControlState.Idle -> MLang.Home.Control.Start
                                 HomeProxyControlState.Connecting -> MLang.Home.Status.Connecting
-                                HomeProxyControlState.Running -> MLang.Home.Control.Stop
+                                HomeProxyControlState.Running ->
+                                    if (isRemoteController) "运行中" else MLang.Home.Control.Stop
+                                HomeProxyControlState.Lost -> "失联"
                                 HomeProxyControlState.Disconnecting ->
                                     MLang.Home.Status.Disconnecting
                             },

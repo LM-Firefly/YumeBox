@@ -2,7 +2,7 @@ name: CI Channel
 
 on:
   push:
-    branches: [ "Yume", "Dev" ]
+    branches: [ "Yume", "Moe", "Dev" ]
     paths-ignore:
       - "**.md"
       - "docs/**"

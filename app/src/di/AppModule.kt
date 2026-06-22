@@ -27,6 +27,7 @@ import com.github.yumelira.yumebox.screen.profiles.ProfilesViewModel
 import com.github.yumelira.yumebox.screen.settings.AccessControlViewModel
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.github.yumelira.yumebox.screen.settings.NetworkSettingsViewModel
+import com.github.yumelira.yumebox.screen.settings.RemoteControllerViewModel
 import com.github.yumelira.yumebox.service.LogRecordServiceGateway
 import org.koin.android.ext.koin.androidApplication
 import org.koin.core.module.Module
@@ -37,9 +38,10 @@ val appIntegrationModule = module { single<LogRecordGateway> { LogRecordServiceG
 
 val appViewModelModule = module {
     viewModel { AppSettingsViewModel(androidApplication(), get(), get(), get()) }
-    viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(androidApplication(), get(), get(), get(), get(), get()) }
     viewModel { ProfilesViewModel(androidApplication(), get(), get()) }
     viewModel { NetworkSettingsViewModel(androidApplication(), get(), get(), get()) }
+    viewModel { RemoteControllerViewModel(androidApplication(), get(), get()) }
     viewModel { AccessControlViewModel(androidApplication(), get(), get()) }
     viewModel { LogViewModel(get()) }
 }

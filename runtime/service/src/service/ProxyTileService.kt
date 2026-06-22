@@ -223,6 +223,7 @@ class ProxyTileService : TileService() {
                             }
                         RuntimeOwner.LocalTun -> tunPhase
                         RuntimeOwner.LocalHttp -> httpPhase
+                        RuntimeOwner.RemoteController -> RuntimePhase.Running
                         RuntimeOwner.None -> RuntimePhase.Idle
                     },
                 targetMode = modeForOwner(owner) ?: configuredMode,
@@ -235,6 +236,7 @@ class ProxyTileService : TileService() {
             RuntimeOwner.LocalTun -> ProxyMode.Tun
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun -> ProxyMode.RootTun
+            RuntimeOwner.RemoteController -> null
             RuntimeOwner.None -> null
         }
 
@@ -245,6 +247,7 @@ class ProxyTileService : TileService() {
                     RuntimeOwner.LocalTun -> ProxyMode.Tun
                     RuntimeOwner.LocalHttp -> ProxyMode.Http
                     RuntimeOwner.RootTun -> ProxyMode.RootTun
+                    RuntimeOwner.RemoteController -> snapshot.targetMode
                     RuntimeOwner.None -> snapshot.targetMode
                 }
 

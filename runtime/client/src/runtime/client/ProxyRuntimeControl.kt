@@ -58,6 +58,7 @@ internal class ProxyRuntimeControl(
                     source = RuntimeServiceLauncher.SOURCE_UI,
                 )
 
+            RuntimeOwner.RemoteController,
             RuntimeOwner.None -> Unit
         }
     }
@@ -74,6 +75,7 @@ internal class ProxyRuntimeControl(
             RuntimeOwner.LocalTun,
             RuntimeOwner.LocalHttp -> stopLocalRuntime()
 
+            RuntimeOwner.RemoteController,
             RuntimeOwner.None -> Unit
         }
     }

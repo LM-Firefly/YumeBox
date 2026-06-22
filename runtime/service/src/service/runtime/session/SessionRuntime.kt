@@ -643,6 +643,7 @@ class SessionRuntime(
                 RuntimeOwner.LocalTun -> RuntimeStartupLogStore.Scope.LOCAL_TUN
                 RuntimeOwner.LocalHttp -> RuntimeStartupLogStore.Scope.LOCAL_HTTP
                 RuntimeOwner.RootTun -> RuntimeStartupLogStore.Scope.ROOT_TUN
+                RuntimeOwner.RemoteController,
                 RuntimeOwner.None -> return
             }
         RuntimeStartupLogStore(host.context.appContextOrSelf, scope)

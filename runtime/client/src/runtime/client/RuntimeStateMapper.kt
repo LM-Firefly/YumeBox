@@ -37,6 +37,7 @@ object RuntimeStateMapper {
             RuntimeOwner.LocalTun -> ProxyMode.Tun
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun -> ProxyMode.RootTun
+            RuntimeOwner.RemoteController -> null
             RuntimeOwner.None -> null
         }
 

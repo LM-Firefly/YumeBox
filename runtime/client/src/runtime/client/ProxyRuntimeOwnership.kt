@@ -72,6 +72,7 @@ internal object ProxyRuntimeOwnership {
                     RuntimeOwner.RootTun -> rootPhase(rootStatus)
                     RuntimeOwner.LocalTun,
                     RuntimeOwner.LocalHttp -> localPhase.toRuntimePhase()
+                    RuntimeOwner.RemoteController -> RuntimePhase.Running
                     RuntimeOwner.None -> RuntimePhase.Idle
                 },
             targetMode = modeForOwner(owner, configuredMode),
@@ -84,6 +85,7 @@ internal object ProxyRuntimeOwnership {
                     RuntimeOwner.RootTun -> rootStatus.startedAt
                     RuntimeOwner.LocalTun,
                     RuntimeOwner.LocalHttp -> localStartedAt
+                    RuntimeOwner.RemoteController -> null
                     RuntimeOwner.None -> null
                 },
         )
@@ -112,6 +114,7 @@ internal object ProxyRuntimeOwnership {
             RuntimeOwner.LocalTun -> ProxyMode.Tun
             RuntimeOwner.LocalHttp -> ProxyMode.Http
             RuntimeOwner.RootTun -> ProxyMode.RootTun
+            RuntimeOwner.RemoteController -> configuredMode
             RuntimeOwner.None -> configuredMode
         }
 
