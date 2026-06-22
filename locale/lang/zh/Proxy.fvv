@@ -4,11 +4,6 @@ Proxy = {
 
     Mode = {
         Direct = "直连"
-        Global = "全局"
-        Rule = "规则"
-        Unknown = "未知"
-        Switched = "已切换到：%s 模式"
-        SwitchFailed = "切换模式失败：%s"
     }
 
     Action = {
@@ -22,20 +17,6 @@ Proxy = {
         Count = "%d 节点"
     }
 
-    Type = {
-        Direct = "直连"
-        Reject = "拒绝"
-        RejectDrop = "丢弃"
-        Compatible = "兼容"
-        Pass = "透传"
-        Relay = "中继"
-        Selector = "选择器"
-        Fallback = "回退"
-        UrlTest = "UrlTest"
-        LoadBalance = "负载均衡"
-        Smart = "智能"
-        Unknown = "未知"
-    }
 
     Empty = {
         NoNodes = "暂无节点"

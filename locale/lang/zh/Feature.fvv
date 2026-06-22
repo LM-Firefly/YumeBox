@@ -11,7 +11,6 @@ Feature = {
         SwitchStartSubStore = "启动 Sub-Store 服务"
         AllowLan = "允许局域网访问"
         AllowLanSummary = "允许局域网设备访问 Sub-Store"
-        AutoCloseMode = "自动关闭模式"
         AutoCloseModeSummary = "自动关闭时间，长时间运行将消耗更多性能"
         AutoCloseModeAlwaysOn = "常开"
         AutoCloseMode5Min = "5 分钟"

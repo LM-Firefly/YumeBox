@@ -8,13 +8,10 @@ ProfilesVM = {
         ProfileUpdated = "Profile updated: %s"
         UpdateFailed = "Update profile failed: %s"
         ToggleFailed = "Toggle state failed: %s"
-        ProfileImported = "Profile imported: %s"
-        ImportFailed = "Import profile failed: %s"
     }
 
     Progress = {
         Preparing = "Preparing download..."
-        ImportPreparing = "Preparing to import file..."
         Verifying = "Verifying configuration..."
         ImportComplete = "Import complete"
     }

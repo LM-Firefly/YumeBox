@@ -2,7 +2,6 @@
 Service = {
     Notification = {
         Running = "运行中"
-        TrafficFormat = "总计：%s"
         UnknownProfile = "未知配置"
     }
 
@@ -14,9 +13,4 @@ Service = {
         Disconnecting = "正在断开..."
     }
 
-    AutoRestart = {
-        ChannelName = "自动重启服务"
-        ChannelDescription = "用于自动重启代理服务"
-        Checking = "正在检查自动启动..."
-    }
 }

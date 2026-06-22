@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.dropUnlessResumed
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.AppTheme.spacing
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -46,7 +45,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
 @Composable
 fun NavigationBackIcon(
-    navigator: DestinationsNavigator,
+    navigator: Navigator,
     modifier: Modifier = Modifier,
     contentDescription: String = "Back",
 ) {

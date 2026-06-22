@@ -24,7 +24,6 @@ import android.app.Application
 import android.content.res.Configuration
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.common.util.PlatformIdentifier
-import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.core.Global
 import com.github.yumelira.yumebox.core.util.StartupTaskCoordinator
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
@@ -73,7 +72,6 @@ class App : Application() {
         }
         val appSettingsStorage: AppSettingsStore = koinApp.koin.get()
         AppLanguageManager.apply(appSettingsStorage.appLanguage.value)
-        PredictiveBackCompat.apply(applicationInfo, appSettingsStorage.predictiveBackEnabled.value)
 
         extractGeoFiles()
         val featureStore: FeatureStore = koinApp.koin.get()

@@ -21,7 +21,6 @@
 package com.github.yumelira.yumebox
 
 import android.app.Activity
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -54,11 +53,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.core.net.toUri
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.github.yumelira.yumebox.common.util.openUrl
-import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.BottomBarContent
 import com.github.yumelira.yumebox.presentation.component.LocalBottomBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalBottomBarHazeStyle
@@ -68,15 +66,15 @@ import com.github.yumelira.yumebox.presentation.component.LocalMainPagerState
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.LocalPagerState
 import com.github.yumelira.yumebox.presentation.component.MainPagerState
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.rememberBottomBarReservedHeight
 import com.github.yumelira.yumebox.presentation.component.rememberBottomBarScrollBehavior
 import com.github.yumelira.yumebox.presentation.component.rememberMainPagerFlingBehavior
 import com.github.yumelira.yumebox.presentation.component.rememberMainPagerState
 import com.github.yumelira.yumebox.presentation.screen.ProxyPager
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
-import com.github.yumelira.yumebox.presentation.webview.WebViewUtils.getPanelUrl
 import com.github.yumelira.yumebox.screen.moe.MoeHomePage
 import com.github.yumelira.yumebox.screen.moe.calculateHomeVisibility
 import com.github.yumelira.yumebox.screen.home.HomePager
@@ -84,10 +82,6 @@ import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.profiles.ProfilesPager
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.github.yumelira.yumebox.screen.settings.SettingPager
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.ProvidersScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -97,16 +91,13 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-@Destination<RootGraph>
-fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
-    val activity = LocalActivity.current
+fun MainScreen(navigator: Navigator, initialPage: Int = 0) {
     val initialMainPage = initialPage.coerceIn(0, 3)
     val pagerState = rememberPagerState(initialPage = initialMainPage, pageCount = { 4 })
     val mainPagerState = rememberMainPagerState(pagerState)
     val hazeState = remember { HazeState() }
 
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
-    val featureViewModel = koinViewModel<FeatureViewModel>()
     val homeViewModel = koinViewModel<HomeViewModel>()
     val bottomBarAutoHideEnabled by appSettingsViewModel.bottomBarAutoHide.state.collectAsState()
     val topBarBlurEnabled by appSettingsViewModel.topBarBlurEnabled.state.collectAsState()
@@ -115,8 +106,6 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
     val moeWallpaperZoom by appSettingsViewModel.moeWallpaperZoom.state.collectAsState()
     val moeWallpaperBiasX by appSettingsViewModel.moeWallpaperBiasX.state.collectAsState()
     val moeWallpaperBiasY by appSettingsViewModel.moeWallpaperBiasY.state.collectAsState()
-    val selectedPanelType by featureViewModel.selectedPanelType.state.collectAsState()
-    val panelOpenMode by featureViewModel.panelOpenMode.state.collectAsState()
     val bottomBarScrollBehavior =
         rememberBottomBarScrollBehavior(autoHideEnabled = bottomBarAutoHideEnabled)
     val pagerFlingBehavior = rememberMainPagerFlingBehavior(mainPagerState.pagerState)
@@ -184,6 +173,37 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
     val handlePageChange: (Int) -> Unit =
         remember(mainPagerState) { { targetPage -> mainPagerState.animateToPage(targetPage) } }
 
+    val pendingDeepLink by MainActivity.pendingDeepLink.collectAsState()
+    LaunchedEffect(pendingDeepLink) {
+        val uri = pendingDeepLink?.toUri() ?: return@LaunchedEffect
+        when (uri.host) {
+            "page" ->
+                when (uri.lastPathSegment) {
+                    "home" -> handlePageChange(0)
+                    "proxy" -> handlePageChange(1)
+                    "profiles" -> handlePageChange(2)
+                    "settings" -> handlePageChange(3)
+                }
+            "screen" -> {
+                val route: Route? =
+                    when (uri.lastPathSegment) {
+                        "appsettings" -> Route.AppSettings
+                        "network" -> Route.NetworkSettings
+                        "about" -> Route.About
+                        "access" -> Route.AccessControl
+                        "traffic" -> Route.TrafficStatistics
+                        "connection" -> Route.Connection
+                        "log" -> Route.Log
+                        "override" -> Route.Override
+                        "providers" -> Route.Providers
+                        else -> null
+                    }
+                route?.let { navigator.push(it) }
+            }
+        }
+        MainActivity.clearPendingDeepLink()
+    }
+
     MainScreenBackHandler(mainPagerState = mainPagerState)
 
     CompositionLocalProvider(
@@ -249,9 +269,6 @@ fun MainScreen(navigator: DestinationsNavigator, initialPage: Int = 0) {
                         moeWallpaperBiasX = moeWallpaperBiasX,
                         moeWallpaperBiasY = moeWallpaperBiasY,
                         navigator = navigator,
-                        activity = activity,
-                        selectedPanelType = selectedPanelType,
-                        panelOpenMode = panelOpenMode,
                         homePageProgress = homeVisibility,
                         selectedPage = settledMainPage,
                     )
@@ -291,10 +308,7 @@ private fun MainRootPageContent(
     moeWallpaperZoom: Float,
     moeWallpaperBiasX: Float,
     moeWallpaperBiasY: Float,
-    navigator: DestinationsNavigator,
-    activity: Activity?,
-    selectedPanelType: Int,
-    panelOpenMode: LinkOpenMode,
+    navigator: Navigator,
     homePageProgress: Float,
     selectedPage: Int,
 ) {
@@ -319,17 +333,8 @@ private fun MainRootPageContent(
             ProxyPager(
                 mainInnerPadding = mainInnerPadding,
                 onNavigateToProviders = {
-                    navigator.navigate(ProvidersScreenDestination) { launchSingleTop = true }
+                    navigator.push(Route.Providers)
                 },
-                onOpenPanel = onOpenPanel@{
-                        val context = activity ?: return@onOpenPanel
-                        val panelUrl = getPanelUrl(selectedPanelType)
-                        if (panelUrl.isEmpty()) return@onOpenPanel
-                        when (panelOpenMode) {
-                            LinkOpenMode.IN_APP -> WebViewActivity.start(context, panelUrl)
-                            LinkOpenMode.EXTERNAL_BROWSER -> openUrl(context, panelUrl)
-                        }
-                    },
                 isActive = selectedPage == 1,
             )
 

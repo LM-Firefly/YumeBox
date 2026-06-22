@@ -10,7 +10,6 @@ NetworkSettings = {
 
     VpnService = {
         RouteTrafficTitle = "Route System Traffic"
-        RouteTrafficSummary = "Select which proxy mode should take over system traffic"
         VpnMode = "VPN Mode"
         RootTunMode = "Root TUN"
         SystemProxy = "HTTP System Proxy"
@@ -18,15 +17,10 @@ NetworkSettings = {
 
     VpnOptions = {
         BypassPrivateTitle = "Bypass Private Networks"
-        BypassPrivateSummary = "Bypass private networks and local addresses"
         DnsHijackTitle = "DNS Hijack"
-        DnsHijackSummary = "Redirect all DNS requests to YumeBox"
         AllowBypassTitle = "Allow App Bypass"
-        AllowBypassSummary = "Allow apps to bypass VPN"
         EnableIpv6Title = "Enable IPv6"
-        EnableIpv6Summary = "Allow IPv6 traffic through VPN"
         SystemProxyTitle = "VPN Built-in System Proxy"
-        SystemProxySummary = "Only in VPN mode, set an HTTP proxy for apps outside the TUN path"
     }
 
     ProxyOptions = {
@@ -36,7 +30,6 @@ NetworkSettings = {
         AllowSelected = "Allow Selected"
         RejectSelected = "Reject Selected"
         ManageAccessControlTitle = "Manage Access Control"
-        ManageAccessControlSummary = "Configure access control rules for apps and domains"
     }
 
     RootTun = {
@@ -45,13 +38,9 @@ NetworkSettings = {
         MtuTitle = "MTU"
         MtuSummary = "Maximum transmission unit used by RootTun"
         AutoRouteTitle = "Auto Route"
-        AutoRouteSummary = "Automatically add required routes"
         StrictRouteTitle = "Strict Route"
-        StrictRouteSummary = "Only matched traffic is routed into RootTun"
         AutoRedirectTitle = "Auto Redirect"
-        AutoRedirectSummary = "Automatically enable required redirect rules"
         DnsModeTitle = "DNS Mode"
-        DnsModeSummary = "Choose between RedirHost and FakeIP"
         DnsModeRedirHost = "RedirHost"
         DnsModeFakeIp = "FakeIP"
         FakeIpRangeTitle = "FakeIP IPv4 Range"

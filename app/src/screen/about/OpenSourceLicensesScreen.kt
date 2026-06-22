@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
@@ -60,9 +61,6 @@ import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.mikepenz.aboutlibraries.entity.Library
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.util.strippedLicenseContent
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -71,15 +69,14 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-@Destination<RootGraph>
-fun OpenSourceLicensesScreen(navigator: DestinationsNavigator) {
+fun OpenSourceLicensesScreen(navigator: Navigator) {
     val spacing = AppTheme.spacing
 
     val scrollBehavior = MiuixScrollBehavior()
     var showLicenseSheet by remember { mutableStateOf(false) }
     var selectedLibrary by remember { mutableStateOf<Library?>(null) }
 
-    BackHandler { navigator.popBackStack() }
+    BackHandler { navigator.pop() }
 
     val libraries by produceLibraries(R.raw.aboutlibraries)
     val libraryItems = remember(libraries) { libraries?.libraries.orEmpty() }

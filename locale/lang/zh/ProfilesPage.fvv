@@ -36,7 +36,6 @@ ProfilesPage = {
         NeedPermission = "需要相机权限"
         NeedCamera = "需要相机权限才能扫码"
         SelectFromAlbum = "从相册选择二维码图片"
-        ScanSuccess = "扫描成功"
         RecognizeSuccess = "识别成功"
         RecognizeFailed = "未能识别到二维码"
         RecognizeError = "识别失败：%s"
@@ -98,10 +97,6 @@ ProfilesPage = {
         ImportedConfigMissing = "导入配置不存在：%s"
     }
 
-    Misc = {
-        Complete = "完成"
-        Error = "错误"
-    }
 
     SettingsDialog = {
         Title = "订阅设置"

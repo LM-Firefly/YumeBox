@@ -59,7 +59,7 @@ import com.github.yumelira.yumebox.presentation.util.OverrideEditorStore
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
-import com.ramcosta.composedestinations.generated.destinations.OverrideConfigPreviewRouteDestination
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -67,10 +67,11 @@ import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import timber.log.Timber
+import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @SuppressLint("UseKtx")
 @Composable
@@ -103,8 +104,6 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
 
     var importUrlFromScheme by remember { mutableStateOf<String?>(null) }
     val pendingImportUrl by MainActivity.pendingImportUrl.collectAsState()
-    val urlProfiles = remember(profiles) { profiles.filter { it.type == Profile.Type.Url } }
-
     var scannedUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(pendingImportUrl) {
         if (pendingImportUrl != null) {
@@ -129,41 +128,23 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
             TopBar(
                 title = MLang.ProfilesPage.Title,
                 scrollBehavior = scrollBehavior,
-                actions = {
-                    IconButton(
-                        modifier = Modifier.padding(end = UiDp.dp12),
-                        onClick = {
-                            if (!isDownloading && urlProfiles.isNotEmpty()) {
-                                isDownloading = true
-                                scope.launch {
-                                    urlProfiles.forEach { profile ->
-                                        profilesViewModel.updateProfile(profile.uuid)
-                                    }
-                                    isDownloading = false
-                                }
-                            }
-                        },
-                    ) {
-                        Icon(
-                            ShellIcons.UpdateProfiles,
-                            contentDescription = MLang.ProfilesPage.Action.UpdateAll,
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            profileToEdit = null
-                            showAddBottomSheet.value = true
-                        }
-                    ) {
-                        Icon(
-                            ShellIcons.AddProfile,
-                            contentDescription = MLang.ProfilesPage.Action.AddProfile,
-                        )
-                    }
-                },
             )
-        }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                modifier = Modifier.padding(end = UiDp.dp20, bottom = UiDp.dp85),
+                onClick = {
+                    profileToEdit = null
+                    showAddBottomSheet.value = true
+                },
+            ) {
+                Icon(
+                    imageVector = ShellIcons.AddProfile,
+                    contentDescription = MLang.ProfilesPage.Action.AddProfile,
+                    tint = MiuixTheme.colorScheme.onPrimary,
+                )
+            }
+        },
     ) { innerPadding ->
         if (profiles.isEmpty()) {
             CenteredText(
@@ -439,7 +420,7 @@ fun ProfilesPager(mainInnerPadding: PaddingValues) {
                 showEditOptionsDialog = null
                 if (openConfigPreviewAfterEditDialogDismiss) {
                     openConfigPreviewAfterEditDialogDismiss = false
-                    navigator.navigate(OverrideConfigPreviewRouteDestination)
+                    navigator.push(Route.OverrideConfigPreview)
                 }
             },
         )

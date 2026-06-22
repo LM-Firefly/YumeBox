@@ -45,6 +45,7 @@ import com.github.yumelira.yumebox.presentation.component.EditorEmptyState
 import com.github.yumelira.yumebox.presentation.component.EditorListItem
 import com.github.yumelira.yumebox.presentation.component.EditorScaffold
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.PreferenceValueItem
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
@@ -52,9 +53,6 @@ import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.hazeSource
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.Checkbox
@@ -155,9 +153,8 @@ private sealed interface KeyValueDialogState {
     data object Reset : KeyValueDialogState
 }
 
-@Destination<RootGraph>
 @Composable
-fun StringListEditorScreen(navigator: DestinationsNavigator) {
+fun StringListEditorScreen(navigator: Navigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
     val items = remember { mutableStateListOf<TextDraftItem>() }
@@ -296,7 +293,7 @@ fun StringListEditorScreen(navigator: DestinationsNavigator) {
                     dialogState = StringListDialogState.None
                     EditorDataHolder.listEditorCallback?.invoke(null)
                     EditorDataHolder.clearListEditor()
-                    navigator.popBackStack()
+                    navigator.pop()
                 },
             )
         }
@@ -314,9 +311,8 @@ fun StringListEditorScreen(navigator: DestinationsNavigator) {
     }
 }
 
-@Destination<RootGraph>
 @Composable
-fun KeyValueEditorScreen(navigator: DestinationsNavigator) {
+fun KeyValueEditorScreen(navigator: Navigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val topBarHazeState = LocalTopBarHazeState.current
     val items = remember { mutableStateListOf<KeyValueDraftItem>() }
@@ -454,7 +450,7 @@ fun KeyValueEditorScreen(navigator: DestinationsNavigator) {
                     dialogState = KeyValueDialogState.None
                     EditorDataHolder.mapEditorCallback?.invoke(null)
                     EditorDataHolder.clearMapEditor()
-                    navigator.popBackStack()
+                    navigator.pop()
                 },
             )
         }

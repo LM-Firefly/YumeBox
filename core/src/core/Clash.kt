@@ -78,11 +78,6 @@ object Clash {
             Bridge.nativeCompilePreview(encode(request)),
         )
 
-    fun compileAndLoadConfig(request: CompileRequest): CompletableDeferred<Unit> =
-        CompletableDeferred<Unit>().apply {
-            Bridge.nativeCompileAndLoadConfig(this, encode(request))
-        }
-
     fun compileAndLoadConfigSummary(
         request: CompileRequest,
         completable: CompletableDeferred<Unit>,
@@ -118,12 +113,6 @@ object Clash {
         }
         return Json.decodeFromString(ListSerializer(String.serializer()), result.payload)
     }
-
-    fun compileToFile(request: CompileRequest): CompileResult =
-        CompilerJson.decodeFromString(
-            CompileResult.serializer(),
-            Bridge.nativeCompileToFile(encode(request)),
-        )
 
     fun reset() {
         Bridge.nativeReset()
@@ -273,9 +262,6 @@ object Clash {
                 force,
             )
         }
-
-    fun load(path: File): CompletableDeferred<Unit> =
-        CompletableDeferred<Unit>().apply { Bridge.nativeLoad(this, path.absolutePath) }
 
     fun queryProviders(): List<Provider> {
         val providers = Json.decodeFromString(JsonArray.serializer(), Bridge.nativeQueryProviders())

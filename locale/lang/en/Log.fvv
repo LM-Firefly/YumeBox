@@ -2,11 +2,6 @@
 Log = {
     Title = "Logs"
 
-    Action = {
-        StopRecording = "Stop Recording"
-        StartRecording = "Start Recording"
-        Save = "Save"
-    }
 
     Empty = {
         NoLogs = "No log records"

@@ -60,8 +60,6 @@ class AppSettingsViewModel(
     val showTrafficNotification: Preference<Boolean> = settings.showTrafficNotification
     val bottomBarAutoHide: Preference<Boolean> = settings.bottomBarAutoHide
     val topBarBlurEnabled: Preference<Boolean> = settings.topBarBlurEnabled
-    val predictiveBackEnabled: Preference<Boolean> = settings.predictiveBackEnabled
-    val smoothCornerEnabled: Preference<Boolean> = settings.smoothCornerEnabled
     val classicHomeEnabled: Preference<Boolean> = settings.classicHomeEnabled
     val moeWallpaperUri: Preference<String> = settings.moeWallpaperUri
     val moeWallpaperSourceUri: Preference<String> = settings.moeWallpaperSourceUri
@@ -73,8 +71,6 @@ class AppSettingsViewModel(
     val moeSidebarExpanded: Preference<Boolean> = settings.moeSidebarExpanded
     val pageScale: Preference<Float> = settings.pageScale
     val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
-    val screenshotProtectionEnabled: Preference<Boolean> = settings.screenshotProtectionEnabled
-    val biometricUnlockEnabled: Preference<Boolean> = settings.biometricUnlockEnabled
     val exitUiWhenBackground: Preference<Boolean> = featureStore.exitUiWhenBackground
 
     val customUserAgent: Preference<String> = settings.customUserAgent
@@ -94,10 +90,6 @@ class AppSettingsViewModel(
     fun onBottomBarAutoHideChange(enabled: Boolean) = bottomBarAutoHide.set(enabled)
 
     fun onTopBarBlurEnabledChange(enabled: Boolean) = topBarBlurEnabled.set(enabled)
-
-    fun onPredictiveBackEnabledChange(enabled: Boolean) = predictiveBackEnabled.set(enabled)
-
-    fun onSmoothCornerEnabledChange(enabled: Boolean) = smoothCornerEnabled.set(enabled)
 
     fun onClassicHomeEnabledChange(enabled: Boolean) = classicHomeEnabled.set(enabled)
 
@@ -159,11 +151,6 @@ class AppSettingsViewModel(
     fun onShowTrafficNotificationChange(show: Boolean) = showTrafficNotification.set(show)
 
     fun onSingleNodeTestChange(enabled: Boolean) = singleNodeTest.set(enabled)
-
-    fun onScreenshotProtectionEnabledChange(enabled: Boolean) =
-        screenshotProtectionEnabled.set(enabled)
-
-    fun onBiometricUnlockEnabledChange(enabled: Boolean) = biometricUnlockEnabled.set(enabled)
 
     fun onExitUiWhenBackgroundChange(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 

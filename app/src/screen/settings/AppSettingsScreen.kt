@@ -24,9 +24,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.runtime.Composable
@@ -47,9 +44,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.yumelira.yumebox.common.util.AppIconHelper
-import com.github.yumelira.yumebox.common.util.BiometricHelper
 import com.github.yumelira.yumebox.common.util.LocaleUtil
-import com.github.yumelira.yumebox.common.util.PredictiveBackCompat
 import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.data.model.AppLanguage
 import com.github.yumelira.yumebox.data.model.ThemeMode
@@ -68,10 +63,6 @@ import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.MoeWallpaperCropScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -82,8 +73,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-@Destination<RootGraph>
-fun AppSettingsScreen(navigator: DestinationsNavigator) {
+fun AppSettingsScreen() {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<AppSettingsViewModel>()
 
@@ -96,7 +86,7 @@ fun AppSettingsScreen(navigator: DestinationsNavigator) {
             innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item { AppBehaviorSettingsSection(viewModel) }
-            item { AppInterfaceSettingsSection(viewModel = viewModel, navigator = navigator) }
+            item { AppInterfaceSettingsSection(viewModel = viewModel) }
             item { AppPrivacySettingsSection(viewModel) }
             item { AppServiceSettingsSection(viewModel) }
             item { AppNetworkSettingsSection(viewModel) }
@@ -115,21 +105,17 @@ private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
     Card {
         PreferenceSwitchItem(
             title = MLang.AppSettings.Behavior.AutoStartTitle,
-            summary = MLang.AppSettings.Behavior.AutoStartSummary,
             checked = automaticRestart,
             onCheckedChange = viewModel::onAutomaticRestartChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Behavior.AutoUpdateOnStartTitle,
-            summary = MLang.AppSettings.Behavior.AutoUpdateOnStartSummary,
             checked = autoUpdateCurrentProfileOnStart,
             onCheckedChange = viewModel::onAutoUpdateCurrentProfileOnStartChange,
         )
         if (isChineseLocale) {
             PreferenceSwitchItem(
-                title = MLang.AppSettings.Behavior.OneChinaTitle,
-                summary = MLang.AppSettings.Behavior.OneChinaSummary,
-                checked = true,
+                title = MLang.AppSettings.Behavior.OneChinaTitle,                checked = true,
                 onCheckedChange = {},
                 enabled = false,
             )
@@ -138,24 +124,17 @@ private fun AppBehaviorSettingsSection(viewModel: AppSettingsViewModel) {
 }
 
 @Composable
-private fun AppInterfaceSettingsSection(
-    viewModel: AppSettingsViewModel,
-    navigator: DestinationsNavigator,
-) {
-    val context = LocalContext.current
+private fun AppInterfaceSettingsSection(viewModel: AppSettingsViewModel) {
     val themeMode by viewModel.themeMode.state.collectAsState()
     val appLanguage by viewModel.appLanguage.state.collectAsState()
     val themeSeedColorArgb by viewModel.themeSeedColorArgb.state.collectAsState()
     val invertOnPrimaryColors by viewModel.invertOnPrimaryColors.state.collectAsState()
-    val predictiveBackEnabled by viewModel.predictiveBackEnabled.state.collectAsState()
-    val smoothCornerEnabled by viewModel.smoothCornerEnabled.state.collectAsState()
     val bottomBarAutoHide by viewModel.bottomBarAutoHide.state.collectAsState()
     val topBarBlurEnabled by viewModel.topBarBlurEnabled.state.collectAsState()
     val pageScale by viewModel.pageScale.state.collectAsState()
     val classicHomeEnabled by viewModel.classicHomeEnabled.state.collectAsState()
     val homeQuote by viewModel.moeHomeQuote.state.collectAsState()
     val homeQuoteAuthor by viewModel.moeHomeQuoteAuthor.state.collectAsState()
-    val homeSidebarExpanded by viewModel.moeSidebarExpanded.state.collectAsState()
     val homeQuoteSummary =
         remember(homeQuote) { homeQuote.ifBlank { MLang.AppSettings.Interface.HomeQuoteDefault } }
     val homeQuoteAuthorSummary =
@@ -167,7 +146,6 @@ private fun AppInterfaceSettingsSection(
     Card {
         PreferenceEnumItem(
             title = MLang.AppSettings.Interface.ThemeModeTitle,
-            summary = MLang.AppSettings.Interface.ThemeModeSummary,
             currentValue = themeMode,
             items =
                 listOf(
@@ -178,22 +156,20 @@ private fun AppInterfaceSettingsSection(
             values = ThemeMode.entries,
             onValueChange = viewModel::onThemeModeChange,
         )
+        PreferenceSwitchItem(
+            title = MLang.AppSettings.Interface.ThemeColorPolarityInvertTitle,
+            checked = invertOnPrimaryColors,
+            onCheckedChange = viewModel::onInvertOnPrimaryColorsChange,
+        )
         ThemeColorPickerItem(
             themeSeedColorArgb = themeSeedColorArgb,
             onThemeSeedColorChange = viewModel::onThemeSeedColorChange,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.ThemeColorPolarityInvertTitle,
-            summary = MLang.AppSettings.Interface.ThemeColorPolarityInvertSummary,
-            checked = invertOnPrimaryColors,
-            onCheckedChange = viewModel::onInvertOnPrimaryColorsChange,
         )
     }
     Title(MLang.AppSettings.Section.Interface)
     Card {
         PreferenceEnumItem(
             title = MLang.AppSettings.Interface.LanguageTitle,
-            summary = MLang.AppSettings.Interface.LanguageSummary,
             currentValue = appLanguage,
             items =
                 listOf(
@@ -206,32 +182,13 @@ private fun AppInterfaceSettingsSection(
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Interface.AutoHideNavbarTitle,
-            summary = MLang.AppSettings.Interface.AutoHideNavbarSummary,
             checked = bottomBarAutoHide,
             onCheckedChange = viewModel::onBottomBarAutoHideChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Interface.TopBarBlurTitle,
-            summary = MLang.AppSettings.Interface.TopBarBlurSummary,
             checked = topBarBlurEnabled,
             onCheckedChange = viewModel::onTopBarBlurEnabledChange,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.PredictiveBackTitle,
-            summary = MLang.AppSettings.Interface.PredictiveBackSummary,
-            checked = predictiveBackEnabled,
-            onCheckedChange = { enabled ->
-                viewModel.onPredictiveBackEnabledChange(enabled)
-                PredictiveBackCompat.apply(context.applicationInfo, enabled)
-                BiometricHelper.findFragmentActivity(context)?.recreate()
-            },
-            enabled = PredictiveBackCompat.isSupported,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.SmoothCornerTitle,
-            summary = MLang.AppSettings.Interface.SmoothCornerSummary,
-            checked = smoothCornerEnabled,
-            onCheckedChange = viewModel::onSmoothCornerEnabledChange,
         )
         PageScalePreferenceItem(pageScale = pageScale, onApply = viewModel::onPageScaleChange)
     }
@@ -239,15 +196,8 @@ private fun AppInterfaceSettingsSection(
     Card {
         PreferenceSwitchItem(
             title = MLang.AppSettings.Interface.ClassicHomeTitle,
-            summary = MLang.AppSettings.Interface.ClassicHomeSummary,
             checked = classicHomeEnabled,
             onCheckedChange = viewModel::onClassicHomeEnabledChange,
-        )
-        PreferenceSwitchItem(
-            title = MLang.AppSettings.Interface.HomeSidebarExpandedTitle,
-            summary = MLang.AppSettings.Interface.HomeSidebarExpandedSummary,
-            checked = homeSidebarExpanded,
-            onCheckedChange = viewModel::onMoeSidebarExpandedChange,
         )
         MoeQuotePreferenceItem(
             title = MLang.AppSettings.Interface.HomeQuoteTitle,
@@ -263,12 +213,6 @@ private fun AppInterfaceSettingsSection(
             currentValue = homeQuoteAuthor,
             onConfirm = viewModel::onMoeHomeQuoteAuthorChange,
         )
-        MoeWallpaperPreferenceItem(
-            navigator = navigator,
-            wallpaperZoom = viewModel.moeWallpaperZoom.value,
-            wallpaperBiasX = viewModel.moeWallpaperBiasX.value,
-            wallpaperBiasY = viewModel.moeWallpaperBiasY.value,
-        )
     }
 }
 
@@ -279,22 +223,6 @@ private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
 
     Title(MLang.AppSettings.Section.Privacy)
     Card {
-        BiometricProtectedPreferenceSwitch(
-            checkedFlow = viewModel.biometricUnlockEnabled.state,
-            title = MLang.AppSettings.Privacy.BiometricUnlockTitle,
-            summary = MLang.AppSettings.Privacy.BiometricUnlockSummary,
-            enableTitle = MLang.AppSettings.Privacy.BiometricDialogTitleEnable,
-            disableTitle = MLang.AppSettings.Privacy.BiometricDialogTitleDisable,
-            onConfirmedChange = viewModel::onBiometricUnlockEnabledChange,
-        )
-        BiometricProtectedPreferenceSwitch(
-            checkedFlow = viewModel.screenshotProtectionEnabled.state,
-            title = MLang.AppSettings.Privacy.ScreenshotProtectionTitle,
-            summary = MLang.AppSettings.Privacy.ScreenshotProtectionSummary,
-            enableTitle = MLang.AppSettings.Privacy.ScreenshotDialogTitleEnable,
-            disableTitle = MLang.AppSettings.Privacy.ScreenshotDialogTitleDisable,
-            onConfirmedChange = viewModel::onScreenshotProtectionEnabledChange,
-        )
         HideAppIconPreferenceItem(
             hideAppIconFlow = viewModel.hideAppIcon.state,
             onHideAppIconChange = viewModel::onHideAppIconChange,
@@ -302,7 +230,6 @@ private fun AppPrivacySettingsSection(viewModel: AppSettingsViewModel) {
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.Privacy.HideFromRecentsTitle,
-            summary = MLang.AppSettings.Privacy.HideFromRecentsSummary,
             checked = excludeFromRecents,
             onCheckedChange = viewModel::onExcludeFromRecentsChange,
         )
@@ -342,19 +269,16 @@ private fun AppServiceSettingsSection(viewModel: AppSettingsViewModel) {
     Card {
         PreferenceSwitchItem(
             title = MLang.AppSettings.ServiceSection.TrafficNotificationTitle,
-            summary = MLang.AppSettings.ServiceSection.TrafficNotificationSummary,
             checked = showTrafficNotification,
             onCheckedChange = viewModel::onShowTrafficNotificationChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.ServiceSection.SingleNodeTestTitle,
-            summary = MLang.AppSettings.ServiceSection.SingleNodeTestSummary,
             checked = singleNodeTest,
             onCheckedChange = viewModel::onSingleNodeTestChange,
         )
         PreferenceSwitchItem(
             title = MLang.AppSettings.ServiceSection.ExitUiWhenBackgroundTitle,
-            summary = MLang.AppSettings.ServiceSection.ExitUiWhenBackgroundSummary,
             checked = exitUiWhenBackground,
             onCheckedChange = viewModel::onExitUiWhenBackgroundChange,
         )
@@ -384,49 +308,6 @@ private fun AppNetworkSettingsSection(viewModel: AppSettingsViewModel) {
 }
 
 @Composable
-private fun BiometricProtectedPreferenceSwitch(
-    checkedFlow: kotlinx.coroutines.flow.StateFlow<Boolean>,
-    title: String,
-    summary: String,
-    enableTitle: String,
-    disableTitle: String,
-    onConfirmedChange: (Boolean) -> Unit,
-) {
-    val context = LocalContext.current
-    val checked by checkedFlow.collectAsState()
-    val showUnavailableDialogState = remember { mutableStateOf(false) }
-    var unavailableMessage by remember { mutableStateOf("") }
-
-    PreferenceSwitchItem(
-        title = title,
-        summary = summary,
-        checked = checked,
-        onCheckedChange = { targetState ->
-            requestBiometricConfirmation(
-                context = context,
-                title = if (targetState) enableTitle else disableTitle,
-                allowBypassWhenUnavailable = !targetState,
-                onUnavailable = { message ->
-                    unavailableMessage = message
-                    showUnavailableDialogState.value = true
-                },
-                onSuccess = { onConfirmedChange(targetState) },
-            )
-        },
-    )
-
-    WarningBottomSheet(
-        show = showUnavailableDialogState,
-        title = MLang.AppSettings.Privacy.BiometricUnavailableTitle,
-        messages =
-            listOf(
-                unavailableMessage.ifBlank { MLang.AppSettings.Privacy.BiometricUnavailableMessage }
-            ),
-        onConfirm = { showUnavailableDialogState.value = false },
-    )
-}
-
-@Composable
 private fun HideAppIconPreferenceItem(
     hideAppIconFlow: kotlinx.coroutines.flow.StateFlow<Boolean>,
     onHideAppIconChange: (Boolean) -> Unit,
@@ -437,7 +318,6 @@ private fun HideAppIconPreferenceItem(
 
     PreferenceSwitchItem(
         title = MLang.AppSettings.Privacy.HideIconTitle,
-        summary = MLang.AppSettings.Privacy.HideIconSummary,
         checked = hideAppIcon,
         onCheckedChange = { checked ->
             if (checked) {
@@ -492,76 +372,6 @@ private fun MoeQuotePreferenceItem(
     )
 }
 
-@Composable
-private fun MoeWallpaperPreferenceItem(
-    navigator: DestinationsNavigator,
-    wallpaperZoom: Float,
-    wallpaperBiasX: Float,
-    wallpaperBiasY: Float,
-) {
-    val context = LocalContext.current
-    val wallpaperPickerLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
-            uri ->
-            uri ?: return@rememberLauncherForActivityResult
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            }
-            navigator.navigate(
-                MoeWallpaperCropScreenDestination(
-                    wallpaperUri = uri.toString(),
-                    initialZoom = wallpaperZoom,
-                    initialBiasX = wallpaperBiasX,
-                    initialBiasY = wallpaperBiasY,
-                )
-            ) {
-                launchSingleTop = true
-            }
-        }
-
-    PreferenceArrowItem(
-        title = MLang.AppSettings.Interface.HomeWallpaperTitle,
-        summary = MLang.AppSettings.Interface.HomeWallpaperSummary,
-        onClick = {
-            wallpaperPickerLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
-        },
-    )
-}
-
-private fun requestBiometricConfirmation(
-    context: android.content.Context,
-    title: String,
-    allowBypassWhenUnavailable: Boolean = false,
-    onUnavailable: (String) -> Unit,
-    onSuccess: () -> Unit,
-) {
-    val activity = BiometricHelper.findFragmentActivity(context)
-    if (activity == null) {
-        if (allowBypassWhenUnavailable) {
-            onSuccess()
-        } else {
-            onUnavailable(MLang.AppSettings.Privacy.BiometricUnavailableMessage)
-        }
-        return
-    }
-
-    if (!BiometricHelper.canAuthenticate(activity)) {
-        if (allowBypassWhenUnavailable) {
-            onSuccess()
-        } else {
-            onUnavailable(BiometricHelper.getAuthenticationStatusMessage(activity))
-        }
-        return
-    }
-
-    BiometricHelper.authenticate(activity = activity, title = title, onSuccess = onSuccess)
-}
-
 private fun isBatteryOptimizationIgnored(context: android.content.Context): Boolean {
     val powerManager = context.getSystemService(PowerManager::class.java) ?: return false
     return powerManager.isIgnoringBatteryOptimizations(context.packageName)
@@ -608,9 +418,7 @@ private fun PageScalePreferenceItem(pageScale: Float, onApply: (Float) -> Unit) 
     val showPageScaleDialogState = remember { mutableStateOf(false) }
 
     PreferenceArrowItem(
-        title = MLang.AppSettings.Interface.PageScaleTitle,
-        summary = MLang.AppSettings.Interface.PageScaleSummary,
-        endActions = {
+        title = MLang.AppSettings.Interface.PageScaleTitle,        endActions = {
             Text(
                 text = pageScalePercentText,
                 color = MiuixTheme.colorScheme.onSurfaceVariantActions,

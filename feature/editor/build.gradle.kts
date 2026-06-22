@@ -71,7 +71,7 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation(libs.compose.destinations.core)
+    implementation(libs.androidx.navigation3.runtime)
     implementation(libs.timber)
     implementation(libs.miuix.ui)
     implementation(libs.miuix.preference)

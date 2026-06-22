@@ -25,15 +25,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.openUrl
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.screen.FeatureContent
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 
 @Composable
-@Destination<RootGraph>
-fun FeatureScreen(navigator: DestinationsNavigator) {
+fun FeatureScreen(navigator: Navigator) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     FeatureContent(

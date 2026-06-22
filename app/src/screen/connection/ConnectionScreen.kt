@@ -54,9 +54,7 @@ import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownImpl
@@ -85,9 +83,8 @@ private fun ConnectionSort.getDisplayName(): String =
         ConnectionSort.Host -> MLang.Connection.Sort.Host
     }
 
-@Destination<RootGraph>
 @Composable
-fun ConnectionScreen(navigator: DestinationsNavigator) {
+fun ConnectionScreen(navigator: Navigator) {
     val viewModel = koinViewModel<ConnectionViewModel>()
     val state by viewModel.state.collectAsState()
     val filteredConnections by viewModel.filteredConnections.collectAsState()

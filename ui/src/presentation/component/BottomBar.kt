@@ -123,7 +123,6 @@ import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.kyant.shapes.Capsule
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
@@ -201,7 +200,7 @@ val LocalMainPagerState =
 val LocalHandlePageChange =
     compositionLocalOf<(Int) -> Unit> { error("LocalHandlePageChange is not provided") }
 val LocalNavigator =
-    compositionLocalOf<DestinationsNavigator> { error("LocalNavigator is not provided") }
+    compositionLocalOf<Navigator> { error("LocalNavigator is not provided") }
 val LocalBottomBarHazeState = compositionLocalOf<HazeState?> { null }
 val LocalBottomBarHazeStyle = compositionLocalOf<HazeStyle?> { null }
 
@@ -427,13 +426,17 @@ private fun LegacyBottomNavigationBar(
     val indicatorScale = remember { Animatable(1f) }
     val borderShadowColor =
         if (isLightTheme) {
-            Black.copy(alpha = opacity.subtle)
+            // White capsule on the near-white page (surface #F7F7F7) has almost no tonal
+            // contrast, so the drop shadow has to carry the lift — 0.10 was too faint.
+            Black.copy(alpha = opacity.softOverlay)
         } else {
             Black.copy(alpha = opacity.surfaceSoft)
         }
     val outerBorderColor =
         if (isLightTheme) {
-            White.copy(alpha = opacity.disabledSecondary)
+            // A white rim on a white capsule is invisible; use a dark hairline so the capsule
+            // edge reads clearly against the light page (miuix separates with hairlines, not glow).
+            Black.copy(alpha = opacity.subtle)
         } else {
             Black.copy(alpha = opacity.mediumOverlay)
         }

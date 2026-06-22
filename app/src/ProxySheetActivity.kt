@@ -48,15 +48,11 @@ class ProxySheetActivity : ComponentActivity() {
                 appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
             val invertOnPrimaryColors =
                 appSettingsViewModel.invertOnPrimaryColors.state.collectAsState().value
-            val smoothCornerEnabled =
-                appSettingsViewModel.smoothCornerEnabled.state.collectAsState().value
-
             ProvideAndroidPlatformTheme {
                 YumeTheme(
                     themeMode = themeMode,
                     themeSeedColorArgb = themeSeedColorArgb,
                     invertOnPrimaryColors = invertOnPrimaryColors,
-                    smoothCornerEnabled = smoothCornerEnabled,
                 ) {
                     ProxySheetContent(
                         onDismiss = {

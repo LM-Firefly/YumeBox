@@ -2,7 +2,6 @@
 Service = {
     Notification = {
         Running = "Running"
-        TrafficFormat = "Total: %s"
         UnknownProfile = "Unknown profile"
     }
 
@@ -14,9 +13,4 @@ Service = {
         Disconnecting = "Disconnecting..."
     }
 
-    AutoRestart = {
-        ChannelName = "Auto Restart Service"
-        ChannelDescription = "Used to restart proxy service automatically"
-        Checking = "Checking auto-start..."
-    }
 }

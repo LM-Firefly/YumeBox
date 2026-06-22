@@ -44,8 +44,8 @@ import com.github.yumelira.yumebox.presentation.icon.yume.ArrowLeft
 import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
 import com.github.yumelira.yumebox.presentation.icon.yume.ListCollapse
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -54,7 +54,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
 fun ConfigPreviewScreen(
-    navigator: DestinationsNavigator,
+    navigator: Navigator,
     title: String = "配置预览",
     initialContent: String = "",
     language: LanguageScope = LanguageScope.Yaml,

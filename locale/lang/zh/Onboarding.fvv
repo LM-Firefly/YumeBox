@@ -3,7 +3,6 @@ Onboarding = {
     Navigation = {
         Back = "返回"
         Next = "下一步"
-        Start = "开始设置"
         Enter = "进入应用"
     }
 
@@ -36,9 +35,6 @@ Onboarding = {
         RichTextSuffix = "。"
         TermsLink = "《使用条款》"
         PolicyLink = "《隐私政策》"
-        Privacy = {
-            Title = "隐私政策"
-        }
         Accept = {
             Title = "我已阅读并同意隐私政策"
         }

@@ -50,6 +50,7 @@ import com.github.yumelira.yumebox.common.util.toast
 import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
@@ -59,7 +60,6 @@ import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Circle-fading-arrow-up`
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownImpl
@@ -93,7 +93,7 @@ private data class ProviderSection(
 )
 
 @Composable
-fun ProvidersContent(navigator: DestinationsNavigator) {
+fun ProvidersContent(navigator: Navigator) {
     val viewModel = koinViewModel<ProvidersViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current

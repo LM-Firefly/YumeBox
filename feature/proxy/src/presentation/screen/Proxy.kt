@@ -63,7 +63,6 @@ import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.Chromium
 import com.github.yumelira.yumebox.presentation.icon.yume.Folders
 import com.github.yumelira.yumebox.presentation.icon.yume.`List-chevrons-up-down`
 import com.github.yumelira.yumebox.presentation.icon.yume.Speed
@@ -99,7 +98,6 @@ private fun LazyListState.isScrolledFromTop(): Boolean =
 fun ProxyPager(
     mainInnerPadding: PaddingValues,
     onNavigateToProviders: (() -> Unit)?,
-    onOpenPanel: (() -> Unit)?,
     isActive: Boolean,
 ) {
     val proxyViewModel = koinViewModel<ProxyViewModel>()
@@ -113,7 +111,6 @@ fun ProxyPager(
     val topBarHazeState = LocalTopBarHazeState.current
 
     var showSortPopup by rememberSaveable { mutableStateOf(false) }
-    val onTestDelay = remember { { proxyViewModel.testDelay() } }
     val groupSelection =
         rememberProxyGroupSelectionState(
             proxyGroups = proxyGroups,
@@ -212,8 +209,6 @@ fun ProxyPager(
                 showBack = false,
                 onBack = {},
                 onNavigateToProviders = onNavigateToProviders,
-                onOpenPanel = onOpenPanel,
-                onTestDelay = if (selectedGroupName == null) onTestDelay else null,
                 showSortPopup = showSortPopup,
                 onShowSortPopupChange = { showSortPopup = it },
                 sortMode = sortMode,
@@ -308,8 +303,6 @@ private fun ProxyTopBar(
     showBack: Boolean,
     onBack: () -> Unit,
     onNavigateToProviders: (() -> Unit)?,
-    onOpenPanel: (() -> Unit)?,
-    onTestDelay: (() -> Unit)?,
     showSortPopup: Boolean,
     onShowSortPopupChange: (Boolean) -> Unit,
     sortMode: ProxySortMode,
@@ -332,23 +325,10 @@ private fun ProxyTopBar(
                             Icon(Yume.Folders, contentDescription = MLang.Providers.Title)
                         }
                     }
-                    if (onOpenPanel != null) {
-                        IconButton(onClick = onOpenPanel) {
-                            Icon(Yume.Chromium, contentDescription = MLang.Proxy.Action.Panel)
-                        }
-                    }
                 }
             }
         },
         actions = {
-            if (onTestDelay != null) {
-                IconButton(
-                    modifier = Modifier.padding(end = UiDp.dp12),
-                    onClick = { onTestDelay.invoke() },
-                ) {
-                    Icon(Yume.Speed, contentDescription = MLang.Proxy.Action.Test)
-                }
-            }
             Box {
                 IconButton(onClick = { onShowSortPopupChange(true) }) {
                     Icon(Yume.`List-chevrons-up-down`, contentDescription = MLang.Proxy.Action.Sort)
@@ -499,7 +479,9 @@ private fun ProxyContent(
             PaddingValues(
                 start = UiDp.dp12,
                 end = UiDp.dp12,
-                top = innerPadding.calculateTopPadding() + UiDp.dp20,
+                // dp14 (not dp20) because nodeGroupItems adds dp6 above the first card; dp14 + dp6
+                // = dp20, keeping the top card flush with the Profiles page cards.
+                top = innerPadding.calculateTopPadding() + UiDp.dp14,
                 bottom = mainInnerPadding.calculateBottomPadding() + spacing.space12,
             ),
     ) {

@@ -25,7 +25,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +38,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.compose.rememberNavController
 import com.github.yumelira.yumebox.common.runtime.StartupGate
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
 import com.github.yumelira.yumebox.common.util.IntentController
@@ -50,16 +48,12 @@ import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.di.APPLICATION_SCOPE_NAME
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
-import com.github.yumelira.yumebox.presentation.component.StartupBiometricContent
 import com.github.yumelira.yumebox.presentation.component.ToastDialogHost
-import com.github.yumelira.yumebox.presentation.component.rememberStartupBiometricGateState
-import com.github.yumelira.yumebox.presentation.theme.NavigationTransitions
+import com.github.yumelira.yumebox.presentation.navigation.AppNavContainer
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.screen.onboarding.OnboardingLauncher
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
-import com.ramcosta.composedestinations.DestinationsNavHost
-import com.ramcosta.composedestinations.generated.NavGraphs
 import com.tencent.mmkv.MMKV
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -84,6 +78,13 @@ class MainActivity : FragmentActivity() {
 
         fun clearPendingImportUrl() {
             _pendingImportUrl.value = null
+        }
+
+        private val _pendingDeepLink = MutableStateFlow<String?>(null)
+        val pendingDeepLink: StateFlow<String?> = _pendingDeepLink.asStateFlow()
+
+        fun clearPendingDeepLink() {
+            _pendingDeepLink.value = null
         }
     }
 
@@ -115,7 +116,6 @@ class MainActivity : FragmentActivity() {
 
         super.onCreate(savedInstanceState)
         applyExcludeFromRecents(appSettingsStorage.excludeFromRecents.value)
-        applyScreenshotProtection(appSettingsStorage.screenshotProtectionEnabled.value)
 
         intentController = IntentController(lifecycleScope)
         handleIntent(intent)
@@ -145,30 +145,14 @@ class MainActivity : FragmentActivity() {
                 appSettingsViewModel.themeSeedColorArgb.state.collectAsState().value
             val invertOnPrimaryColors =
                 appSettingsViewModel.invertOnPrimaryColors.state.collectAsState().value
-            val smoothCornerEnabled =
-                appSettingsViewModel.smoothCornerEnabled.state.collectAsState().value
             val excludeFromRecents =
                 appSettingsViewModel.excludeFromRecents.state.collectAsState().value
             val topBarBlurEnabled =
                 appSettingsViewModel.topBarBlurEnabled.state.collectAsState().value
             val pageScale = appSettingsViewModel.pageScale.state.collectAsState().value
-            val screenshotProtectionEnabled =
-                appSettingsViewModel.screenshotProtectionEnabled.state.collectAsState().value
-            val biometricUnlockEnabled by
-                appSettingsViewModel.biometricUnlockEnabled.state.collectAsState()
-
-            val biometricGateState =
-                rememberStartupBiometricGateState(
-                    activity = this@MainActivity,
-                    biometricUnlockEnabled = biometricUnlockEnabled,
-                )
 
             LaunchedEffect(excludeFromRecents) {
                 this@MainActivity.applyExcludeFromRecents(excludeFromRecents)
-            }
-
-            LaunchedEffect(screenshotProtectionEnabled) {
-                this@MainActivity.applyScreenshotProtection(screenshotProtectionEnabled)
             }
 
             ProvideAndroidPlatformTheme {
@@ -182,50 +166,28 @@ class MainActivity : FragmentActivity() {
                         themeMode = themeMode,
                         themeSeedColorArgb = themeSeedColorArgb,
                         invertOnPrimaryColors = invertOnPrimaryColors,
-                        smoothCornerEnabled = smoothCornerEnabled,
                     ) {
-                        if (!biometricGateState.isAuthenticated) {
+                        val topBarHazeState = remember { HazeState() }
+                        val topBarBackground = MiuixTheme.colorScheme.surface
+                        val topBarHazeStyle =
+                            remember(topBarBackground) {
+                                HazeStyle(
+                                    backgroundColor = topBarBackground,
+                                    tint = HazeTint(topBarBackground.copy(0.8f)),
+                                )
+                            }
+                        CompositionLocalProvider(
+                            LocalTopBarHazeState provides
+                                if (topBarBlurEnabled) topBarHazeState else null,
+                            LocalTopBarHazeStyle provides
+                                if (topBarBlurEnabled) topBarHazeStyle else null,
+                        ) {
                             Surface(
                                 modifier = Modifier.fillMaxSize(),
                                 color = MiuixTheme.colorScheme.surface,
                             ) {
-                                StartupBiometricContent(
-                                    isAuthenticating = biometricGateState.isAuthenticating,
-                                    biometricErrorMessage =
-                                        biometricGateState.biometricErrorMessage,
-                                    onRetry = biometricGateState.retryAuthentication,
-                                    onExit = { finishAndRemoveTask() },
-                                )
-                            }
-                        } else {
-                            val topBarHazeState = remember { HazeState() }
-                            val topBarBackground = MiuixTheme.colorScheme.surface
-                            val topBarHazeStyle =
-                                remember(topBarBackground) {
-                                    HazeStyle(
-                                        backgroundColor = topBarBackground,
-                                        tint = HazeTint(topBarBackground.copy(0.8f)),
-                                    )
-                                }
-                            val navController = rememberNavController()
-
-                            CompositionLocalProvider(
-                                LocalTopBarHazeState provides
-                                    if (topBarBlurEnabled) topBarHazeState else null,
-                                LocalTopBarHazeStyle provides
-                                    if (topBarBlurEnabled) topBarHazeStyle else null,
-                            ) {
-                                Surface(
-                                    modifier = Modifier.fillMaxSize(),
-                                    color = MiuixTheme.colorScheme.surface,
-                                ) {
-                                    DestinationsNavHost(
-                                        navGraph = NavGraphs.root,
-                                        navController = navController,
-                                        defaultTransitions = NavigationTransitions.defaultStyle,
-                                    )
-                                    ToastDialogHost()
-                                }
+                                AppNavContainer()
+                                ToastDialogHost()
                             }
                         }
                     }
@@ -290,18 +252,12 @@ class MainActivity : FragmentActivity() {
                             _pendingImportUrl.value = configUrl
                         }
                     }
+                } else if (scheme == "yumebox") {
+                    _pendingDeepLink.value = uri.toString()
                 }
             }
 
             intentController.handleIntent(safeIntent)
-        }
-    }
-
-    private fun applyScreenshotProtection(enabled: Boolean) {
-        if (enabled) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
 

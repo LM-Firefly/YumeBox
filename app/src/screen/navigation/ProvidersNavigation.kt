@@ -21,13 +21,10 @@
 package com.github.yumelira.yumebox.screen.navigation
 
 import androidx.compose.runtime.Composable
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.screen.ProvidersContent
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
-@Destination<RootGraph>
-fun ProvidersScreen(navigator: DestinationsNavigator) {
+fun ProvidersScreen(navigator: Navigator) {
     ProvidersContent(navigator = navigator)
 }

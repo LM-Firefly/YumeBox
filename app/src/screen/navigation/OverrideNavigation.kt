@@ -25,17 +25,14 @@ import com.github.yumelira.yumebox.data.model.OverrideContentType
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.feature.editor.screen.ConfigPreviewScreen
 import com.github.yumelira.yumebox.presentation.screen.OverrideListScreen
+import com.github.yumelira.yumebox.presentation.component.Navigator
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.util.OverrideEditorStore
 import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.OverrideConfigPreviewRouteDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.compose.koinInject
 
 @Composable
-@Destination<RootGraph>
-fun OverrideScreen(navigator: DestinationsNavigator) {
+fun OverrideScreen(navigator: Navigator) {
     val overrideConfigViewModel: OverrideConfigViewModel = koinInject()
 
     OverrideListScreen(
@@ -50,14 +47,13 @@ fun OverrideScreen(navigator: DestinationsNavigator) {
                     }
                 },
             )
-            navigator.navigate(OverrideConfigPreviewRouteDestination)
+            navigator.push(Route.OverrideConfigPreview)
         }
     )
 }
 
 @Composable
-@Destination<RootGraph>
-fun OverrideConfigPreviewRoute(navigator: DestinationsNavigator) {
+fun OverrideConfigPreviewRoute(navigator: Navigator) {
     ConfigPreviewScreen(
         navigator = navigator,
         title = OverrideEditorStore.configPreviewTitle,

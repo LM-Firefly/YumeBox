@@ -41,16 +41,14 @@ import com.github.yumelira.yumebox.R
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.core.bridge.Bridge
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.OpenSourceLicensesScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.CancellationException
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -62,8 +60,7 @@ import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-@Destination<RootGraph>
-fun AboutScreen(navigator: DestinationsNavigator) {
+fun AboutScreen(navigator: Navigator) {
     val context = LocalContext.current
     val scrollBehavior = MiuixScrollBehavior()
     val coreVersion by
@@ -157,7 +154,7 @@ fun AboutScreen(navigator: DestinationsNavigator) {
                     ArrowPreference(
                         title = MLang.About.License.Libraries,
                         summary = MLang.About.License.LibrariesSummary,
-                        onClick = { navigator.navigate(OpenSourceLicensesScreenDestination) },
+                        onClick = { navigator.push(Route.OpenSourceLicenses) },
                     )
                     BasicComponent(
                         title = MLang.About.License.AgplName,

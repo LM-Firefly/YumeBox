@@ -22,22 +22,15 @@ package com.github.yumelira.yumebox.screen.onboarding
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.AppStartScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.MainScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.github.yumelira.yumebox.presentation.component.Navigator
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-@Destination<RootGraph>(start = true)
-fun AppStartScreen(navigator: DestinationsNavigator) {
+fun AppStartScreen(navigator: Navigator) {
     LaunchedEffect(Unit) {
-        navigator.navigate(MainScreenDestination(initialPage = 0)) {
-            popUpTo(AppStartScreenDestination) { inclusive = true }
-            launchSingleTop = true
-        }
+        navigator.replaceAll(listOf(Route.Main(initialPage = 0)))
     }
 
     Surface(color = MiuixTheme.colorScheme.surface) {}

@@ -266,29 +266,6 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativePatchSelector(JNIEnv *
 }
 
 JNIEXPORT void JNICALL
-Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeLoad(JNIEnv *env, jobject thiz,
-                                                          jobject completable, jstring path) {
-    TRACE_METHOD();
-
-    jobject _completable = new_global(completable);
-    scoped_string _path = get_string(path);
-
-    load(_completable, _path);
-}
-
-JNIEXPORT void JNICALL
-Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeLoadCompiledConfig(JNIEnv *env, jobject thiz,
-                                                                         jobject completable,
-                                                                         jstring path) {
-    TRACE_METHOD();
-
-    jobject _completable = new_global(completable);
-    scoped_string _path = get_string(path);
-
-    loadCompiledConfig(_completable, _path);
-}
-
-JNIEXPORT void JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeFetchAndValid(JNIEnv *env, jobject thiz,
                                                                    jobject callback,
                                                                    jstring path,
@@ -395,24 +372,6 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeQueryConfiguration(JNI
     TRACE_METHOD();
 
     scoped_string response = queryConfiguration();
-
-    return new_string(response);
-}
-
-JNIEXPORT jstring JNICALL
-Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeInspectCompiledGroups(JNIEnv *env,
-                                                                            jobject thiz,
-                                                                            jstring yaml_text,
-                                                                            jstring profile_dir,
-                                                                            jboolean exclude_not_selectable) {
-    TRACE_METHOD();
-
-    scoped_string _yaml_text = get_string(yaml_text);
-    scoped_string _profile_dir = get_string(profile_dir);
-    scoped_string response = inspectCompiledGroups(_yaml_text, _profile_dir, (int) exclude_not_selectable);
-
-    if (response == NULL)
-        return NULL;
 
     return new_string(response);
 }
@@ -830,38 +789,6 @@ static char* compile_override_raw_config(const char* request_json, override_symb
     }
     free_raw_compile_payload(&payload);
     return config_raw;
-}
-
-JNIEXPORT void JNICALL
-Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeCompileAndLoadConfig(JNIEnv *env, jobject thiz,
-                                                                         jobject completable,
-                                                                         jstring request_json) {
-    TRACE_METHOD();
-
-    override_symbols symbols = resolve_override_symbols();
-
-    if (!symbols.compile_raw || !symbols.free_string) {
-        jobject _completable = new_global(completable);
-        call_completable_complete_impl(_completable, "override library symbols not found");
-        release_jni_object_impl(_completable);
-        return;
-    }
-
-    jobject _completable = new_global(completable);
-    scoped_string _request_json = get_string(request_json);
-
-    // Call Rust to compile the source to RawConfig JSON in native memory.
-    scoped_string compile_error = NULL;
-    char* config_raw = compile_override_raw_config(_request_json, symbols, &compile_error);
-
-    if (config_raw == NULL) {
-        call_completable_complete_impl(_completable, compile_error != NULL ? compile_error : "compile raw config failed");
-        release_jni_object_impl(_completable);
-        return;
-    }
-
-    // Call Go to load the raw config (async, spawns goroutine, calls complete)
-    loadCompiledRaw(_completable, config_raw);
 }
 
 JNIEXPORT jstring JNICALL

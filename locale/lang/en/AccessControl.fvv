@@ -15,7 +15,6 @@ AccessControl = {
     Settings = {
         Title = "Access Control Settings"
         ShowSystemApps = "Show System Apps"
-        DescendingOrder = "Descending Order"
         SelectedFirst = "Selected Apps First"
         SortMode = "Sort Mode"
         SortModeCurrent = "Current: %s"

@@ -3,7 +3,6 @@ Onboarding = {
     Navigation = {
         Back = "Back"
         Next = "Next"
-        Start = "Start Setup"
         Enter = "Enter App"
     }
 
@@ -36,9 +35,6 @@ Onboarding = {
         RichTextSuffix = "."
         TermsLink = "Terms of Use"
         PolicyLink = "Privacy Policy"
-        Privacy = {
-            Title = "Privacy Policy"
-        }
         Accept = {
             Title = "I have read and agree to the privacy policy"
         }

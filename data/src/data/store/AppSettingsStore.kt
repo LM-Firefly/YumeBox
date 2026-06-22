@@ -41,8 +41,6 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val showTrafficNotification by boolFlow(true)
     val bottomBarAutoHide by boolFlow(true)
     val topBarBlurEnabled by boolFlow(false)
-    val predictiveBackEnabled by boolFlow(false)
-    val smoothCornerEnabled by boolFlow(true)
     val classicHomeEnabled by boolFlow(false)
     val moeWallpaperUri by strFlow("")
     val moeWallpaperSourceUri by strFlow("")
@@ -54,8 +52,6 @@ class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = exter
     val moeSidebarExpanded by boolFlow(true)
     val pageScale by floatFlow(1.0f)
     val singleNodeTest by boolFlow(true)
-    val screenshotProtectionEnabled by boolFlow(false)
-    val biometricUnlockEnabled by boolFlow(false)
 
     val customUserAgent by strFlow("")
 

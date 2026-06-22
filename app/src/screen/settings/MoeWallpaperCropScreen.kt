@@ -55,11 +55,9 @@ import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.resize.Precision
 import com.github.panpf.sketch.resize.Scale
 import com.github.panpf.sketch.util.screenSize
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.calculateWallpaperViewportLayout
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -72,9 +70,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.max
 
 @Composable
-@Destination<RootGraph>
 fun MoeWallpaperCropScreen(
-    navigator: DestinationsNavigator,
+    navigator: Navigator,
     wallpaperUri: String,
     initialZoom: Float = 1f,
     initialBiasX: Float = 0f,
@@ -215,7 +212,7 @@ fun MoeWallpaperCropScreen(
                         biasY = viewportLayout.biasY,
                     )
                     viewModel.applyMoeWallpaper(sourceUri = wallpaperUri) {
-                        navigator.popBackStack()
+                        navigator.pop()
                     }
                 },
             ) {

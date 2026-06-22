@@ -38,17 +38,14 @@ import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.component.Card
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.ConnectionScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -62,8 +59,7 @@ import top.yukonga.miuix.kmp.preference.ArrowPreference
 import java.io.File
 
 @Composable
-@Destination<RootGraph>
-fun MetaFeatureScreen(navigator: DestinationsNavigator) {
+fun MetaFeatureScreen(navigator: Navigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -85,20 +81,17 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                     ArrowPreference(
                         title = MLang.Connection.Title,
                         summary = MLang.Connection.Summary,
-                        onClick = {
-                            navigator.navigate(ConnectionScreenDestination) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.Connection) },
                     )
                     ArrowPreference(
                         title = MLang.TrafficStatistics.Title,
                         summary = MLang.TrafficStatistics.EntrySummary,
-                        onClick = {
-                            navigator.navigate(TrafficStatisticsScreenDestination) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.TrafficStatistics) },
+                    )
+                    ArrowPreference(
+                        title = MLang.Settings.More.Logs,
+                        summary = MLang.Settings.More.LogsSummary,
+                        onClick = { navigator.push(Route.Log) },
                     )
                 }
             }
@@ -108,14 +101,7 @@ fun MetaFeatureScreen(navigator: DestinationsNavigator) {
                     ArrowPreference(
                         title = MLang.MetaFeature.CustomRouting.Title,
                         summary = MLang.MetaFeature.CustomRouting.Summary,
-                        onClick = {
-                            navigator.navigate(
-                                com.ramcosta.composedestinations.generated.destinations
-                                    .CustomRoutingRouteDestination
-                            ) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.CustomRouting) },
                     )
                 }
             }

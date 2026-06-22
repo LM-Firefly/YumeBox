@@ -67,9 +67,7 @@ import com.github.yumelira.yumebox.presentation.icon.yume.PowerOff
 import com.github.yumelira.yumebox.presentation.icon.yume.Share
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -84,8 +82,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-@Destination<RootGraph>
-fun LogScreen(navigator: DestinationsNavigator) {
+fun LogScreen(navigator: Navigator) {
     val viewModel = koinViewModel<LogViewModel>()
     val scrollBehavior = MiuixScrollBehavior()
     val context = LocalContext.current

@@ -32,13 +32,6 @@ import java.io.File
 object Bridge {
     external fun nativeCompilePreview(requestJson: String): String
 
-    external fun nativeCompileToFile(requestJson: String): String
-
-    external fun nativeCompileAndLoadConfig(
-        completable: CompletableDeferred<Unit>,
-        requestJson: String,
-    )
-
     external fun nativeCompileAndLoadConfigSummary(
         completable: CompletableDeferred<Unit>,
         requestJson: String,
@@ -111,8 +104,6 @@ object Bridge {
         url: String,
         force: Boolean,
     )
-
-    external fun nativeLoad(completable: CompletableDeferred<Unit>, path: String)
 
     external fun nativeQueryProviders(): String
 

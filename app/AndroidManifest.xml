@@ -39,7 +39,7 @@
             android:usesCleartextTraffic="true">
         <activity
                 android:name=".MainActivity"
-                android:enableOnBackInvokedCallback="false"
+                android:enableOnBackInvokedCallback="true"
                 android:exported="true"
                 android:launchMode="singleTop"
                 android:windowSoftInputMode="adjustResize">
@@ -58,6 +58,12 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:host="install-config" android:scheme="clashmeta"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="yumebox"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="com.github.yumelira.yumebox.action.START_CLASH"/>

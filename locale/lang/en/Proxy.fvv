@@ -4,11 +4,6 @@ Proxy = {
 
     Mode = {
         Direct = "Direct"
-        Global = "Global"
-        Rule = "Rule"
-        Unknown = "Unknown"
-        Switched = "Switched to: %s mode"
-        SwitchFailed = "Mode switch failed: %s"
     }
 
     Action = {
@@ -22,20 +17,6 @@ Proxy = {
         Count = "%d nodes"
     }
 
-    Type = {
-        Direct = "Direct"
-        Reject = "Reject"
-        RejectDrop = "Drop"
-        Compatible = "Compatible"
-        Pass = "Pass"
-        Relay = "Relay"
-        Selector = "Selector"
-        Fallback = "Fallback"
-        UrlTest = "UrlTest"
-        LoadBalance = "Load Balance"
-        Smart = "Smart"
-        Unknown = "Unknown"
-    }
 
     Empty = {
         NoNodes = "No nodes"

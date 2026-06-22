@@ -62,10 +62,8 @@ import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.service.root.RootAccessSupport
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.AccessControlScreenDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.github.yumelira.yumebox.presentation.component.Navigator
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -73,8 +71,7 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
-@Destination<RootGraph>
-fun NetworkSettingsScreen(navigator: DestinationsNavigator) {
+fun NetworkSettingsScreen(navigator: Navigator) {
     val scrollBehavior = MiuixScrollBehavior()
     val viewModel = koinViewModel<NetworkSettingsViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -143,9 +140,7 @@ private fun NetworkVpnServiceSection(
     Title(MLang.NetworkSettings.Section.VpnService)
     Card {
         PreferenceEnumItem(
-            title = MLang.NetworkSettings.VpnService.RouteTrafficTitle,
-            summary = MLang.NetworkSettings.VpnService.RouteTrafficSummary,
-            currentValue = configuredMode,
+            title = MLang.NetworkSettings.VpnService.RouteTrafficTitle,            currentValue = configuredMode,
             items =
                 listOf(
                     MLang.NetworkSettings.VpnService.SystemProxy,
@@ -254,7 +249,7 @@ private fun NetworkServiceOptionsSection(
 
 @Composable
 private fun NetworkProxyOptionsSection(
-    navigator: DestinationsNavigator,
+    navigator: Navigator,
     accessControlMode: AccessControlMode,
     showAccessControlMode: Boolean,
     onAccessControlModeChange: (AccessControlMode) -> Unit,
@@ -276,9 +271,7 @@ private fun NetworkProxyOptionsSection(
             )
         }
         PreferenceArrowItem(
-            title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,
-            summary = MLang.NetworkSettings.ProxyOptions.ManageAccessControlSummary,
-            onClick = { navigator.navigate(AccessControlScreenDestination) },
+            title = MLang.NetworkSettings.ProxyOptions.ManageAccessControlTitle,            onClick = { navigator.push(Route.AccessControl) },
         )
     }
 }
@@ -290,15 +283,11 @@ private fun TunServiceOptions(state: TunServiceOptionsUiState, actions: TunServi
         actions = actions.common,
         extraOptions = {
             PreferenceSwitchItem(
-                title = MLang.NetworkSettings.VpnOptions.AllowBypassTitle,
-                summary = MLang.NetworkSettings.VpnOptions.AllowBypassSummary,
-                checked = state.allowBypass,
+                title = MLang.NetworkSettings.VpnOptions.AllowBypassTitle,                checked = state.allowBypass,
                 onCheckedChange = actions.onAllowBypassChange,
             )
             PreferenceSwitchItem(
-                title = MLang.NetworkSettings.VpnOptions.SystemProxyTitle,
-                summary = MLang.NetworkSettings.VpnOptions.SystemProxySummary,
-                checked = state.systemProxy,
+                title = MLang.NetworkSettings.VpnOptions.SystemProxyTitle,                checked = state.systemProxy,
                 onCheckedChange = actions.onSystemProxyChange,
             )
         },
@@ -395,27 +384,19 @@ private fun RootTunRoutingOptions(
     onRootTunDnsModeChange: (RootTunDnsMode) -> Unit,
 ) {
     PreferenceSwitchItem(
-        title = MLang.NetworkSettings.RootTun.AutoRouteTitle,
-        summary = MLang.NetworkSettings.RootTun.AutoRouteSummary,
-        checked = rootTunAutoRoute,
+        title = MLang.NetworkSettings.RootTun.AutoRouteTitle,        checked = rootTunAutoRoute,
         onCheckedChange = onRootTunAutoRouteChange,
     )
     PreferenceSwitchItem(
-        title = MLang.NetworkSettings.RootTun.StrictRouteTitle,
-        summary = MLang.NetworkSettings.RootTun.StrictRouteSummary,
-        checked = rootTunStrictRoute,
+        title = MLang.NetworkSettings.RootTun.StrictRouteTitle,        checked = rootTunStrictRoute,
         onCheckedChange = onRootTunStrictRouteChange,
     )
     PreferenceSwitchItem(
-        title = MLang.NetworkSettings.RootTun.AutoRedirectTitle,
-        summary = MLang.NetworkSettings.RootTun.AutoRedirectSummary,
-        checked = rootTunAutoRedirect,
+        title = MLang.NetworkSettings.RootTun.AutoRedirectTitle,        checked = rootTunAutoRedirect,
         onCheckedChange = onRootTunAutoRedirectChange,
     )
     PreferenceEnumItem(
-        title = MLang.NetworkSettings.RootTun.DnsModeTitle,
-        summary = MLang.NetworkSettings.RootTun.DnsModeSummary,
-        currentValue = rootTunDnsMode,
+        title = MLang.NetworkSettings.RootTun.DnsModeTitle,        currentValue = rootTunDnsMode,
         items =
             listOf(
                 MLang.NetworkSettings.RootTun.DnsModeRedirHost,
@@ -518,21 +499,15 @@ private fun CommonTunServiceOptions(
 ) {
     Column {
         PreferenceSwitchItem(
-            title = MLang.NetworkSettings.VpnOptions.BypassPrivateTitle,
-            summary = MLang.NetworkSettings.VpnOptions.BypassPrivateSummary,
-            checked = state.bypassPrivateNetwork,
+            title = MLang.NetworkSettings.VpnOptions.BypassPrivateTitle,            checked = state.bypassPrivateNetwork,
             onCheckedChange = actions.onBypassPrivateNetworkChange,
         )
         PreferenceSwitchItem(
-            title = MLang.NetworkSettings.VpnOptions.DnsHijackTitle,
-            summary = MLang.NetworkSettings.VpnOptions.DnsHijackSummary,
-            checked = state.dnsHijack,
+            title = MLang.NetworkSettings.VpnOptions.DnsHijackTitle,            checked = state.dnsHijack,
             onCheckedChange = actions.onDnsHijackChange,
         )
         PreferenceSwitchItem(
-            title = MLang.NetworkSettings.VpnOptions.EnableIpv6Title,
-            summary = MLang.NetworkSettings.VpnOptions.EnableIpv6Summary,
-            checked = state.enableIPv6,
+            title = MLang.NetworkSettings.VpnOptions.EnableIpv6Title,            checked = state.enableIPv6,
             onCheckedChange = actions.onEnableIPv6Change,
         )
         PreferenceEnumItem(

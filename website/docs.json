@@ -28,6 +28,12 @@
             ]
           },
           {
+            "group": "指南",
+            "pages": [
+              "/guide/app"
+            ]
+          },
+          {
             "group": "覆写",
             "pages": [
               "/override/index",

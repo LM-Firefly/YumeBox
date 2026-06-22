@@ -2,11 +2,6 @@
 Log = {
     Title = "日志"
 
-    Action = {
-        StopRecording = "停止记录"
-        StartRecording = "开始记录"
-        Save = "保存"
-    }
 
     Empty = {
         NoLogs = "暂无日志记录"

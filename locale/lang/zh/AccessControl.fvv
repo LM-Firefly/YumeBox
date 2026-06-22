@@ -15,7 +15,6 @@ AccessControl = {
     Settings = {
         Title = "访问控制设置"
         ShowSystemApps = "显示系统应用"
-        DescendingOrder = "倒序排列"
         SelectedFirst = "已选应用优先"
         SortMode = "排序方式"
         SortModeCurrent = "当前：%s"

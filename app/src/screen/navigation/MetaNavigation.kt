@@ -23,17 +23,14 @@ package com.github.yumelira.yumebox.screen.navigation
 import androidx.compose.runtime.Composable
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.feature.meta.presentation.screen.CustomRoutingScreen
+import com.github.yumelira.yumebox.presentation.component.Navigator
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.util.OverrideEditorStore
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.annotation.RootGraph
-import com.ramcosta.composedestinations.generated.destinations.OverrideConfigPreviewRouteDestination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 
 @Composable
-@Destination<RootGraph>
-fun CustomRoutingRoute(navigator: DestinationsNavigator) {
+fun CustomRoutingRoute(navigator: Navigator) {
     CustomRoutingScreen(
-        onNavigateBack = { navigator.navigateUp() },
+        onNavigateBack = { navigator.pop() },
         onOpenYamlEditor = { title, content, onSave ->
             OverrideEditorStore.setupConfigPreview(
                 title = title,
@@ -41,7 +38,7 @@ fun CustomRoutingRoute(navigator: DestinationsNavigator) {
                 language = LanguageScope.Yaml,
                 callback = onSave,
             )
-            navigator.navigate(OverrideConfigPreviewRouteDestination)
+            navigator.push(Route.OverrideConfigPreview)
         },
     )
 }

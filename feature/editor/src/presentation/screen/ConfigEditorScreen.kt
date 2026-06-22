@@ -38,15 +38,15 @@ import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigEditorViewMode
 import com.github.yumelira.yumebox.feature.editor.viewmodel.ConfigType
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
 fun ConfigEditorScreen(
-    navigator: DestinationsNavigator,
+    navigator: Navigator,
     configId: String,
     configType: ConfigType = ConfigType.Override,
     initialContent: String = "",

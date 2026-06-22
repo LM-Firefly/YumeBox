@@ -50,7 +50,7 @@ import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.ramcosta.composedestinations.generated.destinations.TrafficStatisticsScreenDestination
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -178,11 +178,7 @@ fun HomePager(mainInnerPadding: PaddingValues, isActive: Boolean) {
                     SpeedChart(
                         speedHistory = speedHistory,
                         isRunning = isRunning,
-                        onClick = {
-                            navigator.navigate(TrafficStatisticsScreenDestination) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.TrafficStatistics) },
                     )
                 }
             }

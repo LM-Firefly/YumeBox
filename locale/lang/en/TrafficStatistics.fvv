@@ -13,17 +13,7 @@ TrafficStatistics = {
         WeekTraffic = "This Week's Traffic"
     }
 
-    Compare = {
-        MoreThanYesterday = "vs yesterday +%s"
-        LessThanYesterday = "vs yesterday %s"
-        SameAsYesterday = "Same as yesterday"
-        WeekStats = "Last 7 days stats"
-    }
 
-    Chart = {
-        Hourly = "4 Hours"
-        Daily = "Daily"
-    }
 
     Donut = {
         Other = "Other"

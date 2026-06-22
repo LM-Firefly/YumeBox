@@ -211,6 +211,9 @@ dependencies {
     implementation(libs.miuix.blur.android)
     implementation(libs.haze)
     implementation(libs.androidx.navigationevent.compose)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
     val mmkv64 = libs.versions.mmkv64.get()
     val mmkv32 = libs.versions.mmkv32.get()
@@ -224,9 +227,6 @@ dependencies {
     implementation(libs.koin.androidx.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
-
-    implementation(libs.compose.destinations.core)
-    ksp(libs.compose.destinations.ksp)
 
     implementation(libs.timber)
     implementation(libs.xz)
@@ -256,8 +256,4 @@ dependencies {
 
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.core.ktx)
-}
-
-ksp {
-    arg("compose-destinations.defaultTransitions", "none")
 }

@@ -1,8 +1,6 @@
 <Components>
 Component = {
     ProfileCard = {
-        Export = "Export"
-        Edit = "Edit"
         Update = "Update"
         Delete = "Delete"
         RemoteSubscription = "Remote Subscription"
@@ -36,7 +34,6 @@ Component = {
 
     Navigation = {
         Back = "Back"
-        Refresh = "Refresh"
     }
 
     Message = {
@@ -61,40 +58,6 @@ Component = {
         Starting = "Starting..."
     }
 
-    Update = {
-        Action = {
-            DownloadNow = "Download Now"
-        }
-        Title = {
-            Available = "New Version Available"
-        }
-        Message = {
-            Available = "A new update is available"
-            CoverDesc = "Update cover"
-            CurrentVersion = "Current Version"
-            RemoteVersion = "Target Version"
-            Updating = "Updating"
-            Preparing = "Preparing download..."
-            DownloadingWithProgress = "Downloading update package %d%%"
-            Verifying = "Verifying update package..."
-            Finished = "Download complete, waiting for install confirmation"
-            Downloading = "Downloading update package..."
-            DownloadReady = "Download complete, ready to install"
-            VerifyFailed = "Package verification failed, please retry"
-            DownloadErrorWithCode = "Download failed (%d): %s"
-            Error = "Download failed, please try again later"
-            Close = "Got it"
-            Waiting = "Waiting for download..."
-            Checking = "Checking for updates..."
-            NoUpdate = "Already on the latest version"
-            CheckFailed = "Failed to check updates: %s"
-            MissingReleaseMetadata = "The latest release is missing update metadata"
-            NoCompatibleAsset = "No compatible APK was found in the latest release"
-            DownloadAlreadyRunning = "The update package is still downloading"
-            InstallPromptOpened = "Download complete, installer opened"
-            InstallFailed = "Failed to open installer: %s"
-        }
-    }
 
     ConfigInput = {
         PortLabel = "Port (leave empty to not modify)"
@@ -111,9 +74,6 @@ Component = {
     Editor = {
         CountItems = "Total %d items"
         Action = {
-            Reset = "Reset"
-            Add = "Add"
-            Delete = "Delete"
             Search = "Search"
         }
         Dialog = {
@@ -139,7 +99,6 @@ Component = {
             TargetReject = "REJECT"
             TargetDirect = "DIRECT"
             TargetMatch = "MATCH"
-            ErrorTargetRequired = "Please select target"
             ErrorContentRequired = "Rule content cannot be empty"
         }
     }

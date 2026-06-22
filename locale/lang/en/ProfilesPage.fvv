@@ -36,7 +36,6 @@ ProfilesPage = {
         NeedPermission = "Camera permission required"
         NeedCamera = "Camera permission required for scanning"
         SelectFromAlbum = "Select QR code from album"
-        ScanSuccess = "Scan successful"
         RecognizeSuccess = "Recognition successful"
         RecognizeFailed = "Failed to recognize QR code"
         RecognizeError = "Recognition failed: %s"
@@ -98,10 +97,6 @@ ProfilesPage = {
         ImportedConfigMissing = "Imported config missing: %s"
     }
 
-    Misc = {
-        Complete = "Complete"
-        Error = "Error"
-    }
 
     SettingsDialog = {
         Title = "Subscription Settings"

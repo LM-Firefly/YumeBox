@@ -87,7 +87,6 @@ private fun OnboardingActivityTheme(content: @Composable () -> Unit) {
     val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
     val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
     val invertOnPrimaryColors by appSettingsViewModel.invertOnPrimaryColors.state.collectAsState()
-    val smoothCornerEnabled by appSettingsViewModel.smoothCornerEnabled.state.collectAsState()
     val pageScale by appSettingsViewModel.pageScale.state.collectAsState()
 
     ProvideAndroidPlatformTheme {
@@ -102,7 +101,6 @@ private fun OnboardingActivityTheme(content: @Composable () -> Unit) {
                 themeMode = themeMode,
                 themeSeedColorArgb = themeSeedColorArgb,
                 invertOnPrimaryColors = invertOnPrimaryColors,
-                smoothCornerEnabled = smoothCornerEnabled,
             ) {
                 Scaffold { _ ->
                     Surface(

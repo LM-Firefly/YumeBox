@@ -3,7 +3,6 @@ About = {
     Title = "About"
 
     App = {
-        Description = "an ordinary box, as ordinary as it can possibly be"
         VersionLoading = "Loading..."
         VersionFailed = "Failed to load"
     }
@@ -20,8 +19,6 @@ About = {
     }
 
     License = {
-        CheckUpdate = "Check for Updates"
-        CheckUpdateSummary = "Check the latest GitHub release manually"
         Libraries = "Libraries"
         LibrariesSummary = "View all third-party libraries used in this app"
         AgplName = "GNU Affero General Public License v3.0"

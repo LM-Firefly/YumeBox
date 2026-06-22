@@ -21,10 +21,14 @@
 package com.github.yumelira.yumebox.screen.moe
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -90,6 +94,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
+import com.github.yumelira.yumebox.presentation.component.LocalNavigator
 import com.github.yumelira.yumebox.presentation.component.calculateWallpaperViewportLayout
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
@@ -97,6 +102,7 @@ import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.home.HomeProxyControlState
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -247,6 +253,31 @@ fun MoeHomePage(
         }
     }
 
+    val navigator = LocalNavigator.current
+    val wallpaperPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            uri ?: return@rememberLauncherForActivityResult
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+            navigator.push(
+                Route.MoeWallpaperCrop(
+                    wallpaperUri = uri.toString(),
+                    initialZoom = wallpaperZoom,
+                    initialBiasX = wallpaperBiasX,
+                    initialBiasY = wallpaperBiasY,
+                )
+            )
+        }
+    val launchWallpaperPicker: () -> Unit = {
+        wallpaperPickerLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
+
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val sidebarWidth = maxWidth * MoeUi.Sidebar.fraction
         val contentStart = (sidebarWidth - MoeUi.Sidebar.contentOverlap).coerceAtLeast(UiDp.dp0)
@@ -334,11 +365,12 @@ fun MoeHomePage(
                         .fillMaxHeight(0.66f)
                         .pointerInput(Unit) {
                             detectTapGestures(
+                                onTap = { launchWallpaperPicker() },
                                 onDoubleTap = {
                                     appSettingsViewModel.onMoeSidebarExpandedChange(
                                         !sidebarExpanded
                                     )
-                                }
+                                },
                             )
                         }
                         .graphicsLayer {

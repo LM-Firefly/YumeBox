@@ -52,7 +52,6 @@ import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.`Chart-column`
 import com.github.yumelira.yumebox.presentation.icon.yume.FlaskConical
 import com.github.yumelira.yumebox.presentation.icon.yume.`Git-merge`
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
@@ -60,15 +59,9 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Meta
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Wifi-cog`
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
-import com.ramcosta.composedestinations.generated.destinations.AboutScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.AppSettingsScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.FeatureScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.LogScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.MetaFeatureScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.NetworkSettingsScreenDestination
-import com.ramcosta.composedestinations.generated.destinations.OverrideScreenDestination
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
@@ -171,11 +164,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.App,
                         summary = MLang.Settings.UiSettings.AppSummary,
-                        onClick = {
-                            navigator.navigate(AppSettingsScreenDestination) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.AppSettings) },
                         startAction = {
                             CircularIcon(imageVector = Yume.`Settings-2`, contentDescription = null)
                         },
@@ -183,11 +172,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.Network,
                         summary = MLang.Settings.UiSettings.NetworkSummary,
-                        onClick = {
-                            navigator.navigate(NetworkSettingsScreenDestination) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.NetworkSettings) },
                         startAction = {
                             CircularIcon(imageVector = Yume.`Wifi-cog`, contentDescription = null)
                         },
@@ -195,9 +180,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.Override,
                         summary = MLang.Settings.UiSettings.OverrideSummary,
-                        onClick = {
-                            navigator.navigate(OverrideScreenDestination) { launchSingleTop = true }
-                        },
+                        onClick = { navigator.push(Route.Override) },
                         startAction = {
                             CircularIcon(imageVector = Yume.`Git-merge`, contentDescription = null)
                         },
@@ -205,11 +188,7 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     ArrowPreference(
                         title = MLang.Settings.UiSettings.MetaFeatures,
                         summary = MLang.Settings.UiSettings.MetaFeaturesSummary,
-                        onClick = {
-                            navigator.navigate(MetaFeatureScreenDestination) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onClick = { navigator.push(Route.MetaFeature) },
                         startAction = {
                             CircularIcon(imageVector = Yume.Meta, contentDescription = null)
                         },
@@ -223,32 +202,15 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                     ArrowPreference(
                         title = MLang.Settings.More.Lab,
                         summary = MLang.Settings.More.LabSummary,
-                        onClick = {
-                            navigator.navigate(FeatureScreenDestination) { launchSingleTop = true }
-                        },
+                        onClick = { navigator.push(Route.Feature) },
                         startAction = {
                             CircularIcon(imageVector = Yume.FlaskConical, contentDescription = null)
                         },
                     )
                     ArrowPreference(
-                        title = MLang.Settings.More.Logs,
-                        summary = MLang.Settings.More.LogsSummary,
-                        onClick = {
-                            navigator.navigate(LogScreenDestination) { launchSingleTop = true }
-                        },
-                        startAction = {
-                            CircularIcon(
-                                imageVector = Yume.`Chart-column`,
-                                contentDescription = null,
-                            )
-                        },
-                    )
-                    ArrowPreference(
                         title = MLang.Settings.More.About,
                         summary = MLang.Settings.More.AboutSummary,
-                        onClick = {
-                            navigator.navigate(AboutScreenDestination) { launchSingleTop = true }
-                        },
+                        onClick = { navigator.push(Route.About) },
                         startAction = {
                             CircularIcon(imageVector = Yume.Github, contentDescription = null)
                         },

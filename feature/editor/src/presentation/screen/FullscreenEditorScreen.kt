@@ -35,12 +35,12 @@ import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeE
 import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.DialogButtonRow
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Atom
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
@@ -48,7 +48,7 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 
 @Composable
 fun FullscreenEditorScreen(
-    navigator: DestinationsNavigator,
+    navigator: Navigator,
     title: String = "编辑配置",
     initialContent: String = "",
     language: LanguageScope = LanguageScope.Yaml,

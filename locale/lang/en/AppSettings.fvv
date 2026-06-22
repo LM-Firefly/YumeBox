@@ -13,11 +13,8 @@ AppSettings = {
 
     Behavior = {
         AutoStartTitle = "Auto Start"
-        AutoStartSummary = "Automatically start proxy service on app launch and boot"
         AutoUpdateOnStartTitle = "Update on Start"
-        AutoUpdateOnStartSummary = "Auto-update the active subscription profile on start"
         OneChinaTitle = "One-China Policy"
-        OneChinaSummary = "Automatically display TW region flags and codes as China"
     }
 
     Interface = {
@@ -27,98 +24,47 @@ AppSettings = {
         ThemeModeLight = "Light"
         ThemeModeDark = "Dark"
         LanguageTitle = "App Language"
-        LanguageSummary = "Choose the app language"
         LanguageSystem = "Follow System"
         LanguageChinese = "简体中文"
         LanguageEnglish = "English"
 
         ColorThemeTitle = "Theme Palette"
-        ColorThemeSummary = "Pick a seed color and auto-derive monochrome theme colors"
         ColorThemePickerTitle = "Pick Theme Color"
         ColorThemeCodeLabel = "Theme Color Code (#RRGGBB)"
         ColorThemeCustomSummary = "Current theme color: %s"
         ThemeColorPolarityInvertTitle = "Invert Theme Foreground"
-        ThemeColorPolarityInvertSummary = "If themed colors look odd, try enabling this"
-        PredictiveBackTitle = "Predictive Back Gesture"
-        PredictiveBackSummary = "Enable predictive back gesture support on Android 14 and above"
-        SmoothCornerTitle = "Smooth Corner"
-        SmoothCornerSummary = "Enable global smooth rounded corners"
         TopBarBlurTitle = "Blur"
-        TopBarBlurSummary = "Apply a  blur background to"
         AutoHideNavbarTitle = "Auto-hide Navbar"
-        AutoHideNavbarSummary = "Hide navbar on scroll down and show on scroll up"
-        LegacyNavbarStyleTitle = "Floating Navigation Bar"
-        LegacyNavbarStyleSummary = "Floating Navigation Bar Style"
 
         PageScaleTitle = "Page Scale"
-        PageScaleSummary = "Adjust the overall UI scaling ratio of the app"
         PageScaleDialogSummary = "80% - 120%"
 
         ClassicHomeTitle = "Classic Home"
-        ClassicHomeSummary = "Switch back to the legacy home layout"
         HomeQuoteTitle = "Home Quote"
         HomeQuoteDefault = "Wait for a cloud to finish roaming on a quiet route"
         HomeQuoteAuthorTitle = "Home Quote Author"
         HomeQuoteAuthorDefault = "YumeBox"
         EditHomeQuoteTitle = "Edit Home Quote"
         EditHomeQuoteAuthorTitle = "Edit Home Quote Author"
-        HomeSidebarExpandedTitle = "Expand Home Sidebar by Default"
-        HomeSidebarExpandedSummary = "Open the left info sidebar by default on the home page"
-        HomeWallpaperTitle = "Home Wallpaper"
-        HomeWallpaperSummary = "Choose a custom wallpaper for the home page"
-        HomeWallpaperCropTitle = "Wallpaper Cropper"
-        HomeWallpaperCropSummary = "Use the home viewport height and slide left or right to pick the visible area"
-        HomeWallpaperCropModeFree = "Manual Preview"
-        HomeWallpaperCropModeFixed = "Fixed Ratio Crop"
-        HomeWallpaperCropSwitchMode = "Switch Mode"
-        ResetHomeWallpaperTitle = "Reset Home Wallpaper"
         HomeWallpaperImportFailed = "Could not copy the wallpaper locally; using the original source"
     }
 
     Privacy = {
-        BiometricUnlockTitle = "Biometric Unlock"
-        BiometricUnlockSummary = "Require biometric or device credential authentication on app launch"
-        ScreenshotProtectionTitle = "Screenshot Protection"
-        ScreenshotProtectionSummary = "Block screenshots, screen recording, and recents preview"
-        BiometricDialogTitleEnable = "Enable Biometric Unlock"
-        BiometricDialogTitleDisable = "Disable Biometric Unlock"
-        ScreenshotDialogTitleEnable = "Enable Screenshot Protection"
-        ScreenshotDialogTitleDisable = "Disable Screenshot Protection"
-        BiometricPromptTitle = "Verify Identity"
-        BiometricPromptMessage = "Complete authentication to continue into the app"
-        BiometricRetryButton = "Retry"
-        BiometricExitButton = "Exit"
-        BiometricUnavailableTitle = "Biometric Unavailable"
-        BiometricUnavailableMessage = "Authentication is currently unavailable. Please try again later or check device credential and biometric settings"
-        BiometricUnavailableNoneEnrolled = "No biometric data is enrolled yet. Add biometrics in system settings or enable a secure screen lock first"
-        BiometricUnavailableNoHardware = "This device does not support biometrics. Enable a secure screen lock or disable this feature"
-        BiometricUnavailableHwUnavailable = "Biometric hardware is currently unavailable. Please try again later"
-        BiometricUnavailableNoDeviceCredential = "No secure screen lock is configured. Set up a PIN, pattern, or password first"
 
         HideIconTitle = "Hide App Icon"
-        HideIconSummary = "After hiding, you can open via dialer *#*#0721#*#*"
         HideFromRecentsTitle = "Hide Recents Card"
-        HideFromRecentsSummary = "Do not show this app in the recent tasks list (recents card)"
     }
 
     ServiceSection = {
         TrafficNotificationTitle = "Show Traffic Notification"
-        TrafficNotificationSummary = "Display traffic usage in notification bar"
         SingleNodeTestTitle = "Single Node Test"
-        SingleNodeTestSummary = "Tap icon on node card to test individual node delay"
         ExitUiWhenBackgroundTitle = "Release UI In Background"
-        ExitUiWhenBackgroundSummary = "Release the activity UI when the app is fully hidden in background while keeping the proxy service running"
         BatteryOptimizationTitle = "Unrestricted Battery"
-        BatteryOptimizationSummaryEnabled = "Background activity is currently unrestricted. Tap to open system power management settings"
-        BatteryOptimizationSummaryDisabled = "Battery optimization is still restricting background activity. Set it to unrestricted to reduce background kills"
+        BatteryOptimizationSummaryEnabled = "Background activity is unrestricted"
+        BatteryOptimizationSummaryDisabled = "Restricted by battery optimization; tap to fix"
     }
 
     Network = {
-        UpdateChannelTitle = "Update Channel"
-        UpdateChannelSummary = "Choose which GitHub Release channel is used for update checks"
-        UpdateChannelStable = "Stable"
-        UpdateChannelPre = "Pre-release"
-        UpdateChannelSmart = "Smart"
         CustomUserAgentTitle = "Custom User-Agent"
         CustomUserAgentSummaryDefault = "Not set, using default"
     }
@@ -134,7 +80,6 @@ AppSettings = {
     }
 
     Button = {
-        Cancel = "Cancel"
         Apply = "Apply"
     }
 }

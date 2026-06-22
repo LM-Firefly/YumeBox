@@ -8,13 +8,10 @@ ProfilesVM = {
         ProfileUpdated = "配置已更新：%s"
         UpdateFailed = "更新配置失败：%s"
         ToggleFailed = "切换状态失败：%s"
-        ProfileImported = "配置已导入：%s"
-        ImportFailed = "导入配置失败：%s"
     }
 
     Progress = {
         Preparing = "准备下载..."
-        ImportPreparing = "准备导入文件..."
         Verifying = "正在验证配置..."
         ImportComplete = "导入完成"
     }

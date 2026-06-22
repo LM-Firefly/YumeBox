@@ -11,7 +11,6 @@ Feature = {
         SwitchStartSubStore = "Start Sub-Store Service"
         AllowLan = "Allow LAN Access"
         AllowLanSummary = "Allow LAN devices to access Sub-Store"
-        AutoCloseMode = "Auto Close Mode"
         AutoCloseModeSummary = "Select service auto close time, long running will consume more performance"
         AutoCloseModeAlwaysOn = "Always On"
         AutoCloseMode5Min = "5 minutes"

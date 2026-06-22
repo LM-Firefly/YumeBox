@@ -13,11 +13,8 @@ AppSettings = {
 
     Behavior = {
         AutoStartTitle = "自动启动"
-        AutoStartSummary = "应用启动和开机时自动启动代理服务"
         AutoUpdateOnStartTitle = "启动更新配置"
-        AutoUpdateOnStartSummary = "启动时自动更新当前订阅配置"
         OneChinaTitle = "坚持一个中国原则"
-        OneChinaSummary = "自动将台湾地区旗帜及区域码显示为中国"
     }
 
     Interface = {
@@ -27,98 +24,47 @@ AppSettings = {
         ThemeModeLight = "浅色"
         ThemeModeDark = "深色"
         LanguageTitle = "应用语言"
-        LanguageSummary = "选择应用语言"
         LanguageSystem = "跟随系统"
         LanguageChinese = "简体中文"
         LanguageEnglish = "English"
 
         ColorThemeTitle = "主题配色"
-        ColorThemeSummary = "点击选择主题色，并自动推导黑白主题配色"
         ColorThemePickerTitle = "选择主题色"
         ColorThemeCodeLabel = "主题色代码（#RRGGBB）"
         ColorThemeCustomSummary = "当前主题色：%s"
         ThemeColorPolarityInvertTitle = "反转主题前景色"
-        ThemeColorPolarityInvertSummary = "当主题取色看起来怪异时可尝试开启"
-        PredictiveBackTitle = "预测返回手势"
-        PredictiveBackSummary = "在 Android 14 及以上启用预测返回手势支持"
-        SmoothCornerTitle = "平滑圆角"
-        SmoothCornerSummary = "启用全局平滑圆角效果"
         TopBarBlurTitle = "背景模糊"
-        TopBarBlurSummary = "应用模糊背景"
         AutoHideNavbarTitle = "滑动隐藏底栏"
-        AutoHideNavbarSummary = "向下滑动时自动隐藏底栏，向上滑动时显示"
-        LegacyNavbarStyleTitle = "浮动导航栏"
-        LegacyNavbarStyleSummary = "悬浮导航栏样式"
 
         PageScaleTitle = "页面缩放"
-        PageScaleSummary = "调整应用界面的整体缩放比例"
         PageScaleDialogSummary = "80% - 120%"
 
         ClassicHomeTitle = "经典首页"
-        ClassicHomeSummary = "回退到旧版首页布局"
         HomeQuoteTitle = "首页一言"
         HomeQuoteDefault = "在安静的线路上，等一朵云完成漫游"
         HomeQuoteAuthorTitle = "一言作者"
         HomeQuoteAuthorDefault = "YumeBox"
         EditHomeQuoteTitle = "编辑一言"
         EditHomeQuoteAuthorTitle = "编辑一言作者"
-        HomeSidebarExpandedTitle = "首页侧栏默认展开"
-        HomeSidebarExpandedSummary = "进入首页时默认展开左侧信息栏"
-        HomeWallpaperTitle = "首页壁纸"
-        HomeWallpaperSummary = "为首页选择自定义壁纸"
-        HomeWallpaperCropTitle = "壁纸选择裁剪器"
-        HomeWallpaperCropSummary = "以首页可视区域为选区，左右滑动选择显示范围"
-        HomeWallpaperCropModeFree = "手动预览"
-        HomeWallpaperCropModeFixed = "固定比例裁剪"
-        HomeWallpaperCropSwitchMode = "切换模式"
-        ResetHomeWallpaperTitle = "重置首页壁纸"
         HomeWallpaperImportFailed = "无法将壁纸复制到本地，已改用原始来源"
     }
 
     Privacy = {
-        BiometricUnlockTitle = "启动时生物验证"
-        BiometricUnlockSummary = "每次打开应用需要生物识别或锁屏凭据验证才能进入"
-        ScreenshotProtectionTitle = "禁止截图"
-        ScreenshotProtectionSummary = "禁止截图、录屏及最近任务预览"
-        BiometricDialogTitleEnable = "开启启动验证"
-        BiometricDialogTitleDisable = "关闭启动验证"
-        ScreenshotDialogTitleEnable = "开启禁止截图"
-        ScreenshotDialogTitleDisable = "关闭禁止截图"
-        BiometricPromptTitle = "验证身份"
-        BiometricPromptMessage = "请完成验证以继续进入应用"
-        BiometricRetryButton = "重试"
-        BiometricExitButton = "退出"
-        BiometricUnavailableTitle = "无法使用指纹验证"
-        BiometricUnavailableMessage = "当前无法使用生物识别，请稍后重试或检查系统锁屏与生物识别设置"
-        BiometricUnavailableNoneEnrolled = "您尚未录入生物信息，请先在系统设置中录入，或启用 PIN、图案、密码等锁屏验证"
-        BiometricUnavailableNoHardware = "当前设备不支持生物识别，请启用系统锁屏验证或关闭此功能"
-        BiometricUnavailableHwUnavailable = "生物识别硬件当前不可用，请稍后再试"
-        BiometricUnavailableNoDeviceCredential = "当前未设置系统锁屏验证，请先启用 PIN、图案或密码"
 
         HideIconTitle = "隐藏应用图标"
-        HideIconSummary = "隐藏后可通过拨号盘 *#*#0721#*#* 打开"
         HideFromRecentsTitle = "隐藏后台卡片"
-        HideFromRecentsSummary = "启用后不在最近任务列表（后台卡片）中显示应用"
     }
 
     ServiceSection = {
         TrafficNotificationTitle = "显示流量通知"
-        TrafficNotificationSummary = "在通知栏中显示流量使用情况"
         SingleNodeTestTitle = "单节点测试"
-        SingleNodeTestSummary = "点击节点卡片右侧图标测试单个节点延迟"
         ExitUiWhenBackgroundTitle = "后台隐藏时释放界面"
-        ExitUiWhenBackgroundSummary = "应用退到后台且界面不可见时主动释放 UI，仅保留运行中的代理服务"
         BatteryOptimizationTitle = "电池优化无限制"
-        BatteryOptimizationSummaryEnabled = "当前已允许后台无限制运行，点击可打开系统电源管理设置"
-        BatteryOptimizationSummaryDisabled = "当前仍受系统电池优化限制，建议设为无限制以降低后台被杀概率"
+        BatteryOptimizationSummaryEnabled = "已允许后台无限制运行"
+        BatteryOptimizationSummaryDisabled = "受电池优化限制，点击前往设置"
     }
 
     Network = {
-        UpdateChannelTitle = "更新通道"
-        UpdateChannelSummary = "选择检查更新时使用的 GitHub Release 通道"
-        UpdateChannelStable = "Stable"
-        UpdateChannelPre = "Pre-release"
-        UpdateChannelSmart = "Smart"
         CustomUserAgentTitle = "自定义 User-Agent"
         CustomUserAgentSummaryDefault = "未设置，使用默认值"
     }
@@ -134,7 +80,6 @@ AppSettings = {
     }
 
     Button = {
-        Cancel = "取消"
         Apply = "应用"
     }
 }
