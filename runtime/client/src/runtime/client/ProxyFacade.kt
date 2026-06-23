@@ -88,6 +88,8 @@ class ProxyFacade(private val context: Context) {
         const val PROXY_SELECT_FULL_REFRESH_DELAY_MS = 400L
         const val ROOT_TUN_BOOTSTRAP_ATTEMPTS = 20
         const val ROOT_TUN_BOOTSTRAP_DELAY_MS = 300L
+        const val CONTROLLER_SWITCH_STOP_TIMEOUT_MS = 4000L
+        const val CONTROLLER_SWITCH_STOP_POLL_MS = 100L
     }
 
     private val appContext: Context = context.appContextOrSelf
@@ -171,6 +173,7 @@ class ProxyFacade(private val context: Context) {
     private var rootTunBootstrapJob: Job? = null
     private val refreshProxyGroupsMutex = Mutex()
     private val operationMutex = Mutex()
+    private val controllerSwitchMutex = Mutex()
     private val syncPriorityRequests =
         MutableStateFlow<Map<String, ProxyGroupSyncPriority>>(emptyMap())
     private var activeProxyGroupSyncPriority = ProxyGroupSyncPriority.OFF
@@ -221,6 +224,10 @@ class ProxyFacade(private val context: Context) {
     }
 
     fun applyRemoteControllerState() {
+        scope.launch { controllerSwitchMutex.withLock { applyRemoteControllerStateLocked() } }
+    }
+
+    private suspend fun applyRemoteControllerStateLocked() {
         if (isRemoteControllerActive()) {
             val snapshot = _runtimeSnapshot.value
             if (
@@ -239,10 +246,10 @@ class ProxyFacade(private val context: Context) {
                 )
             }
             startTrafficPolling()
-            scope.launch { refreshAllSafely() }
+            refreshAllSafely()
         } else if (_runtimeSnapshot.value.owner == RuntimeOwner.RemoteController) {
             // controller mode turned off -> return to normal local/root reconciliation
-            scope.launch { reconcileRuntimeState() }
+            reconcileRuntimeState()
         }
     }
 
@@ -278,23 +285,35 @@ class ProxyFacade(private val context: Context) {
         )
     }
 
-    private fun stopLocalRuntimeForControllerSwitch() {
-        scope.launch {
-            runCatching {
-                val owner = detectActiveOwner()
-                if (
-                    owner == RuntimeOwner.LocalTun ||
-                        owner == RuntimeOwner.LocalHttp ||
-                        owner == RuntimeOwner.RootTun
-                ) {
-                    Timber.i("Controller switch: stopping local runtime owner=$owner")
-                    runtimeControl.stop(owner)
-                    stopTrafficPolling()
-                }
-            }.onFailure { error ->
-                Timber.w(error, "Failed to stop local runtime on controller switch")
+    private suspend fun stopLocalRuntimeForControllerSwitch() {
+        runCatching {
+            val owner = detectActiveOwner()
+            if (
+                owner == RuntimeOwner.LocalTun ||
+                    owner == RuntimeOwner.LocalHttp ||
+                    owner == RuntimeOwner.RootTun
+            ) {
+                Timber.i("Controller switch: stopping local runtime owner=$owner")
+                runtimeControl.stop(owner)
+                stopTrafficPolling()
+                awaitLocalRuntimeFullyStopped(owner)
+            }
+        }.onFailure { error ->
+            Timber.w(error, "Failed to stop local runtime on controller switch")
+        }
+    }
+
+    // stopService is async; wait until the local service is really gone, then reconcile persisted state.
+    private suspend fun awaitLocalRuntimeFullyStopped(owner: RuntimeOwner) {
+        val mode = localModeForOwner(owner)
+        if (mode != null) {
+            val deadline = System.currentTimeMillis() + CONTROLLER_SWITCH_STOP_TIMEOUT_MS
+            while (System.currentTimeMillis() < deadline) {
+                if (!StatusProvider.isLocalRuntimeServiceAlive(mode)) break
+                delay(CONTROLLER_SWITCH_STOP_POLL_MS)
             }
         }
+        StatusProvider.reconcilePersistedRuntimeState()
     }
 
     fun setProxyGroupSyncPriority(

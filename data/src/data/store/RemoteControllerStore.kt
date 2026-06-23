@@ -50,4 +50,13 @@ class RemoteControllerStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = 
         if (id.isBlank()) return null
         return backends.value.firstOrNull { it.id == id }
     }
+
+    companion object {
+        const val MMKV_ID = "remote_controller"
+
+        private val gate by lazy { RemoteControllerStore(MMKVProvider().getMMKV(MMKV_ID)) }
+
+        /** Live, cross-process check of whether remote-controller mode is active. */
+        fun isActive(): Boolean = gate.controllerEnabled.value && gate.activeBackend() != null
+    }
 }

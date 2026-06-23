@@ -46,6 +46,7 @@ fun AppFormDialog(
     cancelText: String = MLang.Component.Button.Cancel,
     confirmText: String = MLang.Component.Button.Confirm,
     scrollable: Boolean = true,
+    onDismissFinished: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     AppDialog(
@@ -54,6 +55,7 @@ fun AppFormDialog(
         title = title,
         summary = summary,
         onDismissRequest = onDismissRequest,
+        onDismissFinished = onDismissFinished,
     ) {
         val contentModifier =
             Modifier.fillMaxWidth().let {

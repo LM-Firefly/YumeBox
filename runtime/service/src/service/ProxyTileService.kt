@@ -33,6 +33,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.data.store.RemoteControllerStore
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
@@ -91,6 +92,10 @@ class ProxyTileService : TileService() {
         if (toggleJob?.isActive == true) return
 
         toggleJob = scope.launch {
+            if (RemoteControllerStore.isActive()) {
+                updateTileState(true)
+                return@launch
+            }
             val snapshot = currentSnapshot()
             val isRunning = snapshot.running
             val currentMode = effectiveMode(snapshot)

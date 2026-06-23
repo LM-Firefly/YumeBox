@@ -25,6 +25,24 @@ Feature = {
         Unknown = "Unknown Panel"
         CreateShortcut = "Create desktop shortcut"
         CreateShortcutSummary = "Add the current panel to the home screen with the site icon"
+        ShortcutTitle = "Create Shortcut"
+        ShortcutName = "Name"
+        ShortcutPickIcon = "Pick Icon"
+        ShortcutResetIcon = "Reset"
+    }
+
+    RemoteController = {
+        Section = "External Control"
+        ModeTitle = "External Controller Mode"
+        ControlBackend = "Control Backend"
+        AddBackend = "Add Backend"
+        EditBackend = "Edit Backend"
+        Name = "Name"
+        Host = "IP / Host"
+        Port = "Port"
+        Secret = "Secret (optional)"
+        PortRangeError = "Port must be in range 1-65535"
+        Delete = "Delete"
     }
 
     SubStore = {

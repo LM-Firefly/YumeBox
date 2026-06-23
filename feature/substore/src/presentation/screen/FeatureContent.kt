@@ -25,7 +25,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.github.yumelira.yumebox.common.util.DeviceUtil
-import com.github.yumelira.yumebox.data.store.LinkOpenMode
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.EnumSelector
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
@@ -37,7 +36,6 @@ import com.github.yumelira.yumebox.presentation.viewmodel.FeatureViewModel
 import com.github.yumelira.yumebox.substore.model.AutoCloseMode
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
-import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.preference.ArrowPreference
@@ -70,7 +68,6 @@ fun FeatureContent(
     val isJavetLoaded by viewModel.isJavetLoaded.collectAsState()
     val isSubStoreInitialized by viewModel.isSubStoreInitialized.collectAsState()
     val selectedPanelType by viewModel.selectedPanelType.state.collectAsState()
-    val panelOpenMode by viewModel.panelOpenMode.state.collectAsState()
 
     val panelDisplayNames = listOf("Zashboard", "MetaCubeXD", "Yacd")
 
@@ -84,14 +81,35 @@ fun FeatureContent(
             innerPadding = combinePaddingValues(innerPadding, mainLikePadding),
         ) {
             item { topSection() }
+
+            item {
+                val currentPanelName =
+                    panelDisplayNames.getOrElse(selectedPanelType) { MLang.Feature.Panel.Unknown }
+                val panelUrl = panelUrlFor(selectedPanelType)
+
+                Title(MLang.Feature.Panel.Section)
+                Card {
+                    val safeSelectedPanelType =
+                        selectedPanelType.coerceIn(0, panelDisplayNames.lastIndex)
+                    WindowDropdownPreference(
+                        title = MLang.Feature.Panel.SelectPanel,
+                        summary = null,
+                        items = panelDisplayNames,
+                        selectedIndex = safeSelectedPanelType,
+                        onSelectedIndexChange = { viewModel.setSelectedPanelType(it) },
+                    )
+
+                    ArrowPreference(
+                        title = MLang.Feature.Panel.CreateShortcut,
+                        summary = null,
+                        enabled = panelUrl.isNotBlank(),
+                        onClick = { onCreatePanelShortcut(panelUrl, currentPanelName) },
+                    )
+                }
+            }
+
             item {
                 val canStartService = isExtensionInstalled && isSubStoreInitialized
-                when {
-                    isServiceRunning -> MLang.Feature.ServiceStatus.Running.format(frontendUrl)
-                    !isExtensionInstalled -> MLang.Feature.ServiceStatus.NeedExtension
-                    !isSubStoreInitialized -> MLang.Feature.ServiceStatus.NeedSubStore
-                    else -> MLang.Feature.ServiceStatus.NotRunning
-                }
                 Title(MLang.Feature.ServiceStatus.Section)
                 Card {
                     val autoCloseItems = AutoCloseMode.entries.map { it.getDisplayName() }
@@ -128,81 +146,8 @@ fun FeatureContent(
                         enabled = !DeviceUtil.is32BitDevice() && isServiceRunning,
                         onClick = {
                             if (!isServiceRunning) return@ArrowPreference
-                            when (panelOpenMode) {
-                                LinkOpenMode.IN_APP -> onOpenInAppUrl(subStoreUrl)
-                                LinkOpenMode.EXTERNAL_BROWSER -> onOpenExternalUrl(subStoreUrl)
-                            }
+                            onOpenInAppUrl(subStoreUrl)
                         },
-                    )
-                }
-            }
-
-            item {
-                val currentPanelName =
-                    panelDisplayNames.getOrElse(selectedPanelType) { MLang.Feature.Panel.Unknown }
-                val panelUrl = panelUrlFor(selectedPanelType)
-                val panelOpenModeItems =
-                    listOf(
-                        MLang.ProfilesPage.LinkSettings.OpenModeInApp,
-                        MLang.ProfilesPage.LinkSettings.OpenModeExternal,
-                    )
-                val panelOpenModeIndex =
-                    when (panelOpenMode) {
-                        LinkOpenMode.IN_APP -> 0
-                        LinkOpenMode.EXTERNAL_BROWSER -> 1
-                    }
-
-                Title(MLang.Feature.Panel.Section)
-                Card {
-                    val safeSelectedPanelType =
-                        selectedPanelType.coerceIn(0, panelDisplayNames.lastIndex)
-                    WindowDropdownPreference(
-                        title = MLang.Feature.Panel.SelectPanel,
-                        summary =
-                            panelDisplayNames.getOrElse(safeSelectedPanelType) {
-                                panelDisplayNames.first()
-                            },
-                        items = panelDisplayNames,
-                        selectedIndex = safeSelectedPanelType,
-                        onSelectedIndexChange = { viewModel.setSelectedPanelType(it) },
-                    )
-
-                    BasicComponent(
-                        title = "URL",
-                        summary = panelUrl.ifEmpty { currentPanelName },
-                        onClick = {
-                            if (panelUrl.isBlank()) return@BasicComponent
-                            when (panelOpenMode) {
-                                LinkOpenMode.IN_APP -> onOpenInAppUrl(panelUrl)
-                                LinkOpenMode.EXTERNAL_BROWSER -> onOpenExternalUrl(panelUrl)
-                            }
-                        },
-                    )
-
-                    WindowDropdownPreference(
-                        title = MLang.ProfilesPage.LinkSettings.OpenMode,
-                        summary =
-                            panelOpenModeItems.getOrElse(panelOpenModeIndex) {
-                                panelOpenModeItems.first()
-                            },
-                        items = panelOpenModeItems,
-                        selectedIndex = panelOpenModeIndex,
-                        onSelectedIndexChange = { index ->
-                            viewModel.setPanelOpenMode(
-                                when (index) {
-                                    0 -> LinkOpenMode.IN_APP
-                                    1 -> LinkOpenMode.EXTERNAL_BROWSER
-                                    else -> LinkOpenMode.IN_APP
-                                }
-                            )
-                        },
-                    )
-
-                    ArrowPreference(
-                        title = MLang.Feature.Panel.CreateShortcut,
-                        summary = MLang.Feature.Panel.CreateShortcutSummary,
-                        enabled = panelUrl.isNotBlank(),
-                        onClick = { onCreatePanelShortcut(panelUrl, currentPanelName) },
                     )
                 }
             }

@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.common.util
 
 import android.content.Context
+import android.net.Uri
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -30,9 +31,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object DashboardShortcutHelper {
-    suspend fun createPanelShortcut(context: Context, url: String, label: String) {
+    suspend fun createPanelShortcut(
+        context: Context,
+        url: String,
+        label: String,
+        iconUri: Uri? = null,
+    ) {
         if (url.isBlank()) return
-        val icon = withContext(Dispatchers.IO) { fetchFavicon(context, url) }
+        val icon =
+            withContext(Dispatchers.IO) {
+                iconUri?.let { loadIconFromUri(context, it) } ?: fetchFavicon(context, url)
+            }
         val shortcut =
             ShortcutInfoCompat.Builder(context, "panel_" + url.hashCode())
                 .setShortLabel(label.ifBlank { "Dashboard" })
@@ -45,6 +54,16 @@ object DashboardShortcutHelper {
                 ShortcutManagerCompat.requestPinShortcut(context, shortcut, null)
             }
         }
+    }
+
+    private fun loadIconFromUri(context: Context, uri: Uri): IconCompat? {
+        return runCatching {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    val bmp = android.graphics.BitmapFactory.decodeStream(input) ?: return null
+                    IconCompat.createWithBitmap(bmp)
+                }
+            }
+            .getOrNull()
     }
 
     private fun fetchFavicon(context: Context, url: String): IconCompat {

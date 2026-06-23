@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.data.store.RemoteControllerStore
 import com.github.yumelira.yumebox.service.ClashService
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.TunService
@@ -48,6 +49,13 @@ object RuntimeServiceLauncher {
         store.append(
             "${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: request start source=$source mode=${mode.name}"
         )
+
+        if (RemoteControllerStore.isActive()) {
+            store.append(
+                "${RuntimeStartupLogStore.scopeForMode(mode).tag} launcher: skipped, remote controller active"
+            )
+            return
+        }
 
         if (mode == ProxyMode.Tun && StatusProvider.isTunStarting()) {
             store.append("LOCAL_TUN launcher: skipped, already starting")

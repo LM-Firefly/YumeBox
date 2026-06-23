@@ -57,7 +57,7 @@ fun PreferenceArrowItem(
         summary = summary,
         holdDownState = holdDownState,
         endActions = endActions ?: {},
-        bottomAction = bottomAction ?: {},
+        bottomAction = bottomAction,
         onClick = onClick,
     )
 }
@@ -72,7 +72,7 @@ fun PreferenceValueItem(
     BasicComponent(
         title = title,
         summary = summary,
-        endActions = endActions ?: {},
+        endActions = endActions,
         onClick = onClick,
     )
 }

@@ -21,12 +21,18 @@
 package com.github.yumelira.yumebox.screen.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.WebViewActivity
+import com.github.yumelira.yumebox.common.util.DashboardShortcutHelper
 import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.screen.FeatureContent
+import com.github.yumelira.yumebox.screen.feature.PanelShortcutDialog
 import com.github.yumelira.yumebox.screen.feature.RemoteControllerSection
 import kotlinx.coroutines.launch
 
@@ -34,18 +40,34 @@ import kotlinx.coroutines.launch
 fun FeatureScreen(navigator: Navigator) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    var shortcutTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var shortcutDialogVisible by remember { mutableStateOf(false) }
+
     FeatureContent(
         onOpenExternalUrl = { url -> openUrl(context, url) },
         onOpenInAppUrl = { url -> WebViewActivity.start(context, url) },
         onCreatePanelShortcut = { url, label ->
-            scope.launch {
-                com.github.yumelira.yumebox.common.util.DashboardShortcutHelper.createPanelShortcut(
-                    context,
-                    url,
-                    label,
+            shortcutTarget = url to label
+            shortcutDialogVisible = true
+        },
+        topSection = {
+            RemoteControllerSection()
+            shortcutTarget?.let { (url, label) ->
+                PanelShortcutDialog(
+                    show = shortcutDialogVisible,
+                    url = url,
+                    defaultLabel = label,
+                    onDismiss = { shortcutDialogVisible = false },
+                    onConfirm = { name, iconUri ->
+                        scope.launch {
+                            DashboardShortcutHelper.createPanelShortcut(context, url, name, iconUri)
+                        }
+                        shortcutDialogVisible = false
+                    },
+                    onDismissFinished = { shortcutTarget = null },
                 )
             }
         },
-        topSection = { RemoteControllerSection() },
     )
 }

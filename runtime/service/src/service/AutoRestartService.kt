@@ -38,6 +38,7 @@ import com.github.yumelira.yumebox.data.store.AppSettingsStore
 import com.github.yumelira.yumebox.data.store.FeatureStore
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
+import com.github.yumelira.yumebox.data.store.RemoteControllerStore
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.util.AutoStartExecutionGate
 import com.github.yumelira.yumebox.service.common.util.AutoStartUpdatePolicy
@@ -122,6 +123,10 @@ class AutoRestartService : Service() {
 
     private suspend fun checkAndAutoStart(reason: String) {
         if (!appSettingsStorage.automaticRestart.value) return
+        if (RemoteControllerStore.isActive()) {
+            Timber.tag(TAG).i("Skip auto start: remote controller mode active")
+            return
+        }
         if (AutoStartSessionGate.shouldSkipAutoStart()) {
             Timber.tag(TAG).i("Skip auto start: manual pause gate is active in current session")
             return

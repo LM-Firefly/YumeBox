@@ -25,6 +25,24 @@ Feature = {
         Unknown = "未知面板"
         CreateShortcut = "在桌面创建快捷方式"
         CreateShortcutSummary = "将当前面板添加到桌面，使用网站图标，点击直接打开"
+        ShortcutTitle = "创建快捷方式"
+        ShortcutName = "名称"
+        ShortcutPickIcon = "选择图标"
+        ShortcutResetIcon = "恢复默认"
+    }
+
+    RemoteController = {
+        Section = "外部控制"
+        ModeTitle = "外部控制器模式"
+        ControlBackend = "控制后端"
+        AddBackend = "添加后端"
+        EditBackend = "编辑后端"
+        Name = "名称"
+        Host = "IP / Host"
+        Port = "端口"
+        Secret = "密钥（可留空）"
+        PortRangeError = "端口范围必须是 1-65535"
+        Delete = "删除"
     }
 
     SubStore = {
