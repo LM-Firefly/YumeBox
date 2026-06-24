@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,9 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.di
+package com.github.yumelira.yumebox.feature.override.di
 
-import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
+import com.github.yumelira.yumebox.feature.override.presentation.viewmodel.OverrideConfigViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -30,7 +30,7 @@ val featureOverrideViewModelModule = module {
             configRepo = get(),
             resolver = get(),
             bindingProvider = get(),
-            activeProfileOverrideReloader = get(),
+            activeProfileOverrideApplier = get(),
         )
     }
 }

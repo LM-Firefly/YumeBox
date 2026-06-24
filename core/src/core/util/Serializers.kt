@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -27,6 +27,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import java.util.Date
+import java.util.UUID
 
 object DateSerializer : KSerializer<Date> {
     override val descriptor: SerialDescriptor
@@ -36,5 +37,18 @@ object DateSerializer : KSerializer<Date> {
 
     override fun serialize(encoder: Encoder, value: Date) {
         encoder.encodeLong(value.time)
+    }
+}
+
+class UUIDSerializer : KSerializer<UUID> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): UUID {
+        return UUID.fromString(decoder.decodeString())
+    }
+
+    override fun serialize(encoder: Encoder, value: UUID) {
+        encoder.encodeString(value.toString())
     }
 }

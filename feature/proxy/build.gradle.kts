@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.koin.core)
     implementation(libs.koin.android)
@@ -54,10 +55,10 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.timber)
     implementation(libs.haze)
+    implementation(libs.haze.blur)
     implementation(libs.sketch.compose)
     implementation(libs.sketch.http)
     implementation(libs.miuix.ui)
     implementation(libs.miuix.preference)
     implementation(libs.miuix.icons)
 }
-

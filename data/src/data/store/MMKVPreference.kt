@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -401,27 +401,4 @@ abstract class MMKVPreference(
     }
 }
 
-data class Preference<T>(
-    val state: StateFlow<T>,
-    private val update: (T) -> Unit,
-    private val get: () -> T,
-    private val refreshState: () -> Unit = { update(get()) },
-) {
-    val value: T
-        get() = get()
-
-    fun set(value: T) = update(value)
-
-    fun refresh() = refreshState()
-
-    fun invalidate() = refresh()
-}
-
-fun Preference<Boolean>.toggle() = set(!value)
-
-fun <T> Preference<List<T>>.add(item: T) = set(value + item)
-
-fun <T> Preference<List<T>>.remove(predicate: (T) -> Boolean) = set(value.filterNot(predicate))
-
-fun <T> Preference<List<T>>.update(predicate: (T) -> Boolean, transform: (T) -> T) =
-    set(value.map { if (predicate(it)) transform(it) else it })
+typealias Preference<T> = com.github.yumelira.yumebox.core.data.Preference<T>

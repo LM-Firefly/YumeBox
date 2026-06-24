@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,16 +18,16 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.clash.module
+package com.github.yumelira.yumebox.runtime.service.clash.module
 
 import android.app.Service
-import com.github.yumelira.yumebox.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
 
 class CloseModule(service: Service) : Module<CloseModule.RequestClose>(service) {
     object RequestClose
 
     override suspend fun run() {
-        val broadcasts = receiveBroadcast { addAction(Intents.ACTION_CLASH_REQUEST_STOP) }
+        val broadcasts = receiveBroadcast { addAction(Intents.actionClashRequestStop(service.packageName)) }
 
         broadcasts.receive()
 

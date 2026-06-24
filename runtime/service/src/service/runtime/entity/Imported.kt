@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,9 +20,10 @@
 
 @file:UseSerializers(UUIDSerializer::class)
 
-package com.github.yumelira.yumebox.service.runtime.entity
+package com.github.yumelira.yumebox.runtime.service.runtime.entity
 
-import com.github.yumelira.yumebox.service.runtime.util.UUIDSerializer
+import com.github.yumelira.yumebox.core.model.Profile
+import com.github.yumelira.yumebox.core.util.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import java.util.UUID
@@ -39,5 +40,5 @@ data class Imported(
     val total: Long,
     val expire: Long,
     val createdAt: Long,
-    val ageSecretKey: String? = null,
+    val ageSecretKey: String = "",
 )

@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -30,9 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.presentation.theme.UiDp
+import kotlinx.coroutines.delay
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 
@@ -79,13 +79,7 @@ fun MessageHost(message: Message?, onDismiss: () -> Unit) {
 
         if (message.autoClose) {
             LaunchedEffect(message.title, message.content, message.type, message.autoCloseDelay) {
-                PollingTimers.awaitTick(
-                    PollingTimerSpecs.dynamic(
-                        name = "message_host_autoclose_${message.autoCloseDelay}",
-                        intervalMillis = message.autoCloseDelay,
-                        initialDelayMillis = message.autoCloseDelay,
-                    )
-                )
+                delay(message.autoCloseDelay)
                 dismissDialog()
             }
         }

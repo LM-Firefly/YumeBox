@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -29,9 +29,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.WebViewActivity
 import com.github.yumelira.yumebox.common.util.DashboardShortcutHelper
-import com.github.yumelira.yumebox.common.util.openUrl
+import com.github.yumelira.yumebox.feature.substore.presentation.screen.FeatureContent
+import com.github.yumelira.yumebox.platform.util.openUrl
 import com.github.yumelira.yumebox.presentation.component.Navigator
-import com.github.yumelira.yumebox.presentation.screen.FeatureContent
 import com.github.yumelira.yumebox.screen.feature.PanelShortcutDialog
 import com.github.yumelira.yumebox.screen.feature.RemoteControllerSection
 import kotlinx.coroutines.launch
@@ -45,6 +45,7 @@ fun FeatureScreen(navigator: Navigator) {
     var shortcutDialogVisible by remember { mutableStateOf(false) }
 
     FeatureContent(
+        onNavigateBack = { navigator.pop() },
         onOpenExternalUrl = { url -> openUrl(context, url) },
         onOpenInAppUrl = { url -> WebViewActivity.start(context, url) },
         onCreatePanelShortcut = { url, label ->

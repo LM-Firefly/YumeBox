@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -52,7 +52,7 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.github.yumelira.yumebox.data.model.ThemeMode
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.CircleCheckBig
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
@@ -331,7 +331,6 @@ internal fun FinishHeroShell(
     enabled: Boolean,
     onPrimaryClick: () -> Unit,
     onGithubClick: () -> Unit,
-    onCommunityClick: () -> Unit,
 ) {
     OnboardingPageFrame {
         Spacer(modifier = Modifier.height(UiDp.dp88))
@@ -360,13 +359,6 @@ internal fun FinishHeroShell(
                         title = MLang.Onboarding.Project.Github.Title,
                         summary = MLang.Onboarding.Project.Github.Summary,
                         onClick = onGithubClick,
-                    )
-                    DetailDivider()
-                    ProjectLinkRow(
-                        icon = Yume.Message,
-                        title = MLang.Onboarding.Project.Community.Title,
-                        summary = MLang.Onboarding.Project.Community.Summary,
-                        onClick = onCommunityClick,
                     )
                 }
             }

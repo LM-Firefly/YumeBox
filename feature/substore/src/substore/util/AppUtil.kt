@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,14 +18,15 @@
  *
  */
 
-package com.github.yumelira.yumebox.substore.util
+package com.github.yumelira.yumebox.feature.substore.util
 
+import com.github.yumelira.yumebox.core.FirstRunInitializer
 import com.github.yumelira.yumebox.core.Global
-import com.github.yumelira.yumebox.substore.SubStorePaths
+import com.github.yumelira.yumebox.feature.substore.SubStorePaths
 import java.io.File
 
-object AppUtil {
-    fun initFirstOpen() {
+object AppUtil : FirstRunInitializer {
+    override fun initialize() {
         SubStorePaths.ensureStructure()
         createRootJson()
         extractBackendFile()

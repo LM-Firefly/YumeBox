@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -26,8 +26,6 @@ object TrafficChartConfig {
     const val BOUND_C = 40.0 * 1024 * 1024
 
     const val MIN_VISIBLE_HEIGHT = 0.02f
-
-    const val DEFAULT_SAMPLE_LIMIT = 24
 
     fun calculateBarFraction(speedBytes: Long): Float =
         when {

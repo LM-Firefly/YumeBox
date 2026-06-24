@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,22 +18,19 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.runtime.util
+package com.github.yumelira.yumebox.runtime.service.runtime.util
 
-import android.os.Looper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 fun CoroutineScope.cancelAndJoinBlocking() {
-    val scope = this
-    val job = scope.coroutineContext.job
-
+    val job = coroutineContext.job
     job.cancel()
-
-    if (Looper.myLooper() == Looper.getMainLooper()) {
-        return
-    }
-
-    runBlocking { job.join() }
+    Thread {
+        runBlocking { withTimeoutOrNull(CANCEL_JOIN_TIMEOUT_MS) { job.join() } }
+    }.apply { isDaemon = true }.start()
 }
+
+private const val CANCEL_JOIN_TIMEOUT_MS = 1_500L

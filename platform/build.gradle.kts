@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -25,7 +25,7 @@ plugins {
 }
 
 android {
-    namespace = "com.github.yumelira.yumebox.core.android"
+    namespace = "com.github.yumelira.yumebox.platform"
 
     buildFeatures {
         compose = true
@@ -38,8 +38,5 @@ dependencies {
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.apksig)
     implementation(libs.timber)
 }
-
-

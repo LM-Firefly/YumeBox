@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,15 +18,15 @@
  *
  */
 
-package com.github.yumelira.yumebox.di
+package com.github.yumelira.yumebox.feature.proxy.di
 
-import com.github.yumelira.yumebox.presentation.viewmodel.ProvidersViewModel
-import com.github.yumelira.yumebox.presentation.viewmodel.ProxyViewModel
+import com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel.ProvidersViewModel
+import com.github.yumelira.yumebox.feature.proxy.presentation.viewmodel.ProxyViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val featureProxyViewModelModule = module {
-    viewModel { ProxyViewModel(get(), get(), get(), get()) }
+    viewModel { ProxyViewModel(get(), get(), get()) }
     viewModel { ProvidersViewModel(get(), get()) }
 }
 

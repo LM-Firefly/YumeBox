@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ This file is part of YumeBox.
+  ~ This file is part of FlyCat.
   ~
-  ~ YumeBox is free software: you can redistribute it and/or modify
+  ~ FlyCat is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Affero General Public License as
   ~ published by the Free Software Foundation, either version 3 of the
   ~ License.
@@ -15,12 +15,12 @@
   ~ You should have received a copy of the GNU Affero General Public License
   ~ along with this program. If not, see <https://www.gnu.org/licenses/>.
   ~
-  ~ Copyright (c)  YumeLira 2025.
+  ~ Copyright (c)  LM-Firefly 2025.
   ~
   -->
 
 <resources>
-    <string name="tile_proxy_label">YumeBox</string>
+    <string name="tile_proxy_label">FlyCat</string>
     <string name="shortcut_start_clash_short">启动 Clash</string>
     <string name="shortcut_start_clash_long">启动 Clash</string>
     <string name="shortcut_stop_clash_short">停止 Clash</string>

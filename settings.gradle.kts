@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -21,7 +21,7 @@
 @file:Suppress("UnstableApiUsage")
 
 
-rootProject.name = "YumeBox"
+rootProject.name = "FlyCat"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
@@ -68,37 +68,7 @@ dependencyResolutionManagement {
 }
 
 plugins {
-    id("com.highcapable.gropify") version "1.0.1"
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-}
-
-gropify {
-    isEnabled = true
-    global {
-        common {
-            isEnabled = true
-            useTypeAutoConversion = true
-            useValueInterpolation = true
-            existsPropertyFiles("gradle.properties", addDefault = false)
-            excludeKeys(
-                "signing.store.password",
-                "signing.key.password",
-                "signing.store.path",
-                "signing.key.alias",
-            )
-        }
-        android {
-            generateDirPath = "build/generated/gropify"
-            sourceSetName = "main"
-            packageName = "com.github.yumelira.yumebox.yumebox.generated"
-            useKotlin = true
-            isRestrictedAccessEnabled = false
-            isIsolationEnabled = true
-        }
-    }
-    projects(":core", ":extension") {
-        android { isEnabled = false }
-    }
 }
 
 include(
@@ -109,6 +79,8 @@ include(
     ":data",
     ":extension",
     ":app",
+    ":lite",
+    ":feature:update",
     ":feature:substore",
     ":feature:proxy",
     ":feature:override",

@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,10 +18,10 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.clash
+package com.github.yumelira.yumebox.runtime.service.clash
 
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.clash.module.Module
+import com.github.yumelira.yumebox.runtime.service.clash.module.Module
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable

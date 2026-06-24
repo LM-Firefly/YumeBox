@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -25,7 +25,7 @@ plugins {
 }
 
 android {
-    namespace = "com.github.yumelira.yumebox.core.ui"
+    namespace = "com.github.yumelira.yumebox.ui"
 
     buildFeatures {
         compose = true
@@ -36,8 +36,6 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":platform"))
     implementation(project(":locale"))
-    implementation(project(":data"))
-    implementation(project(":runtime:api"))
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
@@ -45,6 +43,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.sketch.compose)
@@ -54,10 +53,9 @@ dependencies {
     implementation(libs.sketch.animated.webp)
     implementation(libs.sketch.compose.resources)
     implementation(libs.haze)
+    implementation(libs.haze.blur)
     implementation(libs.shapes)
     implementation(libs.miuix.ui)
     implementation(libs.miuix.preference)
     implementation(libs.miuix.icons)
 }
-
-

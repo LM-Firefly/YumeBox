@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,31 +18,19 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.remote
+package com.github.yumelira.yumebox.runtime.api.service.remote
 
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.core.model.Profile
 import java.util.UUID
 
 interface IProfileManager {
-    suspend fun create(
-        type: Profile.Type,
-        name: String,
-        source: String = "",
-        ageSecretKey: String? = null,
-    ): UUID
+    suspend fun create(type: Profile.Type, name: String, source: String = "", ageSecretKey: String = ""): UUID
 
     suspend fun clone(uuid: UUID): UUID
 
     suspend fun delete(uuid: UUID)
 
-    suspend fun patch(
-        uuid: UUID,
-        name: String,
-        source: String,
-        interval: Long,
-        updateAgeSecretKey: Boolean = false,
-        ageSecretKey: String? = null,
-    )
+    suspend fun patch(uuid: UUID, name: String, source: String, interval: Long, ageSecretKey: String? = null)
 
     suspend fun update(uuid: UUID, callback: IFetchObserver? = null)
 

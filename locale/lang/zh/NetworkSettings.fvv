@@ -18,6 +18,7 @@ NetworkSettings = {
     VpnOptions = {
         BypassPrivateTitle = "绕过私有网络"
         DnsHijackTitle = "DNS 劫持"
+        DnsHijackSummary = "将所有 DNS 请求重定向到 FlyCat"
         AllowBypassTitle = "允许应用绕过"
         EnableIpv6Title = "运行 IPv6"
         SystemProxyTitle = "VPN 系统代理"
@@ -51,6 +52,6 @@ NetworkSettings = {
 
     Error = {
         VpnDenied = "VPN 权限被拒绝"
-        RootRequired = "RootTun 需要 YumeBox 已获取可用的 Root 权限"
+        RootRequired = "RootTun 需要 FlyCat 已获取可用的 Root 权限"
     }
 }

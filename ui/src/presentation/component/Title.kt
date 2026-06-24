@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -26,7 +26,7 @@ import com.github.yumelira.yumebox.presentation.theme.topPadding
 import top.yukonga.miuix.kmp.basic.SmallTitle
 
 /**
- * App-level wrapper around Miuix `Title`. Keeps YumeBox default spacing while avoiding direct Miuix
+ * App-level wrapper around Miuix `Title`. Keeps FlyCat default spacing while avoiding direct Miuix
  * usage at call sites.
  */
 @Composable

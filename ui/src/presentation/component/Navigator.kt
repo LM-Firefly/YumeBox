@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -27,7 +27,7 @@ import androidx.navigation3.runtime.NavKey
  * Thin wrapper over the navigation3 back stack ([MutableList] of [NavKey]).
  *
  * Replaces compose-destinations' DestinationsNavigator. The [push]/[pop]/[replaceAll]/[popUntil]
- * methods cover every navigation pattern previously used in YumeBox. The [navigateUp]/[popBackStack]
+ * methods cover every navigation pattern previously used in FlyCat. The [navigateUp]/[popBackStack]
  * aliases keep call sites that came from the compose-destinations API churn-free.
  */
 @Stable

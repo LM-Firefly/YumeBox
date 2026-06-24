@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -38,8 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
-import com.github.yumelira.yumebox.data.store.LinkOpenMode
-import com.github.yumelira.yumebox.data.store.ProfileLink
+import com.github.yumelira.yumebox.core.model.LinkOpenMode
+import com.github.yumelira.yumebox.core.model.ProfileLink
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppFormDialog
 import com.github.yumelira.yumebox.presentation.component.PreferenceEnumItem

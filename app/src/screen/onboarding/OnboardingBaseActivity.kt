@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -30,14 +30,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import com.github.yumelira.yumebox.MainActivity
-import com.github.yumelira.yumebox.common.runtime.StartupGate
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.github.yumelira.yumebox.common.util.AppLanguageManager
+import com.github.yumelira.yumebox.MainActivity
+import com.github.yumelira.yumebox.platform.runtime.StartupGate
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
@@ -84,10 +84,10 @@ internal abstract class OnboardingBaseActivity : ComponentActivity() {
 @Composable
 private fun OnboardingActivityTheme(content: @Composable () -> Unit) {
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
-    val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsState()
-    val invertOnPrimaryColors by appSettingsViewModel.invertOnPrimaryColors.state.collectAsState()
-    val pageScale by appSettingsViewModel.pageScale.state.collectAsState()
+    val themeMode by appSettingsViewModel.themeMode.state.collectAsStateWithLifecycle()
+    val themeSeedColorArgb by appSettingsViewModel.themeSeedColorArgb.state.collectAsStateWithLifecycle()
+    val invertOnPrimaryColors by appSettingsViewModel.invertOnPrimaryColors.state.collectAsStateWithLifecycle()
+    val pageScale by appSettingsViewModel.pageScale.state.collectAsStateWithLifecycle()
 
     ProvideAndroidPlatformTheme {
         val systemDensity = LocalDensity.current

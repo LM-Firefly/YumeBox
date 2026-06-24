@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,13 +18,13 @@
  *
  */
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
-import com.github.yumelira.yumebox.service.common.constants.Components
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Components
 
 class DialerLaunchService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null

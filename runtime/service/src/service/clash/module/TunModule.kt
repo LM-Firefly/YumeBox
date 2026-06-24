@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,12 +18,12 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.clash.module
+package com.github.yumelira.yumebox.runtime.service.clash.module
 
 import android.net.VpnService
 import com.github.yumelira.yumebox.core.Clash
 import com.github.yumelira.yumebox.core.util.parseInetSocketAddress
-import com.github.yumelira.yumebox.service.common.util.SocketOwnerResolver
+import com.github.yumelira.yumebox.runtime.service.common.util.SocketOwnerResolver
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext

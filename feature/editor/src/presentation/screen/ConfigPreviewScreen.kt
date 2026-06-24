@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.feature.editor.screen
+package com.github.yumelira.yumebox.feature.editor.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,18 +33,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.feature.editor.editor.CodeEditor
-import com.github.yumelira.yumebox.feature.editor.editor.rememberConfiguredCodeEditorState
-import com.github.yumelira.yumebox.feature.editor.format.CodeFormatter
-import com.github.yumelira.yumebox.feature.editor.language.LanguageScope
+import com.github.yumelira.yumebox.feature.editor.presentation.editor.CodeEditor
+import com.github.yumelira.yumebox.feature.editor.presentation.editor.rememberConfiguredCodeEditorState
+import com.github.yumelira.yumebox.feature.editor.presentation.format.CodeFormatter
+import com.github.yumelira.yumebox.platform.util.toast
+import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.SmallTopBar
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.ArrowLeft
 import com.github.yumelira.yumebox.presentation.icon.yume.ArrowRight
 import com.github.yumelira.yumebox.presentation.icon.yume.ListCollapse
 import com.github.yumelira.yumebox.presentation.icon.yume.Save
-import com.github.yumelira.yumebox.presentation.component.Navigator
+import com.github.yumelira.yumebox.presentation.language.LanguageScope
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon

@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -39,7 +39,6 @@ dependencies {
     implementation(project(":locale"))
     implementation(project(":ui"))
     implementation(project(":data"))
-    implementation(project(":feature:editor"))
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
@@ -48,6 +47,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.koin.core)
@@ -59,4 +59,3 @@ dependencies {
     implementation(libs.miuix.icons)
     implementation(libs.reorderable)
 }
-

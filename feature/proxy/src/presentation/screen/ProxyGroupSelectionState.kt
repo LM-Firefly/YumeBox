@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,14 +18,14 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.screen
+package com.github.yumelira.yumebox.feature.proxy.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.core.domain.model.ProxyGroupInfo
 
 data class ProxyGroupSelectionState(
     val selectedGroupName: String?,

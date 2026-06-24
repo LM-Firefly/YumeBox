@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -23,27 +23,38 @@ package com.github.yumelira.yumebox.screen.settings
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.common.util.toast
+import com.github.yumelira.yumebox.core.data.AppLogSettings
+import com.github.yumelira.yumebox.core.data.Preference
+import com.github.yumelira.yumebox.core.model.AppColorTheme
+import com.github.yumelira.yumebox.core.model.AppLanguage
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.core.util.moeWallpaperFile
 import com.github.yumelira.yumebox.data.controller.AppSettingsController
-import com.github.yumelira.yumebox.data.model.AppColorTheme
-import com.github.yumelira.yumebox.data.model.AppLanguage
-import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import com.github.yumelira.yumebox.data.store.FeatureStore
-import com.github.yumelira.yumebox.data.store.Preference
+import com.github.yumelira.yumebox.data.store.AppStateManager
+import com.github.yumelira.yumebox.platform.util.toast
 import com.github.yumelira.yumebox.presentation.theme.DEFAULT_CUSTOM_THEME_SEED_ARGB
+import com.github.yumelira.yumebox.update.GitHubUpdateManager
+import com.github.yumelira.yumebox.update.UpdateSource
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppSettingsViewModel(
     private val application: Application,
-    private val settings: AppSettingsStore,
-    private val featureStore: FeatureStore,
+    appStateManager: AppStateManager,
     private val controller: AppSettingsController,
+    private val updateManager: GitHubUpdateManager,
+    private val appLogSettings: AppLogSettings,
 ) : ViewModel() {
+    private val settings = appStateManager.appSettingsStore
+    private val featureStore = appStateManager.featureStore
+
     val initialSetupCompleted: Preference<Boolean> = settings.initialSetupCompleted
     val privacyPolicyAccepted: Preference<Boolean> = settings.privacyPolicyAccepted
 
@@ -71,9 +82,75 @@ class AppSettingsViewModel(
     val moeSidebarExpanded: Preference<Boolean> = settings.moeSidebarExpanded
     val pageScale: Preference<Float> = settings.pageScale
     val singleNodeTest: Preference<Boolean> = settings.singleNodeTest
+    val logLevel: Preference<Int> = settings.logLevel
+    val autoCheckAppUpdate: Preference<Boolean> = settings.autoCheckAppUpdate
     val exitUiWhenBackground: Preference<Boolean> = featureStore.exitUiWhenBackground
 
+    private val _updateSource = MutableStateFlow(updateManager.getSelectedSource())
+    val updateSource: StateFlow<UpdateSource> = _updateSource
+
     val customUserAgent: Preference<String> = settings.customUserAgent
+
+    data class MainScreenSettings(
+        val bottomBarAutoHide: Boolean,
+        val topBarBlurEnabled: Boolean,
+        val moeMainUiEnabled: Boolean,
+        val moeWallpaperUri: String,
+        val moeWallpaperZoom: Float,
+        val moeWallpaperBiasX: Float,
+        val moeWallpaperBiasY: Float,
+    )
+
+    private data class DisplayPrefs(
+        val bottomBarAutoHide: Boolean,
+        val topBarBlurEnabled: Boolean,
+        val moeMainUiEnabled: Boolean,
+    )
+
+    private data class WallpaperPrefs(
+        val uri: String,
+        val zoom: Float,
+        val biasX: Float,
+        val biasY: Float,
+    )
+
+    val mainScreenSettings: StateFlow<MainScreenSettings> = combine(
+        combine(
+            bottomBarAutoHide.state,
+            topBarBlurEnabled.state,
+            classicHomeEnabled.state,
+            ::DisplayPrefs,
+        ),
+        combine(
+            moeWallpaperUri.state,
+            moeWallpaperZoom.state,
+            moeWallpaperBiasX.state,
+            moeWallpaperBiasY.state,
+            ::WallpaperPrefs,
+        ),
+    ) { display, wallpaper ->
+        MainScreenSettings(
+            bottomBarAutoHide = display.bottomBarAutoHide,
+            topBarBlurEnabled = display.topBarBlurEnabled,
+            moeMainUiEnabled = display.moeMainUiEnabled,
+            moeWallpaperUri = wallpaper.uri,
+            moeWallpaperZoom = wallpaper.zoom,
+            moeWallpaperBiasX = wallpaper.biasX,
+            moeWallpaperBiasY = wallpaper.biasY,
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        MainScreenSettings(
+            bottomBarAutoHide = bottomBarAutoHide.value,
+            topBarBlurEnabled = topBarBlurEnabled.value,
+            moeMainUiEnabled = classicHomeEnabled.value,
+            moeWallpaperUri = moeWallpaperUri.value,
+            moeWallpaperZoom = moeWallpaperZoom.value,
+            moeWallpaperBiasX = moeWallpaperBiasX.value,
+            moeWallpaperBiasY = moeWallpaperBiasY.value,
+        ),
+    )
 
     fun onThemeModeChange(mode: ThemeMode) = themeMode.set(mode)
 
@@ -152,10 +229,22 @@ class AppSettingsViewModel(
 
     fun onSingleNodeTestChange(enabled: Boolean) = singleNodeTest.set(enabled)
 
+    fun onAutoCheckAppUpdateChange(enabled: Boolean) = autoCheckAppUpdate.set(enabled)
+
+    fun onUpdateSourceChange(source: UpdateSource) {
+        if (_updateSource.value == source) return
+        updateManager.setSelectedSource(source)
+        _updateSource.value = source
+    }
+
     fun onExitUiWhenBackgroundChange(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 
     fun applyCustomUserAgent(userAgent: String) = controller.applyCustomUserAgent(userAgent)
 
+    fun onLogLevelChange(level: Int) {
+        logLevel.set(level)
+        appLogSettings.minLogLevel = level
+    }
     fun setInitialSetupCompleted(completed: Boolean) = initialSetupCompleted.set(completed)
 
     fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)

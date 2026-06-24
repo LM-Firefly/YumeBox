@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Copyright (c)  YumeLira 2025 - Present
+ * Copyright (c)  YumeYucca 2025 - Present
  *
  */
 
@@ -25,7 +25,7 @@ plugins {
 
 
 android {
-    namespace = gropify.project.namespace.core
+    namespace = providers.gradleProperty("project.namespace.core").get()
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
@@ -37,7 +37,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.snake.yaml)
+    implementation(libs.snakeyaml.engine)
     implementation(libs.androidx.annotation.jvm)
     implementation(libs.timber)
 }

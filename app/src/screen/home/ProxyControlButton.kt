@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -36,6 +36,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -113,13 +114,13 @@ fun ProxyControlButton(
                     .scale(scaleAnim.value)
                     .shadow(
                         elevation = UiDp.dp1,
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+                        shape = RoundedCornerShape(cornerRadius),
                         clip = false,
                     )
                     .border(
                         width = UiDp.dp0_2,
                         color = MiuixTheme.colorScheme.outline,
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(cornerRadius),
+                        shape = RoundedCornerShape(cornerRadius),
                     ),
             colors = ButtonDefaults.buttonColors(MiuixTheme.colorScheme.background),
             cornerRadius = cornerRadius,

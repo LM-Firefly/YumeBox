@@ -19,6 +19,10 @@ github.com/bodgit/plumbing v1.3.0 h1:pf9Itz1JOQgn7vEOE7v7nlEfBykYqvUYioC61TwWCFU
 github.com/bodgit/plumbing v1.3.0/go.mod h1:JOTb4XiRu5xfnmdnDJo6GmSbSbtSyufrsyZFByMtKEs=
 github.com/bodgit/windows v1.0.1 h1:tF7K6KOluPYygXa3Z2594zxlkbKPAOvqr97etrGNIz4=
 github.com/bodgit/windows v1.0.1/go.mod h1:a6JLwrB4KrTR5hBpp8FI9/9W9jJfeQ2h4XDXU74ZCdM=
+github.com/chzyer/logex v1.2.1/go.mod h1:JLbx6lG2kDbNRFnfkgvh4eRJRPX1QCoOIWomwysCBrQ=
+github.com/chzyer/readline v1.5.1 h1:upd/6fQk4src78LMRzh5vItIt361/o4uq553V8B5sGI=
+github.com/chzyer/readline v1.5.1/go.mod h1:Eh+b79XXUwfKfcPLepksvw2tcLE/Ct21YObkaSkeBlk=
+github.com/chzyer/test v1.0.0/go.mod h1:2JlltgoNkt4TW/z9V/IzDdFaMTM2JPIi26O1pF38GC8=
 github.com/cilium/ebpf v0.12.3 h1:8ht6F9MquybnY97at+VDZb3eQQr8ev79RueWeVaEcG4=
 github.com/cilium/ebpf v0.12.3/go.mod h1:TctK1ivibvI3znr66ljgi4hqOT8EYQjz1KWBfb1UVgM=
 github.com/coder/websocket v1.8.15 h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=
@@ -69,6 +73,8 @@ github.com/gofrs/uuid/v5 v5.4.0/go.mod h1:CDOjlDMVAtN56jqyRUZh58JT31Tiw7/oQyEXZV
 github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 h1:f+oWsMOmNPc8JmEHVZIycC7hBoQxHH9pNKQORJNozsQ=
 github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8/go.mod h1:wcDNUvekVysuuOpQKo3191zZyTpiI6se1N1ULghS0sw=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/golang/protobuf v1.5.4 h1:i7eJL8qZTpSEXOPTxNKhASYpMn+8e5Q6AdndVa1dWek=
+github.com/golang/protobuf v1.5.4/go.mod h1:lnTiLA8Wa4RWRcIUkrtSVa5nRhsEGBg48fD6rSs7xps=
 github.com/golang/snappy v1.0.0 h1:Oy607GVXHs7RtbggtPBnr2RmDArIsAefDwvrdWvRhGs=
 github.com/golang/snappy v1.0.0/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/btree v1.1.3 h1:CVpQJjYgC4VbzxeGVHfvZrv1ctoYCAI8vbl07Fcxlyg=
@@ -83,6 +89,8 @@ github.com/hashicorp/golang-lru/v2 v2.0.7 h1:a+bsQ5rvGLjzHuww6tVxozPZFVghXaHOwFs
 github.com/hashicorp/golang-lru/v2 v2.0.7/go.mod h1:QeFd9opnmA6QUJc5vARoKUSoFhyfM2/ZepoAG6RGpeM=
 github.com/huin/goupnp v1.3.0 h1:UvLUlWDNpoUdYzb2TCn+MuTWtcjXKSza2n6CBdQ0xXc=
 github.com/huin/goupnp v1.3.0/go.mod h1:gnGPsThkYa7bFi/KWmEysQRf48l2dvR5bxr2OFckNX8=
+github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b h1:ogbOPx86mIhFy764gGkqnkFC8m5PJA7sPzlk9ppLVQA=
+github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
 github.com/insomniacslk/dhcp v0.0.0-20260603135910-a415979eb11e h1:7j1+lOuGBg7PQF1RxeVx0iP+/GpiAxSG/F+9t5JOS94=
 github.com/insomniacslk/dhcp v0.0.0-20260603135910-a415979eb11e/go.mod h1:qfvBmyDNp+/liLEYWRvqny/PEz9hGe2Dz833eXILSmo=
 github.com/jsimonetti/rtnetlink v1.4.2 h1:Df9w9TZ3npHTyDn0Ev9e1uzmN2odmXd0QX+J5GTEn90=
@@ -157,8 +165,8 @@ github.com/metacubex/sevenzip v1.6.4 h1:OIL+DeOeSAbKNsjqxcYUMiarRmX6Kaxakb0GT7E9
 github.com/metacubex/sevenzip v1.6.4/go.mod h1:FP3X9bzFKj9wPxifGN9B3w2fIEicMjzKYIGIhnu+1pw=
 github.com/metacubex/sing v0.5.7 h1:8OC+fhKFSv/l9ehEhJRaZZAOuthfZo68SteBVLe8QqM=
 github.com/metacubex/sing v0.5.7/go.mod h1:ypf0mjwlZm0sKdQSY+yQvmsbWa0hNPtkeqyRMGgoN+w=
-github.com/metacubex/sing-mux v0.3.9 h1:/aoBD2+sK2qsXDlNDe3hkR0GZuFDtwIZhOeGUx9W0Yk=
-github.com/metacubex/sing-mux v0.3.9/go.mod h1:8bT7ZKT3clRrJjYc/x5CRYibC1TX/bK73a3r3+2E+Fc=
+github.com/metacubex/sing-mux v0.3.10 h1:r5CuZ/KuwFsEcRRwpLvzLncW4fDzNfmSEcBEWcy/+94=
+github.com/metacubex/sing-mux v0.3.10/go.mod h1:8bT7ZKT3clRrJjYc/x5CRYibC1TX/bK73a3r3+2E+Fc=
 github.com/metacubex/sing-quic v0.0.0-20260527143057-68e10a6afdc3 h1:PnMby5+kZXTl/CFDHfxMbMTaSRD+uMKMsrDYVQyAmX8=
 github.com/metacubex/sing-quic v0.0.0-20260527143057-68e10a6afdc3/go.mod h1:6ayFGfzzBE85csgQkM3gf4neFq6s0losHlPRSxY+nuk=
 github.com/metacubex/sing-shadowsocks v0.2.12 h1:Wqzo8bYXrK5aWqxu/TjlTnYZzAKtKsaFQBdr6IHFaBE=
@@ -167,8 +175,8 @@ github.com/metacubex/sing-shadowsocks2 v0.2.7 h1:hSuuc0YpsfiqYqt1o+fP4m34BQz4e6w
 github.com/metacubex/sing-shadowsocks2 v0.2.7/go.mod h1:vOEbfKC60txi0ca+yUlqEwOGc3Obl6cnSgx9Gf45KjE=
 github.com/metacubex/sing-shadowtls v0.0.0-20260517015314-c11c36474edc h1:8wLoFfYQ88iGPL+krQ5tJsI8IAmkFjKpQL2q+y3pvss=
 github.com/metacubex/sing-shadowtls v0.0.0-20260517015314-c11c36474edc/go.mod h1:mbfboaXauKJNIHJYxQRa+NJs4JU9NZfkA+I33dS2+9E=
-github.com/metacubex/sing-tun v0.4.20 h1:xdupzizRoZKyDzP0l68WAx5Sk4ooiuT1GiWsiJyOGPw=
-github.com/metacubex/sing-tun v0.4.20/go.mod h1:g4I/JNplDBhXLF+aQWgFbhNeJPSXQOWS9HvLeNvkgeA=
+github.com/metacubex/sing-tun v0.4.21 h1:MjbPYytM240VH70lO182v2Sg/JthMmx6R6z6E2fCR2I=
+github.com/metacubex/sing-tun v0.4.21/go.mod h1:g4I/JNplDBhXLF+aQWgFbhNeJPSXQOWS9HvLeNvkgeA=
 github.com/metacubex/sing-vmess v0.2.5 h1:m9Zt5I27lB9fmLMZfism9sH2LcnAfShZfwSkf6/KJoE=
 github.com/metacubex/sing-vmess v0.2.5/go.mod h1:AwtlzUgf8COe9tRYAKqWZ+leDH7p5U98a0ZUpYehl8Q=
 github.com/metacubex/sing-wireguard v0.0.0-20260520151737-7e7c7c1b854c h1:tH9FuQW357zp2xAGzkoZTGpNGMVmEFZov0iV5M2S5ew=
@@ -177,12 +185,12 @@ github.com/metacubex/smux v0.0.0-20260105030934-d0c8756d3141 h1:DK2l6m2Fc85H2Bhi
 github.com/metacubex/smux v0.0.0-20260105030934-d0c8756d3141/go.mod h1:/yI4OiGOSn0SURhZdJF3CbtPg3nwK700bG8TZLMBvAg=
 github.com/metacubex/ssh v0.1.0 h1:iGfr99qk/eMHzUnQ/0bTxXT8+8SWqLSHBWDHoAhngzw=
 github.com/metacubex/ssh v0.1.0/go.mod h1:NUtl0d+/f2cG9ECEpMM8iCVOpmggQlC13oLeDUONDlU=
-github.com/metacubex/tailscale v0.0.0-20260520011538-f23132fac4b7 h1:LoJR4NMyNKHeEJoeGDtcsao7sV0NRkzMeV5H/0J0MIE=
-github.com/metacubex/tailscale v0.0.0-20260520011538-f23132fac4b7/go.mod h1:MAo3HhE7968rIwmDvYTYE8xCsV4x+hLnkChdXeP3X4c=
-github.com/metacubex/tailscale-wireguard-go v0.0.0-20260521124654-e1bf77ef79af h1:c60IbBMUq2h1M2m7+grMJJmBmrObxL8SwvNtm6Ozbwk=
-github.com/metacubex/tailscale-wireguard-go v0.0.0-20260521124654-e1bf77ef79af/go.mod h1:i3zLKytWkOnyT1i9OmiLevWvrN5J5HE1+yjE7UYNfcQ=
-github.com/metacubex/tfo-go v0.0.0-20251204144243-738de9e3cd15 h1:XKUOMjFYUGOU5sLwbSbGgGI0oOcTrrs1gLCoUB0Kg4M=
-github.com/metacubex/tfo-go v0.0.0-20251204144243-738de9e3cd15/go.mod h1:l9oLnLoEXyGZ5RVLsh7QCC5XsouTUyKk4F2nLm2DHLw=
+github.com/metacubex/tailscale v0.0.0-20260623094802-1ab893d4162c h1:ACfYexFGGaObb80aq0IiG3oRjv4I1lCxf104cUsI0W8=
+github.com/metacubex/tailscale v0.0.0-20260623094802-1ab893d4162c/go.mod h1:rDpd7cy7itpPi3Kgb90fUgSnKwMXHYBk0R5DuNRiNNA=
+github.com/metacubex/tailscale-wireguard-go v0.0.0-20260623093519-06ea214022e4 h1:ui12xOUPsCAYwzI7+7Hw2mVhrAbWDGNQZcrBiELhGk0=
+github.com/metacubex/tailscale-wireguard-go v0.0.0-20260623093519-06ea214022e4/go.mod h1:W00EeoPdd2jbV3+ZUa0m2b7FdKx5B1LFsXvEpy7cToQ=
+github.com/metacubex/tfo-go v0.0.0-20260623020846-376a77860b8c h1:+2C1UshSLzaogLY/IDz1XhOLxjhs3rkhVHB4eCN9Zto=
+github.com/metacubex/tfo-go v0.0.0-20260623020846-376a77860b8c/go.mod h1:l9oLnLoEXyGZ5RVLsh7QCC5XsouTUyKk4F2nLm2DHLw=
 github.com/metacubex/tls v0.1.6 h1:t2ubLneYa4ceyIC++54a57BLqZFA/QYUrhdjLk2GPwo=
 github.com/metacubex/tls v0.1.6/go.mod h1:0XeVdL0cBw+8i5Hqy3lVeP9IyD/LFTq02ExvHM6rzEM=
 github.com/metacubex/utls v1.8.4 h1:HmL9nUApDdWSkgUyodfwF6hSjtiwCGGdyhaSpEejKpg=
@@ -277,6 +285,8 @@ gitlab.com/go-extension/aes-ccm v0.0.0-20230221065045-e58665ef23c7 h1:UNrDfkQqiE
 gitlab.com/go-extension/aes-ccm v0.0.0-20230221065045-e58665ef23c7/go.mod h1:E+rxHvJG9H6PUdzq9NRG6csuLN3XUx98BfGOVWNYnXs=
 gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec h1:FpfFs4EhNehiVfzQttTuxanPIT43FtkkCFypIod8LHo=
 gitlab.com/yawning/bsaes.git v0.0.0-20190805113838-0a714cd429ec/go.mod h1:BZ1RAoRPbCxum9Grlv5aeksu2H8BiKehBYooU2LFiOQ=
+go.uber.org/automaxprocs v1.6.0 h1:O3y2/QNTOdbF+e/dpXNNW7Rx2hZ4sTIPyybbxyNqTUs=
+go.uber.org/automaxprocs v1.6.0/go.mod h1:ifeIMSnPZuznNm6jmdzmU3/bfk01Fe2fotchwEFJ8r8=
 go.uber.org/mock v0.4.0 h1:VcM4ZOtdbR4f6VXfiOpwpVJDL6lCReaZ6mw31wqh7KU=
 go.uber.org/mock v0.4.0/go.mod h1:a6FSlNadKUHUa9IP5Vyt1zh4fC7uAwxMutEAscFbkZc=
 go4.org/mem v0.0.0-20240501181205-ae6ca9944745 h1:Tl++JLUCe4sxGu8cTpDzRLd3tN7US4hOxG5YpKCzkek=
@@ -308,6 +318,7 @@ golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20190606203320-7fc4e5ec1444/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20190804053845-51ab0e2deafa/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200217220822-9197077df867/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.1.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.46.0 h1:noSf2Fq6F8DBgS+LysIkx7rIExoNHJsxOAtPp4rthXw=
