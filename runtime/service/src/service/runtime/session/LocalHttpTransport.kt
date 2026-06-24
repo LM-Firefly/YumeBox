@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,11 +18,11 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.runtime.session
+package com.github.yumelira.yumebox.runtime.service.runtime.session
 
 import android.content.Context
+import com.github.yumelira.yumebox.core.appContextOrSelf
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import java.security.SecureRandom
 
 class LocalHttpTransport(context: Context) : RuntimeTransport {

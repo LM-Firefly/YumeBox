@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -22,15 +22,7 @@ package com.github.yumelira.yumebox.presentation.component
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -45,20 +37,12 @@ import com.github.yumelira.yumebox.presentation.icon.yume.Delete
 import com.github.yumelira.yumebox.presentation.icon.yume.Edit
 import com.github.yumelira.yumebox.presentation.icon.yume.Share
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
-import com.github.yumelira.yumebox.presentation.util.enabled
-import com.github.yumelira.yumebox.presentation.util.getDisplayProvider
-import com.github.yumelira.yumebox.presentation.util.getInfoText
-import com.github.yumelira.yumebox.presentation.util.isConfigSaved
-import com.github.yumelira.yumebox.presentation.util.shouldShowUpdateButton
-import com.github.yumelira.yumebox.service.runtime.entity.Profile
+import com.github.yumelira.yumebox.presentation.util.*
+import com.github.yumelira.yumebox.core.model.Profile
 import dev.oom_wg.purejoy.mlang.MLang
-import top.yukonga.miuix.kmp.basic.HorizontalDivider
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
+import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ProfileCard(

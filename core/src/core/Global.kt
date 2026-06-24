@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -21,21 +21,41 @@
 package com.github.yumelira.yumebox.core
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import java.io.File
 
-object Global : CoroutineScope by CoroutineScope(Dispatchers.IO) {
+object Global {
     val application: Context
-        get() = _application
+        get() = _application ?: throw IllegalStateException(
+            "Global.init() must be called before accessing application context"
+        )
 
-    private lateinit var _application: Context
+    @Volatile
+    private var _application: Context? = null
 
     fun init(application: Context) {
+        if (_application != null) return
         _application = application.applicationContext ?: application
     }
 
-    fun destroy() {
-        cancel()
+    @VisibleForTesting
+    fun reset() {
+        _application = null
     }
+
+    val isInitialized: Boolean
+        get() = _application != null
 }
+
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.SOURCE)
+private annotation class VisibleForTesting
+
+interface FirstRunInitializer {
+    fun initialize()
+}
+
+val Context.appContextOrSelf: Context
+    get() = applicationContext ?: this
+
+val Context.importedDir: File
+    get() = filesDir.resolve("imported")

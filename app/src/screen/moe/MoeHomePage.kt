@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -27,83 +27,90 @@ import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.github.panpf.sketch.cache.CachePolicy
 import com.github.panpf.sketch.rememberAsyncImagePainter
 import com.github.panpf.sketch.request.ImageRequest
 import com.github.panpf.sketch.resize.Precision
 import com.github.panpf.sketch.resize.Scale
 import com.github.panpf.sketch.util.Size
-import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ThemeMode
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.model.ThemeMode
-import com.github.yumelira.yumebox.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
+import com.github.yumelira.yumebox.platform.util.toast
+import com.github.yumelira.yumebox.presentation.component.calculateWallpaperViewportLayout
+import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.LocalHandlePageChange
 import com.github.yumelira.yumebox.presentation.component.LocalNavigator
-import com.github.yumelira.yumebox.presentation.component.calculateWallpaperViewportLayout
 import com.github.yumelira.yumebox.presentation.icon.ShellIcons
+import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.theme.AnimationSpecs
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.home.HomeProxyControlState
 import com.github.yumelira.yumebox.screen.home.HomeViewModel
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
-import com.github.yumelira.yumebox.presentation.navigation.Route
 import dev.oom_wg.purejoy.mlang.MLang
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -111,7 +118,6 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import java.io.File
 
 @Composable
 fun MoeHomePage(
@@ -132,20 +138,20 @@ fun MoeHomePage(
     val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val controlState by homeViewModel.controlState.collectAsState()
-    val profiles by homeViewModel.profiles.collectAsState()
-    val profilesLoaded by homeViewModel.profilesLoaded.collectAsState()
-    val recommendedProfile by homeViewModel.recommendedProfile.collectAsState()
-    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsState(initial = false)
-    val selectedServerName by homeViewModel.selectedServerName.collectAsState()
-    val selectedServerPing by homeViewModel.selectedServerPing.collectAsState()
-    val trafficNow by homeViewModel.trafficNow.collectAsState()
-    val runtimeSnapshot by homeViewModel.runtimeSnapshot.collectAsState()
-    val isRemoteController by homeViewModel.isRemoteController.collectAsState()
-    val themeMode by appSettingsViewModel.themeMode.state.collectAsState()
-    val moeHomeQuote by appSettingsViewModel.moeHomeQuote.state.collectAsState()
-    val moeHomeQuoteAuthor by appSettingsViewModel.moeHomeQuoteAuthor.state.collectAsState()
-    val sidebarExpanded by appSettingsViewModel.moeSidebarExpanded.state.collectAsState()
+    val controlState by homeViewModel.controlState.collectAsStateWithLifecycle()
+    val profiles by homeViewModel.profiles.collectAsStateWithLifecycle()
+    val profilesLoaded by homeViewModel.profilesLoaded.collectAsStateWithLifecycle()
+    val recommendedProfile by homeViewModel.recommendedProfile.collectAsStateWithLifecycle()
+    val hasEnabledProfile by homeViewModel.hasEnabledProfile.collectAsStateWithLifecycle(initialValue = false)
+    val selectedServerName by homeViewModel.selectedServerName.collectAsStateWithLifecycle()
+    val selectedServerPing by homeViewModel.selectedServerPing.collectAsStateWithLifecycle()
+    val trafficData by homeViewModel.trafficData.collectAsStateWithLifecycle()
+    val runtimeSnapshot by homeViewModel.runtimeSnapshot.collectAsStateWithLifecycle()
+    val isRemoteController by homeViewModel.isRemoteController.collectAsStateWithLifecycle()
+    val themeMode by appSettingsViewModel.themeMode.state.collectAsStateWithLifecycle()
+    val moeHomeQuote by appSettingsViewModel.moeHomeQuote.state.collectAsStateWithLifecycle()
+    val moeHomeQuoteAuthor by appSettingsViewModel.moeHomeQuoteAuthor.state.collectAsStateWithLifecycle()
+    val sidebarExpanded by appSettingsViewModel.moeSidebarExpanded.state.collectAsStateWithLifecycle()
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -197,9 +203,9 @@ fun MoeHomePage(
                 formatMoeClock(now)
             }
         }
-    val trafficData =
-        remember(trafficNow, isRunning) {
-            if (isRunning) TrafficData.from(trafficNow) else TrafficData.ZERO
+    val displayTrafficData =
+        remember(trafficData, isRunning) {
+            if (isRunning) trafficData else TrafficData.ZERO
         }
     val systemDark = isSystemInDarkTheme()
     val isDarkHomeSurface =
@@ -241,18 +247,18 @@ fun MoeHomePage(
         )
 
     val handleProxyAction: () -> Unit = {
-        if (isRemoteController) {
-            Unit
-        } else if (!hasEnabledProfile || recommendedProfile == null) {
-            context.toast(MLang.ProfilesVM.Error.ProfileNotExist, Toast.LENGTH_SHORT)
-        } else if (visualControlState == HomeProxyControlState.Idle) {
-            recommendedProfile?.let { profile ->
+        if (!isRemoteController) {
+            if (!hasEnabledProfile || recommendedProfile == null) {
+                context.toast(MLang.ProfilesVM.Error.ProfileNotExist, Toast.LENGTH_SHORT)
+            } else if (visualControlState == HomeProxyControlState.Idle) {
+                recommendedProfile?.let { profile ->
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    homeViewModel.startProxy(profileId = profile.uuid.toString(), mode = null)
+                }
+            } else if (visualControlState == HomeProxyControlState.Running) {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                homeViewModel.startProxy(profileId = profile.uuid.toString(), mode = null)
+                scope.launch { homeViewModel.stopProxy() }
             }
-        } else if (visualControlState == HomeProxyControlState.Running) {
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
-            scope.launch { homeViewModel.stopProxy() }
         }
     }
 
@@ -280,6 +286,9 @@ fun MoeHomePage(
             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
         )
     }
+
+    var showRemoteUrlDialog by remember { mutableStateOf(false) }
+    var remoteUrlInput by remember { mutableStateOf("") }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val sidebarWidth = maxWidth * MoeUi.Sidebar.fraction
@@ -346,13 +355,12 @@ fun MoeHomePage(
             modifier =
                 Modifier.fillMaxSize()
                     .padding(start = contentPanelStart)
-                    .graphicsLayer {
-                        shape =
-                            RoundedCornerShape(
-                                topStart = contentCorner,
-                                bottomStart = contentCorner,
-                            )
-                        clip = true
+                    .let { mod ->
+                        val contentPanelShape = RoundedCornerShape(topStart = contentCorner, bottomStart = contentCorner)
+                        mod.graphicsLayer {
+                            shape = contentPanelShape
+                            clip = true
+                        }
                     }
                     .background(contentSurface)
         ) {
@@ -369,6 +377,7 @@ fun MoeHomePage(
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = { launchWallpaperPicker() },
+                                onLongPress = { showRemoteUrlDialog = true },
                                 onDoubleTap = {
                                     appSettingsViewModel.onMoeSidebarExpandedChange(
                                         !sidebarExpanded
@@ -483,6 +492,25 @@ fun MoeHomePage(
                 )
             }
         }
+    }
+
+    if (showRemoteUrlDialog) {
+        RemoteWallpaperUrlDialog(
+            initialUrl = remoteUrlInput,
+            onDismiss = { showRemoteUrlDialog = false },
+            onConfirm = { url ->
+                showRemoteUrlDialog = false
+                remoteUrlInput = url
+                navigator.push(
+                    Route.MoeWallpaperCrop(
+                        wallpaperUri = url,
+                        initialZoom = wallpaperZoom,
+                        initialBiasX = wallpaperBiasX,
+                        initialBiasY = wallpaperBiasY,
+                    )
+                )
+            },
+        )
     }
 }
 
@@ -599,6 +627,9 @@ private const val MOE_BUNDLED_WALLPAPER = "file:///android_asset/wallpaper.jpg"
  */
 private fun resolveMoeWallpaperModel(context: Context, wallpaperUri: String): String {
     if (wallpaperUri.isBlank()) return MOE_BUNDLED_WALLPAPER
+    if (wallpaperUri.startsWith("http://") || wallpaperUri.startsWith("https://")) {
+        return wallpaperUri
+    }
     if (wallpaperUri.startsWith("file://")) {
         val path = wallpaperUri.removePrefix("file://")
         if (path.startsWith("/android_asset/")) return wallpaperUri
@@ -613,4 +644,60 @@ private fun resolveMoeWallpaperModel(context: Context, wallpaperUri: String): St
             }
             .getOrDefault(false)
     return if (readable) wallpaperUri else MOE_BUNDLED_WALLPAPER
+}
+
+@Composable
+private fun RemoteWallpaperUrlDialog(
+    initialUrl: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var url by remember { mutableStateOf(initialUrl) }
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        top.yukonga.miuix.kmp.basic.Surface(
+            shape = RoundedCornerShape(UiDp.dp28),
+            color = MiuixTheme.colorScheme.surface,
+        ) {
+            Column(
+                modifier = Modifier.padding(UiDp.dp24),
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp16),
+            ) {
+                top.yukonga.miuix.kmp.basic.Text(
+                    text = "设置远程壁纸",
+                    style = MiuixTheme.textStyles.title2,
+                    color = MiuixTheme.colorScheme.onSurface,
+                )
+                top.yukonga.miuix.kmp.basic.TextField(
+                    value = url,
+                    onValueChange = { url = it },
+                    label = "https://example.com/image.jpg",
+                    useLabelAsPlaceholder = true,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    top.yukonga.miuix.kmp.basic.TextButton(
+                        text = MLang.ProfilesPage.Button.Cancel,
+                        onClick = onDismiss,
+                        modifier = Modifier.padding(end = UiDp.dp8),
+                    )
+                    top.yukonga.miuix.kmp.basic.Button(
+                        onClick = {
+                            val trimmed = url.trim()
+                            if (trimmed.isNotEmpty()) onConfirm(trimmed)
+                        },
+                    ) {
+                        top.yukonga.miuix.kmp.basic.Text(
+                            text = MLang.ProfilesPage.Button.Confirm,
+                            color = MiuixTheme.colorScheme.onPrimary,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -29,9 +29,10 @@ import androidx.compose.ui.unit.Dp
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.blurEffect
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -39,17 +40,19 @@ import top.yukonga.miuix.kmp.basic.TopAppBarDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 val LocalTopBarHazeState = compositionLocalOf<HazeState?> { null }
-val LocalTopBarHazeStyle = compositionLocalOf<HazeStyle?> { null }
+val LocalTopBarHazeStyle = compositionLocalOf<HazeBlurStyle?> { null }
 
 @OptIn(ExperimentalHazeApi::class)
-private fun Modifier.topBarHazeEffect(state: HazeState?, style: HazeStyle?): Modifier {
+private fun Modifier.topBarHazeEffect(state: HazeState?, style: HazeBlurStyle?): Modifier {
     if (state == null || style == null) return this
 
     return hazeEffect(state) {
-        this.style = style
-        blurRadius = UiDp.dp20
+        blurEffect {
+            this.style = style
+            blurRadius = UiDp.dp20
+            noiseFactor = 0f
+        }
         inputScale = HazeInputScale.Fixed(0.35f)
-        noiseFactor = 0f
         forceInvalidateOnPreDraw = false
     }
 }

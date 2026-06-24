@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -88,6 +88,13 @@ object Bridge {
 
     external fun nativeQueryGroupNames(excludeNotSelectable: Boolean): String
 
+    external fun nativeInspectCompiledGroups(
+        yamlText: String,
+        profileDir: String,
+        excludeNotSelectable: Boolean,
+    ): String?
+
+    external fun nativeInspectCompiledGroupNames(yamlText: String, excludeNotSelectable: Boolean): String?
     external fun nativeQueryGroup(name: String, sort: String): String?
 
     external fun nativeHealthCheck(completable: CompletableDeferred<Unit>, name: String)
@@ -96,8 +103,10 @@ object Bridge {
 
     external fun nativeHealthCheckAll()
 
+    external fun nativePatchTunnelMode(mode: String): Boolean
     external fun nativePatchSelector(selector: String, name: String): Boolean
 
+    external fun nativeForcePatchSelector(selector: String, name: String): Boolean
     external fun nativeFetchAndValid(
         completable: FetchCallback,
         path: String,
@@ -121,13 +130,13 @@ object Bridge {
 
     external fun nativeSetCustomUserAgent(userAgent: String)
 
-    external fun nativeSetAgeSecretKey(key: String?)
+    external fun nativeSetAgeSecretKey(key: String)
 
     external fun nativeGenX25519KeyPair(): String?
 
-    external fun nativeVerifySecretKeys(secretKeys: String): Boolean
-
     external fun nativeToPublicKeys(secretKeys: String): String?
+
+    external fun nativeVerifySecretKeys(secretKeys: String): Boolean
 
     external fun nativeVerifyPublicKeys(publicKeys: String): Boolean
 

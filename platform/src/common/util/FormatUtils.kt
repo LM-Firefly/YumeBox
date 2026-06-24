@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.common.util
+package com.github.yumelira.yumebox.platform.util
 
 object ByteFormatter {
     private const val KB = 1024L
@@ -78,7 +78,7 @@ object ByteFormatter {
 }
 
 fun formatBytes(bytes: Long): String = ByteFormatter.format(bytes)
-
+fun formatBytes(bytes: ULong): String = ByteFormatter.format(bytes.toLong().coerceAtLeast(0L))
 fun formatSpeed(bytesPerSecond: Long): String = ByteFormatter.formatSpeed(bytesPerSecond)
 
 fun formatBytesForDisplay(bytes: Long): Pair<String, String> = ByteFormatter.formatForDisplay(bytes)

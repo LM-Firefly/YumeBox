@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -29,9 +29,7 @@ android {
 
 dependencies {
     implementation(project(":core"))
-    implementation(project(":data"))
-    implementation(project(":runtime:api"))
-    implementation(project(":runtime:service"))
+    api(project(":runtime:api"))
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
@@ -51,5 +49,3 @@ dependencies {
     implementation(libs.libsu.core)
     implementation(libs.libsu.service)
 }
-
-

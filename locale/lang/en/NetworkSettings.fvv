@@ -18,6 +18,7 @@ NetworkSettings = {
     VpnOptions = {
         BypassPrivateTitle = "Bypass Private Networks"
         DnsHijackTitle = "DNS Hijack"
+        DnsHijackSummary = "Redirect all DNS requests to FlyCat"
         AllowBypassTitle = "Allow App Bypass"
         EnableIpv6Title = "Enable IPv6"
         SystemProxyTitle = "VPN Built-in System Proxy"
@@ -51,6 +52,6 @@ NetworkSettings = {
 
     Error = {
         VpnDenied = "VPN permission denied"
-        RootRequired = "RootTun requires YumeBox to have working root access"
+        RootRequired = "RootTun requires FlyCat to have working root access"
     }
 }

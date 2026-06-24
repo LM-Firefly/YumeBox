@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -33,11 +33,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
+import com.github.yumelira.yumebox.platform.util.openUrl
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.Palette
 import com.github.yumelira.yumebox.presentation.icon.yume.ShieldCheck
@@ -70,8 +70,7 @@ internal class OnboardingActivity : OnboardingBaseActivity() {
                     }
                     finishOnboarding()
                 },
-                onGithubClick = { openUrl(this, "https://github.com/YumeYucca/YumeBox") },
-                onCommunityClick = { openUrl(this, "https://t.me/YumeLira") },
+                onGithubClick = { openUrl(this, "https://github.com/LM-Firefly/FlyCat") },
             )
         }
     }
@@ -90,7 +89,6 @@ private fun OnboardingPagerScreen(
     activity: OnboardingActivity,
     onFinish: () -> Unit,
     onGithubClick: () -> Unit,
-    onCommunityClick: () -> Unit,
 ) {
     val steps = remember { OnboardingStep.entries }
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { steps.size })
@@ -113,7 +111,7 @@ private fun OnboardingPagerScreen(
     var editingThemeSeedHex by
         remember(themeState.themeSeedColorArgb) {
             mutableStateOf(
-                "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
+                formatThemeSeedHex(themeState.themeSeedColorArgb)
             )
         }
 
@@ -206,9 +204,7 @@ private fun OnboardingPagerScreen(
                                     runCatching { colorFromArgb(themeState.themeSeedColorArgb) }
                                         .getOrDefault(Color.White)
                                 editingThemeSeedHex =
-                                    "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(
-                                        16
-                                    ).uppercase().padStart(6, '0')}"
+                                    formatThemeSeedHex(themeState.themeSeedColorArgb)
                             }
                             showThemeColorPicker = show
                         },
@@ -221,7 +217,6 @@ private fun OnboardingPagerScreen(
                     enabled = true,
                     onPrimaryClick = onFinish,
                     onGithubClick = onGithubClick,
-                    onCommunityClick = onCommunityClick,
                 )
             }
         }
@@ -237,16 +232,12 @@ private fun OnboardingPagerScreen(
         onEditingThemeSeedColorChange = {
             editingThemeSeedColor = it
             editingThemeSeedHex =
-                "#${(colorToArgbLong(it) and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
+                formatThemeSeedHex(colorToArgbLong(it))
         },
         onEditingThemeSeedHexChange = { raw ->
-            val normalized =
-                "#${raw.uppercase().filter { ch -> ch in '0'..'9' || ch in 'A'..'F' }.take(6)}"
-            editingThemeSeedHex = normalized
-            if (normalized.length == 7) {
-                normalized.removePrefix("#").toLongOrNull(16)?.let {
-                    editingThemeSeedColor = colorFromArgb(0xFF000000L or it)
-                }
+            editingThemeSeedHex = raw.uppercase()
+            parseThemeHexColorOrNull(raw)?.let {
+                editingThemeSeedColor = it
             }
         },
         onConfirm = {
@@ -254,4 +245,16 @@ private fun OnboardingPagerScreen(
             showThemeColorPicker = false
         },
     )
+}
+
+private fun formatThemeSeedHex(argb: Long): String {
+    val rgb = (argb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')
+    return "#$rgb"
+}
+
+private fun parseThemeHexColorOrNull(input: String): Color? {
+    val body = input.removePrefix("#").removePrefix("0x").uppercase()
+    if (body.length != 6) return null
+    val rgb = body.toLongOrNull(16) ?: return null
+    return colorFromArgb(0xFF000000L or rgb)
 }

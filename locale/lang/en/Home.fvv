@@ -1,6 +1,6 @@
 <Home Page>
 Home = {
-    Title = "YumeBox"
+    Title = "FlyCat"
 
     Message = {
         ConfigSwitched = "Config switched"

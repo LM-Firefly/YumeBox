@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,69 +20,71 @@
 
 package com.github.yumelira.yumebox.screen.settings
 
-import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ClipData
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
-import com.github.yumelira.yumebox.common.util.toast
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideAnimatedFab
+import com.github.yumelira.yumebox.feature.override.presentation.component.rememberOverrideFabController
+import com.github.yumelira.yumebox.platform.util.toast
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.Card
-import com.github.yumelira.yumebox.presentation.component.OverrideAnimatedFab
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
+import com.github.yumelira.yumebox.presentation.component.Navigator
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SearchPager
 import com.github.yumelira.yumebox.presentation.component.SearchStatus
 import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopAppBarAnim
 import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
-import com.github.yumelira.yumebox.presentation.component.rememberOverrideFabController
-import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.AppTheme.spacing
-import com.github.yumelira.yumebox.presentation.component.Navigator
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -96,8 +98,8 @@ import top.yukonga.miuix.kmp.basic.InputField
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Search
+import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -109,8 +111,8 @@ fun AccessControlScreen(navigator: Navigator) {
     val spacing = spacing
     val mainLikePadding = rememberStandalonePageMainPadding()
     val viewModel = koinViewModel<AccessControlViewModel>()
-    val uiState by viewModel.uiState.collectAsState()
-    val filteredApps by viewModel.filteredApps.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val filteredApps by viewModel.filteredApps.collectAsStateWithLifecycle()
     val settingsFabController = rememberOverrideFabController()
 
     var showSettingsSheet by remember { mutableStateOf(false) }
@@ -187,6 +189,8 @@ fun AccessControlScreen(navigator: Navigator) {
                     TopBar(
                         title = MLang.AccessControl.Title,
                         scrollBehavior = scrollBehavior,
+                        navigationIconPadding = 0.dp,
+                        navigationIcon = { NavigationBackIcon(navigator = navigator) },
                         bottomContent = {
                             Box(
                                 modifier =

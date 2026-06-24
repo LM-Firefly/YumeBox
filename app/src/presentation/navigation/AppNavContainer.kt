@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -52,6 +52,7 @@ import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.screen.about.AboutScreen
 import com.github.yumelira.yumebox.screen.about.OpenSourceLicensesScreen
 import com.github.yumelira.yumebox.screen.connection.ConnectionScreen
+import com.github.yumelira.yumebox.screen.log.LogDetailScreen
 import com.github.yumelira.yumebox.screen.log.LogScreen
 import com.github.yumelira.yumebox.screen.navigation.CustomRoutingRoute
 import com.github.yumelira.yumebox.screen.navigation.FeatureScreen
@@ -82,7 +83,7 @@ private fun slideExit(offset: (Int) -> Int): ExitTransition =
         fadeOut(animationSpec = tween(FADE_DURATION, easing = LinearEasing))
 
 /**
- * The app's navigation3 host. Renders the back stack through [NavDisplay] using YumeBox's original
+ * The app's navigation3 host. Renders the back stack through [NavDisplay] using FlyCat's original
  * horizontal slide + fade transitions (the AOSP predictive-back animation was dropped). The system
  * predictive-back gesture scrubs [NavDisplay]'s pop transition, i.e. the default slide.
  */
@@ -120,7 +121,7 @@ fun AppNavContainer() {
                             initialBiasY = route.initialBiasY,
                         )
                     }
-                    entry<Route.AppSettings> { AppSettingsScreen() }
+                    entry<Route.AppSettings> { AppSettingsScreen(navigator) }
                     entry<Route.NetworkSettings> { NetworkSettingsScreen(navigator) }
                     entry<Route.AccessControl> { AccessControlScreen(navigator) }
                     entry<Route.MetaFeature> { MetaFeatureScreen(navigator) }
@@ -136,6 +137,7 @@ fun AppNavContainer() {
                     entry<Route.CustomRouting> { CustomRoutingRoute(navigator) }
                     entry<Route.StringListEditor> { StringListEditorScreen(navigator) }
                     entry<Route.KeyValueEditor> { KeyValueEditorScreen(navigator) }
+                    entry<Route.LogDetail> { route -> LogDetailScreen(navigator, fileName = route.fileName) }
                 },
         )
 

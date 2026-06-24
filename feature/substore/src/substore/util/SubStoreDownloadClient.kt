@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,25 +18,23 @@
  *
  */
 
-package com.github.yumelira.yumebox.substore.util
+package com.github.yumelira.yumebox.feature.substore.util
 
 import android.app.Application
-import com.github.yumelira.yumebox.common.util.ByteFormatter.formatSpeed
-import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import io.ktor.client.HttpClient
+import com.github.yumelira.yumebox.core.data.AppSettingsReader
+import com.github.yumelira.yumebox.core.util.AssetDownloader
+import com.github.yumelira.yumebox.platform.util.ByteFormatter.formatSpeed
 import io.ktor.client.engine.android.Android
+import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.header
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.contentLength
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
-import io.ktor.http.contentLength
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.jvm.javaio.toInputStream
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import timber.log.Timber
 import java.io.File
 import java.net.URLDecoder
 import java.nio.charset.Charset
@@ -44,6 +42,9 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.Calendar
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 data class DownloadProgress(
     val progress: Int,
@@ -64,8 +65,8 @@ data class SubscriptionInfo(
 
 class SubStoreDownloadClient(
     private val application: Application,
-    private val appSettings: AppSettingsStore,
-) {
+    private val appSettings: AppSettingsReader,
+) : AssetDownloader {
     companion object {
         private const val DEFAULT_USER_AGENT = "ClashMetaForAndroid"
         private const val UPDATE_INTERVAL_MS = 500L
@@ -81,10 +82,13 @@ class SubStoreDownloadClient(
         }
     }
 
+    override suspend fun download(url: String, targetFile: File): Boolean =
+        download(url, targetFile, onProgress = null)
+
     suspend fun download(
         url: String,
         targetFile: File,
-        onProgress: ((DownloadProgress) -> Unit)? = null,
+        onProgress: ((DownloadProgress) -> Unit)?,
     ): Boolean =
         withContext(Dispatchers.IO) {
             val (success, _) = downloadWithSubscriptionInfo(url, targetFile, onProgress)

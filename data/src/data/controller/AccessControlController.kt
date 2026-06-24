@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,26 +20,26 @@
 
 package com.github.yumelira.yumebox.data.controller
 
-import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
-import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.data.model.AccessControlMode
-import com.github.yumelira.yumebox.data.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.AccessControlMode
+import com.github.yumelira.yumebox.core.model.ProxyMode
 import com.github.yumelira.yumebox.data.store.NetworkSettingsStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 
 class AccessControlController(
     private val store: NetworkSettingsStore,
     private val isRunning: () -> Boolean,
     private val resolveActiveMode: () -> ProxyMode?,
-    private val restartProxy: suspend (ProxyMode) -> Unit,
-    private val beforeRestart: suspend (ProxyMode) -> Unit = {},
+    private val commandExecutor: AccessControlCommandExecutor,
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var applyJob: Job? = null
 
     fun setAccessControlMode(mode: AccessControlMode) {
@@ -57,13 +57,7 @@ class AccessControlController(
     private fun scheduleApply() {
         applyJob?.cancel()
         applyJob = scope.launch {
-            PollingTimers.awaitTick(
-                PollingTimerSpecs.dynamic(
-                    name = "access_control_apply_packages",
-                    intervalMillis = 350L,
-                    initialDelayMillis = 350L,
-                )
-            )
+            delay(350L)
 
             if (!isRunning()) return@launch
             val activeMode = resolveActiveMode()
@@ -72,10 +66,23 @@ class AccessControlController(
             if (store.accessControlMode.value == AccessControlMode.ALLOW_ALL) return@launch
 
             try {
-                beforeRestart(targetMode)
-                restartProxy(targetMode)
+                commandExecutor.restartProxy(targetMode)
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
+            }
+        }
+    }
+}
+
+class AccessControlCommandExecutor(
+    private val restartProxy: suspend (ProxyMode) -> Unit,
+    private val beforeRestart: suspend (ProxyMode) -> Unit = {},
+) {
+    suspend fun restartProxy(mode: ProxyMode) {
+        withContext(NonCancellable) {
+            beforeRestart(mode)
+            withContext(Dispatchers.IO) {
+                restartProxy.invoke(mode)
             }
         }
     }

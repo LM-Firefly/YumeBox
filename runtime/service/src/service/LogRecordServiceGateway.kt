@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,10 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.app.Application
-import com.github.yumelira.yumebox.core.util.PollingTimerSpec
 import com.github.yumelira.yumebox.data.gateway.LogRecordGateway
 import java.io.File
 
@@ -38,13 +37,8 @@ class LogRecordServiceGateway : LogRecordGateway {
     override val logSuffix: String
         get() = LogRecordService.LOG_SUFFIX
 
-    override val stopWaitSpec: PollingTimerSpec
-        get() =
-            PollingTimerSpec(
-                name = "log_record_stop_wait",
-                intervalMillis = 300L,
-                initialDelayMillis = 300L,
-            )
+    override val stopWaitMillis: Long
+        get() = 300L
 
     override fun start(application: Application) {
         LogRecordService.start(application)

@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -23,14 +23,20 @@ package com.github.yumelira.yumebox.screen.settings
 import android.content.Context
 import android.net.Uri
 import com.github.yumelira.yumebox.core.util.moeWallpaperFile
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 
 /**
- * Copies the Moe wallpaper from an external [sourceUri] (typically a `content://` URI from the
- * photo picker) into the app-private files dir, so rendering survives deletion/permission loss of
- * the original source.
+ * Copies the Moe wallpaper from an external [sourceUri] into the app-private files dir, so
+ * rendering survives deletion/permission loss of the original source.
+ *
+ * Supports three source types:
+ * - `http://` / `https://` remote URLs (downloaded via HTTP)
+ * - `content://` URIs from the photo picker
+ * - `file://` local paths
  *
  * The copy is written to a temp file then renamed over the stable slot, so a half-written copy
  * never replaces a good one (storage-failure edge case).
@@ -44,9 +50,15 @@ object MoeWallpaperImporter {
             runCatching {
                     val target = context.moeWallpaperFile()
                     val tmp = File(target.parentFile, "wallpaper.tmp")
-                    context.contentResolver.openInputStream(Uri.parse(sourceUri)).use { input ->
-                        requireNotNull(input) { "Unable to open Moe wallpaper source: $sourceUri" }
-                        tmp.outputStream().use { input.copyTo(it) }
+                    if (sourceUri.startsWith("http://") || sourceUri.startsWith("https://")) {
+                        downloadToFile(sourceUri, tmp)
+                    } else {
+                        context.contentResolver.openInputStream(Uri.parse(sourceUri)).use { input ->
+                            requireNotNull(input) {
+                                "Unable to open Moe wallpaper source: $sourceUri"
+                            }
+                            tmp.outputStream().use { input.copyTo(it) }
+                        }
                     }
                     if (!tmp.renameTo(target)) {
                         target.delete()
@@ -56,4 +68,22 @@ object MoeWallpaperImporter {
                 }
                 .getOrNull()
         }
+
+    private fun downloadToFile(remoteUrl: String, target: File) {
+        val conn = URL(remoteUrl).openConnection() as HttpURLConnection
+        try {
+            conn.connectTimeout = 15_000
+            conn.readTimeout = 30_000
+            conn.instanceFollowRedirects = true
+            conn.connect()
+            check(conn.responseCode in 200..299) {
+                "HTTP ${conn.responseCode} downloading wallpaper: $remoteUrl"
+            }
+            conn.inputStream.use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            }
+        } finally {
+            conn.disconnect()
+        }
+    }
 }

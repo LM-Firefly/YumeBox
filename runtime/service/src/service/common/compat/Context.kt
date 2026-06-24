@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,7 +20,7 @@
 
 @file:Suppress("DEPRECATION")
 
-package com.github.yumelira.yumebox.service.common.compat
+package com.github.yumelira.yumebox.runtime.service.common.compat
 
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver

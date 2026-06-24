@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.substore
+package com.github.yumelira.yumebox.feature.substore
 
 import com.caoccao.javet.enums.V8AwaitMode
 import com.caoccao.javet.interception.logging.JavetStandardConsoleInterceptor
@@ -155,5 +155,6 @@ class CaseEngine(
                 nodeRuntime = null
             }
             .onFailure { error -> Timber.e(error, "CaseEngine cleanup failed") }
+            SubStoreServiceController.markStopped()
     }
 }

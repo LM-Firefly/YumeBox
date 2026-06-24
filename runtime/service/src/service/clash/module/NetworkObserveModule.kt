@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,25 +18,21 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.clash.module
+package com.github.yumelira.yumebox.runtime.service.clash.module
 
 import android.app.Service
-import android.net.ConnectivityManager
-import android.net.LinkProperties
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
+import android.net.*
 import android.os.Build
 import androidx.core.content.getSystemService
 import com.github.yumelira.yumebox.core.Clash
-import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.runtime.util.asSocketAddressText
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.service.runtime.util.asSocketAddressText
+import java.net.InetAddress
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
-import java.net.InetAddress
-import java.util.concurrent.ConcurrentHashMap
 
 class NetworkObserveModule(service: Service) : Module<Network>(service) {
     private val connectivity = service.getSystemService<ConnectivityManager>()

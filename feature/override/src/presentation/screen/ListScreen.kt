@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,70 +18,74 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.screen
+package com.github.yumelira.yumebox.feature.override.presentation.screen
 
+import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.data.model.OverrideConfig
-import com.github.yumelira.yumebox.data.model.OverrideContentType
+import com.github.yumelira.yumebox.core.model.OverrideConfig
+import com.github.yumelira.yumebox.core.model.OverrideContentType
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideAnimatedFab
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideCardActionIconButton
+import com.github.yumelira.yumebox.feature.override.presentation.component.OverrideStatusBadge
+import com.github.yumelira.yumebox.feature.override.presentation.component.rememberOverrideFabController
+import com.github.yumelira.yumebox.feature.override.presentation.viewmodel.OverrideConfigViewModel
+import com.github.yumelira.yumebox.platform.util.toast
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
 import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.CenteredText
-import com.github.yumelira.yumebox.presentation.component.OverrideAnimatedFab
-import com.github.yumelira.yumebox.presentation.component.OverrideCardActionIconButton
-import com.github.yumelira.yumebox.presentation.component.OverrideStatusBadge
+import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
+import com.github.yumelira.yumebox.presentation.component.NavigationBackIcon
+import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.TopBar
-import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
-import com.github.yumelira.yumebox.presentation.component.rememberOverrideFabController
-import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Badge-plus`
 import com.github.yumelira.yumebox.presentation.icon.yume.Copy
@@ -92,34 +96,32 @@ import com.github.yumelira.yumebox.presentation.icon.yume.ShieldCheck
 import com.github.yumelira.yumebox.presentation.icon.yume.ShieldMinus
 import com.github.yumelira.yumebox.presentation.theme.Spacing
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import com.github.yumelira.yumebox.presentation.viewmodel.OverrideConfigViewModel
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
-import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme
 
 private val overrideConfigItemGap = Spacing().space12
 
 @Composable
-fun OverrideListScreen(onOpenCodeEditor: (OverrideConfig) -> Unit) {
+fun OverrideListScreen(onNavigateBack: () -> Unit, onOpenCodeEditor: (OverrideConfig) -> Unit) {
     val viewModel: OverrideConfigViewModel = koinViewModel()
-    val userConfigs by viewModel.userConfigs.collectAsState()
-    val usageCountMap by viewModel.usageCountMap.collectAsState()
-    val pendingRevealConfigId by viewModel.pendingRevealConfigId.collectAsState()
+    val userConfigs by viewModel.userConfigs.collectAsStateWithLifecycle()
+    val usageCountMap by viewModel.usageCountMap.collectAsStateWithLifecycle()
+    val pendingRevealConfigId by viewModel.pendingRevealConfigId.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -149,8 +151,9 @@ fun OverrideListScreen(onOpenCodeEditor: (OverrideConfig) -> Unit) {
 
     val exportConfigLauncher =
         rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("text/plain")
-        ) { uri ->
+            contract = ActivityResultContracts.StartActivityForResult(),
+        ) { result ->
+            val uri = result.data?.data
             val targetConfig = exportTargetConfig.value
             if (uri == null || targetConfig == null) {
                 exportTargetConfig.value = null
@@ -204,7 +207,7 @@ fun OverrideListScreen(onOpenCodeEditor: (OverrideConfig) -> Unit) {
                 },
             )
         },
-        topBar = { TopBar(title = MLang.Override.Title, scrollBehavior = scrollBehavior) },
+        topBar = { TopBar(title = MLang.Override.Title, scrollBehavior = scrollBehavior, navigationIconPadding = 0.dp, navigationIcon = { NavigationBackIcon(onNavigateBack = onNavigateBack) }) },
     ) { paddingValues ->
         val mainLikePadding = rememberStandalonePageMainPadding()
         ScreenLazyColumn(
@@ -270,7 +273,14 @@ fun OverrideListScreen(onOpenCodeEditor: (OverrideConfig) -> Unit) {
                                 onExport = {
                                     exportTargetConfig.value = config
                                     exportConfigLauncher.launch(
-                                        "${config.name}.${config.contentType.extension}"
+                                        Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                            type = config.contentType.exportMimeType
+                                            putExtra(
+                                                Intent.EXTRA_TITLE,
+                                                "${config.name}.${config.contentType.extension}",
+                                            )
+                                        },
                                     )
                                 },
                                 onEdit = { onOpenCodeEditor(config) },
@@ -660,9 +670,9 @@ private fun OverrideTypeSelector(
     val selectedTypeIndex = contentTypeOptions.indexOf(selectedType).coerceAtLeast(0)
 
     top.yukonga.miuix.kmp.basic.Card {
-        WindowDropdownPreference(
+        WindowSpinnerPreference(
             title = "创建类型",
-            items = contentTypeOptions.map { it.label },
+            items = contentTypeOptions.map { contentType -> DropdownItem(title = contentType.label) },
             selectedIndex = selectedTypeIndex,
             onSelectedIndexChange = { index ->
                 contentTypeOptions.getOrNull(index)?.let(onSelectedTypeChange)
@@ -755,6 +765,12 @@ private val OverrideContentType.label: String
             OverrideContentType.Yaml -> "YAML"
             OverrideContentType.JavaScript -> "JavaScript"
         }
+
+private val OverrideContentType.exportMimeType: String
+    get() = when (this) {
+        OverrideContentType.Yaml -> "application/x-yaml"
+        OverrideContentType.JavaScript -> "application/javascript"
+    }
 
 private val OverrideConfigInputMode.label: String
     get() =

@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.presentation.screen.node
+package com.github.yumelira.yumebox.feature.proxy.presentation.screen.node
 
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
@@ -33,36 +33,38 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.github.yumelira.yumebox.data.model.normalizeProxySheetHeightFraction
-import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
-import com.github.yumelira.yumebox.domain.model.isSelectable
+import androidx.compose.ui.unit.Dp
+import com.github.yumelira.yumebox.core.domain.model.ProxyGroupInfo
+import com.github.yumelira.yumebox.core.model.normalizeProxySheetHeightFraction
+import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.core.model.ProxyDisplayMode
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeState
 import com.github.yumelira.yumebox.presentation.component.LocalTopBarHazeStyle
 import com.github.yumelira.yumebox.presentation.theme.UiDp
-import dev.chrisbanes.haze.HazeProgressive
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeProgressive
 import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.HazeState
 import dev.oom_wg.purejoy.mlang.MLang
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
@@ -76,18 +78,20 @@ val NodeSheetContentPadding =
 private fun LazyListState.isScrolledFromTop(): Boolean =
     firstVisibleItemIndex > 0 || firstVisibleItemScrollOffset > 0
 
-private fun Modifier.nodeTabHaze(state: HazeState?, style: HazeStyle?): Modifier {
+private fun Modifier.nodeTabHaze(state: HazeState?, style: HazeBlurStyle?): Modifier {
     if (state == null || style == null) return this
     return hazeEffect(state) {
-        this.style = style
-        blurRadius = UiDp.dp30
-        noiseFactor = 0f
-        progressive =
-            HazeProgressive.verticalGradient(
-                startIntensity = 1f,
-                endIntensity = 0f,
-                preferPerformance = true,
-            )
+        blurEffect {
+            this.style = style
+            blurRadius = UiDp.dp30
+            noiseFactor = 0f
+            progressive =
+                HazeProgressive.verticalGradient(
+                    startIntensity = 1f,
+                    endIntensity = 0f,
+                    preferPerformance = true,
+                )
+        }
     }
 }
 
@@ -134,7 +138,7 @@ internal fun NodeTabs(groups: List<ProxyGroupInfo>, selectedIndex: Int, onSelect
 
             Box(
                 modifier =
-                    Modifier.clip(RoundedCornerShape(UiDp.dp999))
+                    Modifier.clip(RoundedCornerShape(50))
                         .background(background)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -160,6 +164,7 @@ internal fun rememberNodeSheetHeight(sheetHeightFraction: Float): Dp {
 @Composable
 internal fun NodeGroupSheetContent(
     groups: List<ProxyGroupInfo>,
+    displayMode: ProxyDisplayMode,
     testingGroupNames: Set<String>,
     sheetHeightFraction: Float,
     onGroupClick: (ProxyGroupInfo) -> Unit,
@@ -182,6 +187,7 @@ internal fun NodeGroupSheetContent(
     ) {
         nodeGroupItems(
             groups = groups,
+            displayMode = displayMode,
             onGroupClick = onGroupClick,
             testingGroupNames = testingGroupNames,
             itemVerticalPadding = UiDp.dp0,
@@ -192,7 +198,9 @@ internal fun NodeGroupSheetContent(
 @Composable
 fun NodeSheetContent(
     group: ProxyGroupInfo,
+    displayMode: ProxyDisplayMode = ProxyDisplayMode.DOUBLE_DETAILED,
     onSelectProxy: (String) -> Unit,
+    onForceSelectProxy: ((String) -> Unit)? = null,
     isDelayTesting: Boolean,
     testingProxyNames: Set<String>,
     onTestDelay: () -> Unit,
@@ -200,6 +208,7 @@ fun NodeSheetContent(
     sheetHeightFraction: Float,
     listState: LazyListState = rememberLazyListState(),
     singleNodeTestEnabled: Boolean = true,
+    pinnedProxyName: String = "",
 ) {
     val sheetHeight = rememberNodeSheetHeight(sheetHeightFraction)
 
@@ -248,9 +257,17 @@ fun NodeSheetContent(
         nodeGridItems(
             proxies = group.proxies,
             selectedProxyName = group.now,
+            pinnedProxyName = pinnedProxyName,
+            displayMode = displayMode,
             onProxyClick = { proxyName ->
-                if (group.isSelectable) {
+                if (group.type == Proxy.Type.Selector) {
                     onSelectProxy(proxyName)
+                } else if (
+                    (group.type == Proxy.Type.URLTest || group.type == Proxy.Type.Fallback) &&
+                    onForceSelectProxy != null
+                ) {
+                    val target = if (proxyName == group.fixed) "" else proxyName
+                    onForceSelectProxy(target)
                 } else {
                     onTestDelay()
                 }

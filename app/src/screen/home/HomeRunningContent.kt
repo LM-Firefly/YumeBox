@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -26,9 +26,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.github.yumelira.yumebox.core.domain.model.TrafficData
+import com.github.yumelira.yumebox.core.model.IpMonitoringState
 import com.github.yumelira.yumebox.core.model.TunnelState
-import com.github.yumelira.yumebox.data.gateway.IpMonitoringState
-import com.github.yumelira.yumebox.domain.model.TrafficData
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 
 @Composable
@@ -40,7 +40,7 @@ fun HomeRunningContent(
     serverName: String?,
     serverPing: Int?,
     ipMonitoringState: IpMonitoringState,
-    speedHistory: List<Long>,
+    speedHistory: List<TrafficData>,
     onChartClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

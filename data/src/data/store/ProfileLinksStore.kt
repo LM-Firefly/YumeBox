@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,33 +20,23 @@
 
 package com.github.yumelira.yumebox.data.store
 
+import com.github.yumelira.yumebox.core.data.ProfileLinksReader
+import com.github.yumelira.yumebox.core.model.LinkOpenMode
+import com.github.yumelira.yumebox.core.model.ProfileLink
 import com.tencent.mmkv.MMKV
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-@Serializable
-data class ProfileLink(
-    val id: String,
-    val name: String,
-    val url: String,
-)
-
-enum class LinkOpenMode {
-    IN_APP,
-    EXTERNAL_BROWSER,
-}
-
-class ProfileLinksStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
+class ProfileLinksStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv), ProfileLinksReader {
     private val json = Json { ignoreUnknownKeys = true }
 
-    val linkOpenMode by enumFlow(LinkOpenMode.IN_APP)
+    override val linkOpenMode by enumFlow(LinkOpenMode.IN_APP)
 
-    val links by
+    override val links by
         jsonListFlow(
             default = emptyList(),
             decode = { str -> decodeFromString<List<ProfileLink>>(str) },
             encode = { value -> encodeToString(value) },
         )
 
-    val defaultLinkId by strFlow(default = "")
+    override val defaultLinkId by strFlow(default = "")
 }

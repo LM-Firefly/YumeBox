@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,10 +18,10 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.runtime.util
+package com.github.yumelira.yumebox.runtime.service.runtime.util
 
-import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
-import java.util.UUID
+import com.github.yumelira.yumebox.runtime.service.runtime.records.ImportedDao
+import java.util.*
 
 suspend fun generateProfileUUID(): UUID {
     var result = UUID.randomUUID()

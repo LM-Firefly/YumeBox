@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,6 +20,9 @@
 
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+import org.gradle.jvm.toolchain.JavaToolchainService
 
 buildscript {
     configurations.classpath {
@@ -41,15 +44,15 @@ buildscript {
 }
 
 plugins {
-    `jvm-toolchains`
-    id("com.android.application") version "9.2.1" apply false
-    id("com.android.library") version "9.2.1" apply false
-    kotlin("plugin.serialization") version "2.2.10" apply false
-    kotlin("plugin.compose") version "2.3.10" apply false
-    id("org.jetbrains.compose") version "1.11.1" apply false
-    id("com.google.devtools.ksp") version "2.3.2" apply false
-    id("com.mikepenz.aboutlibraries.plugin.android") version "15.0.0" apply false
-    id("com.diffplug.spotless") version "8.7.0" apply false
+  `jvm-toolchains`
+  id("com.android.application") version "9.4.0-alpha01" apply false
+  id("com.android.library") version "9.4.0-alpha01" apply false
+  kotlin("plugin.serialization") version "2.4.0" apply false
+  kotlin("plugin.compose") version "2.4.0" apply false
+  id("org.jetbrains.compose") version "1.11.1" apply false
+  id("com.google.devtools.ksp") version "2.3.9" apply false
+  id("com.mikepenz.aboutlibraries.plugin.android") version "15.0.0-rc01" apply false
+  id("com.diffplug.spotless") version "8.7.0" apply false
 }
 
 val androidCompileSdk = providers.gradleProperty("android.compileSdk").map(String::toInt).get()
@@ -60,7 +63,7 @@ val androidJvm =
     providers
         .gradleProperty("android.jvm")
         .orElse(providers.gradleProperty("project.jvm"))
-        .orElse("17")
+        .orElse("21")
         .get()
 val androidJvmVersion = androidJvm.toInt()
 val androidNdkVersion = providers.gradleProperty("android.ndkVersion").orNull.orEmpty()
@@ -173,4 +176,10 @@ subprojects {
             }
         }
     }
+}
+
+tasks.register("assembleReleaseWithExtension") {
+    group = "build"
+    description = "Assemble release APK with extension merged (arm64-v8a and x86_64, including javet libs)."
+    dependsOn(":app:assembleRelease", ":extension:assembleRelease")
 }

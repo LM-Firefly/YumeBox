@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -23,19 +23,19 @@ package com.github.yumelira.yumebox.screen.settings
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.github.yumelira.yumebox.data.model.RemoteBackend
+import com.github.yumelira.yumebox.core.data.add
+import com.github.yumelira.yumebox.core.data.remove
+import com.github.yumelira.yumebox.core.data.update
+import com.github.yumelira.yumebox.core.model.RemoteBackend
 import com.github.yumelira.yumebox.data.store.RemoteControllerStore
-import com.github.yumelira.yumebox.data.store.add
-import com.github.yumelira.yumebox.data.store.remove
-import com.github.yumelira.yumebox.data.store.update
-import com.github.yumelira.yumebox.remote.HttpClashManager
 import com.github.yumelira.yumebox.runtime.client.ProxyFacade
+import com.github.yumelira.yumebox.runtime.client.remote.HttpClashManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

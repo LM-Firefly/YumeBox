@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,10 +18,9 @@
  *
  */
 
-package com.github.yumelira.yumebox.domain.model
+package com.github.yumelira.yumebox.core.domain.model
 
 import com.github.yumelira.yumebox.core.model.Proxy
-import com.github.yumelira.yumebox.core.model.isManuallySelectable
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -32,10 +31,12 @@ data class ProxyGroupInfo(
     val now: String,
     val icon: String? = null,
     val hidden: Boolean = false,
+    val fixed: String = "",
+    val chainPath: List<String> = emptyList(),
 )
 
 val ProxyGroupInfo.isSelectable: Boolean
-    get() = type.isManuallySelectable
+    get() = type in Proxy.Type.MANUALLY_SELECTABLE
 
 val ProxyGroupInfo.isProxyGroup: Boolean
     get() = type in Proxy.Type.GROUP_TYPES || now.isNotBlank() || proxies.isNotEmpty()

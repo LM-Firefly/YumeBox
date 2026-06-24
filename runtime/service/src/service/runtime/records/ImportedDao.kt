@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -18,10 +18,10 @@
  *
  */
 
-package com.github.yumelira.yumebox.service.runtime.records
+package com.github.yumelira.yumebox.runtime.service.runtime.records
 
-import com.github.yumelira.yumebox.service.runtime.entity.Imported
-import java.util.UUID
+import com.github.yumelira.yumebox.runtime.service.runtime.entity.Imported
+import java.util.*
 
 object ImportedDao {
     fun queryAll(): List<Imported> = ProfileStore.loadImported()

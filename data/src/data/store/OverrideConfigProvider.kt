@@ -1,7 +1,7 @@
 /*
- * This file is part of YumeBox.
+ * This file is part of FlyCat.
  *
- * YumeBox is free software: you can redistribute it and/or modify
+ * FlyCat is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License.
@@ -20,7 +20,7 @@
 
 package com.github.yumelira.yumebox.data.store
 
-import com.github.yumelira.yumebox.data.model.OverrideConfig
+import com.github.yumelira.yumebox.core.model.OverrideConfig
 import kotlinx.coroutines.flow.Flow
 
 interface OverrideConfigProvider {
