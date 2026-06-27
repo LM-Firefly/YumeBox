@@ -51,7 +51,7 @@ plugins {
   kotlin("plugin.compose") version "2.4.0" apply false
   id("org.jetbrains.compose") version "1.11.1" apply false
   id("com.google.devtools.ksp") version "2.3.9" apply false
-  id("com.mikepenz.aboutlibraries.plugin.android") version "15.0.0-rc01" apply false
+  id("com.mikepenz.aboutlibraries.plugin.android") version "15.0.2" apply false
   id("com.diffplug.spotless") version "8.7.0" apply false
 }
 
