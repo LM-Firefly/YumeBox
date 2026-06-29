@@ -51,4 +51,15 @@ Home = {
         Tun = "TUN"
         Http = "HTTP"
     }
+
+    PreviewGuide = {
+        Title = "Welcome to YumeBox"
+        Description = "Tap Start at the bottom-right to connect"
+        Next = "Next"
+        Start = "Get started"
+        WallpaperTitle = "Change wallpaper"
+        WallpaperDescription = "Tap the wallpaper to pick from your album"
+        AddTitle = "Add subscription"
+        AddDescription = "Click the icon in the upper right corner and paste the link to add it"
+    }
 }

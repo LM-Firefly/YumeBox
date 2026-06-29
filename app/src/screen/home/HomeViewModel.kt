@@ -506,6 +506,14 @@ class HomeViewModel(
             Timber.i(
                 "Home startProxy completed in ${System.currentTimeMillis() - startedAt}ms, mode=${request.mode}"
             )
+
+            // If the remote controller is active, ProxyFacade.startProxy() is a no-op and no runtime
+            // phase change will arrive to reset the pending transition — clear it so the home button
+            // doesn't stick on "Connecting" forever.
+            if (proxyFacade.isRemoteControllerActive()) {
+                clearPendingStart()
+                _pendingTransition.value = PendingTransition.None
+            }
         } catch (error: com.github.yumelira.yumebox.remote.VpnPermissionRequired) {
             _pendingTransition.value = PendingTransition.AwaitingPermission
             _vpnPrepareIntent.emit(error.intent)

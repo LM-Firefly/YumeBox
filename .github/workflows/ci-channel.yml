@@ -207,16 +207,3 @@ jobs:
       meta_asset_name: yumebox-pre-meta.json
       telegram_title: YumeBox Pre
     secrets: inherit
-
-  notify-smart:
-    needs:
-      - prepare-publish-smart-app
-      - publish-release-smart
-    uses: ./.github/workflows/reusable-notify-telegram.yml
-    with:
-      channel: smart
-      release_tag: Smart
-      publish_artifact_name: publish-smart-app
-      meta_asset_name: yumebox-smart-meta.json
-      telegram_title: YumeBox Smart
-    secrets: inherit

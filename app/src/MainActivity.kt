@@ -32,7 +32,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -52,6 +54,7 @@ import com.github.yumelira.yumebox.presentation.component.ToastDialogHost
 import com.github.yumelira.yumebox.presentation.navigation.AppNavContainer
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
+import com.github.yumelira.yumebox.screen.moe.HomePreviewGuideDialog
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.tencent.mmkv.MMKV
 import dev.chrisbanes.haze.HazeState
@@ -123,6 +126,13 @@ class MainActivity : FragmentActivity() {
 
         requestStartupPermissions()
 
+        // First launch only: show the introductory guide once, then never again.
+        val showHomeGuideInitially =
+            savedInstanceState == null && !appSettingsStorage.homePreviewGuideShown.value
+        if (showHomeGuideInitially) {
+            appSettingsStorage.homePreviewGuideShown.set(true)
+        }
+
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
             val themeMode = appSettingsViewModel.themeMode.state.collectAsState().value
@@ -173,6 +183,13 @@ class MainActivity : FragmentActivity() {
                             ) {
                                 AppNavContainer()
                                 ToastDialogHost()
+
+                                var showHomeGuide by
+                                    remember { mutableStateOf(showHomeGuideInitially) }
+                                HomePreviewGuideDialog(
+                                    show = showHomeGuide,
+                                    onDismissRequest = { showHomeGuide = false },
+                                )
                             }
                         }
                     }

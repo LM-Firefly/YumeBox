@@ -1,6 +1,8 @@
 import requests
 import os
 import glob
+import subprocess
+import html
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
@@ -19,21 +21,27 @@ VERSION_CODE = os.environ.get("VERSION_CODE", "")
 RELEASE_URL = os.environ.get("RELEASE_URL", "")
 META_URL = os.environ.get("META_URL", "")
 PUBLISH_DIR = os.environ.get("PUBLISH_DIR", "")
+LOGO_URL = os.environ.get("LOGO_URL", "https://yumebox.oom-wg.dev/logo/Yume.webp")
+COMMIT_MESSAGE = os.environ.get("COMMIT_MESSAGE", "")
 
 
-def md_escape(text):
-    if not text:
-        return ""
-    escaped = text.replace("\\", "\\\\")
-    for ch in ["_", "*", "`", "["]:
-        escaped = escaped.replace(ch, f"\\{ch}")
-    return escaped
+def get_commit_message():
+    msg = (COMMIT_MESSAGE or "").strip()
+    if not msg and COMMIT_SHA:
+        try:
+            result = subprocess.run(
+                ["git", "log", "-1", "--format=%B", COMMIT_SHA],
+                cwd=os.environ.get("GITHUB_WORKSPACE") or ".",
+                capture_output=True, text=True, timeout=15,
+            )
+            msg = (result.stdout or "").strip()
+        except Exception as e:
+            print(f"[-] git log failed: {e}")
+    return msg
 
 
-def code_safe(text):
-    if not text:
-        return ""
-    return text.replace("`", "'")
+def html_escape(text):
+    return html.escape(text or "")
 
 
 def get_caption():
@@ -64,30 +72,35 @@ def get_caption():
         display_title = f"{TITLE} Test"
 
     lines = [
-        f"*{md_escape(display_title)}*",
-        f"*• Type*: {code_safe(workflow_label)}",
-        f"*• Trigger*: {code_safe(trigger_label)}",
-        f"*• Branch*: {code_safe(BRANCH)}",
+        f"<b>{html_escape(display_title)}</b>",
+        f"<b>• Trigger</b>: {html_escape(trigger_label)}",
+        f"<b>• Branch</b>: {html_escape(BRANCH)}",
     ]
     if VERSION_NAME and VERSION_CODE:
-        lines.append(f"*• Version*: `{code_safe(VERSION_NAME)} ({code_safe(VERSION_CODE)})`")
+        lines.append(f"<b>• Version</b>: <code>{html_escape(VERSION_NAME)} ({html_escape(VERSION_CODE)})</code>")
     elif VERSION_NAME:
-        lines.append(f"*• Version*: `{code_safe(VERSION_NAME)}`")
+        lines.append(f"<b>• Version</b>: <code>{html_escape(VERSION_NAME)}</code>")
 
     if action_url:
-        lines.append(f"*• Download*: [workpiece]({action_url})")
+        lines.append(f'<b>• Download</b>: <a href="{action_url}">workpiece</a>')
     if RELEASE_URL:
-        lines.append(f"*• Release*: [open]({RELEASE_URL})")
+        lines.append(f'<b>• Release</b>: <a href="{RELEASE_URL}">open</a>')
     if META_URL:
-        lines.append(f"*• Meta*: [json]({META_URL})")
+        lines.append(f'<b>• Meta</b>: <a href="{META_URL}">json</a>')
 
     if commit_url:
-        lines.append(f"*• Commit*: [{code_safe(commit_short)}]({commit_url})")
+        lines.append(f'<b>• Commit</b>: <a href="{commit_url}">{html_escape(commit_short)}</a>')
     else:
-        lines.append(f"*• Commit*: {code_safe(commit_short)}")
+        lines.append(f"<b>• Commit</b>: {html_escape(commit_short)}")
 
-    msg = "\n".join(lines)
-    return msg
+    commit_message = get_commit_message()
+    if commit_message:
+        body = commit_message.strip()
+        if len(body) > 700:
+            body = body[:700].rstrip() + "…"
+        lines.append(f"<blockquote>{html_escape(body)}</blockquote>")
+
+    return "\n".join(lines)
 
 
 def check_environ():
@@ -154,25 +167,39 @@ def send_files_via_bot_api():
     file_path = files[0]
     print(f"[+] Uploading {file_path}...")
 
-    with open(file_path, 'rb') as f:
-        data = {
+    reply_to_id = None
+    try:
+        photo_data = {
             'chat_id': CHAT_ID,
+            'photo': LOGO_URL,
             'caption': caption,
-            'parse_mode': 'Markdown'
+            'parse_mode': 'HTML',
         }
+        if MESSAGE_THREAD_ID:
+            photo_data['message_thread_id'] = MESSAGE_THREAD_ID
+        photo_resp = requests.post(f"{bot_url}/sendPhoto", data=photo_data, timeout=60)
+        print(f"[+] Photo+caption: {photo_resp.status_code}")
+        if photo_resp.status_code == 200:
+            reply_to_id = photo_resp.json().get("result", {}).get("message_id")
+        else:
+            print(f"[-] Photo send failed: {photo_resp.text}")
+    except Exception as e:
+        print(f"[-] Photo send failed: {e}")
 
+    with open(file_path, 'rb') as f:
+        data = {'chat_id': CHAT_ID}
         if MESSAGE_THREAD_ID:
             data['message_thread_id'] = MESSAGE_THREAD_ID
+        if reply_to_id:
+            data['reply_to_message_id'] = reply_to_id
 
-        files_data = {
-            'document': f
-        }
+        files_data = {'document': f}
 
         response = requests.post(
             f"{bot_url}/sendDocument",
             data=data,
             files=files_data,
-            timeout=60
+            timeout=60,
         )
 
     if response.status_code == 200:
