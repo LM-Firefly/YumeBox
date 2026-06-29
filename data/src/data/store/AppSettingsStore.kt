@@ -26,9 +26,6 @@ import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.tencent.mmkv.MMKV
 
 class AppSettingsStore(externalMmkv: MMKV) : MMKVPreference(externalMmkv = externalMmkv) {
-    val initialSetupCompleted by boolFlow(false)
-    val privacyPolicyAccepted by boolFlow(false)
-
     val themeMode by enumFlow(ThemeMode.Auto)
     val appLanguage by enumFlow(AppLanguage.System)
     val colorTheme by enumFlow(AppColorTheme.ClassicMonochrome)

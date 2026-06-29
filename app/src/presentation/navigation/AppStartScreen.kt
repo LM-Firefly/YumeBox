@@ -18,22 +18,18 @@
  *
  */
 
-package com.github.yumelira.yumebox.screen.onboarding
+package com.github.yumelira.yumebox.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import com.github.yumelira.yumebox.presentation.component.Navigator
 import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun ActivationWizardScreen(navigator: Navigator, previewMode: Boolean = false) {
-    val context = LocalContext.current
-
-    LaunchedEffect(previewMode) {
-        OnboardingLauncher.start(context, previewMode = previewMode)
-        navigator.pop()
+fun AppStartScreen(navigator: Navigator) {
+    LaunchedEffect(Unit) {
+        navigator.replaceAll(listOf(Route.Main(initialPage = 0)))
     }
 
     Surface(color = MiuixTheme.colorScheme.surface) {}

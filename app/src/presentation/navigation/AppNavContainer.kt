@@ -60,8 +60,6 @@ import com.github.yumelira.yumebox.screen.navigation.OverrideConfigPreviewRoute
 import com.github.yumelira.yumebox.screen.navigation.OverrideScreen
 import com.github.yumelira.yumebox.screen.navigation.ProvidersScreen
 import com.github.yumelira.yumebox.screen.navigation.StringListEditorScreen
-import com.github.yumelira.yumebox.screen.onboarding.ActivationWizardScreen
-import com.github.yumelira.yumebox.screen.onboarding.AppStartScreen
 import com.github.yumelira.yumebox.screen.settings.AccessControlScreen
 import com.github.yumelira.yumebox.screen.settings.AppSettingsScreen
 import com.github.yumelira.yumebox.screen.settings.MetaFeatureScreen
@@ -108,9 +106,6 @@ fun AppNavContainer() {
                 entryProvider {
                     entry<Route.AppStart> { AppStartScreen(navigator) }
                     entry<Route.Main> { route -> MainScreen(navigator, initialPage = route.initialPage) }
-                    entry<Route.ActivationWizard> { route ->
-                        ActivationWizardScreen(navigator, previewMode = route.previewMode)
-                    }
                     entry<Route.MoeWallpaperCrop> { route ->
                         MoeWallpaperCropScreen(
                             navigator = navigator,

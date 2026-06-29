@@ -44,9 +44,6 @@ class AppSettingsViewModel(
     private val featureStore: FeatureStore,
     private val controller: AppSettingsController,
 ) : ViewModel() {
-    val initialSetupCompleted: Preference<Boolean> = settings.initialSetupCompleted
-    val privacyPolicyAccepted: Preference<Boolean> = settings.privacyPolicyAccepted
-
     val themeMode: Preference<ThemeMode> = settings.themeMode
     val appLanguage: Preference<AppLanguage> = settings.appLanguage
     val colorTheme: Preference<AppColorTheme> = settings.colorTheme
@@ -155,8 +152,4 @@ class AppSettingsViewModel(
     fun onExitUiWhenBackgroundChange(enabled: Boolean) = exitUiWhenBackground.set(enabled)
 
     fun applyCustomUserAgent(userAgent: String) = controller.applyCustomUserAgent(userAgent)
-
-    fun setInitialSetupCompleted(completed: Boolean) = initialSetupCompleted.set(completed)
-
-    fun setPrivacyPolicyAccepted(accepted: Boolean) = privacyPolicyAccepted.set(accepted)
 }

@@ -52,7 +52,6 @@ import com.github.yumelira.yumebox.presentation.component.ToastDialogHost
 import com.github.yumelira.yumebox.presentation.navigation.AppNavContainer
 import com.github.yumelira.yumebox.presentation.theme.ProvideAndroidPlatformTheme
 import com.github.yumelira.yumebox.presentation.theme.YumeTheme
-import com.github.yumelira.yumebox.screen.onboarding.OnboardingLauncher
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.tencent.mmkv.MMKV
 import dev.chrisbanes.haze.HazeState
@@ -71,7 +70,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 class MainActivity : FragmentActivity() {
     companion object {
-        private const val REQUEST_NOTIFICATION_PERMISSION = 1001
+        private const val REQUEST_STARTUP_PERMISSIONS = 1001
+        private const val MIUI_GET_INSTALLED_APPS_PERMISSION =
+            "com.android.permission.GET_INSTALLED_APPS"
         private const val EXTRA_EXIT_UI_WHEN_BACKGROUND = "exit_ui_when_background"
         private val _pendingImportUrl = MutableStateFlow<String?>(null)
         val pendingImportUrl: StateFlow<String?> = _pendingImportUrl.asStateFlow()
@@ -120,23 +121,7 @@ class MainActivity : FragmentActivity() {
         intentController = IntentController(lifecycleScope)
         handleIntent(intent)
 
-        if (!appSettingsStorage.initialSetupCompleted.value) {
-            OnboardingLauncher.start(this, previewMode = false)
-            finish()
-            return
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (
-                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
-                    android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    REQUEST_NOTIFICATION_PERMISSION,
-                )
-            }
-        }
+        requestStartupPermissions()
 
         setContent {
             val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
@@ -260,6 +245,42 @@ class MainActivity : FragmentActivity() {
             intentController.handleIntent(safeIntent)
         }
     }
+
+    /**
+     * On launch, auto-request the two runtime permissions the app needs: notifications (Android 13+)
+     * and the MIUI dynamic "get installed apps" permission. Both are fired in a single system dialog
+     * sequence; permissions that aren't runtime-requestable on this device/OS are simply skipped.
+     */
+    private fun requestStartupPermissions() {
+        val permissions =
+            buildList {
+                if (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                            android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    add(android.Manifest.permission.POST_NOTIFICATIONS)
+                }
+                if (
+                    isMiuiGetInstalledAppsDynamicSupported() &&
+                        checkSelfPermission(MIUI_GET_INSTALLED_APPS_PERMISSION) !=
+                            android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    add(MIUI_GET_INSTALLED_APPS_PERMISSION)
+                }
+            }
+        if (permissions.isNotEmpty()) {
+            requestPermissions(permissions.toTypedArray(), REQUEST_STARTUP_PERMISSIONS)
+        }
+    }
+
+    private fun isMiuiGetInstalledAppsDynamicSupported(): Boolean =
+        runCatching {
+                packageManager
+                    .getPermissionInfo(MIUI_GET_INSTALLED_APPS_PERMISSION, 0)
+                    .packageName == "com.lbe.security.miui"
+            }
+            .getOrDefault(false)
 
     @Suppress("DEPRECATION")
     private fun applyExcludeFromRecents(exclude: Boolean) {
