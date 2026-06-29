@@ -256,6 +256,7 @@ jobs:
           path: ./screenshots/preview.png
           retention-days: 30
           if-no-files-found: error
+          archive: false
 
       - name: Send preview to Telegram
         continue-on-error: true

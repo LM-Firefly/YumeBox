@@ -33,9 +33,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -270,7 +268,10 @@ fun SearchStatus.SearchPager(
     val surfaceAlpha by
         animateFloatAsState(
             targetValue = if (searchStatus.shouldExpand()) 1f else 0f,
-            animationSpec = tween(200, easing = FastOutSlowInEasing),
+            // Match topPadding's duration/easing so the surface dim and the layout settle on the same
+            // frame. Previously the dim finished 100ms earlier (200 vs 300), exposing the content
+            // mid-collapse and reading as an end-of-animation hitch.
+            animationSpec = tween(300, easing = LinearOutSlowInEasing),
             label = "SearchSurfaceAlpha",
         )
 
@@ -364,8 +365,12 @@ private fun SearchPagerCancelButton(
     val isExpanded = searchStatus.isExpanded() || searchStatus.isExpanding()
     AnimatedVisibility(
         visible = isExpanded,
-        enter = expandHorizontally() + slideInHorizontally(initialOffsetX = { it }),
-        exit = shrinkHorizontally() + slideOutHorizontally(targetOffsetX = { it }),
+        // Animate only the layout width (expand/shrink) + fade. The previous slide-in/out fought the
+        // simultaneous width animation (slide offset keyed off the shrinking width), which made the
+        // adjacent weight(1f) search bar reflow jerkily on removal. Dropping the slide keeps the
+        // space reclaim smooth.
+        enter = fadeIn() + expandHorizontally(),
+        exit = fadeOut() + shrinkHorizontally(),
     ) {
         Text(
             text = MLang.Component.Button.Cancel,

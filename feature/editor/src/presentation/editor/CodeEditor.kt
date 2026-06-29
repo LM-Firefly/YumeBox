@@ -38,6 +38,8 @@ import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.subscribeAlways
 import timber.log.Timber
 
+private const val EDITOR_DEFAULT_TEXT_SIZE_SP = 14f
+
 @Composable
 fun CodeEditor(
     state: CodeEditorState,
@@ -119,6 +121,10 @@ private fun createCodeEditor(
 
     return CodeEditor(context).apply {
         isEditable = !state.readOnly
+
+        // Sora's default text size is quite large; pin a comfortable editor default (sp). Users can
+        // still pinch-to-zoom from here.
+        setTextSize(EDITOR_DEFAULT_TEXT_SIZE_SP)
 
         val font = EditorFontManager.getEditorTypeface(context)
         typefaceText = font

@@ -67,3 +67,4 @@ jobs:
             jniLibs
             build/generated/assets/geo
           if-no-files-found: error
+          archive: false

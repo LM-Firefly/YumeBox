@@ -31,13 +31,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,19 +61,16 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.core.graphics.drawable.toBitmap
-import com.github.yumelira.yumebox.common.util.toast
-import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.Card
-import com.github.yumelira.yumebox.presentation.component.OverrideAnimatedFab
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
 import com.github.yumelira.yumebox.presentation.component.SearchPager
 import com.github.yumelira.yumebox.presentation.component.SearchStatus
-import com.github.yumelira.yumebox.presentation.component.Title
 import com.github.yumelira.yumebox.presentation.component.TopAppBarAnim
 import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
-import com.github.yumelira.yumebox.presentation.component.rememberOverrideFabController
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.icon.Yume
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
@@ -88,18 +82,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.DropdownEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.InputField
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.Search
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.preference.WindowDropdownPreference
+import top.yukonga.miuix.kmp.icon.extended.Sort
+import top.yukonga.miuix.kmp.overlay.OverlayCascadingListPopup
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -111,9 +107,10 @@ fun AccessControlScreen(navigator: Navigator) {
     val viewModel = koinViewModel<AccessControlViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val filteredApps by viewModel.filteredApps.collectAsState()
-    val settingsFabController = rememberOverrideFabController()
 
-    var showSettingsSheet by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
+    var showOpsMenu by remember { mutableStateOf(false) }
+    val mainListState = rememberLazyListState()
     var searchStatus by remember {
         mutableStateOf(
             SearchStatus(
@@ -138,11 +135,6 @@ fun AccessControlScreen(navigator: Navigator) {
                     }
             )
         }
-    val showSettingsFab by
-        remember(currentSearchStatus, showSettingsSheet) {
-            derivedStateOf { currentSearchStatus.isCollapsed() && !showSettingsSheet }
-        }
-
     val permissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -171,22 +163,62 @@ fun AccessControlScreen(navigator: Navigator) {
         }
     }
 
+    // Jump the main list back to the top whenever the order changes (sort mode or selected-first),
+    // otherwise the previous scroll offset is kept against a freshly reordered list.
+    LaunchedEffect(uiState.sortMode, uiState.selectedFirst) {
+        mainListState.scrollToItem(0)
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            floatingActionButton = {
-                OverrideAnimatedFab(
-                    controller = settingsFabController,
-                    visible = showSettingsFab,
-                    imageVector = Yume.`Settings-2`,
-                    contentDescription = MLang.AccessControl.Settings.Title,
-                    onClick = { showSettingsSheet = true },
-                )
-            },
             topBar = {
                 currentSearchStatus.TopAppBarAnim {
                     TopBar(
                         title = MLang.AccessControl.Title,
                         scrollBehavior = scrollBehavior,
+                        actions = {
+                            Box {
+                                IconButton(
+                                    modifier = Modifier.padding(end = spacing.space12),
+                                    onClick = { showSortMenu = true },
+                                ) {
+                                    Icon(
+                                        imageVector = MiuixIcons.Sort,
+                                        contentDescription = MLang.AccessControl.Settings.SortMode,
+                                        tint = MiuixTheme.colorScheme.onSurface,
+                                    )
+                                }
+                                AccessControlSortMenu(
+                                    show = showSortMenu,
+                                    sortMode = uiState.sortMode,
+                                    onDismiss = { showSortMenu = false },
+                                    onSortModeChange = viewModel::onSortModeChange,
+                                )
+                            }
+                            Box {
+                                IconButton(onClick = { showOpsMenu = true }) {
+                                    Icon(
+                                        imageVector = Yume.`Settings-2`,
+                                        contentDescription = MLang.AccessControl.Settings.Title,
+                                        tint = MiuixTheme.colorScheme.onSurface,
+                                    )
+                                }
+                                AccessControlOperationsMenu(
+                                    show = showOpsMenu,
+                                    uiState = uiState,
+                                    onDismiss = { showOpsMenu = false },
+                                    onShowSystemAppsChange = viewModel::onShowSystemAppsChange,
+                                    onSelectedFirstChange = viewModel::onSelectedFirstChange,
+                                    onSelectAll = viewModel::selectAll,
+                                    onDeselectAll = viewModel::deselectAll,
+                                    onInvertSelection = viewModel::invertSelection,
+                                    onSelectChinaApps = viewModel::selectChinaAppsInCurrentList,
+                                    onSelectNonChinaApps = viewModel::selectNonChinaAppsInCurrentList,
+                                    onImportPackages = viewModel::importPackages,
+                                    onExportPackages = viewModel::exportPackages,
+                                )
+                            }
+                        },
                         bottomContent = {
                             Box(
                                 modifier =
@@ -252,16 +284,16 @@ fun AccessControlScreen(navigator: Navigator) {
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        MLang.AccessControl.AppList.Loading,
-                        color = MiuixTheme.colorScheme.onSurface,
-                    )
+                    InfiniteProgressIndicator(color = MiuixTheme.colorScheme.onSurface)
                 }
-            } else if (currentSearchStatus.isCollapsed()) {
+            } else if (currentSearchStatus.shouldCollapse()) {
+                // Render the list during COLLAPSING too (not just at the COLLAPSED end state) so it is
+                // already settled underneath the fading search overlay — otherwise it pops in on the
+                // final frame and looks like a refresh flash.
                 ScreenLazyColumn(
                     scrollBehavior = scrollBehavior,
                     innerPadding = combinedInnerPadding,
-                    onScrollDirectionChanged = settingsFabController::onScrollDirectionChanged,
+                    lazyListState = mainListState,
                     contentPadding =
                         PaddingValues(
                             top = combinedInnerPadding.calculateTopPadding() + spacing.space6,
@@ -270,12 +302,6 @@ fun AccessControlScreen(navigator: Navigator) {
                             end = listEndPadding,
                         ),
                 ) {
-                    item {
-                        Title(
-                            MLang.AccessControl.AppList.Title.format(uiState.selectedPackages.size)
-                        )
-                    }
-
                     items(items = filteredApps, key = { it.packageName }) { app ->
                         AppCard(
                             app = app,
@@ -294,21 +320,6 @@ fun AccessControlScreen(navigator: Navigator) {
                 }
             }
 
-            AccessControlSettingsSheet(
-                show = showSettingsSheet,
-                uiState = uiState,
-                onDismiss = { showSettingsSheet = false },
-                onShowSystemAppsChange = viewModel::onShowSystemAppsChange,
-                onSelectedFirstChange = viewModel::onSelectedFirstChange,
-                onSortModeChange = viewModel::onSortModeChange,
-                onSelectAll = viewModel::selectAll,
-                onDeselectAll = viewModel::deselectAll,
-                onInvertSelection = viewModel::invertSelection,
-                onSelectChinaApps = viewModel::selectChinaAppsInCurrentList,
-                onSelectNonChinaApps = viewModel::selectNonChinaAppsInCurrentList,
-                onImportPackages = viewModel::importPackages,
-                onExportPackages = viewModel::exportPackages,
-            )
         }
 
         currentSearchStatus.SearchPager(
@@ -396,13 +407,41 @@ private fun AccessControlCollapsedSearchBar(
 }
 
 @Composable
-private fun AccessControlSettingsSheet(
+private fun AccessControlSortMenu(
+    show: Boolean,
+    sortMode: AccessControlViewModel.SortMode,
+    onDismiss: () -> Unit,
+    onSortModeChange: (AccessControlViewModel.SortMode) -> Unit,
+) {
+    val entries =
+        listOf(
+            DropdownEntry(
+                items =
+                    AccessControlViewModel.SortMode.entries.map { mode ->
+                        DropdownItem(
+                            text = mode.displayName,
+                            selected = mode == sortMode,
+                            onClick = { onSortModeChange(mode) },
+                        )
+                    }
+            )
+        )
+
+    // Picking a sort mode dismisses the popup (collapseOnSelection defaults to true).
+    OverlayCascadingListPopup(
+        show = show,
+        entries = entries,
+        onDismissRequest = onDismiss,
+    )
+}
+
+@Composable
+private fun AccessControlOperationsMenu(
     show: Boolean,
     uiState: AccessControlViewModel.UiState,
     onDismiss: () -> Unit,
     onShowSystemAppsChange: (Boolean) -> Unit,
     onSelectedFirstChange: (Boolean) -> Unit,
-    onSortModeChange: (AccessControlViewModel.SortMode) -> Unit,
     onSelectAll: () -> Unit,
     onDeselectAll: () -> Unit,
     onInvertSelection: () -> Unit,
@@ -416,141 +455,101 @@ private fun AccessControlSettingsSheet(
         remember(context) {
             context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         }
-    val sortModeEntries = remember { AccessControlViewModel.SortMode.entries }
+    val settings = MLang.AccessControl.Settings
 
-    AppActionBottomSheet(
+    val entries =
+        listOf(
+            DropdownEntry(
+                items =
+                    listOf(
+                        DropdownItem(
+                            text = settings.ShowSystemApps,
+                            selected = uiState.showSystemApps,
+                            onClick = { onShowSystemAppsChange(!uiState.showSystemApps) },
+                        ),
+                        DropdownItem(
+                            text = settings.SelectedFirst,
+                            selected = uiState.selectedFirst,
+                            onClick = { onSelectedFirstChange(!uiState.selectedFirst) },
+                        ),
+                    )
+            ),
+            DropdownEntry(
+                items =
+                    listOf(
+                        DropdownItem(
+                            text = settings.BatchOperation,
+                            children =
+                                listOf(
+                                    DropdownItem(text = settings.SelectAll, onClick = onSelectAll),
+                                    DropdownItem(
+                                        text = settings.DeselectAll,
+                                        onClick = onDeselectAll,
+                                    ),
+                                    DropdownItem(
+                                        text = settings.Invert,
+                                        onClick = onInvertSelection,
+                                    ),
+                                ),
+                        ),
+                        DropdownItem(
+                            text = settings.RegionQuickSelect,
+                            children =
+                                listOf(
+                                    DropdownItem(
+                                        text = settings.ChinaApps,
+                                        onClick = { onSelectChinaApps() },
+                                    ),
+                                    DropdownItem(
+                                        text = settings.OverseasApps,
+                                        onClick = { onSelectNonChinaApps() },
+                                    ),
+                                ),
+                        ),
+                        DropdownItem(
+                            text = settings.ImportExport,
+                            children =
+                                listOf(
+                                    DropdownItem(
+                                        text = settings.Import,
+                                        onClick = {
+                                            val text =
+                                                clipboardManager.primaryClip
+                                                    ?.takeIf { it.itemCount > 0 }
+                                                    ?.getItemAt(0)
+                                                    ?.text
+                                                    ?.toString()
+                                                    .orEmpty()
+                                            if (text.isNotEmpty()) {
+                                                onImportPackages(text)
+                                            }
+                                        },
+                                    ),
+                                    DropdownItem(
+                                        text = settings.Export,
+                                        onClick = {
+                                            clipboardManager.setPrimaryClip(
+                                                ClipData.newPlainText(
+                                                    "packages",
+                                                    onExportPackages(),
+                                                )
+                                            )
+                                        },
+                                    ),
+                                ),
+                        ),
+                    )
+            ),
+        )
+
+    // Selecting any item (including inside a 2nd-level submenu) collapses and dismisses the popup —
+    // collapseOnSelection defaults to true. The submenu can also be backed out via the system back
+    // gesture or by tapping outside the popup (both handled by the Miuix cascading layout).
+    OverlayCascadingListPopup(
         show = show,
-        modifier = Modifier,
-        title = MLang.AccessControl.Settings.Title,
+        entries = entries,
         onDismissRequest = onDismiss,
-        enableNestedScroll = true,
-        renderInRootScaffold = false,
-    ) {
-        Column {
-            top.yukonga.miuix.kmp.basic.Card {
-                SwitchPreference(
-                    title = MLang.AccessControl.Settings.ShowSystemApps,
-                    checked = uiState.showSystemApps,
-                    onCheckedChange = onShowSystemAppsChange,
-                )
-                SwitchPreference(
-                    title = MLang.AccessControl.Settings.SelectedFirst,
-                    checked = uiState.selectedFirst,
-                    onCheckedChange = onSelectedFirstChange,
-                )
-                WindowDropdownPreference(
-                    title = MLang.AccessControl.Settings.SortMode,
-                    summary =
-                        MLang.AccessControl.Settings.SortModeCurrent.format(
-                            uiState.sortMode.displayName
-                        ),
-                    items = sortModeEntries.map { it.displayName },
-                    selectedIndex = sortModeEntries.indexOf(uiState.sortMode).coerceAtLeast(0),
-                    onSelectedIndexChange = { index ->
-                        sortModeEntries.getOrNull(index)?.let(onSortModeChange)
-                    },
-                )
-                WindowDropdownPreference(
-                    title = MLang.AccessControl.Settings.BatchOperation,
-                    items =
-                        listOf(
-                            MLang.AccessControl.Settings.SelectAll,
-                            MLang.AccessControl.Settings.DeselectAll,
-                            MLang.AccessControl.Settings.Invert,
-                        ),
-                    selectedIndex = 0,
-                    onSelectedIndexChange = { index ->
-                        when (index) {
-                            0 -> onSelectAll()
-                            1 -> onDeselectAll()
-                            2 -> onInvertSelection()
-                        }
-                    },
-                )
-                WindowDropdownPreference(
-                    title = MLang.AccessControl.Settings.RegionQuickSelect,
-                    items =
-                        listOf(
-                            MLang.AccessControl.Settings.ChinaApps,
-                            MLang.AccessControl.Settings.OverseasApps,
-                        ),
-                    selectedIndex = 0,
-                    onSelectedIndexChange = { index ->
-                        val (label, selectedCount) =
-                            when (index) {
-                                0 -> MLang.AccessControl.Settings.ChinaApps to onSelectChinaApps()
-                                1 ->
-                                    MLang.AccessControl.Settings.OverseasApps to
-                                        onSelectNonChinaApps()
-                                else -> "" to 0
-                            }
-                        context.toast(
-                            MLang.AccessControl.Settings.RegionSelectResult.format(
-                                label,
-                                selectedCount,
-                            )
-                        )
-                    },
-                )
-                WindowDropdownPreference(
-                    title = MLang.AccessControl.Settings.ImportExport,
-                    items =
-                        listOf(
-                            MLang.AccessControl.Settings.Import,
-                            MLang.AccessControl.Settings.Export,
-                        ),
-                    selectedIndex = 0,
-                    onSelectedIndexChange = { index ->
-                        when (index) {
-                            0 -> {
-                                val text =
-                                    clipboardManager.primaryClip
-                                        ?.takeIf { it.itemCount > 0 }
-                                        ?.getItemAt(0)
-                                        ?.text
-                                        ?.toString()
-                                        .orEmpty()
-                                if (text.isNotEmpty()) {
-                                    val count = onImportPackages(text)
-                                    context.toast(
-                                        MLang.AccessControl.Settings.ImportSuccess.format(count)
-                                    )
-                                } else {
-                                    context.toast(MLang.AccessControl.Settings.ImportFailed)
-                                }
-                            }
-
-                            1 -> {
-                                clipboardManager.setPrimaryClip(
-                                    ClipData.newPlainText("packages", onExportPackages())
-                                )
-                                context.toast(
-                                    MLang.AccessControl.Settings.ExportSuccess.format(
-                                        uiState.selectedPackages.size
-                                    )
-                                )
-                            }
-                        }
-                    },
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(spacing.space24))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space12)) {
-            Button(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                Text(MLang.AccessControl.Button.Cancel)
-            }
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColorsPrimary(),
-            ) {
-                Text(MLang.AccessControl.Button.Confirm, color = MiuixTheme.colorScheme.onPrimary)
-            }
-        }
-    }
+    )
 }
 
 @Composable
@@ -565,13 +564,14 @@ private fun AppCard(
 
     Card(modifier = Modifier.padding(vertical = spacing.space4), applyHorizontalPadding = false) {
         BasicComponent(
-            title = app.label,
-            summary = app.packageName,
+            // Reduce the default 16dp vertical inside-margin a little for a tighter row, keep
+            // horizontal at 16dp so the card width is unchanged.
+            insideMargin = PaddingValues(horizontal = spacing.space16, vertical = spacing.space12),
             startAction = {
                 AppIcon(
                     packageName = app.packageName,
                     contentDescription = app.label,
-                    imageSize = componentSizes.iconBadgeLarge,
+                    imageSize = componentSizes.iconBadgeMedium,
                     bitmapSize = 80,
                     modifier = Modifier.padding(end = spacing.space12),
                 )
@@ -583,7 +583,23 @@ private fun AppCard(
                 )
             },
             onClick = onClick,
-        )
+        ) {
+            Text(
+                text = app.label,
+                fontSize = MiuixTheme.textStyles.headline1.fontSize,
+                fontWeight = FontWeight.Medium,
+                color = MiuixTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = app.packageName,
+                fontSize = MiuixTheme.textStyles.body2.fontSize,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

@@ -199,3 +199,4 @@ jobs:
           name: ${{ inputs.publish_artifact_name }}
           path: publish/*.apk
           if-no-files-found: error
+          archive: false
