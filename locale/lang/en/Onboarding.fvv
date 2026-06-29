@@ -4,6 +4,11 @@ Onboarding = {
         Back = "Back"
         Next = "Next"
         Enter = "Enter App"
+        Start = "Get Started"
+    }
+
+    Welcome = {
+        Tagline = "A lightweight, modern, open proxy client"
     }
 
     Permission = {

@@ -4,6 +4,11 @@ Onboarding = {
         Back = "返回"
         Next = "下一步"
         Enter = "进入应用"
+        Start = "开始体验"
+    }
+
+    Welcome = {
+        Tagline = "轻量 · 现代 · 自由的代理客户端"
     }
 
     Permission = {

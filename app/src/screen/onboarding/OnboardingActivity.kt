@@ -21,33 +21,18 @@
 package com.github.yumelira.yumebox.screen.onboarding
 
 import android.os.Bundle
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.github.yumelira.yumebox.common.util.openUrl
 import com.github.yumelira.yumebox.data.store.AppSettingsStore
-import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.Palette
-import com.github.yumelira.yumebox.presentation.icon.yume.ShieldCheck
-import com.github.yumelira.yumebox.presentation.icon.yume.UserKey
 import com.github.yumelira.yumebox.presentation.theme.colorFromArgb
 import com.github.yumelira.yumebox.presentation.theme.colorToArgbLong
 import com.github.yumelira.yumebox.screen.settings.AppSettingsViewModel
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerSheet
-import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.koinViewModel
 
@@ -62,7 +47,7 @@ internal class OnboardingActivity : OnboardingBaseActivity() {
         }
 
         setOnboardingContent {
-            OnboardingPagerScreen(
+            OnboardingScreen(
                 activity = this,
                 onFinish = {
                     if (!previewMode) {
@@ -70,31 +55,13 @@ internal class OnboardingActivity : OnboardingBaseActivity() {
                     }
                     finishOnboarding()
                 },
-                onGithubClick = { openUrl(this, "https://github.com/YumeYucca/YumeBox") },
-                onCommunityClick = { openUrl(this, "https://t.me/YumeLira") },
             )
         }
     }
 }
 
-private enum class OnboardingStep {
-    Startup,
-    Permissions,
-    Terms,
-    Personalize,
-    Finish,
-}
-
 @Composable
-private fun OnboardingPagerScreen(
-    activity: OnboardingActivity,
-    onFinish: () -> Unit,
-    onGithubClick: () -> Unit,
-    onCommunityClick: () -> Unit,
-) {
-    val steps = remember { OnboardingStep.entries }
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { steps.size })
-    val coroutineScope = rememberCoroutineScope()
+private fun OnboardingScreen(activity: OnboardingActivity, onFinish: () -> Unit) {
     val appSettingsViewModel = koinViewModel<AppSettingsViewModel>()
     val lifecycleOwner = LocalLifecycleOwner.current
     val permissionState =
@@ -103,155 +70,72 @@ private fun OnboardingPagerScreen(
     val themeState = rememberThemeCustomizationState(appSettingsViewModel)
     val showPrivacySheet = remember { mutableStateOf(false) }
     var showThemeColorPicker by remember { mutableStateOf(false) }
-    var editingThemeSeedColor by
-        remember(themeState.themeSeedColorArgb) {
-            mutableStateOf(
-                runCatching { colorFromArgb(themeState.themeSeedColorArgb) }
-                    .getOrDefault(Color.White)
-            )
-        }
-    var editingThemeSeedHex by
-        remember(themeState.themeSeedColorArgb) {
-            mutableStateOf(
-                "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
-            )
-        }
 
-    fun navigateTo(page: Int) {
-        if (page !in steps.indices || pagerState.isScrollInProgress) {
-            return
-        }
-        coroutineScope.launch {
-            pagerState.animateScrollToPage(
-                page = page,
-                animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
-            )
-        }
-    }
-
-    BackHandler(
-        enabled = pagerState.currentPage > 0 && !showPrivacySheet.value && !showThemeColorPicker
-    ) {
-        navigateTo(pagerState.currentPage - 1)
-    }
-
-    HorizontalPager(
-        modifier = Modifier.fillMaxSize(),
-        state = pagerState,
-        userScrollEnabled = false,
-        beyondViewportPageCount = 0,
-        overscrollEffect = null,
-    ) { page ->
-        when (steps[page]) {
-            OnboardingStep.Startup -> {
-                StartupHeroShell(
-                    enabled = true,
-                    onStart = { navigateTo(OnboardingStep.Permissions.ordinal) },
-                )
-            }
-
-            OnboardingStep.Permissions -> {
-                ProvisionDetailShell(
-                    previewIcon = Yume.UserKey,
-                    title = MLang.Onboarding.Permission.Title,
-                    subtitle = MLang.Onboarding.Permission.Subtitle,
-                    primaryText = MLang.Onboarding.Navigation.Next,
-                    primaryEnabled = true,
-                    onPrimaryClick = { navigateTo(OnboardingStep.Terms.ordinal) },
-                    onBack = { navigateTo(OnboardingStep.Startup.ordinal) },
-                ) {
-                    PermissionContent(permissionState)
-                }
-            }
-
-            OnboardingStep.Terms -> {
-                ProvisionDetailShell(
-                    previewIcon = Yume.ShieldCheck,
-                    title = MLang.Onboarding.Privacy.Title,
-                    subtitle = MLang.Onboarding.Privacy.Subtitle,
-                    primaryText = MLang.Onboarding.Navigation.Next,
-                    primaryEnabled = privacyState.accepted,
-                    onPrimaryClick = {
-                        if (privacyState.accepted) {
-                            navigateTo(OnboardingStep.Personalize.ordinal)
-                        }
-                    },
-                    onBack = { navigateTo(OnboardingStep.Permissions.ordinal) },
-                ) {
-                    TermsContent(
-                        accepted = privacyState.accepted,
-                        onAcceptedChange = privacyState.onAcceptedChange,
-                        onPrivacySheetRequest = { showPrivacySheet.value = true },
-                    )
-                }
-            }
-
-            OnboardingStep.Personalize -> {
-                ProvisionDetailShell(
-                    previewIcon = Yume.Palette,
-                    title = MLang.Onboarding.Personalize.Title,
-                    subtitle = MLang.Onboarding.Personalize.Subtitle,
-                    primaryText = MLang.Onboarding.Navigation.Next,
-                    primaryEnabled = true,
-                    onPrimaryClick = { navigateTo(OnboardingStep.Finish.ordinal) },
-                    onBack = { navigateTo(OnboardingStep.Terms.ordinal) },
-                ) {
-                    PersonalizeContent(
-                        themeMode = themeState.themeMode,
-                        onThemeModeChange = themeState.onThemeModeChange,
-                        themeSeedColorArgb = themeState.themeSeedColorArgb,
-                        onShowThemeColorPickerChange = { show ->
-                            if (show) {
-                                editingThemeSeedColor =
-                                    runCatching { colorFromArgb(themeState.themeSeedColorArgb) }
-                                        .getOrDefault(Color.White)
-                                editingThemeSeedHex =
-                                    "#${(themeState.themeSeedColorArgb and 0x00FFFFFFL).toString(
-                                        16
-                                    ).uppercase().padStart(6, '0')}"
-                            }
-                            showThemeColorPicker = show
-                        },
-                    )
-                }
-            }
-
-            OnboardingStep.Finish -> {
-                FinishHeroShell(
-                    enabled = true,
-                    onPrimaryClick = onFinish,
-                    onGithubClick = onGithubClick,
-                    onCommunityClick = onCommunityClick,
-                )
-            }
-        }
-    }
+    OnboardingSinglePage(
+        permissionState = permissionState,
+        privacyAccepted = privacyState.accepted,
+        onPrivacyAcceptedChange = privacyState.onAcceptedChange,
+        onPrivacySheetRequest = { showPrivacySheet.value = true },
+        themeMode = themeState.themeMode,
+        onThemeModeChange = themeState.onThemeModeChange,
+        themeSeedColorArgb = themeState.themeSeedColorArgb,
+        onShowThemeColorPickerChange = { showThemeColorPicker = it },
+        onFinish = onFinish,
+    )
 
     PrivacyPolicySheet(show = showPrivacySheet)
 
-    ThemeColorPickerSheet(
+    OnboardingThemeColorPickerHost(
         show = showThemeColorPicker,
-        editingThemeSeedColor = editingThemeSeedColor,
-        editingThemeSeedHex = editingThemeSeedHex,
-        onDismissRequest = { showThemeColorPicker = false },
+        themeSeedColorArgb = themeState.themeSeedColorArgb,
+        onThemeSeedColorChange = themeState.onThemeSeedColorChange,
+        onDismiss = { showThemeColorPicker = false },
+    )
+}
+
+@Composable
+private fun OnboardingThemeColorPickerHost(
+    show: Boolean,
+    themeSeedColorArgb: Long,
+    onThemeSeedColorChange: (Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var editingColor by
+        remember(themeSeedColorArgb) {
+            mutableStateOf(
+                runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
+            )
+        }
+    var editingHex by
+        remember(themeSeedColorArgb) {
+            mutableStateOf(
+                "#${(themeSeedColorArgb and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
+            )
+        }
+
+    ThemeColorPickerSheet(
+        show = show,
+        editingThemeSeedColor = editingColor,
+        editingThemeSeedHex = editingHex,
+        onDismissRequest = onDismiss,
         onEditingThemeSeedColorChange = {
-            editingThemeSeedColor = it
-            editingThemeSeedHex =
+            editingColor = it
+            editingHex =
                 "#${(colorToArgbLong(it) and 0x00FFFFFFL).toString(16).uppercase().padStart(6, '0')}"
         },
         onEditingThemeSeedHexChange = { raw ->
             val normalized =
                 "#${raw.uppercase().filter { ch -> ch in '0'..'9' || ch in 'A'..'F' }.take(6)}"
-            editingThemeSeedHex = normalized
+            editingHex = normalized
             if (normalized.length == 7) {
                 normalized.removePrefix("#").toLongOrNull(16)?.let {
-                    editingThemeSeedColor = colorFromArgb(0xFF000000L or it)
+                    editingColor = colorFromArgb(0xFF000000L or it)
                 }
             }
         },
         onConfirm = {
-            themeState.onThemeSeedColorChange(colorToArgbLong(editingThemeSeedColor))
-            showThemeColorPicker = false
+            onThemeSeedColorChange(colorToArgbLong(editingColor))
+            onDismiss()
         },
     )
 }

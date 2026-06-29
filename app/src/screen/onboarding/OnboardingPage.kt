@@ -23,41 +23,34 @@ package com.github.yumelira.yumebox.screen.onboarding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.icon.Yume
-import com.github.yumelira.yumebox.presentation.icon.yume.CircleCheckBig
-import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.List
 import com.github.yumelira.yumebox.presentation.icon.yume.Message
+import com.github.yumelira.yumebox.presentation.icon.yume.Rocket
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import com.github.yumelira.yumebox.screen.settings.component.ThemeColorPickerItem
 import com.github.yumelira.yumebox.screen.settings.component.ThemeModeSelectorItem
@@ -67,91 +60,19 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-internal fun StartupHeroShell(enabled: Boolean, onStart: () -> Unit) {
-    OnboardingPageFrame {
-        Spacer(modifier = Modifier.height(UiDp.dp212))
-
-        RevealBlock(delayMillis = 0, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            StartupTypewriterWord(
-                phrases = StartupTypewriterPhrases,
-                modifier = Modifier.widthIn(max = UiDp.dp320),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(UiDp.dp18))
-
-        DetailScrollableContent(modifier = Modifier.weight(1f)) {
-            Spacer(modifier = Modifier.height(UiDp.dp20))
-        }
-
-        RevealScaleBlock(
-            delayMillis = 680,
-            modifier = Modifier.align(Alignment.CenterHorizontally).offset(y = (-156).dp),
-        ) {
-            HeroStartButton(enabled = enabled, onStart = onStart)
-        }
-    }
-}
-
-@Composable
-internal fun ProvisionDetailShell(
-    previewIcon: ImageVector,
-    title: String,
-    subtitle: String,
-    primaryText: String,
-    primaryEnabled: Boolean,
-    onPrimaryClick: () -> Unit,
-    onBack: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit,
+internal fun OnboardingSinglePage(
+    permissionState: PermissionState,
+    privacyAccepted: Boolean,
+    onPrivacyAcceptedChange: (Boolean) -> Unit,
+    onPrivacySheetRequest: () -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    themeSeedColorArgb: Long,
+    onShowThemeColorPickerChange: (Boolean) -> Unit,
+    onFinish: () -> Unit,
 ) {
-    OnboardingPageFrame {
-        Spacer(modifier = Modifier.height(UiDp.dp88))
-
-        RevealBlock(delayMillis = 0, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            DetailPreviewBadge(icon = previewIcon)
-        }
-
-        Spacer(modifier = Modifier.height(UiDp.dp32))
-
-        DetailHeadline(title = title, subtitle = subtitle)
-
-        Spacer(modifier = Modifier.height(UiDp.dp40))
-
-        DetailScrollableContent(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
-        ) {
-            RevealBlock(delayMillis = 160) {
-                Column(verticalArrangement = Arrangement.spacedBy(UiDp.dp18), content = content)
-            }
-            Spacer(modifier = Modifier.height(UiDp.dp20))
-        }
-
-        DetailFooter(delayMillis = 220, offsetY = (-36).dp) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(UiDp.dp12),
-            ) {
-                SecondaryFooterAction(
-                    text = MLang.Onboarding.Navigation.Back,
-                    onClick = onBack,
-                    modifier = Modifier.weight(1f),
-                )
-                PrimaryFooterAction(
-                    text = primaryText,
-                    enabled = primaryEnabled,
-                    onClick = onPrimaryClick,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun OnboardingPageFrame(content: @Composable ColumnScope.() -> Unit) {
     Box(modifier = Modifier.fillMaxSize()) {
-        DetailBackdrop()
+        OnboardingBackdrop()
 
         Column(
             modifier =
@@ -159,27 +80,63 @@ private fun OnboardingPageFrame(content: @Composable ColumnScope.() -> Unit) {
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .padding(horizontal = PagePadding, vertical = UiDp.dp12),
-            content = content,
-        )
-    }
-}
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier =
+                    Modifier.weight(1f)
+                        .fillMaxWidth()
+                        .widthIn(max = DetailWidth)
+                        .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
+            ) {
+                Spacer(modifier = Modifier.height(UiDp.dp56))
 
-@Composable
-private fun DetailScrollableContent(
-    modifier: Modifier = Modifier,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .wrapContentWidth(Alignment.CenterHorizontally)
-                .widthIn(max = DetailWidth)
-                .verticalScroll(rememberScrollState()),
-        verticalArrangement = verticalArrangement,
-        content = content,
-    )
+                RevealScaleBlock(delayMillis = 0) { OnboardingHeroBadge(icon = Yume.Rocket) }
+                RevealBlock(delayMillis = 90) {
+                    HeroWordmark(title = "YumeBox", tagline = MLang.Onboarding.Welcome.Tagline)
+                }
+
+                Spacer(modifier = Modifier.height(UiDp.dp10))
+
+                RevealBlock(delayMillis = 160, modifier = Modifier.fillMaxWidth()) {
+                    TermsContent(
+                        accepted = privacyAccepted,
+                        onAcceptedChange = onPrivacyAcceptedChange,
+                        onPrivacySheetRequest = onPrivacySheetRequest,
+                    )
+                }
+
+                RevealBlock(delayMillis = 220, modifier = Modifier.fillMaxWidth()) {
+                    PermissionContent(permissionState)
+                }
+
+                RevealBlock(delayMillis = 280, modifier = Modifier.fillMaxWidth()) {
+                    PersonalizeContent(
+                        themeMode = themeMode,
+                        onThemeModeChange = onThemeModeChange,
+                        themeSeedColorArgb = themeSeedColorArgb,
+                        onShowThemeColorPickerChange = onShowThemeColorPickerChange,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(UiDp.dp12))
+            }
+
+            RevealBlock(
+                delayMillis = 340,
+                modifier = Modifier.fillMaxWidth().widthIn(max = DetailWidth).padding(top = UiDp.dp16),
+            ) {
+                PrimaryFooterAction(
+                    text = MLang.Onboarding.Navigation.Enter,
+                    enabled = privacyAccepted,
+                    onClick = { if (privacyAccepted) onFinish() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -292,16 +249,12 @@ internal fun TermsContent(
                     state = androidx.compose.ui.state.ToggleableState(accepted),
                     onClick = { onAcceptedChange(!accepted) },
                 )
-                Column(
+                Text(
+                    text = MLang.Onboarding.Privacy.Accept.Title,
+                    style = MiuixTheme.textStyles.body1.copy(fontWeight = FontWeight.Medium),
+                    color = MiuixTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(UiDp.dp4),
-                ) {
-                    Text(
-                        text = MLang.Onboarding.Privacy.Accept.Title,
-                        style = MiuixTheme.textStyles.body1.copy(fontWeight = FontWeight.Medium),
-                        color = MiuixTheme.colorScheme.onSurface,
-                    )
-                }
+                )
             }
         }
     }
@@ -323,112 +276,5 @@ internal fun PersonalizeContent(
             showBottomSheetInPlace = false,
             onOpenPickerRequest = { onShowThemeColorPickerChange(true) },
         )
-    }
-}
-
-@Composable
-internal fun FinishHeroShell(
-    enabled: Boolean,
-    onPrimaryClick: () -> Unit,
-    onGithubClick: () -> Unit,
-    onCommunityClick: () -> Unit,
-) {
-    OnboardingPageFrame {
-        Spacer(modifier = Modifier.height(UiDp.dp88))
-
-        RevealBlock(delayMillis = 0, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            DetailPreviewBadge(icon = Yume.CircleCheckBig)
-        }
-
-        Spacer(modifier = Modifier.height(UiDp.dp32))
-
-        DetailHeadline(
-            title = MLang.Onboarding.Finish.Title,
-            subtitle = MLang.Onboarding.Finish.Subtitle,
-        )
-
-        Spacer(modifier = Modifier.height(UiDp.dp40))
-
-        DetailScrollableContent(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(UiDp.dp18),
-        ) {
-            RevealBlock(delayMillis = 160) {
-                DetailGroup {
-                    ProjectLinkRow(
-                        icon = Yume.Github,
-                        title = MLang.Onboarding.Project.Github.Title,
-                        summary = MLang.Onboarding.Project.Github.Summary,
-                        onClick = onGithubClick,
-                    )
-                    DetailDivider()
-                    ProjectLinkRow(
-                        icon = Yume.Message,
-                        title = MLang.Onboarding.Project.Community.Title,
-                        summary = MLang.Onboarding.Project.Community.Summary,
-                        onClick = onCommunityClick,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(UiDp.dp20))
-        }
-
-        DetailFooter(delayMillis = 220, offsetY = (-36).dp) {
-            PrimaryFooterAction(
-                text = MLang.Onboarding.Navigation.Enter,
-                enabled = enabled,
-                onClick = onPrimaryClick,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.DetailHeadline(title: String, subtitle: String) {
-    Column(
-        modifier =
-            Modifier.widthIn(max = DetailWidth).fillMaxWidth().align(Alignment.CenterHorizontally),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
-    ) {
-        RevealBlock(delayMillis = 50) {
-            Text(
-                text = title,
-                style =
-                    MiuixTheme.textStyles.title2.copy(
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                color = MiuixTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-        }
-        RevealBlock(delayMillis = 110) {
-            Text(
-                text = subtitle,
-                style = MiuixTheme.textStyles.body2.copy(lineHeight = 22.sp),
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.DetailFooter(
-    delayMillis: Int,
-    offsetY: androidx.compose.ui.unit.Dp,
-    content: @Composable () -> Unit,
-) {
-    RevealBlock(
-        delayMillis = delayMillis,
-        modifier =
-            Modifier.widthIn(max = DetailWidth)
-                .fillMaxWidth()
-                .align(Alignment.CenterHorizontally)
-                .offset(y = offsetY),
-    ) {
-        content()
     }
 }

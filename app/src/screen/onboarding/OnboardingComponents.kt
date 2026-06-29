@@ -33,24 +33,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,137 +54,75 @@ import com.github.yumelira.yumebox.presentation.icon.ShellIcons
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
 import dev.oom_wg.purejoy.mlang.MLang
-import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
+/** Large gradient wordmark for the welcome step, with a quiet tagline underneath. */
 @Composable
-internal fun StartupTypewriterWord(phrases: List<String>, modifier: Modifier = Modifier) {
-    val spacing = AppTheme.spacing
-    val opacity = AppTheme.opacity
-
-    var phraseIndex by remember(phrases) { mutableStateOf(0) }
-    var visibleLength by remember(phrases) { mutableStateOf(0) }
-    var deleting by remember(phrases) { mutableStateOf(false) }
-
-    LaunchedEffect(phrases) {
-        while (true) {
-            val currentText = phrases.getOrElse(phraseIndex) { "" }
-            if (!deleting) {
-                if (visibleLength < currentText.length) {
-                    delay(95)
-                    visibleLength += 1
-                } else {
-                    delay(1850)
-                    deleting = true
-                }
-            } else {
-                if (visibleLength > 0) {
-                    delay(65)
-                    visibleLength -= 1
-                } else {
-                    delay(700)
-                    deleting = false
-                    phraseIndex = (phraseIndex + 1) % phrases.size
-                }
-            }
-        }
-    }
-
-    val currentText = phrases.getOrElse(phraseIndex) { "" }
-    val displayText = remember(currentText, visibleLength) { currentText.take(visibleLength) }
-    val showCursor = visibleLength < currentText.length || deleting
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = displayText,
-            style =
-                MiuixTheme.textStyles.title1.copy(
-                    fontSize = 54.sp,
-                    fontWeight = FontWeight.Normal,
-                    letterSpacing = 0.2.sp,
-                ),
-            color = MiuixTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
+internal fun HeroWordmark(title: String, tagline: String, modifier: Modifier = Modifier) {
+    val colorScheme = MiuixTheme.colorScheme
+    val brush =
+        Brush.linearGradient(
+            listOf(colorScheme.primary, lerp(colorScheme.primary, colorScheme.onSurface, 0.55f))
         )
 
-        if (showCursor) {
-            Box(
-                modifier =
-                    Modifier.padding(
-                            start = spacing.space4,
-                            top = AppTheme.sizes.textLineCompactSpacing,
-                        )
-                        .width(UiDp.dp1_2)
-                        .height(UiDp.dp46)
-                        .background(
-                            color = MiuixTheme.colorScheme.onSurface.copy(alpha = opacity.high),
-                            shape = RoundedCornerShape(50),
-                        )
-            )
-        }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(UiDp.dp12),
+    ) {
+        Text(
+            text = title,
+            style =
+                MiuixTheme.textStyles.title1.copy(
+                    fontSize = 52.sp,
+                    fontWeight = FontWeight.Bold,
+                    brush = brush,
+                ),
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = tagline,
+            style = MiuixTheme.textStyles.body2.copy(lineHeight = 22.sp),
+            color = colorScheme.onSurfaceVariantSummary,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
+/** A soft primary-tinted circle hosting the step's glyph, with a gentle infinite breathing pulse. */
 @Composable
-internal fun HeroStartButton(enabled: Boolean, onStart: () -> Unit, modifier: Modifier = Modifier) {
-    val componentSizes = AppTheme.sizes
-
-    val pulseTransition = rememberInfiniteTransition(label = "startup_button_pulse")
-    val pulseScale by
-        pulseTransition.animateFloat(
+internal fun OnboardingHeroBadge(icon: ImageVector, modifier: Modifier = Modifier) {
+    val opacity = AppTheme.opacity
+    val pulse = rememberInfiniteTransition(label = "hero_badge_pulse")
+    val scale by
+        pulse.animateFloat(
             initialValue = 1f,
-            targetValue = 1.045f,
+            targetValue = 1.05f,
             animationSpec =
                 infiniteRepeatable(
-                    animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+                    animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
                     repeatMode = RepeatMode.Reverse,
                 ),
-            label = "startup_button_scale",
+            label = "hero_badge_scale",
         )
 
     Box(
         modifier =
             modifier
-                .size(componentSizes.heroStartButtonSize)
+                .size(HeroBadgeSize)
+                .graphicsLayer(scaleX = scale, scaleY = scale)
                 .clip(CircleShape)
-                .clickable(enabled = enabled, onClick = onStart)
-                .graphicsLayer(
-                    alpha = if (enabled) 1f else 0.45f,
-                    scaleX = if (enabled) pulseScale else 1f,
-                    scaleY = if (enabled) pulseScale else 1f,
-                ),
+                .background(MiuixTheme.colorScheme.primary.copy(alpha = opacity.subtle)),
         contentAlignment = Alignment.Center,
     ) {
-        Spacer(
-            modifier =
-                Modifier.matchParentSize()
-                    .clip(CircleShape)
-                    .background(MiuixTheme.colorScheme.primary)
-        )
-        Icon(
-            imageVector = ShellIcons.NavigateForward,
-            contentDescription = "Start",
-            tint = MiuixTheme.colorScheme.onPrimary,
-            modifier = Modifier.size(componentSizes.settingsIconGlyphSize),
-        )
-    }
-}
-
-@Composable
-internal fun DetailPreviewBadge(icon: ImageVector) {
-    Box(modifier = Modifier.size(DetailPreviewBadgeSize), contentAlignment = Alignment.Center) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = MiuixTheme.colorScheme.primary,
-            modifier = Modifier.size(DetailPreviewIconSize),
+            modifier = Modifier.size(HeroIconSize),
         )
     }
 }
@@ -399,26 +332,6 @@ internal fun SecondaryFooterAction(
             text = text,
             style = MiuixTheme.textStyles.body1.copy(fontWeight = FontWeight.Medium),
             color = MiuixTheme.colorScheme.onSurface,
-        )
-    }
-}
-
-@Composable
-internal fun SecondaryLinkAction(text: String, onClick: () -> Unit) {
-    val spacing = AppTheme.spacing
-    val radii = AppTheme.radii
-
-    Box(
-        modifier =
-            Modifier.clip(RoundedCornerShape(radii.radius18))
-                .clickable(onClick = onClick)
-                .padding(horizontal = spacing.space10, vertical = spacing.space6),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            style = MiuixTheme.textStyles.footnote1.copy(fontWeight = FontWeight.Medium),
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
     }
 }

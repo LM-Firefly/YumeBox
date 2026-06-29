@@ -23,6 +23,8 @@ Settings = {
         LabSummary = "Sub-Store · Experiments"
         Logs = "Logs"
         LogsSummary = "Runtime Logs"
+        Onboarding = "Setup Guide"
+        OnboardingSummary = "Replay the welcome guide"
         About = "About"
         AboutSummary = "Version & License"
     }

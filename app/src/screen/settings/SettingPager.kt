@@ -56,12 +56,14 @@ import com.github.yumelira.yumebox.presentation.icon.yume.FlaskConical
 import com.github.yumelira.yumebox.presentation.icon.yume.`Git-merge`
 import com.github.yumelira.yumebox.presentation.icon.yume.Github
 import com.github.yumelira.yumebox.presentation.icon.yume.Meta
+import com.github.yumelira.yumebox.presentation.icon.yume.Rocket
 import com.github.yumelira.yumebox.presentation.icon.yume.`Settings-2`
 import com.github.yumelira.yumebox.presentation.icon.yume.`Wifi-cog`
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.navigation.Route
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingEvent
 import com.github.yumelira.yumebox.presentation.viewmodel.SettingViewModel
+import com.github.yumelira.yumebox.screen.onboarding.OnboardingLauncher
 import dev.oom_wg.purejoy.mlang.MLang
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
@@ -205,6 +207,16 @@ fun SettingPager(mainInnerPadding: PaddingValues) {
                         onClick = { navigator.push(Route.Feature) },
                         startAction = {
                             CircularIcon(imageVector = Yume.FlaskConical, contentDescription = null)
+                        },
+                    )
+                    ArrowPreference(
+                        title = MLang.Settings.More.Onboarding,
+                        summary = MLang.Settings.More.OnboardingSummary,
+                        onClick = {
+                            OnboardingLauncher.start(context, previewMode = true)
+                        },
+                        startAction = {
+                            CircularIcon(imageVector = Yume.Rocket, contentDescription = null)
                         },
                     )
                     ArrowPreference(

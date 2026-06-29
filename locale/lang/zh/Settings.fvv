@@ -23,6 +23,8 @@ Settings = {
         LabSummary = "Sub-Store · 实验功能"
         Logs = "日志"
         LogsSummary = "运行日志"
+        Onboarding = "新手引导"
+        OnboardingSummary = "重新查看欢迎引导"
         About = "关于"
         AboutSummary = "版本与许可"
     }

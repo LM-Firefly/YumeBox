@@ -23,13 +23,16 @@ package com.github.yumelira.yumebox.screen.onboarding
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -39,10 +42,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.dp
 import com.github.yumelira.yumebox.common.AppConstants
 import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.presentation.theme.UiDp
@@ -55,27 +60,71 @@ internal val SectionShape = RoundedCornerShape(UiDp.dp36)
 internal const val RevealDurationMs = 420
 internal const val LinkTermsTag = "terms"
 internal const val LinkPolicyTag = "policy"
-internal val DetailPreviewBadgeSize = UiDp.dp108
-internal val DetailPreviewIconSize = UiDp.dp68
-internal val StartupTypewriterPhrases = listOf("YumeBox", "Hello Word")
+internal val HeroBadgeSize = UiDp.dp108
+internal val HeroIconSize = UiDp.dp56
 
+/**
+ * Slow-drifting "aurora" backdrop: the app surface with two primary-tinted radial blobs that breathe
+ * and drift independently, plus a soft top-light / bottom-shadow ambient. Purely decorative and
+ * GPU-cheap (a single Canvas), it gives every onboarding step a calm, premium sense of depth.
+ */
 @Composable
-internal fun DreamBackdrop(modifier: Modifier = Modifier, boosted: Boolean = true) {
+internal fun OnboardingBackdrop(modifier: Modifier = Modifier) {
     val opacity = AppTheme.opacity
-
     val surface = MiuixTheme.colorScheme.surface
     val primary = MiuixTheme.colorScheme.primary
-    val baseTint =
-        remember(surface, boosted) { lerp(surface, primary, if (boosted) 0.035f else 0.02f) }
-    Canvas(modifier = modifier.fillMaxSize()) {
+    val blobWarm = remember(surface, primary) { lerp(surface, primary, 0.26f) }
+    val blobCool = remember(surface, primary) { lerp(surface, primary, 0.14f) }
+
+    val transition = rememberInfiniteTransition(label = "onboarding_aurora")
+    val drift by
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis = 16000, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "aurora_drift",
+        )
+    val breathe by
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis = 9000, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "aurora_breathe",
+        )
+
+    Canvas(modifier = modifier.fillMaxSize().background(surface)) {
+        val maxDim = maxOf(size.width, size.height)
+
+        val warmCenter =
+            Offset(x = size.width * (0.16f + 0.18f * drift), y = size.height * (0.16f + 0.05f * breathe))
         drawRect(
             brush =
-                Brush.linearGradient(
-                    colors = listOf(surface, baseTint, lerp(surface, primary, 0.02f)),
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, size.height),
+                Brush.radialGradient(
+                    colors = listOf(blobWarm.copy(alpha = 0.55f), Color.Transparent),
+                    center = warmCenter,
+                    radius = maxDim * (0.62f + 0.06f * breathe),
                 )
         )
+
+        val coolCenter =
+            Offset(x = size.width * (0.92f - 0.16f * drift), y = size.height * (0.7f - 0.06f * breathe))
+        drawRect(
+            brush =
+                Brush.radialGradient(
+                    colors = listOf(blobCool.copy(alpha = 0.5f), Color.Transparent),
+                    center = coolCenter,
+                    radius = maxDim * (0.7f + 0.05f * (1f - breathe)),
+                )
+        )
+
         drawRect(
             brush =
                 Brush.verticalGradient(
@@ -87,29 +136,6 @@ internal fun DreamBackdrop(modifier: Modifier = Modifier, boosted: Boolean = tru
                         )
                 )
         )
-    }
-}
-
-@Composable
-internal fun DetailBackdrop(modifier: Modifier = Modifier) {
-    val opacity = AppTheme.opacity
-
-    val surface = MiuixTheme.colorScheme.surface
-    val primary = MiuixTheme.colorScheme.primary
-    val accent = remember(surface) { lerp(surface, primary, 0.045f) }
-
-    Box(modifier = modifier.fillMaxSize().background(surface)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawRect(
-                brush =
-                    Brush.verticalGradient(
-                        colors =
-                            listOf(accent.copy(alpha = opacity.subtleStrong), Color.Transparent),
-                        startY = 0f,
-                        endY = size.height * 0.28f,
-                    )
-            )
-        }
     }
 }
 
