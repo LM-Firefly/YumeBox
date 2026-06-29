@@ -300,6 +300,9 @@ object Clash {
     fun genX25519KeyPair(): AgeKeyPair? =
         Bridge.nativeGenX25519KeyPair()?.let { Json.decodeFromString(AgeKeyPair.serializer(), it) }
 
+    fun genHybridKeyPair(): AgeKeyPair? =
+        Bridge.nativeGenHybridKeyPair()?.let { Json.decodeFromString(AgeKeyPair.serializer(), it) }
+
     fun verifySecretKeys(secretKeys: String): Boolean =
         Bridge.nativeVerifySecretKeys(secretKeys.trim())
 

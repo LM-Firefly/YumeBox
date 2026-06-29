@@ -4,8 +4,7 @@ MetaFeature = {
 
     Section = {
         ConnectionAndTraffic = "连接与流量统计"
-        CustomRouting = "自定义分流"
-        GeoXUpdate = "GeoX 更新"
+        Routing = "分流相关"
     }
 
     GeoX = {
@@ -27,5 +26,15 @@ MetaFeature = {
     Download = {
         DialogTitle = "更新 GeoX"
         DownloadComplete = "下载完成：%d/%d"
+    }
+
+    AgeKey = {
+        Section = "Age 密钥"
+        X25519Title = "X25519"
+        HybridTitle = "mlkem768-x25519"
+        SecretKey = "私钥"
+        PublicKey = "公钥"
+        Generate = "生成"
+        DerivePublicKey = "推导公钥"
     }
 }

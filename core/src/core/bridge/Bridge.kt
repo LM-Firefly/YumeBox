@@ -125,6 +125,8 @@ object Bridge {
 
     external fun nativeGenX25519KeyPair(): String?
 
+    external fun nativeGenHybridKeyPair(): String?
+
     external fun nativeVerifySecretKeys(secretKeys: String): Boolean
 
     external fun nativeToPublicKeys(secretKeys: String): String?

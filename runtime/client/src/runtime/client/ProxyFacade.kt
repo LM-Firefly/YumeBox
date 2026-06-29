@@ -798,6 +798,10 @@ class ProxyFacade(private val context: Context) {
 
             else -> {
                 runCatching {
+                        // Ensure the local gateway is connected first (controller mode never
+                        // initializes it), otherwise queryActive() throws "ServiceClient not
+                        // connected" right after leaving controller mode.
+                        connectCurrentBackend()
                         val profile = ServiceClient.profile().queryActive()
                         _currentProfile.value = profile
                         updateProfileReady(profile)
@@ -1420,6 +1424,11 @@ class ProxyFacade(private val context: Context) {
                 .queryAllProxyGroups(excludeNotSelectable = false)
                 .map(::toProxyGroupInfo)
         }
+        // The local gateway is connected lazily; in controller mode it is never initialized, so a
+        // preview query taken right after leaving controller mode would otherwise throw
+        // "ServiceClient not connected" on the line below and the groups would stay empty. Connect
+        // first so the local preview path is self-sufficient regardless of prior controller state.
+        connectCurrentBackend()
         val activeProfile =
             ServiceClient.profile().queryActive().also {
                 _currentProfile.value = it
@@ -1429,7 +1438,6 @@ class ProxyFacade(private val context: Context) {
         if (activeProfile == null) {
             return emptyList()
         }
-        connectCurrentBackend()
         val groups =
             ServiceClient.clash()
                 .queryProfileProxyGroups(excludeNotSelectable = false)

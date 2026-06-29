@@ -304,6 +304,17 @@ Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeGenX25519KeyPair(JNIEn
     return new_string(response);
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeGenHybridKeyPair(JNIEnv *env, jobject thiz) {
+    TRACE_METHOD();
+
+    scoped_string response = genHybridKeyPair();
+    if (response == NULL)
+        return NULL;
+
+    return new_string(response);
+}
+
 JNIEXPORT jboolean JNICALL
 Java_com_github_yumelira_yumebox_core_bridge_Bridge_nativeVerifySecretKeys(JNIEnv *env, jobject thiz,
                                                                        jstring secret_keys) {

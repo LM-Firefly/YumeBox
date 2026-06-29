@@ -20,13 +20,17 @@
 
 package com.github.yumelira.yumebox.screen.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.state.ToggleableState
 import com.github.yumelira.yumebox.common.util.toast
@@ -34,9 +38,7 @@ import com.github.yumelira.yumebox.core.model.GeoFileType
 import com.github.yumelira.yumebox.core.model.GeoXItem
 import com.github.yumelira.yumebox.core.model.geoXItems
 import com.github.yumelira.yumebox.core.util.runtimeHomeDir
-import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
-import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
-import com.github.yumelira.yumebox.presentation.component.AppBottomSheetConfirmAction
+import com.github.yumelira.yumebox.presentation.component.AppDialog
 import com.github.yumelira.yumebox.presentation.component.Card
 import com.github.yumelira.yumebox.presentation.component.Navigator
 import com.github.yumelira.yumebox.presentation.component.ScreenLazyColumn
@@ -45,6 +47,7 @@ import com.github.yumelira.yumebox.presentation.component.TopBar
 import com.github.yumelira.yumebox.presentation.component.combinePaddingValues
 import com.github.yumelira.yumebox.presentation.component.rememberStandalonePageMainPadding
 import com.github.yumelira.yumebox.presentation.navigation.Route
+import com.github.yumelira.yumebox.presentation.theme.AppTheme
 import com.github.yumelira.yumebox.substore.util.SubStoreDownloadClient
 import dev.oom_wg.purejoy.mlang.MLang
 import kotlinx.coroutines.Dispatchers
@@ -52,9 +55,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import java.io.File
 
@@ -66,6 +71,8 @@ fun MetaFeatureScreen(navigator: Navigator) {
     val downloadClient: SubStoreDownloadClient = koinInject()
 
     val showGeoXDownloadSheet = remember { mutableStateOf(false) }
+    val ageKeyHybrid = remember { mutableStateOf(false) }
+    val ageKeyDialogVisible = remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopBar(title = MLang.MetaFeature.Title, scrollBehavior = scrollBehavior) }
@@ -96,18 +103,13 @@ fun MetaFeatureScreen(navigator: Navigator) {
                 }
             }
             item {
-                Title(MLang.MetaFeature.Section.CustomRouting)
+                Title(MLang.MetaFeature.Section.Routing)
                 Card {
                     ArrowPreference(
                         title = MLang.MetaFeature.CustomRouting.Title,
                         summary = MLang.MetaFeature.CustomRouting.Summary,
                         onClick = { navigator.push(Route.CustomRouting) },
                     )
-                }
-            }
-            item {
-                Title(MLang.MetaFeature.Section.GeoXUpdate)
-                Card {
                     ArrowPreference(
                         title = MLang.MetaFeature.GeoX.OnlineUpdateTitle,
                         summary = MLang.MetaFeature.GeoX.OnlineUpdateSummary,
@@ -115,46 +117,64 @@ fun MetaFeatureScreen(navigator: Navigator) {
                     )
                 }
             }
+            item {
+                Title(MLang.MetaFeature.AgeKey.Section)
+                Card {
+                    ArrowPreference(
+                        title = MLang.MetaFeature.AgeKey.X25519Title,
+                        onClick = {
+                            ageKeyHybrid.value = false
+                            ageKeyDialogVisible.value = true
+                        },
+                    )
+                    ArrowPreference(
+                        title = MLang.MetaFeature.AgeKey.HybridTitle,
+                        onClick = {
+                            ageKeyHybrid.value = true
+                            ageKeyDialogVisible.value = true
+                        },
+                    )
+                }
+            }
         }
 
-        GeoXDownloadSheet(
+        GeoXDownloadDialog(
             show = showGeoXDownloadSheet,
             context = context,
             scope = scope,
             downloadClient = downloadClient,
         )
+
+        AgeKeyGeneratorDialog(
+            show = ageKeyDialogVisible.value,
+            hybrid = ageKeyHybrid.value,
+            onDismiss = { ageKeyDialogVisible.value = false },
+            onDismissFinished = {},
+        )
     }
 }
 
 @Composable
-private fun GeoXDownloadSheet(
+private fun GeoXDownloadDialog(
     show: MutableState<Boolean>,
     context: android.content.Context,
     scope: kotlinx.coroutines.CoroutineScope,
     downloadClient: SubStoreDownloadClient,
 ) {
+    val spacing = AppTheme.spacing
     val selectedItems = remember { mutableStateMapOf<GeoFileType, Boolean>() }
+    val canConfirm = selectedItems.values.any { it }
 
-    AppActionBottomSheet(
+    AppDialog(
         show = show.value,
         title = MLang.MetaFeature.Download.DialogTitle,
         onDismissRequest = { show.value = false },
-        startAction = { AppBottomSheetCloseAction(onClick = { show.value = false }) },
-        endAction = {
-            AppBottomSheetConfirmAction(
-                enabled = selectedItems.values.any { it },
-                onClick = {
-                    val itemsToDownload = geoXItems.filter { selectedItems[it.type] == true }
-                    if (itemsToDownload.isEmpty()) {
-                        return@AppBottomSheetConfirmAction
-                    }
-                    show.value = false
-                    downloadGeoXFiles(context, scope, downloadClient, itemsToDownload)
-                },
-            )
-        },
-        content = {
-            Column {
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(spacing.space16),
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 geoXItems.forEach { item ->
                     BasicComponent(
                         title = item.title,
@@ -172,8 +192,33 @@ private fun GeoXDownloadSheet(
                     )
                 }
             }
-        },
-    )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space16),
+            ) {
+                TextButton(
+                    text = MLang.Component.Button.Cancel,
+                    onClick = { show.value = false },
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    text = MLang.Component.Button.Confirm,
+                    onClick = {
+                        val itemsToDownload = geoXItems.filter { selectedItems[it.type] == true }
+                        if (itemsToDownload.isEmpty()) {
+                            return@TextButton
+                        }
+                        show.value = false
+                        downloadGeoXFiles(context, scope, downloadClient, itemsToDownload)
+                    },
+                    enabled = canConfirm,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                )
+            }
+        }
+    }
 }
 
 private fun downloadGeoXFiles(

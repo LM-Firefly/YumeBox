@@ -34,6 +34,7 @@ import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.ILogObserver
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -76,6 +77,16 @@ class HttpClashManager(
     private val client: HttpClient by lazy {
         HttpClient(Android) {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+            // Without timeouts a runBlocking REST call against an unreachable backend blocks its
+            // IO thread until the OS TCP timeout (tens of seconds). The traffic poller and proxy
+            // group sync loop fire these continuously, so a dead backend saturates Dispatchers.IO
+            // and starves the local start path — the home start button appears frozen. Bound every
+            // call so a lost backend fails fast instead of hanging. socketTimeout intentionally
+            // covers the streaming /traffic read (one JSON line per second) without killing it.
+            install(HttpTimeout) {
+                connectTimeoutMillis = CONNECT_TIMEOUT_MS
+                socketTimeoutMillis = SOCKET_TIMEOUT_MS
+            }
         }
     }
 
@@ -397,6 +408,9 @@ class HttpClashManager(
     private data class SelectBody(val name: String)
 
     private companion object {
+        const val CONNECT_TIMEOUT_MS = 5_000L
+        const val SOCKET_TIMEOUT_MS = 10_000L
+
         val DELAY_QUERY = mapOf(
             "url" to "http://www.gstatic.com/generate_204",
             "timeout" to "5000",

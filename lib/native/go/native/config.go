@@ -198,6 +198,16 @@ func genX25519KeyPair() *C.char {
 	return marshalJson(ageKeyPair{SecretKey: secretKey, PublicKey: publicKey})
 }
 
+//export genHybridKeyPair
+func genHybridKeyPair() *C.char {
+	secretKey, publicKey, err := config.GenHybridKeyPair()
+	if err != nil {
+		return nil
+	}
+
+	return marshalJson(ageKeyPair{SecretKey: secretKey, PublicKey: publicKey})
+}
+
 //export verifySecretKeys
 func verifySecretKeys(secretKeys C.c_string) C.int {
 	if config.VerifySecretKeys(C.GoString(secretKeys)) != nil {

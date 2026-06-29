@@ -4,8 +4,7 @@ MetaFeature = {
 
     Section = {
         ConnectionAndTraffic = "Connections & Traffic"
-        CustomRouting = "Custom Routing"
-        GeoXUpdate = "GeoX Update"
+        Routing = "Routing"
     }
 
     GeoX = {
@@ -27,5 +26,15 @@ MetaFeature = {
     Download = {
         DialogTitle = "Update GeoX Online"
         DownloadComplete = "Download complete: %d/%d"
+    }
+
+    AgeKey = {
+        Section = "Age Keys"
+        X25519Title = "X25519"
+        HybridTitle = "mlkem768-x25519"
+        SecretKey = "Secret Key"
+        PublicKey = "Public Key"
+        Generate = "Generate"
+        DerivePublicKey = "Derive Public"
     }
 }

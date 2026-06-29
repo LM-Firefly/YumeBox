@@ -1,13 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/metacubex/mihomo/component/age"
 )
-
-const unsupportedHybridAgeSecretKeyPrefix = "AGE-SECRET-KEY-PQ-1"
 
 func SetGlobalSecretKeys(secretKeys ...string) {
 	trimmed := make([]string, 0, len(secretKeys))
@@ -25,25 +22,22 @@ func GenX25519KeyPair() (secretKey string, publicKey string, err error) {
 	return age.GenX25519KeyPair()
 }
 
+// GenHybridKeyPair generates a post-quantum mlkem768-x25519 hybrid age keypair.
+// Both x25519 and hybrid keys are fully supported end to end: the Rust override
+// decryptor implements the mlkem768x25519 (X-Wing) HPKE recipient.
+func GenHybridKeyPair() (secretKey string, publicKey string, err error) {
+	return age.GenHybridKeyPair()
+}
+
 func ToPublicKeys(secretKeys ...string) (publicKeys []string, err error) {
 	trimmed := make([]string, 0, len(secretKeys))
 	for _, secretKey := range secretKeys {
-		key := strings.TrimSpace(secretKey)
-		if err := rejectUnsupportedAgeSecretKeys(key); err != nil {
-			return nil, err
-		}
-		trimmed = append(trimmed, key)
+		trimmed = append(trimmed, strings.TrimSpace(secretKey))
 	}
 	return age.ToPublicKeys(trimmed...)
 }
 
 func VerifySecretKeys(secretKeys ...string) error {
-	for _, secretKey := range secretKeys {
-		key := strings.TrimSpace(secretKey)
-		if err := rejectUnsupportedAgeSecretKeys(key); err != nil {
-			return err
-		}
-	}
 	trimmed := make([]string, 0, len(secretKeys))
 	for _, secretKey := range secretKeys {
 		trimmed = append(trimmed, strings.TrimSpace(secretKey))
@@ -57,17 +51,4 @@ func VerifyPublicKeys(publicKeys ...string) error {
 		trimmed = append(trimmed, strings.TrimSpace(publicKey))
 	}
 	return age.VerityPublicKeys(trimmed...)
-}
-
-func rejectUnsupportedAgeSecretKeys(secretKeys string) error {
-	for _, rawLine := range strings.Split(secretKeys, "\n") {
-		line := strings.TrimSpace(rawLine)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		if strings.HasPrefix(line, unsupportedHybridAgeSecretKeyPrefix) {
-			return fmt.Errorf("hybrid age secret keys are not supported by the Rust override decryptor yet")
-		}
-	}
-	return nil
 }

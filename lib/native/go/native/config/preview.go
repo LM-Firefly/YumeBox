@@ -121,45 +121,15 @@ func getPreviewTestURL(proxy C.Proxy) string {
 	return "https://www.gstatic.com/generate_204"
 }
 
+// normalizeProxyType passes the mihomo adapter type through verbatim. mihomo's
+// proxy.Type().String() is the source of truth, and the Kotlin side
+// (core/model/Proxy.kt) stores `type` as an opaque string — it never whitelists
+// protocols, only categorizing via GROUP_TYPES / MANUALLY_SELECTABLE. Mirroring that
+// here keeps the native preview future-proof: a newly added mihomo protocol shows its
+// real type instead of being collapsed to "Unknown". Only an empty type falls back.
 func normalizeProxyType(proxyType string) string {
-	switch proxyType {
-	case "Direct",
-		"Reject",
-		"RejectDrop",
-		"Compatible",
-		"Pass",
-		"PassRule",
-		"Shadowsocks",
-		"ShadowsocksR",
-		"Snell",
-		"Socks5",
-		"Http",
-		"Vmess",
-		"Vless",
-		"Trojan",
-		"Hysteria",
-		"Hysteria2",
-		"Tuic",
-		"WireGuard",
-		"Dns",
-		"Ssh",
-		"Mieru",
-		"AnyTLS",
-		"Sudoku",
-		"Masque",
-		"TrustTunnel",
-		"OpenVPN",
-		"Tailscale",
-		"GostRelay",
-		"Relay",
-		"Selector",
-		"Fallback",
-		"URLTest",
-		"LoadBalance",
-		"Smart",
-		"Unknown":
-		return proxyType
-	default:
-		return "Unknown"
+	if trimmed := strings.TrimSpace(proxyType); trimmed != "" {
+		return trimmed
 	}
+	return "Unknown"
 }
