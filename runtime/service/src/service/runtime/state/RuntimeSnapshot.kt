@@ -42,6 +42,15 @@ enum class RuntimePhase {
 
     val running: Boolean
         get() = this == Running
+
+    val isNotIdle: Boolean
+        get() = this != Idle
+
+    val isActiveOrStopping: Boolean
+        get() = this == Starting || this == Running || this == Stopping
+
+    val isRecovering: Boolean
+        get() = this == Starting || this == Stopping
 }
 
 @Serializable

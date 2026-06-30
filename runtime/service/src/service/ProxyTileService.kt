@@ -37,7 +37,7 @@ import com.github.yumelira.yumebox.data.store.RemoteControllerStore
 import com.github.yumelira.yumebox.runtime.service.R
 import com.github.yumelira.yumebox.service.common.constants.Components
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeServiceLauncher
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
@@ -58,7 +58,6 @@ class ProxyTileService : TileService() {
     private val networkSettingsStorage by lazy {
         NetworkSettingsStore(MMKVProvider().getMMKV("network_settings"))
     }
-    private val rootTunStateStore by lazy { RootTunStateStore(applicationContext) }
     private val tileLabelText: String by lazy {
         applicationInfo.loadLabel(packageManager).toString().ifBlank { "YumeBox" }
     }
@@ -191,12 +190,12 @@ class ProxyTileService : TileService() {
 
     private fun currentSnapshot(): RuntimeSnapshot {
         val configuredMode = networkSettingsStorage.proxyMode.value
-        val rootStatus = rootTunStateStore.snapshot()
+        val rootStatus = RootTunStatusFlow.current(applicationContext)
         val tunPhase = StatusProvider.queryRuntimePhase(ProxyMode.Tun).toRuntimePhase()
         val httpPhase = StatusProvider.queryRuntimePhase(ProxyMode.Http).toRuntimePhase()
         val owner =
             when {
-                rootStatus.state.isActive || rootStatus.runtimeReady -> RuntimeOwner.RootTun
+                rootStatus.state.isActiveOrStopping || rootStatus.runtimeReady -> RuntimeOwner.RootTun
                 tunPhase != RuntimePhase.Idle -> RuntimeOwner.LocalTun
                 httpPhase != RuntimePhase.Idle -> RuntimeOwner.LocalHttp
                 else -> RuntimeOwner.None
@@ -215,15 +214,15 @@ class ProxyTileService : TileService() {
                     when (owner) {
                         RuntimeOwner.RootTun ->
                             when (rootStatus.state) {
-                                com.github.yumelira.yumebox.service.root.RootTunState.Idle ->
+                                RuntimePhase.Idle ->
                                     RuntimePhase.Idle
-                                com.github.yumelira.yumebox.service.root.RootTunState.Starting ->
+                                RuntimePhase.Starting ->
                                     RuntimePhase.Starting
-                                com.github.yumelira.yumebox.service.root.RootTunState.Running ->
+                                RuntimePhase.Running ->
                                     RuntimePhase.Running
-                                com.github.yumelira.yumebox.service.root.RootTunState.Stopping ->
+                                RuntimePhase.Stopping ->
                                     RuntimePhase.Stopping
-                                com.github.yumelira.yumebox.service.root.RootTunState.Failed ->
+                                RuntimePhase.Failed ->
                                     RuntimePhase.Failed
                             }
                         RuntimeOwner.LocalTun -> tunPhase
@@ -259,13 +258,13 @@ class ProxyTileService : TileService() {
             else -> snapshot.targetMode
         }
 
-    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase =
+    private fun RuntimePhase.toRuntimePhase(): RuntimePhase =
         when (this) {
-            LocalRuntimePhase.Idle -> RuntimePhase.Idle
-            LocalRuntimePhase.Starting -> RuntimePhase.Starting
-            LocalRuntimePhase.Running -> RuntimePhase.Running
-            LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
-            LocalRuntimePhase.Failed -> RuntimePhase.Failed
+            RuntimePhase.Idle -> RuntimePhase.Idle
+            RuntimePhase.Starting -> RuntimePhase.Starting
+            RuntimePhase.Running -> RuntimePhase.Running
+            RuntimePhase.Stopping -> RuntimePhase.Stopping
+            RuntimePhase.Failed -> RuntimePhase.Failed
         }
 
     private fun updateTileState(isRunning: Boolean) {

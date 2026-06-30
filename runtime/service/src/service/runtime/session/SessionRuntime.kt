@@ -54,15 +54,16 @@ class SessionRuntime(
     private val compiledConfigPipeline = CompiledConfigPipeline(host.context.appContextOrSelf)
     private val proxyGroupResolver = RuntimeProxyGroupResolver(compiledConfigPipeline)
     private val lock = Any()
+    private val snapshotLock = Any()
 
     @Volatile private var interruptReason: String? = null
     private var currentSpec: RuntimeSpec? = null
-    private var currentSnapshot: RuntimeSnapshot = RuntimeSnapshot(targetMode = host.mode)
+    @Volatile private var currentSnapshot: RuntimeSnapshot = RuntimeSnapshot(targetMode = host.mode)
     private var networkObserver: ServiceNetworkObserver? = null
     private val queryCache = SessionRuntimeQueryCache()
     private val telemetry =
         SessionRuntimeTelemetry(host = host, scope = scope) { ready ->
-            publishSnapshot(currentSnapshot.copy(logReady = ready))
+            updateSnapshot { it.copy(logReady = ready) }
         }
 
     fun start(spec: RuntimeSpec): RuntimeOperationResult =
@@ -174,7 +175,7 @@ class SessionRuntime(
         if (currentSnapshot.phase == RuntimePhase.Running) {
             Clash.queryTrafficNow().also {
                 queryCache.updateTrafficNow(it)
-                publishSnapshot(currentSnapshot.copy(trafficReady = true))
+                updateSnapshot { it.copy(trafficReady = true) }
             }
         } else {
             0L
@@ -184,7 +185,7 @@ class SessionRuntime(
         if (currentSnapshot.phase == RuntimePhase.Running) {
             Clash.queryTrafficTotal().also {
                 queryCache.updateTrafficTotal(it)
-                publishSnapshot(currentSnapshot.copy(trafficReady = true))
+                updateSnapshot { it.copy(trafficReady = true) }
             }
         } else {
             0L
@@ -208,7 +209,7 @@ class SessionRuntime(
                     }
                 }
         queryCache.replaceProxyGroups(groups)
-        publishSnapshot(currentSnapshot.copy(groupsReady = groups.isNotEmpty()))
+        updateSnapshot { it.copy(groupsReady = groups.isNotEmpty()) }
         return groups
     }
 
@@ -341,8 +342,8 @@ class SessionRuntime(
         refreshRuntimeSnapshot()
         startupLog(spec, "snapshot refresh: done")
 
-        publishSnapshot(
-            currentSnapshot.copy(
+        updateSnapshot {
+            it.copy(
                 phase = RuntimePhase.Running,
                 profileReady = true,
                 groupsReady = queryCache.snapshot().proxyGroups.isNotEmpty(),
@@ -353,7 +354,7 @@ class SessionRuntime(
                 startedAt = startedAt,
                 effectiveFingerprint = spec.effectiveFingerprint,
             )
-        )
+        }
         host.onProfileLoaded(spec.profileUuid)
         host.onStarted(spec)
         startupLog(spec, "started")
@@ -633,8 +634,18 @@ class SessionRuntime(
     }
 
     private fun publishSnapshot(snapshot: RuntimeSnapshot) {
-        currentSnapshot = snapshot.copy(running = snapshot.phase.running)
-        host.onSnapshotChanged(currentSnapshot)
+        synchronized(snapshotLock) {
+            currentSnapshot = snapshot.copy(running = snapshot.phase.running)
+            host.onSnapshotChanged(currentSnapshot)
+        }
+    }
+
+    private inline fun updateSnapshot(transform: (RuntimeSnapshot) -> RuntimeSnapshot) {
+        synchronized(snapshotLock) {
+            val next = transform(currentSnapshot)
+            currentSnapshot = next.copy(running = next.phase.running)
+            host.onSnapshotChanged(currentSnapshot)
+        }
     }
 
     private fun startupLog(spec: RuntimeSpec, message: String) {

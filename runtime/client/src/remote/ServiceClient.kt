@@ -23,7 +23,6 @@ package com.github.yumelira.yumebox.remote
 import android.content.Context
 import com.github.yumelira.yumebox.data.store.MMKVProvider
 import com.github.yumelira.yumebox.data.store.RemoteControllerStore
-import com.github.yumelira.yumebox.service.ClashManager
 import com.github.yumelira.yumebox.service.ProfileManager
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
@@ -39,7 +38,6 @@ import timber.log.Timber
 object ServiceClient {
     private val mutex = Mutex()
     private var initialized = false
-    private var localClashManager: ClashManager? = null
     private var clashManager: IClashManager? = null
     private var profileManager: IProfileManager? = null
 
@@ -55,16 +53,13 @@ object ServiceClient {
 
                 try {
                     initializeServiceGlobal(appContext)
-                    val localManager = ClashManager(appContext)
-                    localClashManager = localManager
                     val remoteStore =
                         RemoteControllerStore(MMKVProvider().getMMKV("remote_controller"))
                     val httpManager =
                         HttpClashManager(backendProvider = { remoteStore.activeBackend() })
                     clashManager =
-                        RuntimeClashManager(
+                        ClashGateway(
                             appContext,
-                            localManager,
                             remote = httpManager,
                             isRemoteControllerActive = {
                                 remoteStore.controllerEnabled.value &&
@@ -79,7 +74,6 @@ object ServiceClient {
                 } catch (error: Exception) {
                     if (error is CancellationException) throw error
                     initialized = false
-                    localClashManager = null
                     clashManager = null
                     profileManager = null
                     Timber.e(error, "Failed to initialize local service gateway")
@@ -90,7 +84,6 @@ object ServiceClient {
     }
 
     suspend fun disconnect() {
-        localClashManager = null
         clashManager = null
         profileManager = null
         initialized = false

@@ -35,7 +35,7 @@ import java.util.UUID
 
 internal class RootTunRuntimeHost(
     private val service: RootTunRootService,
-    private val stateStore: RootTunStateStore,
+    private val statePublisher: RootTunStatePublisher,
 ) : RuntimeHost {
     private var startedBroadcastSent = false
     private var lastRuntimeSpec: RuntimeSpec? = null
@@ -67,7 +67,7 @@ internal class RootTunRuntimeHost(
     }
 
     override fun onSnapshotChanged(snapshot: RuntimeSnapshot) {
-        stateStore.updateStatus(snapshot.toRootTunStatus(lastRuntimeSpec))
+        statePublisher.update(snapshot.toRootTunStatus(lastRuntimeSpec))
         if (snapshot.phase == RuntimePhase.Running && !startedBroadcastSent) {
             service.sendClashStarted()
             startedBroadcastSent = true
@@ -75,8 +75,8 @@ internal class RootTunRuntimeHost(
     }
 
     override fun onLogReady(ready: Boolean) {
-        val current = stateStore.snapshot()
-        stateStore.updateStatus(
+        val current = statePublisher.snapshot()
+        statePublisher.update(
             current.copy(controllerReady = true, runtimeReady = ready || current.runtimeReady)
         )
     }
@@ -85,11 +85,11 @@ internal class RootTunRuntimeHost(
 
     override fun reportFailure(error: String) {
         StatusProvider.markRuntimeFailed(ProxyMode.RootTun)
-        stateStore.updateStatus(
-            stateStore
+        statePublisher.update(
+            statePublisher
                 .snapshot()
                 .copy(
-                    state = RootTunState.Failed,
+                    state = RuntimePhase.Failed,
                     running = false,
                     lastError = error,
                     runtimeReady = false,
@@ -101,15 +101,15 @@ internal class RootTunRuntimeHost(
     private fun RuntimeSnapshot.toRootTunStatus(spec: RuntimeSpec?): RootTunStatus {
         val state =
             when (phase) {
-                RuntimePhase.Idle -> RootTunState.Idle
-                RuntimePhase.Starting -> RootTunState.Starting
-                RuntimePhase.Running -> RootTunState.Running
-                RuntimePhase.Stopping -> RootTunState.Stopping
-                RuntimePhase.Failed -> RootTunState.Failed
+                RuntimePhase.Idle -> RuntimePhase.Idle
+                RuntimePhase.Starting -> RuntimePhase.Starting
+                RuntimePhase.Running -> RuntimePhase.Running
+                RuntimePhase.Stopping -> RuntimePhase.Stopping
+                RuntimePhase.Failed -> RuntimePhase.Failed
             }
         return RootTunStatus(
             state = state,
-            running = state.isActive,
+            running = state.isActiveOrStopping,
             lastError = lastError,
             profileUuid = profileUuid,
             profileName = profileName,

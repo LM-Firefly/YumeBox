@@ -21,6 +21,7 @@
 package com.github.yumelira.yumebox.service.root
 
 import android.content.Context
+import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.tencent.mmkv.MMKV
 
 class RootTunStateStore(context: Context) {
@@ -57,7 +58,7 @@ class RootTunStateStore(context: Context) {
     fun isRunning(): Boolean = snapshot().running
 
     fun updateStatus(status: RootTunStatus) {
-        val normalized = status.copy(running = status.state.isActive)
+        val normalized = status.copy(running = status.state.isActiveOrStopping)
         val encoded = RootTunJson.Default.encodeToString(RootTunStatus.serializer(), normalized)
         store.encode(KEY_STATUS_JSON, encoded)
         store.encode(KEY_RUNNING, normalized.running)
@@ -71,7 +72,7 @@ class RootTunStateStore(context: Context) {
     fun markIdle(error: String? = null) {
         updateStatus(
             RootTunStatus(
-                state = RootTunState.Idle,
+                state = RuntimePhase.Idle,
                 lastError = error,
                 runtimeReady = false,
                 controllerReady = true,
@@ -87,14 +88,14 @@ class RootTunStateStore(context: Context) {
 
     private fun legacySnapshot(): RootTunStatus {
         val running = store.decodeBool(KEY_RUNNING, false)
-        val state = if (running) RootTunState.Running else RootTunState.Idle
+        val state = if (running) RuntimePhase.Running else RuntimePhase.Idle
         return RootTunStatus(
             state = state,
-            running = state.isActive,
+            running = state.isActiveOrStopping,
             lastError = store.decodeString(KEY_LAST_ERROR),
             profileUuid = store.decodeString(KEY_PROFILE_UUID),
             profileName = store.decodeString(KEY_PROFILE_NAME),
-            runtimeReady = state == RootTunState.Running,
+            runtimeReady = state == RuntimePhase.Running,
             controllerReady = false,
         )
     }

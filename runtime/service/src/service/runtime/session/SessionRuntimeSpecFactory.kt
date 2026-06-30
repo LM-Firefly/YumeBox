@@ -62,8 +62,8 @@ class SessionRuntimeSpecFactory(
         )
     }
 
-    fun createRootTunSpec(): RuntimeSpec {
-        val rootResult = RootTunConfigFactory(context).create()
+    fun createRootTunSpec(log: (String) -> Unit = {}): RuntimeSpec {
+        val rootResult = RootTunConfigFactory(context).create(log)
         val profile =
             ImportedDao.queryByUUID(rootResult.profileUuid)
                 ?: error("Root tun profile metadata not found: ${rootResult.profileUuid}")

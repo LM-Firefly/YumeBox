@@ -24,6 +24,7 @@ import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeLogChunk
+import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -32,21 +33,6 @@ object RootTunJson {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
-}
-
-@Serializable
-enum class RootTunState {
-    Idle,
-    Starting,
-    Running,
-    Stopping,
-    Failed;
-
-    val isActive: Boolean
-        get() = this == Starting || this == Running || this == Stopping
-
-    val isRecovering: Boolean
-        get() = this == Starting || this == Stopping
 }
 
 @Serializable data class RootTunStartRequest(val source: String = "")
@@ -59,8 +45,8 @@ data class RootTunOperationResult(
 
 @Serializable
 data class RootTunStatus(
-    val state: RootTunState = RootTunState.Idle,
-    val running: Boolean = state.isActive,
+    val state: RuntimePhase = RuntimePhase.Idle,
+    val running: Boolean = state.isActiveOrStopping,
     val lastError: String? = null,
     val profileUuid: String? = null,
     val profileName: String? = null,

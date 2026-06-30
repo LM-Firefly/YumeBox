@@ -25,6 +25,8 @@ import com.github.yumelira.yumebox.core.model.RootTunConfig
 import com.github.yumelira.yumebox.core.model.RootTunDnsMode
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.records.ImportedDao
+import com.github.yumelira.yumebox.service.runtime.records.ProfileStore
+import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
 import com.github.yumelira.yumebox.service.runtime.util.directoryLastModified
 import com.github.yumelira.yumebox.service.runtime.util.importedDir
 import java.io.File
@@ -35,7 +37,8 @@ class RootTunConfigFactory(
     private val store: ServiceStore = ServiceStore(),
 ) {
     private val packageResolver = RootTunPackageResolver(context, store)
-    private val startupLogStore = RootTunStartupLogStore(context)
+    private val startupLogStore =
+        RuntimeStartupLogStore(context, RuntimeStartupLogStore.Scope.ROOT_TUN)
 
     data class StaticRootTunPlan(
         val fingerprint: String,
@@ -71,28 +74,28 @@ class RootTunConfigFactory(
         val config: RootTunConfig,
     )
 
-    fun create(): Result {
+    /**
+     * Builds the RootTun spec. [log] receives the startup trace; callers in the root process pass
+     * the ROOT_TUN store's append (single writer), while main-process query paths pass a no-op so
+     * they never write to / truncate `root_tun_startup.log`.
+     */
+    fun create(log: (String) -> Unit = {}): Result {
         val startedAt = System.currentTimeMillis()
-        startupLogStore.clear()
-        startupLogStore.append(startupLogStore.formatProfilesStoreLine())
+        log(formatProfilesStoreLine())
 
-        startupLogStore.append("ROOT_TUN factory: resolve active profile")
+        log("ROOT_TUN factory: resolve active profile")
         val activeProfile = store.activeProfile ?: error("No active profile selected")
         val imported =
             ImportedDao.queryByUUID(activeProfile)
                 ?: error("Active profile metadata not found: $activeProfile")
         val profileDir = context.importedDir.resolve(imported.uuid.toString())
-        startupLogStore.append(
-            "ROOT_TUN factory: activeProfile=${imported.uuid} name=${imported.name}"
-        )
+        log("ROOT_TUN factory: activeProfile=${imported.uuid} name=${imported.name}")
 
         val staticPlanResolveAt = System.currentTimeMillis()
-        startupLogStore.append("ROOT_TUN factory: resolve static transport plan")
+        log("ROOT_TUN factory: resolve static transport plan")
         val staticPlan = resolveStaticPlan()
         val staticPlanResolveCost = System.currentTimeMillis() - staticPlanResolveAt
-        startupLogStore.append(
-            "ROOT_TUN factory: static transport plan done ${staticPlanResolveCost}ms"
-        )
+        log("ROOT_TUN factory: static transport plan done ${staticPlanResolveCost}ms")
 
         val stack = firstNonBlank(store.tunStackMode) ?: "system"
         val allowIpv6 = staticPlan.allowIpv6
@@ -125,11 +128,9 @@ class RootTunConfigFactory(
                 profileFingerprint =
                     buildProfileFingerprint(imported.uuid, profileDir.directoryLastModified ?: -1L),
             )
-        startupLogStore.append(
-            "ROOT_TUN factory: derived RootTunConfig transportFingerprint=$transportFingerprint"
-        )
+        log("ROOT_TUN factory: derived RootTunConfig transportFingerprint=$transportFingerprint")
 
-        startupLogStore.append(
+        log(
             "ROOT_TUN factory: timings staticPlan=${staticPlanResolveCost}ms total=${System.currentTimeMillis() - startedAt}ms"
         )
 
@@ -147,8 +148,8 @@ class RootTunConfigFactory(
                 append(staticPlan.missingPackages)
             }
         }
-        startupLogStore.append(summary)
-        startupLogStore.append(
+        log(summary)
+        log(
             "ROOT_TUN factory: config=" +
                 RootTunJson.Default.encodeToString(RootTunConfig.serializer(), config)
         )
@@ -274,6 +275,11 @@ class RootTunConfigFactory(
 
     private fun buildProfileFingerprint(profileUuid: UUID, updatedAt: Long): String =
         "$profileUuid|$updatedAt"
+
+    private fun formatProfilesStoreLine(): String {
+        val keyCount = runCatching { ProfileStore.countStoredKeys() }.getOrDefault(0)
+        return "<MMKV_IO.cpp:133::loadFromFile> loaded [profiles] with $keyCount key-values"
+    }
 
     private fun resolveDnsHijack(): List<String> {
         if (!store.dnsHijacking) return emptyList()

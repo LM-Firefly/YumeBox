@@ -23,11 +23,19 @@ package com.github.yumelira.yumebox.service.root
 import android.content.Intent
 import android.os.IBinder
 import com.github.yumelira.yumebox.core.Global
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
+import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
 import com.github.yumelira.yumebox.service.runtime.session.RootTunTransport
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeSpec
+import com.github.yumelira.yumebox.service.runtime.session.RuntimeStartupLogStore
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntime
 import com.github.yumelira.yumebox.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.tencent.mmkv.MMKV
 import com.topjohnwu.superuser.ipc.RootService
 import kotlinx.coroutines.runBlocking
@@ -37,7 +45,8 @@ import kotlinx.serialization.builtins.serializer
 class RootTunRootService : RootService() {
     private lateinit var runtime: SessionRuntime
     private lateinit var stateStore: RootTunStateStore
-    private lateinit var startupLogStore: RootTunStartupLogStore
+    private lateinit var statePublisher: RootTunStatePublisher
+    private lateinit var startupLogStore: RuntimeStartupLogStore
     private lateinit var runtimeSpecFactory: SessionRuntimeSpecFactory
     private lateinit var runtimeHost: RootTunRuntimeHost
 
@@ -52,11 +61,11 @@ class RootTunRootService : RootService() {
                 startupLogStore.append(
                     "ROOT_TUN root-service: binder branch=start transport=${spec.transportFingerprint}"
                 )
-                stateStore.updateStatus(
-                    stateStore
+                statePublisher.update(
+                    statePublisher
                         .snapshot()
                         .copy(
-                            state = RootTunState.Starting,
+                            state = RuntimePhase.Starting,
                             running = true,
                             profileUuid = spec.profileUuid,
                             profileName = spec.profileName,
@@ -87,7 +96,7 @@ class RootTunRootService : RootService() {
                     "ROOT_TUN root-service: binder branch=reload source=${request.source}"
                 )
                 val spec = createSpec("reload")
-                val currentTransport = stateStore.snapshot().transportFingerprint
+                val currentTransport = statePublisher.snapshot().transportFingerprint
                 return if (
                     currentTransport != null && currentTransport != spec.transportFingerprint
                 ) {
@@ -114,12 +123,12 @@ class RootTunRootService : RootService() {
             override fun queryStatus(): String =
                 RootTunJson.Default.encodeToString(
                     RootTunStatus.serializer(),
-                    stateStore.snapshot(),
+                    statePublisher.snapshot(),
                 )
 
             override fun queryTunnelStateJson(): String =
                 RootTunJson.Default.encodeToString(
-                    com.github.yumelira.yumebox.core.model.TunnelState.serializer(),
+                    TunnelState.serializer(),
                     runtime.queryTunnelState(),
                 )
 
@@ -129,13 +138,13 @@ class RootTunRootService : RootService() {
 
             override fun queryConnectionsJson(): String =
                 RootTunJson.Default.encodeToString(
-                    com.github.yumelira.yumebox.core.model.ConnectionSnapshot.serializer(),
+                    ConnectionSnapshot.serializer(),
                     runtime.queryConnections(),
                 )
 
             override fun queryAllProxyGroupsJson(excludeNotSelectable: Boolean): String =
                 RootTunJson.Default.encodeToString(
-                    ListSerializer(com.github.yumelira.yumebox.core.model.ProxyGroup.serializer()),
+                    ListSerializer(ProxyGroup.serializer()),
                     runtime.queryAllProxyGroups(excludeNotSelectable),
                 )
 
@@ -147,22 +156,19 @@ class RootTunRootService : RootService() {
 
             override fun queryProxyGroupJson(name: String, sort: String): String =
                 RootTunJson.Default.encodeToString(
-                    com.github.yumelira.yumebox.core.model.ProxyGroup.serializer(),
-                    runtime.queryProxyGroup(
-                        name,
-                        com.github.yumelira.yumebox.core.model.ProxySort.valueOf(sort),
-                    ),
+                    ProxyGroup.serializer(),
+                    runtime.queryProxyGroup(name, ProxySort.valueOf(sort)),
                 )
 
             override fun queryConfigurationJson(): String =
                 RootTunJson.Default.encodeToString(
-                    com.github.yumelira.yumebox.core.model.UiConfiguration.serializer(),
+                    UiConfiguration.serializer(),
                     runtime.queryConfiguration(),
                 )
 
             override fun queryProvidersJson(): String =
                 RootTunJson.Default.encodeToString(
-                    ListSerializer(com.github.yumelira.yumebox.core.model.Provider.serializer()),
+                    ListSerializer(Provider.serializer()),
                     runtime.queryProviders(),
                 )
 
@@ -198,6 +204,18 @@ class RootTunRootService : RootService() {
                     RootTunLogChunk.serializer(),
                     RootTunLogChunk.from(runtime.queryRecentLogsJson(sinceSeq)),
                 )
+
+            override fun appendStartupLog(text: String) {
+                startupLogStore.append(text)
+            }
+
+            override fun registerStateObserver(observer: IRootTunStateObserver) {
+                statePublisher.register(observer)
+            }
+
+            override fun unregisterStateObserver(observer: IRootTunStateObserver) {
+                statePublisher.unregister(observer)
+            }
         }
 
     override fun onCreate() {
@@ -206,9 +224,10 @@ class RootTunRootService : RootService() {
         initializeServiceGlobal(this)
         MMKV.initialize(this)
         stateStore = RootTunStateStore(this)
-        startupLogStore = RootTunStartupLogStore(this)
+        statePublisher = RootTunStatePublisher(stateStore)
+        startupLogStore = RuntimeStartupLogStore(this, RuntimeStartupLogStore.Scope.ROOT_TUN)
         runtimeSpecFactory = SessionRuntimeSpecFactory(this)
-        runtimeHost = RootTunRuntimeHost(this, stateStore)
+        runtimeHost = RootTunRuntimeHost(this, statePublisher)
         startupLogStore.append("ROOT_TUN root-service: onCreate")
         runtime = SessionRuntime(host = runtimeHost, transport = RootTunTransport())
     }
@@ -229,8 +248,9 @@ class RootTunRootService : RootService() {
         RootTunJson.Default.decodeFromString(RootTunStartRequest.serializer(), requestJson)
 
     private fun createSpec(action: String): RuntimeSpec {
+        startupLogStore.clear()
         startupLogStore.append("ROOT_TUN root-service: spec create begin action=$action")
-        val spec = runtimeSpecFactory.createRootTunSpec()
+        val spec = runtimeSpecFactory.createRootTunSpec(log = startupLogStore::append)
         startupLogStore.append(
             "ROOT_TUN root-service: spec create done action=$action profile=${spec.profileUuid} transport=${spec.transportFingerprint}"
         )

@@ -20,13 +20,8 @@
 
 package com.github.yumelira.yumebox.runtime.client.root
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
 import com.github.yumelira.yumebox.core.model.Provider
 import com.github.yumelira.yumebox.core.model.ProxyGroup
@@ -36,73 +31,88 @@ import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.service.RootTunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.root.IRootTunService
+import com.github.yumelira.yumebox.service.root.IRootTunStateObserver
+import com.github.yumelira.yumebox.service.root.RootTunBinding
 import com.github.yumelira.yumebox.service.root.RootTunJson
 import com.github.yumelira.yumebox.service.root.RootTunLogChunk
 import com.github.yumelira.yumebox.service.root.RootTunOperationResult
-import com.github.yumelira.yumebox.service.root.RootTunRootService
-import com.github.yumelira.yumebox.service.root.RootTunRuntimeRecovery
 import com.github.yumelira.yumebox.service.root.RootTunStartRequest
-import com.github.yumelira.yumebox.service.root.RootTunStartupLogStore
-import com.github.yumelira.yumebox.service.root.RootTunState
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
 import com.github.yumelira.yumebox.service.root.RootTunStatus
+import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
+import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.topjohnwu.superuser.ipc.RootService
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 object RootTunController {
-    private val mutex = Mutex()
+    private val binding = RootTunBinding()
 
-    @Volatile private var binder: IRootTunService? = null
+    /**
+     * Receives root-pushed status over the AIDL channel and freshens the in-process
+     * [RootTunStatusFlow], replacing the old shared-MMKV polling.
+     */
+    private val stateObserver =
+        object : IRootTunStateObserver.Stub() {
+            override fun onStatusChanged(statusJson: String) {
+                runCatching {
+                    RootTunStatusFlow.update(
+                        RootTunJson.Default.decodeFromString(
+                            RootTunStatus.serializer(),
+                            statusJson,
+                        )
+                    )
+                }
+            }
+        }
 
-    @Volatile private var connection: ServiceConnection? = null
+    init {
+        // Re-register the observer on every (re)bind; unregister on disconnect. Registration is
+        // idempotent (RemoteCallbackList dedups by binder) and failures are swallowed (root may be
+        // momentarily gone).
+        binding.afterBind = { service ->
+            runCatching { service.registerStateObserver(stateObserver) }
+        }
+        binding.beforeUnbind = { service ->
+            runCatching { service.unregisterStateObserver(stateObserver) }
+        }
+    }
 
     private suspend fun <T> remoteCall(
         context: Context,
         onBinderFailure: (() -> T)? = null,
         block: (IRootTunService) -> T,
-    ): T {
-        val appContext = context.appContextOrSelf
-        return withContext(Dispatchers.IO) {
-            try {
-                block(bind(appContext))
-            } catch (error: Throwable) {
-                if (RootTunRuntimeRecovery.isBinderConnectionFailure(error)) {
-                    invalidateConnection(
-                        appContext,
-                        RootTunRuntimeRecovery.binderFailureReason(error),
-                    )
-                    onBinderFailure?.let {
-                        return@withContext it()
-                    }
-                }
-                throw error
-            }
+    ): T = binding.remoteCall(context, onBinderFailure, block)
+
+    private suspend fun bind(context: Context): IRootTunService = binding.bind(context)
+
+    private suspend fun disconnect() = binding.disconnect()
+
+    private fun cachedBinder(context: Context): IRootTunService? = binding.cachedBinder(context)
+
+    private fun createIntent(context: Context): Intent = binding.createIntent(context)
+
+    /** Forwards the main-process startup trace into the root process's single log file. */
+    private suspend fun flushStartupTrace(lines: List<String>) {
+        if (lines.isEmpty()) return
+        withContext(Dispatchers.IO) {
+            runCatching { binding.currentBinder?.appendStartupLog(lines.joinToString("\n")) }
         }
     }
 
     suspend fun start(context: Context): RootTunOperationResult {
         val appContext = context.appContextOrSelf
-        val startupLogStore = RootTunStartupLogStore(appContext)
-        val stateStore = RootTunStateStore(appContext)
+        val trace = mutableListOf<String>()
         val startAt = System.currentTimeMillis()
 
         val request = RootTunStartRequest(source = "controller.start")
-        startupLogStore.append(
-            "ROOT_TUN controller: prepare=${System.currentTimeMillis() - startAt}ms"
-        )
+        trace += "ROOT_TUN controller: prepare=${System.currentTimeMillis() - startAt}ms"
         val foregroundStartAt = System.currentTimeMillis()
-        val current = stateStore.snapshot()
-        stateStore.updateStatus(
+        val current = RootTunStatusFlow.current(appContext)
+        RootTunStatusFlow.update(
             current.copy(
-                state = RootTunState.Starting,
+                state = RuntimePhase.Starting,
                 running = true,
                 runtimeReady = false,
                 controllerReady = true,
@@ -111,101 +121,91 @@ object RootTunController {
             )
         )
         RootTunService.start(appContext)
-        startupLogStore.append(
-            "ROOT_TUN controller: fgService=${System.currentTimeMillis() - foregroundStartAt}ms"
-        )
-        return start(appContext, request, stateStore, startupLogStore, startAt)
+        trace += "ROOT_TUN controller: fgService=${System.currentTimeMillis() - foregroundStartAt}ms"
+        return start(appContext, request, trace, startAt)
     }
 
     private suspend fun start(
         context: Context,
         request: RootTunStartRequest,
-        stateStore: RootTunStateStore,
-        startupLogStore: RootTunStartupLogStore,
+        trace: MutableList<String>,
         startedAt: Long,
     ): RootTunOperationResult {
         val appContext = context.appContextOrSelf
         val remoteStartAt = System.currentTimeMillis()
-        val result =
-            runCatching {
-                    remoteCall(context) { service ->
-                        val resultJson =
-                            service.startRootTun(
-                                RootTunJson.Default.encodeToString(
-                                    RootTunStartRequest.serializer(),
-                                    request,
+        try {
+            val result =
+                runCatching {
+                        remoteCall(context) { service ->
+                            val resultJson =
+                                service.startRootTun(
+                                    RootTunJson.Default.encodeToString(
+                                        RootTunStartRequest.serializer(),
+                                        request,
+                                    )
                                 )
-                            )
-                        RootTunJson.Default.decodeFromString(
-                            RootTunOperationResult.serializer(),
-                            resultJson,
-                        )
-                    }
-                }
-                .getOrElse { error ->
-                    rollbackFailedStart(
-                        context = appContext,
-                        stateStore = stateStore,
-                        error = error.message ?: "RootTun start failed",
-                    )
-                    startupLogStore.append(
-                        "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms failed=${error.message}"
-                    )
-                    return RootTunOperationResult(
-                        success = false,
-                        error = error.message ?: "RootTun start failed",
-                    )
-                }
-        startupLogStore.append(
-            "ROOT_TUN controller: remoteStart=${System.currentTimeMillis() - remoteStartAt}ms"
-        )
-        if (!result.success) {
-            rollbackFailedStart(
-                context = appContext,
-                stateStore = stateStore,
-                error = result.error ?: "RootTun start failed",
-            )
-            startupLogStore.append(
-                "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms"
-            )
-            return result
-        }
-
-        return try {
-            runCatching { stateStore.updateStatus(queryStatus(context)) }
-            startupLogStore.append(
-                "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms"
-            )
-            result
-        } catch (error: Throwable) {
-            val rollbackResult =
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                            val resultJson = bind(context).stopRootTun()
                             RootTunJson.Default.decodeFromString(
                                 RootTunOperationResult.serializer(),
                                 resultJson,
                             )
                         }
-                        .getOrNull()
-                }
-            val appContext = context.appContextOrSelf
-            runCatching { RootTunService.stop(appContext) }
-            runCatching { RootService.stop(createIntent(appContext)) }
-            disconnect()
-
-            val message = buildString {
-                append(error.message ?: "failed to start RootTun foreground service")
-                rollbackResult
-                    ?.error
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { append(" | rollback: ").append(it) }
+                    }
+                    .getOrElse { error ->
+                        rollbackFailedStart(
+                            context = appContext,
+                            error = error.message ?: "RootTun start failed",
+                        )
+                        trace +=
+                            "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms failed=${error.message}"
+                        return RootTunOperationResult(
+                            success = false,
+                            error = error.message ?: "RootTun start failed",
+                        )
+                    }
+            trace += "ROOT_TUN controller: remoteStart=${System.currentTimeMillis() - remoteStartAt}ms"
+            if (!result.success) {
+                rollbackFailedStart(
+                    context = appContext,
+                    error = result.error ?: "RootTun start failed",
+                )
+                trace += "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms"
+                return result
             }
-            startupLogStore.append(
-                "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms failed=$message"
-            )
-            stateStore.markIdle(message)
-            RootTunOperationResult(success = false, error = message)
+
+            return try {
+                runCatching { RootTunStatusFlow.update(queryStatus(context)) }
+                trace += "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms"
+                result
+            } catch (error: Throwable) {
+                val rollbackResult =
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                                val resultJson = bind(context).stopRootTun()
+                                RootTunJson.Default.decodeFromString(
+                                    RootTunOperationResult.serializer(),
+                                    resultJson,
+                                )
+                            }
+                            .getOrNull()
+                    }
+                runCatching { RootTunService.stop(appContext) }
+                runCatching { RootService.stop(createIntent(appContext)) }
+                disconnect()
+
+                val message = buildString {
+                    append(error.message ?: "failed to start RootTun foreground service")
+                    rollbackResult
+                        ?.error
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { append(" | rollback: ").append(it) }
+                }
+                trace +=
+                    "ROOT_TUN controller: total=${System.currentTimeMillis() - startedAt}ms failed=$message"
+                RootTunStatusFlow.markIdle(message)
+                RootTunOperationResult(success = false, error = message)
+            }
+        } finally {
+            flushStartupTrace(trace)
         }
     }
 
@@ -215,41 +215,43 @@ object RootTunController {
         }
 
         val appContext = context.appContextOrSelf
-        val startupLogStore = RootTunStartupLogStore(appContext)
-        val stateStore = RootTunStateStore(appContext)
-        val currentStatus = stateStore.snapshot()
+        val trace = mutableListOf<String>()
+        val currentStatus = RootTunStatusFlow.current(appContext)
         val request = RootTunStartRequest(source = "controller.reload")
-        startupLogStore.append(
+        trace +=
             "ROOT_TUN controller: reload request currentTransport=${currentStatus.transportFingerprint}"
-        )
 
-        val result =
-            runCatching {
-                    remoteCall(appContext) { service ->
-                        startupLogStore.append("ROOT_TUN controller: reload branch=service")
-                        val resultJson =
-                            service.reloadActiveProfile(
-                                RootTunJson.Default.encodeToString(
-                                    RootTunStartRequest.serializer(),
-                                    request,
+        try {
+            val result =
+                runCatching {
+                        remoteCall(appContext) { service ->
+                            trace += "ROOT_TUN controller: reload branch=service"
+                            val resultJson =
+                                service.reloadActiveProfile(
+                                    RootTunJson.Default.encodeToString(
+                                        RootTunStartRequest.serializer(),
+                                        request,
+                                    )
                                 )
+                            RootTunJson.Default.decodeFromString(
+                                RootTunOperationResult.serializer(),
+                                resultJson,
                             )
-                        RootTunJson.Default.decodeFromString(
-                            RootTunOperationResult.serializer(),
-                            resultJson,
+                        }
+                    }
+                    .getOrElse { error ->
+                        return RootTunOperationResult(
+                            success = false,
+                            error = error.message ?: "RootTun reload failed",
                         )
                     }
-                }
-                .getOrElse { error ->
-                    return RootTunOperationResult(
-                        success = false,
-                        error = error.message ?: "RootTun reload failed",
-                    )
-                }
-        if (result.success) {
-            runCatching { stateStore.updateStatus(queryStatus(appContext)) }
+            if (result.success) {
+                runCatching { RootTunStatusFlow.update(queryStatus(appContext)) }
+            }
+            return result
+        } finally {
+            flushStartupTrace(trace)
         }
-        return result
     }
 
     suspend fun stop(context: Context): RootTunOperationResult {
@@ -385,134 +387,19 @@ object RootTunController {
             RootTunJson.Default.decodeFromString(RootTunLogChunk.serializer(), raw)
         }
 
-    private suspend fun disconnect() {
-        mutex.withLock {
-            val current = connection ?: return
-
-            withContext(Dispatchers.Main) { runCatching { RootService.unbind(current) } }
-            connection = null
-            binder = null
-        }
-    }
-
-    private suspend fun bind(context: Context): IRootTunService {
-        cachedBinder(context)?.let {
-            return it
-        }
-
-        return bindInternal(context)
-    }
-
-    private suspend fun bindInternal(context: Context): IRootTunService {
-        return mutex.withLock {
-            cachedBinder(context)?.let {
-                return it
-            }
-
-            suspendCancellableCoroutine { continuation ->
-                val appContext = context.appContextOrSelf
-                val intent = createIntent(appContext)
-                val mainHandler = Handler(Looper.getMainLooper())
-
-                val newConnection =
-                    object : ServiceConnection {
-                        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-                            val remote = IRootTunService.Stub.asInterface(service)
-                            if (remote == null) {
-                                invalidateConnection(appContext, "root tun binder is null")
-                                if (continuation.isActive) {
-                                    continuation.resumeWithException(
-                                        IllegalStateException("root tun binder is null")
-                                    )
-                                }
-                                return
-                            }
-
-                            binder = remote
-                            connection = this
-                            if (continuation.isActive) {
-                                continuation.resume(remote)
-                            }
-                        }
-
-                        override fun onServiceDisconnected(name: ComponentName?) {
-                            invalidateConnection(appContext, null)
-                        }
-
-                        override fun onNullBinding(name: ComponentName?) {
-                            invalidateConnection(
-                                appContext,
-                                "root tun service returned null binding",
-                            )
-                            if (continuation.isActive) {
-                                continuation.resumeWithException(
-                                    IllegalStateException("root tun service returned null binding")
-                                )
-                            }
-                        }
-
-                        override fun onBindingDied(name: ComponentName?) {
-                            invalidateConnection(appContext, "RootTun binding died")
-                        }
-                    }
-
-                connection = newConnection
-                continuation.invokeOnCancellation {
-                    mainHandler.post { runCatching { RootService.unbind(newConnection) } }
-                    if (connection === newConnection) {
-                        connection = null
-                    }
-                    if (binder != null && connection == null) {
-                        binder = null
-                    }
-                }
-
-                mainHandler.post {
-                    runCatching { RootService.bind(intent, newConnection) }
-                        .onFailure { error ->
-                            connection = null
-                            binder = null
-                            if (continuation.isActive) {
-                                continuation.resumeWithException(error)
-                            }
-                        }
-                }
-            }
-        }
-    }
-
     private fun isRuntimeActive(context: Context): Boolean {
         cachedBinder(context)?.let {
             return true
         }
-        val status = RootTunStateStore(context.appContextOrSelf).snapshot()
-        return status.state.isActive || status.runtimeReady
+        val status = RootTunStatusFlow.current(context)
+        return status.state.isActiveOrStopping || status.runtimeReady
     }
-
-    private fun cachedBinder(context: Context): IRootTunService? {
-        val current = binder ?: return null
-        if (RootTunRuntimeRecovery.isBinderAlive(current)) {
-            return current
-        }
-        invalidateConnection(context.appContextOrSelf, "RootTun binder cache is dead")
-        return null
-    }
-
-    private fun invalidateConnection(context: Context, reason: String?) {
-        binder = null
-        connection = null
-        RootTunRuntimeRecovery.handleBinderGone(context, reason)
-    }
-
-    private fun createIntent(context: Context): Intent =
-        Intent(context, RootTunRootService::class.java)
 
     private suspend fun rollbackFailedStart(
         context: Context,
-        stateStore: RootTunStateStore,
         error: String,
     ) {
-        stateStore.markIdle(error)
+        RootTunStatusFlow.markIdle(error)
         runCatching { RootTunService.stop(context) }
         runCatching { RootService.stop(createIntent(context)) }
         disconnect()

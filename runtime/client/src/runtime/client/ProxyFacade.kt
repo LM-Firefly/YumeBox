@@ -44,13 +44,12 @@ import com.github.yumelira.yumebox.domain.model.ProxyGroupInfo
 import com.github.yumelira.yumebox.remote.ServiceClient
 import com.github.yumelira.yumebox.remote.VpnPermissionRequired
 import com.github.yumelira.yumebox.runtime.client.root.RootTunController
-import com.github.yumelira.yumebox.service.LocalRuntimePhase
 import com.github.yumelira.yumebox.service.RootTunService
 import com.github.yumelira.yumebox.service.StatusProvider
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
 import com.github.yumelira.yumebox.service.root.RootTunStatus
+import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
@@ -118,7 +117,6 @@ class ProxyFacade(private val context: Context) {
             ServiceClient.clash()
         }
 
-    private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
     private val runtimeControl = ProxyRuntimeControl(appContext) { actionClashRequestStop }
     private val _rootTunStatus = MutableStateFlow(RootTunStatus())
     val rootTunStatus: StateFlow<RootTunStatus> = _rootTunStatus.asStateFlow()
@@ -478,7 +476,7 @@ class ProxyFacade(private val context: Context) {
             if (targetOwner == RuntimeOwner.RootTun) {
                 applyRootTunStatus(
                     RootTunStatus(
-                        state = com.github.yumelira.yumebox.service.root.RootTunState.Starting
+                        state = RuntimePhase.Starting
                     )
                 )
                 scheduleRootTunBootstrap()
@@ -865,7 +863,7 @@ class ProxyFacade(private val context: Context) {
             stopRootTunBootstrap()
             applyRootTunStatus(
                 RootTunStatus(
-                    state = com.github.yumelira.yumebox.service.root.RootTunState.Stopping
+                    state = RuntimePhase.Stopping
                 )
             )
         }
@@ -956,7 +954,7 @@ class ProxyFacade(private val context: Context) {
         val configuredMode = networkSettingsStorage.proxyMode.value
         clearLegacyRuntimeCaches()
         StatusProvider.reconcilePersistedRuntimeState()
-        val persistedRootStatus = rootTunStateStore.snapshot()
+        val persistedRootStatus = RootTunStatusFlow.current(appContext)
         val shouldBootstrapRootTun = shouldBootstrapRootTunRuntime(persistedRootStatus)
         val rootStatus =
             persistedRootStatus.takeIf(::shouldAttachRootTunForegroundService) ?: RootTunStatus()
@@ -1017,23 +1015,23 @@ class ProxyFacade(private val context: Context) {
         }
 
         return runCatching { RootTunController.queryStatus(appContext) }
-            .onSuccess { status -> rootTunStateStore.updateStatus(status) }
+            .onSuccess { status -> RootTunStatusFlow.update(status) }
             .getOrElse { error ->
                 Timber.d(error, "RootTun live status unavailable during runtime reconcile")
-                rootTunStateStore.snapshot()
+                RootTunStatusFlow.current(appContext)
             }
     }
 
     private fun shouldBootstrapRootTunRuntime(
-        status: RootTunStatus = rootTunStateStore.snapshot()
+        status: RootTunStatus = RootTunStatusFlow.current(appContext)
     ): Boolean = shouldAttachRootTunForegroundService(status)
 
     private fun shouldAttachRootTunForegroundService(status: RootTunStatus): Boolean =
-        status.state.isActive || status.runtimeReady
+        status.state.isActiveOrStopping || status.runtimeReady
 
     private fun isRootSessionActive(): Boolean {
         val status = _rootTunStatus.value
-        return status.state.isActive || status.runtimeReady
+        return status.state.isActiveOrStopping || status.runtimeReady
     }
 
     private fun isLocalSessionActive(mode: ProxyMode?): Boolean {
@@ -1041,8 +1039,8 @@ class ProxyFacade(private val context: Context) {
         return StatusProvider.isRuntimeActive(mode)
     }
 
-    private fun localRuntimePhaseForOwner(owner: RuntimeOwner): LocalRuntimePhase {
-        val localMode = localModeForOwner(owner) ?: return LocalRuntimePhase.Idle
+    private fun localRuntimePhaseForOwner(owner: RuntimeOwner): RuntimePhase {
+        val localMode = localModeForOwner(owner) ?: return RuntimePhase.Idle
         return StatusProvider.queryRuntimePhase(localMode)
     }
 
@@ -1090,11 +1088,11 @@ class ProxyFacade(private val context: Context) {
         stopRootTunBootstrap()
 
         if (!isRootSessionActive()) {
-            val status = rootTunStateStore.snapshot()
-            if (status.state.isActive) {
-                rootTunStateStore.markIdle(reason ?: status.lastError)
+            val status = RootTunStatusFlow.current(appContext)
+            if (status.state.isActiveOrStopping) {
+                RootTunStatusFlow.markIdle(reason ?: status.lastError)
             }
-            applyRootTunStatus(rootTunStateStore.snapshot())
+            applyRootTunStatus(RootTunStatusFlow.current(appContext))
         }
 
         clearRuntimeState(resetGroups = false)
@@ -1117,8 +1115,8 @@ class ProxyFacade(private val context: Context) {
         val generation = nextGeneration()
         stopRootTunBootstrap()
         if (!isRootSessionActive()) {
-            rootTunStateStore.markIdle(error)
-            applyRootTunStatus(rootTunStateStore.snapshot())
+            RootTunStatusFlow.markIdle(error)
+            applyRootTunStatus(RootTunStatusFlow.current(appContext))
         }
         clearRuntimeState(resetGroups = false)
         publishRuntimeSnapshot(
@@ -1256,17 +1254,17 @@ class ProxyFacade(private val context: Context) {
 
     private suspend fun currentRootTunStatus(): RootTunStatus =
         runCatching { RootTunController.queryStatus(appContext) }
-            .getOrElse { rootTunStateStore.snapshot() }
+            .getOrElse { RootTunStatusFlow.current(appContext) }
 
     private suspend fun reconcileRootTunRuntimeStateSafely() {
         runCatching {
-                val persistedStatus = rootTunStateStore.snapshot()
+                val persistedStatus = RootTunStatusFlow.current(appContext)
                 if (!shouldAttachRootTunForegroundService(persistedStatus)) {
                     return@runCatching
                 }
                 ensureRootTunServiceAttached(persistedStatus)
                 val status = RootTunController.queryStatus(appContext)
-                rootTunStateStore.updateStatus(status)
+                RootTunStatusFlow.update(status)
                 applyRootTunStatus(status)
                 val configuredMode = networkSettingsStorage.proxyMode.value
                 publishRuntimeSnapshot(
@@ -1274,10 +1272,10 @@ class ProxyFacade(private val context: Context) {
                         owner = RuntimeOwner.RootTun,
                         configuredMode = configuredMode,
                         rootStatus = status,
-                        localPhase = LocalRuntimePhase.Idle,
+                        localPhase = RuntimePhase.Idle,
                     )
                 )
-                if (status.state == com.github.yumelira.yumebox.service.root.RootTunState.Running) {
+                if (status.state == RuntimePhase.Running) {
                     startTrafficPolling()
                     refreshAllSafely()
                 }
@@ -1285,7 +1283,9 @@ class ProxyFacade(private val context: Context) {
             .onFailure { error -> Timber.d(error, "RootTun bootstrap reconcile skipped") }
     }
 
-    private fun ensureRootTunServiceAttached(status: RootTunStatus = rootTunStateStore.snapshot()) {
+    private fun ensureRootTunServiceAttached(
+        status: RootTunStatus = RootTunStatusFlow.current(appContext)
+    ) {
         if (!shouldAttachRootTunForegroundService(status)) {
             return
         }
@@ -1297,7 +1297,7 @@ class ProxyFacade(private val context: Context) {
         if (rootTunBootstrapJob?.isActive == true) return
         rootTunBootstrapJob = scope.launch {
             repeat(ROOT_TUN_BOOTSTRAP_ATTEMPTS) { attempt ->
-                val persistedStatus = rootTunStateStore.snapshot()
+                val persistedStatus = RootTunStatusFlow.current(appContext)
                 if (!shouldAttachRootTunForegroundService(persistedStatus)) {
                     return@launch
                 }
@@ -1310,7 +1310,7 @@ class ProxyFacade(private val context: Context) {
                         .getOrNull()
 
                 if (status != null) {
-                    rootTunStateStore.updateStatus(status)
+                    RootTunStatusFlow.update(status)
                     applyRootTunStatus(status)
                     val configuredMode = networkSettingsStorage.proxyMode.value
                     publishRuntimeSnapshot(
@@ -1318,12 +1318,12 @@ class ProxyFacade(private val context: Context) {
                             owner = RuntimeOwner.RootTun,
                             configuredMode = configuredMode,
                             rootStatus = status,
-                            localPhase = LocalRuntimePhase.Idle,
+                            localPhase = RuntimePhase.Idle,
                         )
                     )
                     if (
                         status.state ==
-                            com.github.yumelira.yumebox.service.root.RootTunState.Running
+                            RuntimePhase.Running
                     ) {
                         startTrafficPolling()
                         refreshAllSafely()
@@ -1341,9 +1341,10 @@ class ProxyFacade(private val context: Context) {
     private fun clearLegacyRuntimeCaches() {
         StatusProvider.clearLegacyStateFiles()
         StatusProvider.reconcilePersistedRuntimeState()
-        val rootStatus = rootTunStateStore.snapshot()
-        if (!rootStatus.state.isActive && !rootStatus.runtimeReady) {
-            runCatching { rootTunStateStore.clear() }
+        val rootStatus = RootTunStatusFlow.current(appContext)
+        if (!rootStatus.state.isActiveOrStopping && !rootStatus.runtimeReady) {
+            // The root process owns the durable store now; only reset the in-process view.
+            RootTunStatusFlow.update(RootTunStatus())
         }
         applyRootTunStatus(RootTunStatus())
         if (!StatusProvider.serviceRunning) {

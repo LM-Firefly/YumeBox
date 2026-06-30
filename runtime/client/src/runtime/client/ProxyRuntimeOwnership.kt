@@ -21,8 +21,6 @@
 package com.github.yumelira.yumebox.runtime.client
 
 import com.github.yumelira.yumebox.data.model.ProxyMode
-import com.github.yumelira.yumebox.service.LocalRuntimePhase
-import com.github.yumelira.yumebox.service.root.RootTunState
 import com.github.yumelira.yumebox.service.root.RootTunStatus
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
@@ -35,7 +33,7 @@ internal object ProxyRuntimeOwnership {
         isLocalSessionActive: (ProxyMode) -> Boolean,
     ): RuntimeOwner =
         when {
-            rootStatus.state.isActive || rootStatus.runtimeReady -> RuntimeOwner.RootTun
+            rootStatus.state.isActiveOrStopping || rootStatus.runtimeReady -> RuntimeOwner.RootTun
             isLocalSessionActive(ProxyMode.Tun) -> RuntimeOwner.LocalTun
             isLocalSessionActive(ProxyMode.Http) -> RuntimeOwner.LocalHttp
             else -> RuntimeOwner.None
@@ -62,7 +60,7 @@ internal object ProxyRuntimeOwnership {
         owner: RuntimeOwner,
         configuredMode: ProxyMode,
         rootStatus: RootTunStatus,
-        localPhase: LocalRuntimePhase = LocalRuntimePhase.Idle,
+        localPhase: RuntimePhase = RuntimePhase.Idle,
         localStartedAt: Long? = null,
     ): RuntimeSnapshot =
         RuntimeSnapshot(
@@ -120,19 +118,19 @@ internal object ProxyRuntimeOwnership {
 
     private fun rootPhase(status: RootTunStatus): RuntimePhase =
         when (status.state) {
-            RootTunState.Idle -> RuntimePhase.Idle
-            RootTunState.Starting -> RuntimePhase.Starting
-            RootTunState.Running -> RuntimePhase.Running
-            RootTunState.Stopping -> RuntimePhase.Stopping
-            RootTunState.Failed -> RuntimePhase.Failed
+            RuntimePhase.Idle -> RuntimePhase.Idle
+            RuntimePhase.Starting -> RuntimePhase.Starting
+            RuntimePhase.Running -> RuntimePhase.Running
+            RuntimePhase.Stopping -> RuntimePhase.Stopping
+            RuntimePhase.Failed -> RuntimePhase.Failed
         }
 
-    private fun LocalRuntimePhase.toRuntimePhase(): RuntimePhase =
+    private fun RuntimePhase.toRuntimePhase(): RuntimePhase =
         when (this) {
-            LocalRuntimePhase.Idle -> RuntimePhase.Idle
-            LocalRuntimePhase.Starting -> RuntimePhase.Starting
-            LocalRuntimePhase.Running -> RuntimePhase.Running
-            LocalRuntimePhase.Stopping -> RuntimePhase.Stopping
-            LocalRuntimePhase.Failed -> RuntimePhase.Failed
+            RuntimePhase.Idle -> RuntimePhase.Idle
+            RuntimePhase.Starting -> RuntimePhase.Starting
+            RuntimePhase.Running -> RuntimePhase.Running
+            RuntimePhase.Stopping -> RuntimePhase.Stopping
+            RuntimePhase.Failed -> RuntimePhase.Failed
         }
 }

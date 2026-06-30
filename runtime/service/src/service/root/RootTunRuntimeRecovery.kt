@@ -59,13 +59,12 @@ object RootTunRuntimeRecovery {
 
     fun handleBinderGone(context: Context, reason: String?) {
         val appContext = context.appContextOrSelf
-        val stateStore = RootTunStateStore(appContext)
-        val previous = stateStore.snapshot()
-        val hadRuntime = previous.state.isActive || previous.runtimeReady
+        val previous = RootTunStatusFlow.current(appContext)
+        val hadRuntime = previous.state.isActiveOrStopping || previous.runtimeReady
         val message = reason?.takeIf { it.isNotBlank() } ?: previous.lastError
 
         if (hadRuntime || !message.isNullOrBlank()) {
-            stateStore.markIdle(message)
+            RootTunStatusFlow.markIdle(message)
         }
 
         StatusProvider.markRuntimeIdle(ProxyMode.RootTun)

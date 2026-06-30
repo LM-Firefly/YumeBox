@@ -1,5 +1,7 @@
 package com.github.yumelira.yumebox.service.root;
 
+import com.github.yumelira.yumebox.service.root.IRootTunStateObserver;
+
 interface IRootTunService {
     String startRootTun(String requestJson);
     String restartRootTun(String requestJson);
@@ -23,4 +25,7 @@ interface IRootTunService {
     String updateProvider(String type, String name);
     void requestStop();
     String queryRecentLogsJson(long sinceSeq);
+    oneway void appendStartupLog(String text);
+    void registerStateObserver(in IRootTunStateObserver observer);
+    void unregisterStateObserver(in IRootTunStateObserver observer);
 }

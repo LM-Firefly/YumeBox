@@ -38,9 +38,9 @@ import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.notification.NotificationPresentation
 import com.github.yumelira.yumebox.service.notification.NotificationPresentationFactory
 import com.github.yumelira.yumebox.service.root.RootTunServiceBridge
-import com.github.yumelira.yumebox.service.root.RootTunState
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
 import com.github.yumelira.yumebox.service.root.RootTunStatus
+import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
+import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStarted
 import com.github.yumelira.yumebox.service.runtime.util.sendClashStopped
 import dev.oom_wg.purejoy.mlang.MLang
@@ -49,7 +49,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class RootTunService : BaseService() {
-    private val stateStore by lazy { RootTunStateStore(appContextOrSelf) }
     private val notificationManager by lazy { NotificationManagerCompat.from(this) }
     private var notificationJob: Job? = null
 
@@ -67,7 +66,7 @@ class RootTunService : BaseService() {
 
             ACTION_START,
             null -> {
-                val cachedStatus = stateStore.snapshot()
+                val cachedStatus = RootTunStatusFlow.current(appContextOrSelf)
                 startForeground(
                     NOTIFICATION_ID,
                     buildNotification(
@@ -79,7 +78,7 @@ class RootTunService : BaseService() {
                         )
                     ),
                 )
-                if (!cachedStatus.state.isActive && !cachedStatus.state.isRecovering) {
+                if (!cachedStatus.state.isActiveOrStopping && !cachedStatus.state.isRecovering) {
                     stopSelf()
                     return START_NOT_STICKY
                 }
@@ -101,8 +100,8 @@ class RootTunService : BaseService() {
                                         unreachableCount++
                                         val error = snapshotResult.exceptionOrNull()
                                         val fallbackStatus =
-                                            stateStore.snapshot().takeIf {
-                                                it.state != RootTunState.Idle ||
+                                            RootTunStatusFlow.current(appContextOrSelf).takeIf {
+                                                it.state != RuntimePhase.Idle ||
                                                     !it.profileName.isNullOrBlank() ||
                                                     !it.lastError.isNullOrBlank()
                                             } ?: lastStatus
@@ -132,7 +131,7 @@ class RootTunService : BaseService() {
                                             ),
                                         )
                                         if (
-                                            !fallbackStatus.state.isActive &&
+                                            !fallbackStatus.state.isActiveOrStopping &&
                                                 !fallbackStatus.state.isRecovering
                                         ) {
                                             stopSelf()
@@ -146,7 +145,7 @@ class RootTunService : BaseService() {
                                     syncStatus(snapshot)
 
                                     if (
-                                        snapshot.state == RootTunState.Running &&
+                                        snapshot.state == RuntimePhase.Running &&
                                             !startedBroadcastSent
                                     ) {
                                         sendClashStarted()
@@ -154,8 +153,8 @@ class RootTunService : BaseService() {
                                     }
 
                                     if (
-                                        snapshot.state == RootTunState.Idle ||
-                                            snapshot.state == RootTunState.Failed
+                                        snapshot.state == RuntimePhase.Idle ||
+                                            snapshot.state == RuntimePhase.Failed
                                     ) {
                                         notificationManager.notify(
                                             NOTIFICATION_ID,
@@ -177,7 +176,7 @@ class RootTunService : BaseService() {
                                         snapshot.profileName
                                             ?: MLang.Service.Notification.UnknownProfile
                                     val presentation =
-                                        if (snapshot.state == RootTunState.Running) {
+                                        if (snapshot.state == RuntimePhase.Running) {
                                             buildTrafficPresentation(profileName)
                                         } else {
                                             NotificationPresentationFactory.createStatus(
@@ -206,8 +205,8 @@ class RootTunService : BaseService() {
         notificationJob?.cancel()
         notificationJob = null
 
-        val snapshot = stateStore.snapshot()
-        if (!snapshot.state.isActive) {
+        val snapshot = RootTunStatusFlow.current(appContextOrSelf)
+        if (!snapshot.state.isActiveOrStopping) {
             StatusProvider.markRuntimeIdle(ProxyMode.RootTun)
             sendClashStopped(snapshot.lastError)
         }
@@ -283,21 +282,21 @@ class RootTunService : BaseService() {
 
     private fun syncStatus(status: RootTunStatus) {
         when (status.state) {
-            RootTunState.Idle -> StatusProvider.markRuntimeIdle(ProxyMode.RootTun)
-            RootTunState.Starting -> StatusProvider.markRuntimeStarting(ProxyMode.RootTun)
-            RootTunState.Running -> StatusProvider.markRuntimeRunning(ProxyMode.RootTun)
-            RootTunState.Stopping -> StatusProvider.markRuntimeStopping(ProxyMode.RootTun)
-            RootTunState.Failed -> StatusProvider.markRuntimeFailed(ProxyMode.RootTun)
+            RuntimePhase.Idle -> StatusProvider.markRuntimeIdle(ProxyMode.RootTun)
+            RuntimePhase.Starting -> StatusProvider.markRuntimeStarting(ProxyMode.RootTun)
+            RuntimePhase.Running -> StatusProvider.markRuntimeRunning(ProxyMode.RootTun)
+            RuntimePhase.Stopping -> StatusProvider.markRuntimeStopping(ProxyMode.RootTun)
+            RuntimePhase.Failed -> StatusProvider.markRuntimeFailed(ProxyMode.RootTun)
         }
     }
 
     private fun describeStatus(status: RootTunStatus): String =
         when (status.state) {
-            RootTunState.Starting -> "Starting..."
-            RootTunState.Running -> MLang.Service.Notification.Running
-            RootTunState.Stopping -> "Stopping..."
-            RootTunState.Failed -> "Failed: ${status.lastError ?: "unknown error"}"
-            RootTunState.Idle -> "Stopped"
+            RuntimePhase.Starting -> "Starting..."
+            RuntimePhase.Running -> MLang.Service.Notification.Running
+            RuntimePhase.Stopping -> "Stopping..."
+            RuntimePhase.Failed -> "Failed: ${status.lastError ?: "unknown error"}"
+            RuntimePhase.Idle -> "Stopped"
         }
 
     companion object {

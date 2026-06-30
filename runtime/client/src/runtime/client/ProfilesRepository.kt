@@ -28,7 +28,7 @@ import com.github.yumelira.yumebox.runtime.client.root.RootTunReloadScheduler
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.remote.IFetchObserver
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
 import com.github.yumelira.yumebox.service.runtime.entity.Profile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,7 +43,6 @@ import java.util.UUID
  */
 class ProfilesRepository(private val context: Context) {
     private val appContext = context.appContextOrSelf
-    private val rootTunStateStore by lazy { RootTunStateStore(appContext) }
 
     suspend fun createProfile(
         type: Profile.Type,
@@ -189,8 +188,8 @@ class ProfilesRepository(private val context: Context) {
     suspend fun queryActive(): Profile? = queryActiveProfile()
 
     private fun isRootTunActive(): Boolean {
-        val status = rootTunStateStore.snapshot()
-        return status.state.isActive || status.runtimeReady
+        val status = RootTunStatusFlow.current(appContext)
+        return status.state.isActiveOrStopping || status.runtimeReady
     }
 
     private fun notifyRuntimeOverrideChanged() {

@@ -30,6 +30,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import com.github.yumelira.yumebox.data.model.ThemeMode
 import com.github.yumelira.yumebox.presentation.component.AppActionBottomSheet
 import com.github.yumelira.yumebox.presentation.component.AppBottomSheetCloseAction
@@ -97,14 +99,6 @@ internal fun ThemeColorPickerItem(
     onOpenPickerRequest: (() -> Unit)? = null,
 ) {
     val showThemeColorPicker = remember { mutableStateOf(false) }
-    val editingThemeSeedColor =
-        remember(themeSeedColorArgb) {
-            mutableStateOf(
-                runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
-            )
-        }
-    val editingThemeSeedHex =
-        remember(themeSeedColorArgb) { mutableStateOf(formatThemeSeedHex(themeSeedColorArgb)) }
 
     BasicComponent(
         title = MLang.AppSettings.Interface.ColorThemeTitle,
@@ -113,9 +107,6 @@ internal fun ThemeColorPickerItem(
                 formatThemeSeedHex(themeSeedColorArgb)
             ),
         onClick = {
-            editingThemeSeedColor.value =
-                runCatching { colorFromArgb(themeSeedColorArgb) }.getOrDefault(Color.White)
-            editingThemeSeedHex.value = formatThemeSeedHex(themeSeedColorArgb)
             if (showBottomSheetInPlace) {
                 showThemeColorPicker.value = true
             } else {
@@ -139,21 +130,9 @@ internal fun ThemeColorPickerItem(
     if (showBottomSheetInPlace) {
         ThemeColorPickerSheet(
             show = showThemeColorPicker.value,
-            editingThemeSeedColor = editingThemeSeedColor.value,
-            editingThemeSeedHex = editingThemeSeedHex.value,
+            initialSeedColorArgb = themeSeedColorArgb,
             onDismissRequest = { showThemeColorPicker.value = false },
-            onEditingThemeSeedColorChange = {
-                editingThemeSeedColor.value = it
-                editingThemeSeedHex.value = formatThemeSeedHex(colorToArgbLong(it))
-            },
-            onEditingThemeSeedHexChange = { raw ->
-                // 不立即 normalize，让用户自由输入
-                editingThemeSeedHex.value = raw.uppercase()
-                // 尝试解析颜色，成功则更新预览
-                parseThemeHexColorOrNull(raw)?.let { editingThemeSeedColor.value = it }
-            },
-            onConfirm = {
-                val argb = colorToArgbLong(editingThemeSeedColor.value)
+            onConfirm = { argb ->
                 onThemeSeedColorChange(argb)
                 showThemeColorPicker.value = false
             },
@@ -164,14 +143,23 @@ internal fun ThemeColorPickerItem(
 @Composable
 internal fun ThemeColorPickerSheet(
     show: Boolean,
-    editingThemeSeedColor: Color,
-    editingThemeSeedHex: String,
+    initialSeedColorArgb: Long,
     onDismissRequest: () -> Unit,
-    onEditingThemeSeedColorChange: (Color) -> Unit,
-    onEditingThemeSeedHexChange: (String) -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: (Long) -> Unit,
     renderInRootScaffold: Boolean = true,
 ) {
+    val pickerColor =
+        remember(show, initialSeedColorArgb) {
+            mutableStateOf(
+                runCatching { colorFromArgb(initialSeedColorArgb) }.getOrDefault(Color.White)
+            )
+        }
+    val hexField =
+        remember(show, initialSeedColorArgb) {
+            val hex = formatThemeSeedHex(initialSeedColorArgb)
+            mutableStateOf(TextFieldValue(hex, TextRange(hex.length)))
+        }
+
     AppActionBottomSheet(
         show = show,
         modifier = Modifier,
@@ -181,17 +169,27 @@ internal fun ThemeColorPickerSheet(
         renderInRootScaffold = renderInRootScaffold,
         defaultWindowInsetsPadding = false,
         startAction = { AppBottomSheetCloseAction(onClick = onDismissRequest) },
-        endAction = { AppBottomSheetConfirmAction(onClick = onConfirm) },
+        endAction = {
+            AppBottomSheetConfirmAction(onClick = { onConfirm(colorToArgbLong(pickerColor.value)) })
+        },
         content = {
             Column(modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding()) {
                 ColorPicker(
-                    color = editingThemeSeedColor,
-                    onColorChanged = onEditingThemeSeedColorChange,
+                    color = pickerColor.value,
+                    onColorChanged = { color ->
+                        pickerColor.value = color
+                        val hex = formatThemeSeedHex(colorToArgbLong(color))
+                        hexField.value = TextFieldValue(hex, TextRange(hex.length))
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 TextField(
-                    value = editingThemeSeedHex,
-                    onValueChange = onEditingThemeSeedHexChange,
+                    value = hexField.value,
+                    onValueChange = { updated ->
+                        val upper = updated.copy(text = updated.text.uppercase())
+                        hexField.value = upper
+                        parseThemeHexColorOrNull(upper.text)?.let { pickerColor.value = it }
+                    },
                     label = MLang.AppSettings.Interface.ColorThemeCodeLabel,
                     modifier = Modifier.fillMaxWidth().padding(top = UiDp.dp8),
                 )

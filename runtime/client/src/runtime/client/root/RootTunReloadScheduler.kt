@@ -26,7 +26,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.common.constants.Intents
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
-import com.github.yumelira.yumebox.service.root.RootTunStateStore
+import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -84,8 +84,8 @@ object RootTunReloadScheduler {
             return
         }
 
-        val state = RootTunStateStore(context).snapshot()
-        if (!state.state.isActive && !state.runtimeReady) {
+        val state = RootTunStatusFlow.current(context)
+        if (!state.state.isActiveOrStopping && !state.runtimeReady) {
             return
         }
 
