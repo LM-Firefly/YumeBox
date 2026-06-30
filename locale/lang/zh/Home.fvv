@@ -59,6 +59,8 @@ Home = {
         Start = "开始使用"
         WallpaperTitle = "更换壁纸"
         WallpaperDescription = "点按壁纸，从相册换图"
+        SwipeTitle = "左右滑动"
+        SwipeDescription = "横向滑动首页，切换代理、配置和设置页面"
         AddTitle = "添加订阅"
         AddDescription = "点右上角图标，粘贴链接即可添加"
     }

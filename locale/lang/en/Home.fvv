@@ -59,6 +59,8 @@ Home = {
         Start = "Get started"
         WallpaperTitle = "Change wallpaper"
         WallpaperDescription = "Tap the wallpaper to pick from your album"
+        SwipeTitle = "Swipe pages"
+        SwipeDescription = "Swipe across Home to switch to Proxy, Profiles, and Settings"
         AddTitle = "Add subscription"
         AddDescription = "Click the icon in the upper right corner and paste the link to add it"
     }

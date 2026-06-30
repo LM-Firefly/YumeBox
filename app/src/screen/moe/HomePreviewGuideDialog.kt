@@ -52,14 +52,6 @@ import top.yukonga.miuix.kmp.layout.DialogDefaults
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 
-/**
- * A centered, introductory modal shown once on every cold start. It walks the user through a short,
- * three-page guided tour: page one presents a decorative skeleton mockup of the Moe home page with the
- * one-tap "start" chip highlighted, page two shows the same home with the wallpaper area being tapped
- * and a photo-picker sheet rising, page three shows the Profiles page with the "+" add button and the
- * add-subscription sheet. Purely informational — advanced via the bottom button, dismissed once the
- * last page's button is tapped, by tapping outside, or via the back gesture.
- */
 @Composable
 internal fun HomePreviewGuideDialog(show: Boolean, onDismissRequest: () -> Unit) {
     val spacing = AppTheme.spacing
@@ -75,6 +67,7 @@ internal fun HomePreviewGuideDialog(show: Boolean, onDismissRequest: () -> Unit)
             when (page) {
                 0 -> MLang.Home.PreviewGuide.Title
                 1 -> MLang.Home.PreviewGuide.WallpaperTitle
+                2 -> MLang.Home.PreviewGuide.SwipeTitle
                 else -> MLang.Home.PreviewGuide.AddTitle
             },
         titleColor = DialogDefaults.titleColor(),
@@ -82,6 +75,7 @@ internal fun HomePreviewGuideDialog(show: Boolean, onDismissRequest: () -> Unit)
             when (page) {
                 0 -> MLang.Home.PreviewGuide.Description
                 1 -> MLang.Home.PreviewGuide.WallpaperDescription
+                2 -> MLang.Home.PreviewGuide.SwipeDescription
                 else -> MLang.Home.PreviewGuide.AddDescription
             },
         summaryColor = DialogDefaults.summaryColor(),
@@ -115,14 +109,14 @@ internal fun HomePreviewGuideDialog(show: Boolean, onDismissRequest: () -> Unit)
                         when (p) {
                             0 -> MoeHomeSkeletonMockup(demo = HomeMockupDemo.StartButton)
                             1 -> MoeHomeSkeletonMockup(demo = HomeMockupDemo.Wallpaper)
+                            2 -> HomeToNodeSwipeMockup()
                             else -> ProfilesSkeletonMockup()
                         }
                     }
                 }
 
-                // Page indicator dots.
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    repeat(3) { i ->
+                    repeat(4) { i ->
                         Box(
                             modifier =
                                 Modifier.size(7.dp)
@@ -135,7 +129,7 @@ internal fun HomePreviewGuideDialog(show: Boolean, onDismissRequest: () -> Unit)
                     }
                 }
 
-                if (page < 2) {
+                if (page < 3) {
                     GuideButton(
                         text = MLang.Home.PreviewGuide.Next,
                         onClick = { page += 1 },

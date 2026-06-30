@@ -69,14 +69,6 @@ internal enum class HomeMockupDemo {
     Wallpaper,
 }
 
-/**
- * A miniature, purely decorative "skeleton" mockup of the Moe home page drawn entirely from masked
- * placeholder blocks (no real data): a phone frame with a left sidebar (time + nav dots) and a right
- * content panel (hero block, a faux node-info strip, quote bars). In [HomeMockupDemo.StartButton] the
- * bottom-right "start" chip is highlighted — it pulses with a radiating ripple to draw the eye. In
- * [HomeMockupDemo.Wallpaper] the chip is plain; instead the hero plays a looping tap effect and a
- * photo-picker bottom sheet slides up. Purely decorative, never interactive.
- */
 @Composable
 internal fun MoeHomeSkeletonMockup(
     demo: HomeMockupDemo = HomeMockupDemo.StartButton,
@@ -105,9 +97,9 @@ internal fun MoeHomeSkeletonMockup(
                             durationMillis = 3600
                             0f at 0
                             0f at 900
-                            1f at 1300 with FastOutSlowInEasing
+                            1f at 1300 using FastOutSlowInEasing
                             1f at 2900
-                            0f at 3300 with FastOutSlowInEasing
+                            0f at 3300 using FastOutSlowInEasing
                             0f at 3600
                         },
                     repeatMode = RepeatMode.Restart,
@@ -125,7 +117,7 @@ internal fun MoeHomeSkeletonMockup(
                             durationMillis = 3600
                             1f at 0
                             1f at 700
-                            0.85f at 850 with FastOutSlowInEasing
+                            0.85f at 850 using FastOutSlowInEasing
                             1f at 1000
                             1f at 3600
                         },
@@ -265,7 +257,6 @@ internal fun MoeHomeSkeletonMockup(
                             modifier = Modifier.align(Alignment.Center),
                             contentAlignment = Alignment.Center,
                         ) {
-                            // Ripple ring radiating from the touch point.
                             Box(
                                 modifier =
                                     Modifier.graphicsLayer {
@@ -357,11 +348,6 @@ internal fun MoeHomeSkeletonMockup(
     }
 }
 
-/**
- * The highlighted "start" chip: a primary capsule that visibly "presses" in a repeating finger-tap
- * rhythm, wrapped by a radiating ripple ring and topped with a prominent "touch" dot — evoking a
- * deliberate tap on the connect button. Decorative only, never clickable.
- */
 @Composable
 private fun HighlightedStartChip(modifier: Modifier = Modifier) {
     val colorScheme = MiuixTheme.colorScheme
@@ -379,7 +365,7 @@ private fun HighlightedStartChip(modifier: Modifier = Modifier) {
                             durationMillis = 1500
                             1f at 0
                             1f at 200
-                            0.9f at 360 with FastOutSlowInEasing
+                            0.9f at 360 using FastOutSlowInEasing
                             1f at 560
                             1f at 1500
                         },
@@ -411,7 +397,6 @@ private fun HighlightedStartChip(modifier: Modifier = Modifier) {
         )
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        // Ripple ring radiating from behind the touch dot.
         Box(
             modifier =
                 Modifier.align(Alignment.BottomEnd)
@@ -466,11 +451,6 @@ private fun HighlightedStartChip(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * A plain, non-highlighted "start" chip: the same primary capsule and "启动" label as
- * [HighlightedStartChip] but static — no ripple, touch dot, or pulse. Used while the wallpaper demo
- * draws the eye to the hero instead. Decorative only.
- */
 @Composable
 private fun PlainStartChip(modifier: Modifier = Modifier) {
     val colorScheme = MiuixTheme.colorScheme
@@ -495,11 +475,6 @@ private fun PlainStartChip(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * A miniature mock of the system "安全访问" album picker bottom sheet: a drag handle, highlighted
- * "全部" + "影集" tab pills, a notice bar, and a 3×3 photo grid that fills the sheet, whose first tile
- * suggests the camera. Slides up from the bottom driven by [sheetProgress]. Decorative only.
- */
 @Composable
 private fun PhotoPickerSheet(sheetProgress: Float, modifier: Modifier = Modifier) {
     val colorScheme = MiuixTheme.colorScheme
@@ -523,7 +498,6 @@ private fun PhotoPickerSheet(sheetProgress: Float, modifier: Modifier = Modifier
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // Drag handle.
             Box(
                 Modifier.width(22.dp)
                     .height(4.dp)
@@ -594,11 +568,343 @@ private fun PhotoPickerSheet(sheetProgress: Float, modifier: Modifier = Modifier
     }
 }
 
-/**
- * A miniature, purely decorative skeleton of the Profiles / Subscriptions page: a top bar with a title
- * and a highlighted "+" add button, a short list of profile cards, and a looping demo where the add
- * button is tapped and the "add profile" bottom sheet slides up from the bottom. Never interactive.
- */
+@Composable
+internal fun HomeToNodeSwipeMockup(modifier: Modifier = Modifier) {
+    val colorScheme = MiuixTheme.colorScheme
+    val opacity = AppTheme.opacity
+
+    val placeholder = colorScheme.onSurface.copy(alpha = opacity.subtle)
+    val strongPlaceholder = colorScheme.onSurface.copy(alpha = opacity.subtleStrong)
+    val nodeCardBackground = colorScheme.surfaceVariant.copy(alpha = opacity.surfaceVariant)
+    val frameBorder = colorScheme.outline.copy(alpha = opacity.surfaceSoft)
+
+    val transition = rememberInfiniteTransition(label = "home_to_node_swipe")
+    val swipeProgress by
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 0f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation =
+                        keyframes {
+                            durationMillis = 3600
+                            0f at 0
+                            0f at 620
+                            1f at 1320 using FastOutSlowInEasing
+                            1f at 2380
+                            0f at 3100 using FastOutSlowInEasing
+                            0f at 3600
+                        },
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "home_to_node_swipe_progress",
+        )
+    val touchScale by
+        transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation =
+                        keyframes {
+                            durationMillis = 3600
+                            1f at 0
+                            1f at 520
+                            0.86f at 680 using FastOutSlowInEasing
+                            1f at 900
+                            1f at 3600
+                        },
+                    repeatMode = RepeatMode.Restart,
+                ),
+            label = "home_to_node_touch_scale",
+        )
+
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth(0.64f)
+                .aspectRatio(0.46f)
+                .clip(RoundedCornerShape(22.dp))
+                .background(colorScheme.surface)
+                .border(1.5.dp, frameBorder, RoundedCornerShape(22.dp))
+                .padding(7.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(15.dp))) {
+            Box(Modifier.matchParentSize().background(colorScheme.surface))
+
+            NodePagePreview(
+                placeholder = placeholder,
+                strongPlaceholder = strongPlaceholder,
+                nodeCardBackground = nodeCardBackground,
+                frameBorder = frameBorder,
+                modifier =
+                    Modifier.fillMaxSize()
+                        .graphicsLayer {
+                            translationX = (1f - swipeProgress) * size.width
+                            alpha = 0.7f + 0.3f * swipeProgress
+                        },
+            )
+
+            HomePagePreview(
+                placeholder = placeholder,
+                strongPlaceholder = strongPlaceholder,
+                frameBorder = frameBorder,
+                modifier =
+                    Modifier.fillMaxSize()
+                        .graphicsLayer {
+                            translationX = -swipeProgress * size.width
+                            val scale = 1f - 0.025f * swipeProgress
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                        .padding(7.dp),
+            )
+
+            Box(
+                modifier =
+                    Modifier.matchParentSize()
+                        .graphicsLayer {
+                            translationX = (0.22f - 0.32f * swipeProgress) * size.width
+                        },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier =
+                        Modifier.graphicsLayer {
+                                scaleX = touchScale
+                                scaleY = touchScale
+                            }
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(colorScheme.primary)
+                            .border(2.dp, colorScheme.surface, CircleShape)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomePagePreview(
+    placeholder: Color,
+    strongPlaceholder: Color,
+    frameBorder: Color,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MiuixTheme.colorScheme
+    val opacity = AppTheme.opacity
+
+    Row(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(15.dp))
+                .background(colorScheme.surface)
+                .border(1.dp, frameBorder, RoundedCornerShape(15.dp))
+                .padding(7.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxHeight().weight(0.22f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(10.dp))
+            Box(
+                Modifier.width(12.dp)
+                    .height(52.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(strongPlaceholder)
+            )
+            Spacer(Modifier.weight(1f))
+            repeat(3) { index ->
+                Box(
+                    Modifier.size(13.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (index == 0) colorScheme.primary else placeholder)
+                )
+                if (index < 2) Spacer(Modifier.height(10.dp))
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+
+        Column(
+            modifier = Modifier.fillMaxHeight().weight(0.78f),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .weight(2f)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(strongPlaceholder)
+            ) {
+                Box(
+                    Modifier.align(Alignment.BottomStart)
+                        .fillMaxWidth(0.64f)
+                        .padding(8.dp)
+                        .height(9.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(colorScheme.surface.copy(alpha = opacity.secondaryText))
+                )
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                repeat(3) { index ->
+                    val lineWidth =
+                        when (index) {
+                            0 -> 0.92f
+                            1 -> 0.76f
+                            else -> 0.48f
+                        }
+                    Box(
+                        Modifier.fillMaxWidth(lineWidth)
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(placeholder)
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                Box(
+                    Modifier.align(Alignment.End)
+                        .width(62.dp)
+                        .height(30.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(colorScheme.primary)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NodePagePreview(
+    placeholder: Color,
+    strongPlaceholder: Color,
+    nodeCardBackground: Color,
+    frameBorder: Color,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MiuixTheme.colorScheme
+    val opacity = AppTheme.opacity
+
+    Column(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(15.dp))
+                .background(colorScheme.surface)
+                .border(1.dp, frameBorder, RoundedCornerShape(15.dp))
+                .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.width(38.dp)
+                    .height(13.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(strongPlaceholder)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                repeat(2) {
+                    Box(Modifier.size(13.dp).clip(CircleShape).background(placeholder))
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            repeat(3) { index ->
+                Box(
+                    Modifier.weight(if (index == 0) 1.25f else 1f)
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (index == 0) colorScheme.primary else placeholder)
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            repeat(4) { index ->
+                NodePreviewCard(
+                    selected = index == 0,
+                    placeholder = placeholder,
+                    strongPlaceholder = strongPlaceholder,
+                    nodeCardBackground = nodeCardBackground,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NodePreviewCard(
+    selected: Boolean,
+    placeholder: Color,
+    strongPlaceholder: Color,
+    nodeCardBackground: Color,
+    modifier: Modifier = Modifier,
+) {
+    val colorScheme = MiuixTheme.colorScheme
+    val opacity = AppTheme.opacity
+
+    Row(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(11.dp))
+                .background(nodeCardBackground)
+                .border(
+                    1.dp,
+                    if (selected) colorScheme.primary.copy(alpha = opacity.disabled)
+                    else Color.Transparent,
+                    RoundedCornerShape(11.dp),
+                )
+                .padding(7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Box(
+            Modifier.size(20.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(if (selected) colorScheme.primary else strongPlaceholder)
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Box(
+                Modifier.fillMaxWidth(if (selected) 0.74f else 0.58f)
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(strongPlaceholder)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(2) {
+                    Box(
+                        Modifier.width(18.dp)
+                            .height(7.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(placeholder)
+                    )
+                }
+            }
+        }
+        Box(
+            Modifier.width(26.dp)
+                .height(8.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(if (selected) colorScheme.primary else placeholder)
+        )
+    }
+}
+
 @Composable
 internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
     val colorScheme = MiuixTheme.colorScheme
@@ -607,12 +913,10 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
     val mask = colorScheme.onSurface.copy(alpha = opacity.subtle)
     val maskStrong = colorScheme.onSurface.copy(alpha = opacity.subtleStrong)
     val frameBorder = colorScheme.outline.copy(alpha = opacity.surfaceSoft)
-    // Grey recessed input fields vs the elevated white type-selector card.
     val recessed = colorScheme.onSurface.copy(alpha = opacity.verySubtle)
     val card = colorScheme.surface
 
     val transition = rememberInfiniteTransition(label = "profiles_sheet")
-    // Sheet stays hidden, slides up after the add tap, rests, then slides back down each cycle.
     val sheetProgress by
         transition.animateFloat(
             initialValue = 0f,
@@ -624,9 +928,9 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
                             durationMillis = 3600
                             0f at 0
                             0f at 900
-                            1f at 1300 with FastOutSlowInEasing
+                            1f at 1300 using FastOutSlowInEasing
                             1f at 2900
-                            0f at 3300 with FastOutSlowInEasing
+                            0f at 3300 using FastOutSlowInEasing
                             0f at 3600
                         },
                     repeatMode = RepeatMode.Restart,
@@ -644,18 +948,12 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
                 .border(1.5.dp, frameBorder, RoundedCornerShape(22.dp))
                 .padding(7.dp)
     ) {
-        // Base page: top bar + a column of weighted profile cards that fill the frame top to
-        // bottom, with the floating bottom nav pill as the last child of the flow. Drawn directly
-        // in the frame (only clipped by the outer 22.dp corner) so the top-right add button and its
-        // expanding ripple are never cut by the inner overlay clip.
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Status-bar gap so the top bar (and the add button) don't sit flush against the frame.
             Spacer(Modifier.height(10.dp))
 
-            // Top bar: bold "配置" title on the left, highlighted add button on the right.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -672,8 +970,6 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(8.dp))
 
-            // Profile cards: three cards that share and fill the vertical space so the page
-            // reads full top-to-bottom (no empty white gap below the list).
             Column(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -688,7 +984,6 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(8.dp))
 
-            // Floating bottom nav pill (4 icons); the 3rd is the current page, highlighted.
             Row(
                 modifier =
                     Modifier.clip(RoundedCornerShape(50))
@@ -707,18 +1002,13 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
             }
         }
 
-        // Overlay only: dim scrim + the "add profile" bottom sheet, clipped to the phone-frame's
-        // inner radius so the dim mask follows the rounded corners instead of sharp edges. The base
-        // page above is intentionally left outside this clip.
         Box(modifier = Modifier.matchParentSize().clip(RoundedCornerShape(15.dp))) {
-            // Dim scrim, visible only while the sheet is up.
             Box(
                 modifier =
                     Modifier.matchParentSize()
                         .background(Color.Black.copy(alpha = 0.40f * sheetProgress))
             )
 
-            // The "add profile" bottom sheet sliding up from the bottom.
             Box(
                 modifier =
                     Modifier.align(Alignment.BottomCenter)
@@ -739,14 +1029,12 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    // Drag handle.
                     Box(
                         Modifier.width(26.dp)
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp))
                             .background(mask)
                     )
-                    // Title row: close ✕ on the left, title block centered, confirm ✓ on the right.
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -769,8 +1057,6 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
                                 .background(maskStrong)
                         )
                     }
-                    // Type-selector card: an elevated white card that stands out from the grey
-                    // fields below — "配置类型" label on the left, "订阅链接" + chevrons on the right.
                     Box(
                         Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
@@ -808,7 +1094,6 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
                             }
                         }
                     }
-                    // Three recessed grey input fields: 配置名称 / 订阅链接 / Age 私钥(可选).
                     repeat(3) { index ->
                         Box(
                             modifier =
@@ -833,12 +1118,6 @@ internal fun ProfilesSkeletonMockup(modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * One profile card in [ProfilesSkeletonMockup]. [index] 0 is a local card (toggle on, no info lines,
- * no 更新 chip); later cards are remote (toggle off, two info lines, a 更新 chip). The card stretches to
- * its given (weighted) height — a trailing [Spacer] pushes the divider + action row to the bottom so it
- * always reads full regardless of height. Decorative only.
- */
 @Composable
 private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
     val colorScheme = MiuixTheme.colorScheme
@@ -860,7 +1139,6 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // Header: name + subtitle on the left, enable toggle on the right.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -880,7 +1158,6 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
                             .background(maskInner)
                     )
                 }
-                // Pill toggle: green/on for the first card, grey/off otherwise.
                 Box(
                     modifier =
                         Modifier.width(22.dp)
@@ -898,7 +1175,6 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
                 }
             }
 
-            // Remote cards show two info lines (流量 / 到期).
             if (index > 0) {
                 Box(
                     Modifier.fillMaxWidth(0.85f)
@@ -914,17 +1190,14 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
                 )
             }
 
-            // Push the divider + action row to the bottom so the card looks full when stretched.
             Spacer(Modifier.weight(1f))
 
-            // Thin divider above the action row.
             Box(
                 Modifier.fillMaxWidth()
                     .height(1.dp)
                     .background(colorScheme.onSurface.copy(alpha = opacity.surfaceSoft))
             )
 
-            // Action row: two circular icon buttons left, 更新/删除 chips right.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -936,7 +1209,6 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (index > 0) {
-                        // 更新 chip (green, remote only).
                         Box(
                             Modifier.width(26.dp)
                                 .height(12.dp)
@@ -944,7 +1216,6 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
                                 .background(colorScheme.primary.copy(alpha = opacity.subtleStrong))
                         )
                     }
-                    // 删除 chip.
                     Box(
                         Modifier.width(26.dp)
                             .height(12.dp)
@@ -957,16 +1228,11 @@ private fun ProfileCardMock(index: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * The highlighted "+" add button from the Profiles top bar: a primary rounded square with a drawn plus
- * sign that pulses and emits a ripple just before the demo bottom sheet appears. Decorative only.
- */
 @Composable
 private fun AddButtonGlyph(modifier: Modifier = Modifier) {
     val colorScheme = MiuixTheme.colorScheme
 
     val transition = rememberInfiniteTransition(label = "add_button")
-    // A short tap right before the sheet rises.
     val tapScale by
         transition.animateFloat(
             initialValue = 1f,
@@ -978,7 +1244,7 @@ private fun AddButtonGlyph(modifier: Modifier = Modifier) {
                             durationMillis = 3600
                             1f at 0
                             1f at 700
-                            0.85f at 850 with FastOutSlowInEasing
+                            0.85f at 850 using FastOutSlowInEasing
                             1f at 1000
                             1f at 3600
                         },
@@ -1010,7 +1276,6 @@ private fun AddButtonGlyph(modifier: Modifier = Modifier) {
         )
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        // Ripple ring radiating from behind the button.
         Box(
             modifier =
                 Modifier.graphicsLayer {
@@ -1023,7 +1288,6 @@ private fun AddButtonGlyph(modifier: Modifier = Modifier) {
                     .background(colorScheme.primary)
         )
 
-        // Primary rounded square with a drawn "+".
         Box(
             modifier =
                 Modifier.graphicsLayer {

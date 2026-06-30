@@ -126,7 +126,6 @@ class MainActivity : FragmentActivity() {
 
         requestStartupPermissions()
 
-        // First launch only: show the introductory guide once, then never again.
         val showHomeGuideInitially =
             savedInstanceState == null && !appSettingsStorage.homePreviewGuideShown.value
         if (showHomeGuideInitially) {
