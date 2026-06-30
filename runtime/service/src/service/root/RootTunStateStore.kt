@@ -39,9 +39,7 @@ class RootTunStateStore(context: Context) {
             if (lastEncoded != null && lastEncoded == encoded && lastStatus != null) {
                 return lastStatus
             }
-            return runCatching {
-                    RootTunJson.Default.decodeFromString(RootTunStatus.serializer(), encoded)
-                }
+            return runCatching { rootTunDecode<RootTunStatus>(encoded) }
                 .getOrElse { legacySnapshot() }
                 .also { decoded ->
                     cachedEncoded = encoded
@@ -59,7 +57,7 @@ class RootTunStateStore(context: Context) {
 
     fun updateStatus(status: RootTunStatus) {
         val normalized = status.copy(running = status.state.isActiveOrStopping)
-        val encoded = RootTunJson.Default.encodeToString(RootTunStatus.serializer(), normalized)
+        val encoded = rootTunEncode(normalized)
         store.encode(KEY_STATUS_JSON, encoded)
         store.encode(KEY_RUNNING, normalized.running)
         encodeNullable(KEY_LAST_ERROR, normalized.lastError)

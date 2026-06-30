@@ -30,9 +30,9 @@ import android.os.Bundle
 import com.github.yumelira.yumebox.data.model.ProxyMode
 import com.github.yumelira.yumebox.service.common.util.Global
 import com.github.yumelira.yumebox.service.common.util.initializeServiceGlobal
+import com.github.yumelira.yumebox.core.util.enumByNameOrNull
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.tencent.mmkv.MMKV
-import kotlin.enums.enumEntries
 
 @Suppress("DEPRECATION")
 class StatusProvider : ContentProvider() {
@@ -246,13 +246,10 @@ class StatusProvider : ContentProvider() {
         private fun readPersistedRuntimeState(): Pair<ProxyMode?, RuntimePhase> {
             val cache = serviceCache()
             val phase =
-                cache.decodeString(KEY_RUNTIME_PHASE)?.let { value ->
-                    enumEntries<RuntimePhase>().firstOrNull { it.name == value }
-                } ?: RuntimePhase.Idle
+                enumByNameOrNull<RuntimePhase>(cache.decodeString(KEY_RUNTIME_PHASE))
+                    ?: RuntimePhase.Idle
             val mode =
-                cache
-                    .decodeString(KEY_RUNTIME_MODE)
-                    ?.let { value -> enumEntries<ProxyMode>().firstOrNull { it.name == value } }
+                enumByNameOrNull<ProxyMode>(cache.decodeString(KEY_RUNTIME_MODE))
                     ?.takeIf { phase.isNotIdle }
             return mode to phase
         }

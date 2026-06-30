@@ -149,10 +149,7 @@ class RootTunConfigFactory(
             }
         }
         log(summary)
-        log(
-            "ROOT_TUN factory: config=" +
-                RootTunJson.Default.encodeToString(RootTunConfig.serializer(), config)
-        )
+        log("ROOT_TUN factory: config=" + rootTunEncode(config))
 
         return Result(
             profileUuid = imported.uuid,

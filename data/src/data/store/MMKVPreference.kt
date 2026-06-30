@@ -20,6 +20,7 @@
 
 package com.github.yumelira.yumebox.data.store
 
+import com.github.yumelira.yumebox.core.util.enumByNameOrNull
 import com.tencent.mmkv.MMKV
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -204,13 +205,7 @@ abstract class MMKVPreference(
     protected inline fun <reified T : Enum<T>> enum(default: T) =
         MMKVProperty(
             default = default,
-            getter = { key, def ->
-                runCatching {
-                        val name = mmkv.decodeString(key) ?: def.name
-                        java.lang.Enum.valueOf(T::class.java, name)
-                    }
-                    .getOrDefault(def)
-            },
+            getter = { key, def -> enumByNameOrNull<T>(mmkv.decodeString(key)) ?: def },
             setter = { key, value -> mmkv.encode(key, value.name) },
         )
 
@@ -304,13 +299,7 @@ abstract class MMKVPreference(
     protected inline fun <reified T : Enum<T>> enumFlow(default: T) =
         MMKVFlowProperty(
             default = default,
-            getter = { key, def ->
-                runCatching {
-                        val name = mmkv.decodeString(key) ?: def.name
-                        java.lang.Enum.valueOf(T::class.java, name)
-                    }
-                    .getOrDefault(def)
-            },
+            getter = { key, def -> enumByNameOrNull<T>(mmkv.decodeString(key)) ?: def },
             setter = { key, value -> mmkv.encode(key, value.name) },
         )
 

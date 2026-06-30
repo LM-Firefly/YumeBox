@@ -25,7 +25,7 @@ import com.github.yumelira.yumebox.core.domain.ConnectionHistoryManager
 import com.github.yumelira.yumebox.core.model.LogMessage
 import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
-import com.github.yumelira.yumebox.service.root.RootTunJson
+import com.github.yumelira.yumebox.service.root.rootTunEncode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -71,8 +71,7 @@ internal class SessionRuntimeTelemetry(
                         val item = receiver.receive()
                         localLogObserver?.invoke(item)
                         host.onLogItem(item)
-                        val encoded =
-                            RootTunJson.Default.encodeToString(LogMessage.serializer(), item)
+                        val encoded = rootTunEncode(item)
                         val seq = logSeq.incrementAndGet()
                         synchronized(recentLogs) {
                             recentLogs.addLast(seq to encoded)
