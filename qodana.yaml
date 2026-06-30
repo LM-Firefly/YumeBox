@@ -1,10 +1,32 @@
-####################################################################################################################
-# WARNING: Do not store sensitive information in this file, as its contents will be included in the Qodana report. #
-####################################################################################################################
+#-------------------------------------------------------------------------------#
+#               Qodana analysis configuration for YumeBox                        #
+#        https://www.jetbrains.com/help/qodana/qodana-yaml.html                  #
+#-------------------------------------------------------------------------------#
 
 version: "1.0"
-linter: jetbrains/qodana-jvm-android:2025.2
+
+# Android Gradle / Kotlin multi-module project (minSdk 26, compileSdk 37, JVM 24).
+# NOTE: the project uses AGP 9.2.1, which Qodana 2026.1's Android linter
+# (jetbrains/qodana-jvm-android) rejects — it supports AGP <= 9.0.0. Until a Qodana release
+# supports AGP 9.2.x, use the JVM Community linter, which has no Android Studio plugin and so
+# skips the AGP compatibility check. Trade-off: JVM/Kotlin analysis only (no Android resource /
+# R / Compose-preview awareness). Switch back to qodana-jvm-android once it supports AGP 9.2.
+linter: jetbrains/qodana-jvm-community:2026.1
+
+# Built-in inspection profile. Use qodana.starter for a lighter, lower-noise first run.
 profile:
   name: qodana.recommended
-include:
-  - name: CheckDependencyLicenses
+
+# Kotlin/Java static analysis only. Exclude everything that is not app source:
+#  - lib/      native trilogy (Go libclash, Rust liboverride submodule, C++ libbridge) + mihomo
+#  - scripts/  standalone *.main.kts build tooling (native-build / locale codegen)
+#  - website/  documentation site (mdx/css)
+#  - .trellis/ task-management workspace
+# Module build/ output is git-ignored and excluded automatically.
+exclude:
+  - name: All
+    paths:
+      - lib
+      - scripts
+      - website
+      - .trellis
