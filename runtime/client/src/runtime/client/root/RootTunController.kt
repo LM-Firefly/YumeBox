@@ -33,18 +33,17 @@ import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import com.github.yumelira.yumebox.service.root.IRootTunService
 import com.github.yumelira.yumebox.service.root.IRootTunStateObserver
 import com.github.yumelira.yumebox.service.root.RootTunBinding
-import com.github.yumelira.yumebox.service.root.RootTunJson
 import com.github.yumelira.yumebox.service.root.RootTunLogChunk
 import com.github.yumelira.yumebox.service.root.RootTunOperationResult
 import com.github.yumelira.yumebox.service.root.RootTunStartRequest
 import com.github.yumelira.yumebox.service.root.RootTunStatus
 import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
+import com.github.yumelira.yumebox.service.root.rootTunDecode
+import com.github.yumelira.yumebox.service.root.rootTunEncode
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.topjohnwu.superuser.ipc.RootService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 
 object RootTunController {
     private val binding = RootTunBinding()
@@ -57,12 +56,7 @@ object RootTunController {
         object : IRootTunStateObserver.Stub() {
             override fun onStatusChanged(statusJson: String) {
                 runCatching {
-                    RootTunStatusFlow.update(
-                        RootTunJson.Default.decodeFromString(
-                            RootTunStatus.serializer(),
-                            statusJson,
-                        )
-                    )
+                    RootTunStatusFlow.update(rootTunDecode<RootTunStatus>(statusJson))
                 }
             }
         }
@@ -137,17 +131,8 @@ object RootTunController {
             val result =
                 runCatching {
                         remoteCall(context) { service ->
-                            val resultJson =
-                                service.startRootTun(
-                                    RootTunJson.Default.encodeToString(
-                                        RootTunStartRequest.serializer(),
-                                        request,
-                                    )
-                                )
-                            RootTunJson.Default.decodeFromString(
-                                RootTunOperationResult.serializer(),
-                                resultJson,
-                            )
+                            val resultJson = service.startRootTun(rootTunEncode(request))
+                            rootTunDecode<RootTunOperationResult>(resultJson)
                         }
                     }
                     .getOrElse { error ->
@@ -181,10 +166,7 @@ object RootTunController {
                     withContext(Dispatchers.IO) {
                         runCatching {
                                 val resultJson = bind(context).stopRootTun()
-                                RootTunJson.Default.decodeFromString(
-                                    RootTunOperationResult.serializer(),
-                                    resultJson,
-                                )
+                                rootTunDecode<RootTunOperationResult>(resultJson)
                             }
                             .getOrNull()
                     }
@@ -227,16 +209,8 @@ object RootTunController {
                         remoteCall(appContext) { service ->
                             trace += "ROOT_TUN controller: reload branch=service"
                             val resultJson =
-                                service.reloadActiveProfile(
-                                    RootTunJson.Default.encodeToString(
-                                        RootTunStartRequest.serializer(),
-                                        request,
-                                    )
-                                )
-                            RootTunJson.Default.decodeFromString(
-                                RootTunOperationResult.serializer(),
-                                resultJson,
-                            )
+                                service.reloadActiveProfile(rootTunEncode(request))
+                            rootTunDecode<RootTunOperationResult>(resultJson)
                         }
                     }
                     .getOrElse { error ->
@@ -265,10 +239,7 @@ object RootTunController {
                 onBinderFailure = { RootTunOperationResult(success = true) },
             ) { service ->
                 val resultJson = service.stopRootTun()
-                RootTunJson.Default.decodeFromString(
-                    RootTunOperationResult.serializer(),
-                    resultJson,
-                )
+                rootTunDecode<RootTunOperationResult>(resultJson)
             }
         disconnect()
         return result
@@ -283,15 +254,12 @@ object RootTunController {
     suspend fun queryStatus(context: Context): RootTunStatus =
         remoteCall(context) { service ->
             val statusJson = service.queryStatus()
-            RootTunJson.Default.decodeFromString(RootTunStatus.serializer(), statusJson)
+            rootTunDecode<RootTunStatus>(statusJson)
         }
 
     suspend fun queryTunnelState(context: Context): TunnelState =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                TunnelState.serializer(),
-                service.queryTunnelStateJson(),
-            )
+            rootTunDecode<TunnelState>(service.queryTunnelStateJson())
         }
 
     suspend fun queryTrafficNow(context: Context): Long =
@@ -302,10 +270,7 @@ object RootTunController {
 
     suspend fun queryConnections(context: Context): ConnectionSnapshot =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                ConnectionSnapshot.serializer(),
-                service.queryConnectionsJson(),
-            )
+            rootTunDecode<ConnectionSnapshot>(service.queryConnectionsJson())
         }
 
     suspend fun queryProxyGroupNames(
@@ -313,10 +278,7 @@ object RootTunController {
         excludeNotSelectable: Boolean,
     ): List<String> =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                ListSerializer(String.serializer()),
-                service.queryProxyGroupNamesJson(excludeNotSelectable),
-            )
+            rootTunDecode<List<String>>(service.queryProxyGroupNamesJson(excludeNotSelectable))
         }
 
     suspend fun queryAllProxyGroups(
@@ -324,10 +286,7 @@ object RootTunController {
         excludeNotSelectable: Boolean,
     ): List<ProxyGroup> =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                ListSerializer(ProxyGroup.serializer()),
-                service.queryAllProxyGroupsJson(excludeNotSelectable),
-            )
+            rootTunDecode<List<ProxyGroup>>(service.queryAllProxyGroupsJson(excludeNotSelectable))
         }
 
     suspend fun queryProxyGroup(context: Context, name: String, sort: ProxySort): ProxyGroup =
@@ -335,23 +294,17 @@ object RootTunController {
             val raw =
                 service.queryProxyGroupJson(name, sort.name)
                     ?: error("proxy group not found: $name")
-            RootTunJson.Default.decodeFromString(ProxyGroup.serializer(), raw)
+            rootTunDecode<ProxyGroup>(raw)
         }
 
     suspend fun queryConfiguration(context: Context): UiConfiguration =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                UiConfiguration.serializer(),
-                service.queryConfigurationJson(),
-            )
+            rootTunDecode<UiConfiguration>(service.queryConfigurationJson())
         }
 
     suspend fun queryProviders(context: Context): List<Provider> =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                ListSerializer(Provider.serializer()),
-                service.queryProvidersJson(),
-            )
+            rootTunDecode<List<Provider>>(service.queryProvidersJson())
         }
 
     suspend fun patchSelector(context: Context, group: String, name: String): Boolean =
@@ -384,7 +337,7 @@ object RootTunController {
     suspend fun queryRecentLogs(context: Context, sinceSeq: Long): RootTunLogChunk =
         remoteCall(context) { service ->
             val raw = service.queryRecentLogsJson(sinceSeq)
-            RootTunJson.Default.decodeFromString(RootTunLogChunk.serializer(), raw)
+            rootTunDecode<RootTunLogChunk>(raw)
         }
 
     private fun isRuntimeActive(context: Context): Boolean {

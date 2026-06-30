@@ -68,6 +68,5 @@ class RootTunStatePublisher(private val store: RootTunStateStore) {
         }
     }
 
-    private fun encode(status: RootTunStatus): String =
-        RootTunJson.Default.encodeToString(RootTunStatus.serializer(), status)
+    private fun encode(status: RootTunStatus): String = rootTunEncode(status)
 }

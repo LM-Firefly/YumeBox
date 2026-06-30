@@ -45,6 +45,7 @@ import com.github.yumelira.yumebox.service.remote.IClashManager
 import com.github.yumelira.yumebox.service.remote.ILogObserver
 import com.github.yumelira.yumebox.service.root.RootTunRuntimeRecovery
 import com.github.yumelira.yumebox.service.root.RootTunStatusFlow
+import com.github.yumelira.yumebox.service.root.rootTunDecode
 import com.github.yumelira.yumebox.service.runtime.config.ServiceStore
 import com.github.yumelira.yumebox.service.runtime.session.CompiledConfigPipeline
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeProxyGroupResolver
@@ -296,10 +297,7 @@ class ClashGateway(
                             val chunk = RootTunController.queryRecentLogs(appContext, rootLogSeq)
                             if (chunk.items.isNotEmpty()) {
                                 chunk.items.forEach { raw ->
-                                    observer.newItem(
-                                        com.github.yumelira.yumebox.service.root.RootTunJson.Default
-                                            .decodeFromString(LogMessage.serializer(), raw)
-                                    )
+                                    observer.newItem(rootTunDecode<LogMessage>(raw))
                                 }
                             }
                             rootLogSeq = chunk.nextSeq

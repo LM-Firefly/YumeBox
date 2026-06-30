@@ -32,6 +32,7 @@ import com.github.yumelira.yumebox.core.util.PollingTimerSpecs
 import com.github.yumelira.yumebox.core.util.PollingTimers
 import com.github.yumelira.yumebox.service.ServiceNetworkObserver
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
+import com.github.yumelira.yumebox.service.root.rootTunEncode
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeOwner
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import com.github.yumelira.yumebox.service.runtime.state.RuntimeSnapshot
@@ -41,7 +42,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.builtins.serializer
 import timber.log.Timber
 import java.util.TimeZone
 import kotlin.math.min
@@ -279,10 +279,7 @@ class SessionRuntime(
                 Clash.healthCheckProxy(proxyName).await().also { refreshRuntimeProxyGroup(group) }
             }
             .getOrElse {
-                """{"delay":-1,"error":${com.github.yumelira.yumebox.service.root.RootTunJson.Default.encodeToString(
-                String.serializer(),
-                it.message ?: "health check proxy failed",
-            )}}"""
+                """{"delay":-1,"error":${rootTunEncode(it.message ?: "health check proxy failed")}}"""
             }
     }
 

@@ -28,8 +28,6 @@ import com.github.yumelira.yumebox.service.RootTunService
 import com.github.yumelira.yumebox.service.common.util.appContextOrSelf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 
 internal object RootTunServiceBridge {
     private val binding = RootTunBinding()
@@ -50,17 +48,8 @@ internal object RootTunServiceBridge {
         val result =
             withContext(Dispatchers.IO) {
                 val service = bind(context)
-                val resultJson =
-                    service.startRootTun(
-                        RootTunJson.Default.encodeToString(
-                            RootTunStartRequest.serializer(),
-                            request,
-                        )
-                    )
-                RootTunJson.Default.decodeFromString(
-                    RootTunOperationResult.serializer(),
-                    resultJson,
-                )
+                val resultJson = service.startRootTun(rootTunEncode(request))
+                rootTunDecode<RootTunOperationResult>(resultJson)
             }
         if (result.success) {
             RootTunService.start(appContext)
@@ -75,10 +64,7 @@ internal object RootTunServiceBridge {
                 onBinderFailure = { RootTunOperationResult(success = true) },
             ) { service ->
                 val resultJson = service.stopRootTun()
-                RootTunJson.Default.decodeFromString(
-                    RootTunOperationResult.serializer(),
-                    resultJson,
-                )
+                rootTunDecode<RootTunOperationResult>(resultJson)
             }
         disconnect()
         return result
@@ -87,7 +73,7 @@ internal object RootTunServiceBridge {
     suspend fun queryStatus(context: Context): RootTunStatus =
         remoteCall(context) { service ->
             val statusJson = service.queryStatus()
-            RootTunJson.Default.decodeFromString(RootTunStatus.serializer(), statusJson)
+            rootTunDecode<RootTunStatus>(statusJson)
         }
 
     suspend fun queryTrafficNow(context: Context): Long =
@@ -101,10 +87,7 @@ internal object RootTunServiceBridge {
         excludeNotSelectable: Boolean = false,
     ): List<String> =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                ListSerializer(String.serializer()),
-                service.queryProxyGroupNamesJson(excludeNotSelectable),
-            )
+            rootTunDecode<List<String>>(service.queryProxyGroupNamesJson(excludeNotSelectable))
         }
 
     suspend fun queryProxyGroup(
@@ -114,16 +97,13 @@ internal object RootTunServiceBridge {
     ): ProxyGroup? =
         remoteCall(context) { service ->
             service.queryProxyGroupJson(name, sort.name)?.let {
-                RootTunJson.Default.decodeFromString(ProxyGroup.serializer(), it)
+                rootTunDecode<ProxyGroup>(it)
             }
         }
 
     suspend fun queryConnections(context: Context): ConnectionSnapshot =
         remoteCall(context) { service ->
-            RootTunJson.Default.decodeFromString(
-                ConnectionSnapshot.serializer(),
-                service.queryConnectionsJson(),
-            )
+            rootTunDecode<ConnectionSnapshot>(service.queryConnectionsJson())
         }
 
     suspend fun closeConnection(context: Context, id: String): Boolean =

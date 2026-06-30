@@ -26,6 +26,8 @@ import com.github.yumelira.yumebox.core.model.UiConfiguration
 import com.github.yumelira.yumebox.service.runtime.session.RuntimeLogChunk
 import com.github.yumelira.yumebox.service.runtime.state.RuntimePhase
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 object RootTunJson {
@@ -34,6 +36,11 @@ object RootTunJson {
         encodeDefaults = true
     }
 }
+
+/** Reified shorthand for [RootTunJson] marshalling — reuses the shared `Default` config. */
+inline fun <reified T> rootTunEncode(value: T): String = RootTunJson.Default.encodeToString(value)
+
+inline fun <reified T> rootTunDecode(json: String): T = RootTunJson.Default.decodeFromString(json)
 
 @Serializable data class RootTunStartRequest(val source: String = "")
 
