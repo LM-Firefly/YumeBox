@@ -362,8 +362,8 @@ class SessionRuntime(
 
     private fun reloadInternal(spec: RuntimeSpec) {
         check(currentSpec != null) { "runtime not started" }
-        publishSnapshot(
-            currentSnapshot.copy(
+        updateSnapshot {
+            it.copy(
                 phase = RuntimePhase.Starting,
                 profileUuid = spec.profileUuid,
                 profileName = spec.profileName,
@@ -371,7 +371,7 @@ class SessionRuntime(
                 groupsReady = false,
                 trafficReady = false,
             )
-        )
+        }
 
         compileAndLoad(spec)
         awaitProxyGroupsReady(spec)
@@ -380,8 +380,8 @@ class SessionRuntime(
         startupLog(spec, "snapshot refresh: begin")
         refreshRuntimeSnapshot()
         startupLog(spec, "snapshot refresh: done")
-        publishSnapshot(
-            currentSnapshot.copy(
+        updateSnapshot {
+            it.copy(
                 phase = RuntimePhase.Running,
                 profileReady = true,
                 groupsReady = queryCache.snapshot().proxyGroups.isNotEmpty(),
@@ -392,7 +392,7 @@ class SessionRuntime(
                 effectiveFingerprint = spec.effectiveFingerprint,
                 lastError = null,
             )
-        )
+        }
         host.onProfileLoaded(spec.profileUuid)
         startupLog(spec, "reload done")
     }
@@ -403,10 +403,10 @@ class SessionRuntime(
             return
         }
 
-        publishSnapshot(
-            currentSnapshot.copy(
+        updateSnapshot {
+            it.copy(
                 phase =
-                    if (currentSnapshot.phase == RuntimePhase.Idle) {
+                    if (it.phase == RuntimePhase.Idle) {
                         RuntimePhase.Idle
                     } else {
                         RuntimePhase.Stopping
@@ -418,7 +418,7 @@ class SessionRuntime(
                 logReady = false,
                 lastError = reason,
             )
-        )
+        }
         stopLogStream()
         stopConnectionTracking()
         stopObservers()
