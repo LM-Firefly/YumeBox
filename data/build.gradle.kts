@@ -33,12 +33,11 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation(project(":locale"))
-    implementation(project(":runtime:api"))
 
     api(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.snake.yaml)
+    implementation(libs.snakeyaml.engine)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)
@@ -52,7 +51,7 @@ dependencies {
     val mmkvVersion = if (injectedAbi in listOf("arm64-v8a", "x86_64")) mmkv64 else mmkv32
     implementation("com.tencent:mmkv:$mmkvVersion")
 
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("androidx.test:core:1.6.1")
-    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation(libs.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
 }

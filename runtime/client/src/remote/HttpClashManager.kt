@@ -18,7 +18,7 @@
  *
  */
 
-package com.github.yumelira.yumebox.remote
+package com.github.yumelira.yumebox.runtime.client.remote
 
 import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
 import com.github.yumelira.yumebox.core.model.Provider
@@ -26,12 +26,12 @@ import com.github.yumelira.yumebox.core.model.ProviderList
 import com.github.yumelira.yumebox.core.model.Proxy
 import com.github.yumelira.yumebox.core.model.ProxyGroup
 import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.RemoteBackend
 import com.github.yumelira.yumebox.core.model.TunnelState
 import com.github.yumelira.yumebox.core.model.UiConfiguration
-import com.github.yumelira.yumebox.core.util.encodeTrafficValue
-import com.github.yumelira.yumebox.data.model.RemoteBackend
-import com.github.yumelira.yumebox.service.remote.IClashManager
-import com.github.yumelira.yumebox.service.remote.ILogObserver
+import com.github.yumelira.yumebox.core.model.encodeTrafficValue
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.HttpTimeout
@@ -45,7 +45,6 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
-import io.ktor.utils.io.readUTF8Line
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
@@ -54,8 +53,9 @@ import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.readLine
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -135,24 +135,21 @@ class HttpClashManager(
 
     // ---- Tunnel / traffic ------------------------------------------------
 
-    override fun queryTunnelState(): TunnelState =
-        runBlocking(Dispatchers.IO) {
-            val raw = request(HttpMethod.Get, "configs").bodyAsText()
-            val configs = json.decodeFromString<RawConfigs>(raw)
-            TunnelState(configs.mode)
-        }
+    override suspend fun queryTunnelState(): TunnelState = withContext(Dispatchers.IO) {
+        val raw = request(HttpMethod.Get, "configs").bodyAsText()
+        val configs = json.decodeFromString<RawConfigs>(raw)
+        TunnelState(configs.mode)
+    }
 
-    override fun queryTrafficNow(): Long =
-        runBlocking(Dispatchers.IO) {
-            val sample = readTrafficSample() ?: return@runBlocking 0L
-            (encodeTrafficValue(sample.up) shl 32) or encodeTrafficValue(sample.down)
-        }
+    override suspend fun queryTrafficNow(): Long = withContext(Dispatchers.IO) {
+        val sample = readTrafficSample() ?: return@withContext 0L
+        (encodeTrafficValue(sample.up) shl 32) or encodeTrafficValue(sample.down)
+    }
 
-    override fun queryTrafficTotal(): Long =
-        runBlocking(Dispatchers.IO) {
-            val sample = readTrafficSample() ?: return@runBlocking 0L
-            (encodeTrafficValue(sample.upTotal) shl 32) or encodeTrafficValue(sample.downTotal)
-        }
+    override suspend fun queryTrafficTotal(): Long = withContext(Dispatchers.IO) {
+        val sample = readTrafficSample() ?: return@withContext 0L
+        (encodeTrafficValue(sample.upTotal) shl 32) or encodeTrafficValue(sample.downTotal)
+    }
 
     /**
      * Reads the FIRST line of the streaming `/traffic` endpoint (one JSON line per second) and
@@ -161,13 +158,14 @@ class HttpClashManager(
     private suspend fun readTrafficSample(): RawTraffic? = runCatching {
         val backend = requireBackend()
         client.prepareGet(buildUrl("traffic")) { applyAuth(backend) }.execute { response ->
-            val line = response.bodyAsChannel().readUTF8Line()
+            val line = response.bodyAsChannel().readLine()
             line?.let { json.decodeFromString<RawTraffic>(it) }
         }
     }.getOrNull()
 
-    override fun queryConnections(): ConnectionSnapshot =
-        runBlocking(Dispatchers.IO) { fetchConnections() }
+    override suspend fun queryConnections(): ConnectionSnapshot = withContext(Dispatchers.IO) {
+        fetchConnections()
+    }
 
     private suspend fun fetchConnections(): ConnectionSnapshot {
         val raw = request(HttpMethod.Get, "connections").bodyAsText()
@@ -176,16 +174,16 @@ class HttpClashManager(
 
     // ---- Local-profile-only (irrelevant in pure-remote mode) -------------
 
-    override fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> = emptyList()
+    override suspend fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> = emptyList()
 
-    override fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> = emptyList()
+    override suspend fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> = emptyList()
 
-    override fun queryActiveProfileTunRouteExcludeAddress(): List<String> = emptyList()
+    override suspend fun queryActiveProfileTunRouteExcludeAddress(): List<String> = emptyList()
 
     // ---- Proxy groups ----------------------------------------------------
 
-    override fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> =
-        runBlocking(Dispatchers.IO) {
+    override suspend fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> =
+        withContext(Dispatchers.IO) {
             val nodes = fetchProxies()
             val groups = orderGroups(fetchGroups(), nodes)
             groups
@@ -193,8 +191,8 @@ class HttpClashManager(
                 .map { buildGroup(it, nodes, ProxySort.Default) }
         }
 
-    override fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> =
-        runBlocking(Dispatchers.IO) {
+    override suspend fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> =
+        withContext(Dispatchers.IO) {
             val nodes = fetchProxies()
             orderGroups(fetchGroups(), nodes)
                 .filter { !excludeNotSelectable || it.type in Proxy.Type.MANUALLY_SELECTABLE }
@@ -210,11 +208,11 @@ class HttpClashManager(
         )
     }
 
-    override fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup =
-        runBlocking(Dispatchers.IO) {
+    override suspend fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup =
+        withContext(Dispatchers.IO) {
             val nodes = fetchProxies()
             val group = nodes[name]
-                ?: return@runBlocking ProxyGroup(
+                ?: return@withContext ProxyGroup(
                     name = name,
                     type = Proxy.Type.Unknown,
                     proxies = emptyList(),
@@ -235,8 +233,8 @@ class HttpClashManager(
 
     // ---- Selection / connections mutation --------------------------------
 
-    override fun patchSelector(group: String, name: String): Boolean =
-        runBlocking(Dispatchers.IO) {
+    override suspend fun patchSelector(group: String, name: String): Boolean =
+        withContext(Dispatchers.IO) {
             try {
                 val response = request(
                     HttpMethod.Put,
@@ -250,8 +248,25 @@ class HttpClashManager(
             }
         }
 
-    override fun closeConnection(id: String): Boolean =
-        runBlocking(Dispatchers.IO) {
+    override suspend fun patchForceSelector(group: String, name: String): Boolean =
+        patchSelector(group, name)
+
+    override suspend fun patchTunnelMode(mode: TunnelState.Mode): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = request(
+                    HttpMethod.Put,
+                    "configs",
+                    body = mapOf("mode" to mode.name.lowercase()),
+                )
+                response.status.isSuccess()
+            } catch (error: Throwable) {
+                false
+            }
+        }
+
+    override suspend fun closeConnection(id: String): Boolean =
+        withContext(Dispatchers.IO) {
             try {
                 request(HttpMethod.Delete, "connections", id).status.isSuccess()
             } catch (error: Throwable) {
@@ -259,8 +274,8 @@ class HttpClashManager(
             }
         }
 
-    override fun closeAllConnections() {
-        runBlocking(Dispatchers.IO) {
+    override suspend fun closeAllConnections() {
+        withContext(Dispatchers.IO) {
             runCatching { request(HttpMethod.Delete, "connections") }
         }
     }
@@ -300,7 +315,7 @@ class HttpClashManager(
 
     // ---- Providers -------------------------------------------------------
 
-    override fun queryProviders(): ProviderList {
+    override suspend fun queryProviders(): ProviderList {
         // TODO(M7): map /providers/proxies + /providers/rules → ProviderList.
         return ProviderList(emptyList())
     }
@@ -312,7 +327,7 @@ class HttpClashManager(
 
     // ---- Configuration ---------------------------------------------------
 
-    override fun queryConfiguration(): UiConfiguration = UiConfiguration()
+    override suspend fun queryConfiguration(): UiConfiguration = UiConfiguration()
 
     // ---- Lifecycle (no-ops in pure-remote mode) --------------------------
 
