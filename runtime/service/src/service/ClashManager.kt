@@ -18,31 +18,171 @@
  *
  */
 
-package com.github.yumelira.yumebox.service
+package com.github.yumelira.yumebox.runtime.service
 
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
 import com.github.yumelira.yumebox.core.Clash
+import com.github.yumelira.yumebox.core.model.ConnectionSnapshot
 import com.github.yumelira.yumebox.core.model.LogMessage
-import com.github.yumelira.yumebox.service.common.constants.Intents
-import com.github.yumelira.yumebox.service.common.log.Log
-import com.github.yumelira.yumebox.service.remote.ILogObserver
-import com.github.yumelira.yumebox.service.runtime.util.sendBroadcastSelf
+import com.github.yumelira.yumebox.core.model.Provider
+import com.github.yumelira.yumebox.core.model.ProviderList
+import com.github.yumelira.yumebox.core.model.Proxy
+import com.github.yumelira.yumebox.core.model.ProxyGroup
+import com.github.yumelira.yumebox.core.model.ProxyMode
+import com.github.yumelira.yumebox.core.model.ProxySort
+import com.github.yumelira.yumebox.core.model.TunnelState
+import com.github.yumelira.yumebox.core.model.UiConfiguration
+import com.github.yumelira.yumebox.runtime.api.service.common.constants.Intents
+import com.github.yumelira.yumebox.runtime.api.service.remote.IClashManager
+import com.github.yumelira.yumebox.runtime.api.service.remote.ILogObserver
+import com.github.yumelira.yumebox.runtime.service.common.log.Log
+import com.github.yumelira.yumebox.runtime.service.runtime.config.ServiceStore
+import com.github.yumelira.yumebox.runtime.service.runtime.records.SelectionDao
+import com.github.yumelira.yumebox.runtime.service.runtime.session.CompiledConfigPipeline
+import com.github.yumelira.yumebox.runtime.service.runtime.session.SessionRuntimeSpecFactory
+import com.github.yumelira.yumebox.runtime.service.runtime.util.mergeProxyGroupNames
+import com.github.yumelira.yumebox.runtime.service.runtime.util.sendBroadcastSelf
+import com.tencent.mmkv.MMKV
+import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import timber.log.Timber
 
 class ClashManager(private val context: Context) :
-    CoroutineScope by CoroutineScope(Dispatchers.IO) {
+    IClashManager, CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.IO) {
+    private val store = ServiceStore()
+    private val compiledConfigPipeline = CompiledConfigPipeline(context)
+    private val runtimeSpecFactory = SessionRuntimeSpecFactory(context)
+    private val networkSettings = MMKV.mmkvWithID("network_settings", MMKV.MULTI_PROCESS_MODE)
     private var logReceiver: ReceiveChannel<LogMessage>? = null
 
-    fun requestStop() {
-        runCatching { context.sendBroadcastSelf(Intent(Intents.ACTION_CLASH_REQUEST_STOP)) }
+    override suspend fun queryTunnelState(): TunnelState {
+        return Clash.queryTunnelState()
+    }
+
+    override suspend fun queryTrafficNow(): Long {
+        if (!StatusProvider.serviceRunning) return 0L
+        return TrafficSampleCache.queryTrafficNow()
+    }
+
+    override suspend fun queryTrafficTotal(): Long {
+        if (!StatusProvider.serviceRunning) return 0L
+        return TrafficSampleCache.queryTrafficTotal()
+    }
+
+    override suspend fun queryConnections(): ConnectionSnapshot {
+        return Clash.queryConnections()
+    }
+
+    override suspend fun queryActiveProfileTunRouteExcludeAddress(): List<String> {
+        if (store.activeProfile == null) return emptyList()
+        val spec = runtimeSpecFactory.createTunSpec()
+        return compiledConfigPipeline.previewTunRouteExcludeAddress(spec)
+    }
+
+    override suspend fun queryProfileProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        return queryProfileProxyGroups(excludeNotSelectable).map(ProxyGroup::name)
+    }
+
+    override suspend fun queryProfileProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+        if (store.activeProfile == null) return emptyList()
+        val spec =
+            when (configuredProxyMode()) {
+                ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
+                ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
+                ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
+            }
+        return withContext(Dispatchers.Default) {
+            compiledConfigPipeline.previewGroups(spec, excludeNotSelectable)
+        }
+    }
+
+    override suspend fun queryAllProxyGroups(excludeNotSelectable: Boolean): List<ProxyGroup> {
+        val groupNames = resolveRuntimeProxyGroupNames(excludeNotSelectable)
+        return groupNames.mapNotNull(::queryRuntimeProxyGroupOrNull)
+    }
+
+    override suspend fun queryProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        return resolveRuntimeProxyGroupNames(excludeNotSelectable)
+    }
+
+    override suspend fun queryProxyGroup(name: String, proxySort: ProxySort): ProxyGroup {
+        return Clash.queryGroup(name, proxySort)
+    }
+
+    override suspend fun queryConfiguration(): UiConfiguration {
+        return Clash.queryConfiguration()
+    }
+
+    override suspend fun queryProviders(): ProviderList {
+        return ProviderList(Clash.queryProviders())
+    }
+
+    override suspend fun patchTunnelMode(mode: TunnelState.Mode): Boolean {
+        return Clash.patchTunnelMode(mode)
+    }
+
+    override suspend fun patchSelector(group: String, name: String): Boolean {
+        return Clash.patchSelector(group, name).also { patched ->
+            val current = store.activeProfile ?: return@also
+
+            if (!patched) {
+                SelectionDao.remove(current, group)
+                return@also
+            }
+
+            val patchedGroup =
+                runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            if (patchedGroup?.type == Proxy.Type.Selector) {
+                SelectionDao.upsertManualSelection(current, group, name)
+            } else {
+                SelectionDao.remove(current, group)
+            }
+        }
+    }
+
+    override suspend fun patchForceSelector(group: String, name: String): Boolean {
+        return Clash.patchForceSelector(group, name).also { patched ->
+            val current = store.activeProfile ?: return@also
+            val patchedGroup = runCatching { Clash.queryGroup(group, ProxySort.Default) }.getOrNull()
+            SelectionDao.persistForcePinnedSelection(
+                profileUUID = current,
+                proxyGroup = group,
+                requestedNode = name,
+                patched = patched,
+                supportsPinnedSelection = patchedGroup?.let {
+                    it.type == Proxy.Type.URLTest || it.type == Proxy.Type.Fallback
+                } ?: false,
+            )
+        }
+    }
+
+    override suspend fun closeConnection(id: String): Boolean {
+        return Clash.closeConnection(id)
+    }
+
+    override suspend fun closeAllConnections() {
+        Clash.closeAllConnections()
+    }
+
+    override fun requestStop() {
+        runCatching { context.sendBroadcastSelf(Intent(Intents.actionClashRequestStop(context.packageName))) }
 
         runCatching {
             context.stopService(Intent(context, TunService::class.java))
@@ -56,7 +196,78 @@ class ClashManager(private val context: Context) :
         }
     }
 
-    fun setLogObserver(observer: ILogObserver?) {
+    override suspend fun healthCheck(group: String) {
+        Timber.d("ClashManager healthCheck: group=%s", group)
+        return Clash.healthCheck(group).await()
+    }
+
+    override suspend fun healthCheckProxy(group: String, proxyName: String): Int {
+        Timber.d("ClashManager healthCheckProxy: group=%s proxy=%s", group, proxyName)
+        val json = Clash.healthCheckProxy(proxyName).await()
+        val obj = Json.parseToJsonElement(json)
+        return obj.jsonObject["delay"]?.jsonPrimitive?.int ?: -1
+    }
+
+    override suspend fun updateProvider(type: Provider.Type, name: String) {
+        return Clash.updateProvider(type, name).await()
+    }
+
+    private fun configuredProxyMode(): ProxyMode {
+        val raw =
+            networkSettings.decodeString("proxyMode", ProxyMode.Tun.name) ?: ProxyMode.Tun.name
+        return runCatching { ProxyMode.valueOf(raw) }.getOrDefault(ProxyMode.Tun)
+    }
+
+    private fun resolveRuntimeProxyGroupNames(excludeNotSelectable: Boolean): List<String> {
+        val runtimeNames = Clash.queryGroupNames(excludeNotSelectable)
+        val activeProfile = store.activeProfile ?: return runtimeNames
+        val spec =
+            when (configuredProxyMode()) {
+                ProxyMode.RootTun -> runtimeSpecFactory.createRootTunSpec()
+                ProxyMode.Http -> runtimeSpecFactory.createHttpSpec()
+                ProxyMode.Tun -> runtimeSpecFactory.createTunSpec()
+            }
+        if (spec.profileUuid != activeProfile.toString()) {
+            return runtimeNames
+        }
+
+        val runtimeFile = File(spec.runtimeConfigPath)
+        if (!runtimeFile.isFile) {
+            return runtimeNames
+        }
+        val expectedNames =
+            runCatching {
+                    Clash.inspectCompiledGroupNames(
+                            runtimeFile.readText(),
+                            excludeNotSelectable,
+                        )
+                }
+                .getOrDefault(emptyList())
+        if (expectedNames.isEmpty()) {
+            return runtimeNames
+        }
+
+        return mergeProxyGroupNames(expectedNames, runtimeNames)
+    }
+
+    private fun queryRuntimeProxyGroupOrNull(groupName: String): ProxyGroup? {
+        val group = Clash.queryGroup(groupName, ProxySort.Default)
+        if (group.name.isBlank()) {
+            return null
+        }
+        return if (
+            group.type == Proxy.Type.Unknown &&
+                group.proxies.isEmpty() &&
+                group.now.isBlank() &&
+                group.icon.isNullOrBlank()
+        ) {
+            null
+        } else {
+            group
+        }
+    }
+
+    override fun setLogObserver(observer: ILogObserver?) {
         synchronized(this) {
             logReceiver?.apply {
                 cancel()
@@ -84,6 +295,50 @@ class ClashManager(private val context: Context) :
                         }
                     }
             }
+        }
+    }
+}
+
+internal object TrafficSampleCache {
+    private const val DEFAULT_TTL_MS = 2_000L
+
+    private val nowLock = Any()
+    @Volatile private var nowValue: Long = 0L
+    @Volatile private var nowAt: Long = 0L
+    private val _trafficNow = MutableStateFlow(0L)
+    val trafficNow: StateFlow<Long> = _trafficNow.asStateFlow()
+
+    private val totalLock = Any()
+    @Volatile private var totalValue: Long = 0L
+    @Volatile private var totalAt: Long = 0L
+    private val _trafficTotal = MutableStateFlow(0L)
+    val trafficTotal: StateFlow<Long> = _trafficTotal.asStateFlow()
+
+    fun queryTrafficNow(ttlMs: Long = DEFAULT_TTL_MS): Long {
+        val ts = SystemClock.uptimeMillis()
+        if (ts - nowAt < ttlMs) return nowValue
+        synchronized(nowLock) {
+            val ts2 = SystemClock.uptimeMillis()
+            if (ts2 - nowAt < ttlMs) return nowValue
+            val v = Clash.queryTrafficNow()
+            nowValue = v
+            nowAt = ts2
+            _trafficNow.value = v
+            return v
+        }
+    }
+
+    fun queryTrafficTotal(ttlMs: Long = DEFAULT_TTL_MS): Long {
+        val ts = SystemClock.uptimeMillis()
+        if (ts - totalAt < ttlMs) return totalValue
+        synchronized(totalLock) {
+            val ts2 = SystemClock.uptimeMillis()
+            if (ts2 - totalAt < ttlMs) return totalValue
+            val v = Clash.queryTrafficTotal()
+            totalValue = v
+            totalAt = ts2
+            _trafficTotal.value = v
+            return v
         }
     }
 }
